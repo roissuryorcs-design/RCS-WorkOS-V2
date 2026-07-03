@@ -40,7 +40,7 @@ export default function Row({ item, onUpdate, onDelete }) {
         />
       </td>
       <td style={{ padding: "6px 8px" }}>
-        <StatusCell value={item.status} onChange={(val) => onUpdate("status", val)} />
+        <StatusCell status={item.status} />
       </td>
       <td style={{ padding: "6px 8px" }}>
         <input
