@@ -4,6 +4,7 @@
   align-items: center;
   margin-bottom: 16px;
   flex-wrap: wrap;
+  padding: 4px 0;
 }
 
 .toolbar-search {
@@ -31,7 +32,8 @@
 }
 
 .toolbar-undo-btn,
-.toolbar-export-btn {
+.toolbar-export-btn,
+.toolbar-theme-btn {
   padding: 6px 14px;
   background: var(--btn-secondary-bg);
   color: var(--btn-secondary-text);
@@ -39,9 +41,16 @@
   border-radius: 4px;
   cursor: pointer;
   font-size: 13px;
+  transition: 0.2s;
 }
 
 .toolbar-undo-btn:hover:not(:disabled),
-.toolbar-export-btn:hover {
+.toolbar-export-btn:hover,
+.toolbar-theme-btn:hover {
   background: var(--bg-hover);
+}
+
+.toolbar-theme-btn {
+  min-width: 70px;
+  text-align: center;
 }
