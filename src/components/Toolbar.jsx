@@ -1,3 +1,4 @@
+import { useTheme } from "../context/ThemeContext";
 import "../css/toolbar.css";
 
 export default function Toolbar({
@@ -8,6 +9,8 @@ export default function Toolbar({
   onExport,
   canUndo,
 }) {
+  const { theme, toggleTheme } = useTheme();
+
   return (
     <div className="toolbar">
       <input
@@ -35,6 +38,24 @@ export default function Toolbar({
 
       <button className="toolbar-export-btn" onClick={onExport}>
         📤 Export
+      </button>
+
+      {/* TOMBOL DARK MODE */}
+      <button
+        onClick={toggleTheme}
+        className="toolbar-theme-btn"
+        style={{
+          padding: "6px 14px",
+          background: "var(--bg-hover)",
+          color: "var(--text-secondary)",
+          border: "1px solid var(--border-color)",
+          borderRadius: 4,
+          cursor: "pointer",
+          fontSize: 13,
+          transition: "0.2s",
+        }}
+      >
+        {theme === "light" ? "🌙 Dark" : "☀️ Light"}
       </button>
     </div>
   );
