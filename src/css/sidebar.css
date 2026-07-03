@@ -1,165 +1,83 @@
-.sidebar{
-
-width:270px;
-
-background:white;
-
-border-right:1px solid #e6e9ef;
-
-display:flex;
-
-flex-direction:column;
-
-padding:20px;
-
+.sidebar {
+  width: 220px;
+  background: #f5f6f8;
+  padding: 24px 16px;
+  border-right: 1px solid #e5e7eb;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  overflow-y: auto;
+  flex-shrink: 0;
 }
 
-.logo{
-
-display:flex;
-
-align-items:center;
-
-gap:12px;
-
-margin-bottom:25px;
-
+.sidebar-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a1a2e;
+  margin-bottom: 20px;
 }
 
-.logo-icon{
-
-width:48px;
-
-height:48px;
-
-border-radius:12px;
-
-background:#0073ea;
-
-color:white;
-
-display:flex;
-
-align-items:center;
-
-justify-content:center;
-
-font-size:22px;
-
-font-weight:bold;
-
+.sidebar-section {
+  margin-bottom: 24px;
 }
 
-.logo h2{
-
-font-size:20px;
-
-margin:0;
-
+.sidebar-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: #9ca3af;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+  text-transform: uppercase;
 }
 
-.logo span{
-
-font-size:12px;
-
-color:#888;
-
+.sidebar-item {
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #1a1a2e;
+  cursor: pointer;
+  margin-bottom: 2px;
 }
 
-.search{
-
-margin-bottom:25px;
-
+.sidebar-item.active {
+  background: #e5e7eb;
+  font-weight: 600;
 }
 
-.search input{
-
-width:100%;
-
-padding:10px 12px;
-
-border:1px solid #ddd;
-
-border-radius:8px;
-
-outline:none;
-
+.sidebar-item:hover {
+  background: #e5e7eb;
 }
 
-.menu-title{
-
-margin-top:10px;
-
-margin-bottom:8px;
-
-font-size:11px;
-
-font-weight:bold;
-
-color:#999;
-
-letter-spacing:1px;
-
+.sidebar-board {
+  padding: 6px 12px;
+  padding-left: 24px;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #4b5563;
+  cursor: pointer;
+  margin-bottom: 2px;
 }
 
-.menu-item{
-
-padding:11px 14px;
-
-border-radius:8px;
-
-cursor:pointer;
-
-margin-bottom:4px;
-
-transition:.2s;
-
+.sidebar-board.active {
+  background: #e5e7eb;
+  font-weight: 600;
 }
 
-.menu-item:hover{
-
-background:#f5f6f8;
-
+.sidebar-board:hover {
+  background: #e5e7eb;
 }
 
-.workspace{
-
-padding:11px 14px;
-
-border-radius:8px;
-
-cursor:pointer;
-
-margin-bottom:4px;
-
-transition:.2s;
-
+.sidebar-add-btn {
+  font-size: 13px;
+  padding: 6px 12px;
+  border-radius: 4px;
+  color: #3b82f6;
+  border: 1px dashed #3b82f6;
+  cursor: pointer;
+  text-align: center;
+  margin-top: 4px;
 }
 
-.workspace:hover{
-
-background:#f5f6f8;
-
-}
-
-.active{
-
-background:#0073ea;
-
-color:white;
-
-}
-
-.sidebar-footer{
-
-margin-top:auto;
-
-text-align:center;
-
-font-size:12px;
-
-color:#999;
-
-padding-top:20px;
-
+.sidebar-add-btn:hover {
+  background: #eff6ff;
 }
