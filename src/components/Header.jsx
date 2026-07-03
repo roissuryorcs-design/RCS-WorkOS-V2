@@ -2,43 +2,12 @@ import "../css/header.css";
 
 export default function Header({ title, subtitle }) {
   return (
-    <div 
-      className="header"
-      style={{
-        position: "sticky",
-        top: 0,
-        zIndex: 40,
-        background: "var(--bg-secondary)",
-        padding: "12px 0 8px 0",
-        borderBottom: "1px solid var(--border-color)",
-        marginBottom: 16,
-        transition: "background 0.3s ease, border-color 0.3s ease",
-        // Tambahan untuk memastikan sticky
-        display: "block",
-        width: "100%",
-        backdropFilter: "blur(4px)", // Opsional: efek glass
-      }}
-    >
+    <div className="header">
       <div>
-        <h1 
-          style={{
-            fontSize: 22,
-            fontWeight: 600,
-            color: "var(--text-primary)",
-            margin: 0,
-            transition: "color 0.3s ease",
-          }}
-        >
+        <h1 className="header-title">
           {title || "FOREL FPSO HVAC"}
         </h1>
-        <p 
-          style={{
-            fontSize: 14,
-            color: "var(--text-muted)",
-            marginTop: 2,
-            transition: "color 0.3s ease",
-          }}
-        >
+        <p className="header-subtitle">
           {subtitle || "Engineering"}
         </p>
       </div>
