@@ -1,4 +1,4 @@
-// Pastikan struktur di AppContent seperti ini
+// Di dalam AppContent (bagian render)
 return (
   <div className="app-container">
     <Sidebar ... />
