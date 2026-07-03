@@ -1,12 +1,12 @@
 import "../css/toolbar.css";
 
-export default function Toolbar({ 
-  search, 
-  onSearchChange, 
+export default function Toolbar({
+  search,
+  onSearchChange,
   onAddGroup,
   onUndo,
   onExport,
-  canUndo 
+  canUndo,
 }) {
   return (
     <div className="toolbar">
@@ -16,51 +16,24 @@ export default function Toolbar({
         value={search}
         onChange={(e) => onSearchChange(e.target.value)}
       />
-      
-      <button 
-        className="toolbar-add-btn" 
-        onClick={onAddGroup}
-        style={{
-          padding: "6px 14px",
-          background: "#3b82f6",
-          color: "white",
-          border: "none",
-          borderRadius: 4,
-          cursor: "pointer",
-          fontSize: 13,
-        }}
-      >
+
+      <button className="toolbar-add-btn" onClick={onAddGroup}>
         + Add new group
       </button>
 
       <button
         onClick={onUndo}
         disabled={!canUndo}
+        className="toolbar-undo-btn"
         style={{
-          padding: "6px 14px",
-          background: canUndo ? "transparent" : "#e5e7eb",
-          color: canUndo ? "#4b5563" : "#9ca3af",
-          border: "1px solid #d1d5db",
-          borderRadius: 4,
+          opacity: canUndo ? 1 : 0.5,
           cursor: canUndo ? "pointer" : "not-allowed",
-          fontSize: 13,
         }}
       >
         ↩ Undo
       </button>
 
-      <button
-        onClick={onExport}
-        style={{
-          padding: "6px 14px",
-          background: "transparent",
-          color: "#4b5563",
-          border: "1px solid #d1d5db",
-          borderRadius: 4,
-          cursor: "pointer",
-          fontSize: 13,
-        }}
-      >
+      <button className="toolbar-export-btn" onClick={onExport}>
         📤 Export
       </button>
     </div>
