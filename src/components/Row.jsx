@@ -1,29 +1,74 @@
 import StatusCell from "./StatusCell";
-import PersonCell from "./PersonCell";
-import DateCell from "./DateCell";
-import PriorityCell from "./PriorityCell";
 
-export default function Row({ item }) {
+export default function Row({ item, onUpdate, onDelete }) {
+  const inputStyle = {
+    border: "none",
+    background: "transparent",
+    fontSize: 13,
+    padding: "4px 2px",
+    width: "100%",
+    color: "#1a1a2e",
+    outline: "none",
+    fontFamily: "Arial, sans-serif",
+  };
+
   return (
-    <tr>
-      <td>{item.item}</td>
-
-      <td>{item.document}</td>
-
-      <td>
-        <StatusCell status={item.status} />
+    <tr
+      style={{ borderBottom: "1px solid #f3f4f6", fontSize: 13 }}
+      onMouseEnter={(e) => (e.currentTarget.style.background = "#f9fafb")}
+      onMouseLeave={(e) => (e.currentTarget.style.background = "white")}
+    >
+      <td style={{ padding: "6px 8px" }}>
+        <input
+          value={item.item}
+          onChange={(e) => onUpdate("item", e.target.value)}
+          style={inputStyle}
+        />
       </td>
-
-      <td>
-        <PersonCell person={item.pic} />
+      <td style={{ padding: "6px 8px" }}>
+        <input
+          value={item.document}
+          onChange={(e) => onUpdate("document", e.target.value)}
+          style={inputStyle}
+        />
       </td>
-
-      <td>
-        <DateCell due={item.due} />
+      <td style={{ padding: "6px 8px" }}>
+        <input
+          value={item.people}
+          onChange={(e) => onUpdate("people", e.target.value)}
+          style={inputStyle}
+        />
       </td>
-
-      <td>
-        <PriorityCell priority={item.priority} />
+      <td style={{ padding: "6px 8px" }}>
+        <StatusCell value={item.status} onChange={(val) => onUpdate("status", val)} />
+      </td>
+      <td style={{ padding: "6px 8px" }}>
+        <input
+          value={item.dueDate}
+          onChange={(e) => onUpdate("dueDate", e.target.value)}
+          style={inputStyle}
+        />
+      </td>
+      <td style={{ padding: "6px 8px" }}>
+        <input
+          value={item.rev}
+          onChange={(e) => onUpdate("rev", e.target.value)}
+          style={inputStyle}
+        />
+      </td>
+      <td style={{ padding: "6px 8px", textAlign: "center" }}>
+        <button
+          onClick={onDelete}
+          style={{
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            fontSize: 14,
+            color: "#9ca3af",
+          }}
+        >
+          ✕
+        </button>
       </td>
     </tr>
   );
