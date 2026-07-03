@@ -1,14 +1,16 @@
 .app-container {
   display: flex;
   min-height: 100vh;
-  background: #f5f6f8;
+  background: var(--bg-primary);
   font-family: Arial, sans-serif;
+  transition: background 0.3s ease;
 }
 
 .main-content {
   flex: 1;
   padding: 24px 32px;
-  background: #ffffff;
+  background: var(--bg-secondary);
+  transition: background 0.3s ease;
 }
 
 .board-footer {
@@ -17,9 +19,9 @@
   align-items: center;
   margin-top: 16px;
   padding-top: 12px;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--footer-border);
   font-size: 13px;
-  color: #6b7280;
+  color: var(--footer-text);
   flex-wrap: wrap;
   gap: 8px;
 }
