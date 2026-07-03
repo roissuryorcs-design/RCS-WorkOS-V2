@@ -1,96 +1,53 @@
 import "../css/sidebar.css";
 
-const menus = [
-  "🏠 Dashboard",
-  "📋 My Work",
-  "📄 Documents",
-  "📅 Schedule",
-  "📊 Reports",
-];
+export default function Sidebar({
+  workspaces,
+  activeWorkspaceId,
+  activeBoardId,
+  onSelectWorkspace,
+  onSelectBoard,
+  onAddWorkspace,
+  onAddBoard,
+}) {
+  const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId);
 
-const workspaces = [
-  "FOREL FP50 HVAC",
-  "Mechanical",
-  "Electrical",
-  "Instrumentation",
-  "Commissioning",
-];
-
-export default function Sidebar() {
   return (
-    <aside className="sidebar">
+    <div className="sidebar">
+      <h2 className="sidebar-title">📊 WorkOS</h2>
 
-      <div className="logo">
-
-        <div className="logo-icon">
-          R
+      <div className="sidebar-section">
+        <p className="sidebar-section-title">WORKSPACES</p>
+        {workspaces.map((ws) => (
+          <div
+            key={ws.id}
+            className={`sidebar-item ${ws.id === activeWorkspaceId ? "active" : ""}`}
+            onClick={() => onSelectWorkspace(ws.id)}
+          >
+            📁 {ws.name}
+          </div>
+        ))}
+        <div className="sidebar-add-btn" onClick={onAddWorkspace}>
+          + New Workspace
         </div>
+      </div>
 
-        <div>
-
-          <h2>RCS WorkOS</h2>
-
-          <span>Engineering OS</span>
-
+      {activeWorkspace && (
+        <div className="sidebar-section">
+          <p className="sidebar-section-title">BOARDS</p>
+          {activeWorkspace.boards.map((board) => (
+            <div
+              key={board.id}
+              className={`sidebar-board ${board.id === activeBoardId ? "active" : ""}`}
+              onClick={() => onSelectBoard(board.id)}
+            >
+              📋 {board.name}
+            </div>
+          ))}
+          <div className="sidebar-add-btn" onClick={() => onAddBoard(activeWorkspaceId)}>
+            + New Board
+          </div>
         </div>
-
-      </div>
-
-      <div className="search">
-
-        <input
-          type="text"
-          placeholder="Search..."
-        />
-
-      </div>
-
-      <div className="menu-title">
-        MENU
-      </div>
-
-      {menus.map(menu => (
-
-        <div
-          key={menu}
-          className="menu-item"
-        >
-
-          {menu}
-
-        </div>
-
-      ))}
-
-      <div className="menu-title">
-
-        WORKSPACE
-
-      </div>
-
-      {workspaces.map((ws,index)=>(
-
-        <div
-          key={ws}
-          className={
-            index===0
-            ?"workspace active"
-            :"workspace"
-          }
-        >
-
-          {ws}
-
-        </div>
-
-      ))}
-
-      <div className="sidebar-footer">
-
-        RCS WorkOS V2
-
-      </div>
-
-    </aside>
+      )}
+    </div>
   );
 }
