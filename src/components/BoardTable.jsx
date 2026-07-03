@@ -16,8 +16,15 @@ export default function BoardTable({
   onAddItem,
   onOpenStatusManager,
 }) {
-  const { columns, updateColumnWidth, renameColumn, toggleColumn, deleteColumn, visibleColumns } =
-    useColumns();
+  const {
+    columns,
+    updateColumnWidth,
+    renameColumn,
+    toggleColumn,
+    deleteColumn,
+    reorderColumns,
+    visibleColumns,
+  } = useColumns();
 
   const [collapsed, setCollapsed] = useState({});
   const [popupGroup, setPopupGroup] = useState(null);
@@ -181,22 +188,21 @@ export default function BoardTable({
                           letterSpacing: "0.3px",
                         }}
                       >
-                        {visibleColumns.map((col, idx) => {
-                          const isLast = idx === visibleColumns.length - 1;
-                          return (
-                            <ResizableHeader
-                              key={col.id}
-                              column={col}
-                              onResize={updateColumnWidth}
-                              onRename={renameColumn}
-                              onToggle={toggleColumn}
-                              onDelete={deleteColumn}
-                              isLast={isLast}
-                            >
-                              {col.label}
-                            </ResizableHeader>
-                          );
-                        })}
+                        {visibleColumns.map((col, idx) => (
+                          <ResizableHeader
+                            key={col.id}
+                            column={col}
+                            index={idx}
+                            totalColumns={visibleColumns.length}
+                            onResize={updateColumnWidth}
+                            onRename={renameColumn}
+                            onToggle={toggleColumn}
+                            onDelete={deleteColumn}
+                            onReorder={reorderColumns}
+                          >
+                            {col.label}
+                          </ResizableHeader>
+                        ))}
                       </tr>
                     </thead>
                     <tbody>
