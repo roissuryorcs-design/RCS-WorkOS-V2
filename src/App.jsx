@@ -1,13 +1,6 @@
-// Di dalam AppContent (bagian render)
-return (
-  <div className="app-container">
-    <Sidebar ... />
+// Di App.jsx, hapus atau komentari ColumnManager
+// Karena sekarang menu kolom sudah ada langsung di header tabel
 
-    <div className="main-content">
-      <Header title="FOREL FPSO HVAC" subtitle="Engineering" />
-      <Toolbar ... />
-      <BoardTable ... />
-      <div className="board-footer">...</div>
-    </div>
-  </div>
-);
+// Hapus import ColumnManager
+// Hapus state showColumnManager
+// Hapus tombol "Manage Columns" dari BoardTable (sudah di dalam header)
