@@ -1,53 +1,60 @@
 import "../css/sidebar.css";
 
-export default function Sidebar({
-  workspaces,
-  activeWorkspaceId,
-  activeBoardId,
-  onSelectWorkspace,
-  onSelectBoard,
-  onAddWorkspace,
-  onAddBoard,
-}) {
-  const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId);
-
+export default function Sidebar({ favorites, onAddFavorite, onRemoveFavorite }) {
   return (
     <div className="sidebar">
-      <h2 className="sidebar-title">📊 WorkOS</h2>
+      <div className="sidebar-header">
+        <span className="sidebar-logo">📊 RCS WorkOS</span>
+      </div>
 
+      {/* Navigation Menu */}
+      <div className="nav-section">
+        <div className="nav-item active">🏠 Home</div>
+        <div className="nav-item">📋 My work</div>
+        <div className="nav-item">➕ More</div>
+        <div className="nav-item">🤖 monday AI</div>
+      </div>
+
+      {/* Favorites */}
       <div className="sidebar-section">
-        <p className="sidebar-section-title">WORKSPACES</p>
-        {workspaces.map((ws) => (
-          <div
-            key={ws.id}
-            className={`sidebar-item ${ws.id === activeWorkspaceId ? "active" : ""}`}
-            onClick={() => onSelectWorkspace(ws.id)}
-          >
-            📁 {ws.name}
+        <div className="section-title">FAVORITES</div>
+        {favorites.map((fav, idx) => (
+          <div key={idx} className="favorite-item">
+            <span>📁 {fav}</span>
+            <button
+              onClick={() => onRemoveFavorite(idx)}
+              className="favorite-remove-btn"
+            >
+              ✕
+            </button>
           </div>
         ))}
-        <div className="sidebar-add-btn" onClick={onAddWorkspace}>
-          + New Workspace
+        <div onClick={onAddFavorite} className="add-favorite-btn">
+          + Add favorites
         </div>
       </div>
 
-      {activeWorkspace && (
-        <div className="sidebar-section">
-          <p className="sidebar-section-title">BOARDS</p>
-          {activeWorkspace.boards.map((board) => (
-            <div
-              key={board.id}
-              className={`sidebar-board ${board.id === activeBoardId ? "active" : ""}`}
-              onClick={() => onSelectBoard(board.id)}
-            >
-              📋 {board.name}
-            </div>
-          ))}
-          <div className="sidebar-add-btn" onClick={() => onAddBoard(activeWorkspaceId)}>
-            + New Board
-          </div>
-        </div>
-      )}
+      {/* FOREL FPSO Project */}
+      <div className="sidebar-section">
+        <div className="section-title">FOREL FPSO</div>
+        <div className="nav-item">📁 Engineering</div>
+        <div className="sub-item">• GA Drawings</div>
+        <div className="sub-item">• Layout Drawings</div>
+        <div className="sub-item">• D&D</div>
+        <div className="sub-item">• P&D 1</div>
+        <div className="sub-item">• Equipment Schedule 4</div>
+        <div className="nav-item" style={{ marginTop: 6 }}>📁 Commissioning</div>
+        <div className="sub-item">• FAT</div>
+        <div className="sub-item">• SAT</div>
+        <div className="sub-item">• O&M</div>
+      </div>
+
+      {/* MORE */}
+      <div className="sidebar-section">
+        <div className="section-title">MORE</div>
+        <div className="nav-item">Monday AI</div>
+        <div className="nav-item">Automate</div>
+      </div>
     </div>
   );
 }
