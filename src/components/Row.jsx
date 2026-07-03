@@ -18,42 +18,42 @@ export default function Row({ item, statuses, onUpdate, onDelete }) {
       onMouseEnter={(e) => (e.currentTarget.style.background = "#f9fafb")}
       onMouseLeave={(e) => (e.currentTarget.style.background = "white")}
     >
-      <td style={{ padding: "6px 8px" }}>
+      <td style={{ padding: "6px 8px", borderRight: "1px solid #e5e7eb" }}>
         <input
           value={item.item}
           onChange={(e) => onUpdate("item", e.target.value)}
           style={inputStyle}
         />
       </td>
-      <td style={{ padding: "6px 8px" }}>
+      <td style={{ padding: "6px 8px", borderRight: "1px solid #e5e7eb" }}>
         <input
           value={item.document}
           onChange={(e) => onUpdate("document", e.target.value)}
           style={inputStyle}
         />
       </td>
-      <td style={{ padding: "6px 8px" }}>
+      <td style={{ padding: "6px 8px", borderRight: "1px solid #e5e7eb" }}>
         <input
           value={item.people}
           onChange={(e) => onUpdate("people", e.target.value)}
           style={inputStyle}
         />
       </td>
-      <td style={{ padding: "6px 8px" }}>
+      <td style={{ padding: "6px 8px", borderRight: "1px solid #e5e7eb" }}>
         <StatusCell
           status={item.status}
           statuses={statuses}
           onChange={(val) => onUpdate("status", val)}
         />
       </td>
-      <td style={{ padding: "6px 8px" }}>
+      <td style={{ padding: "6px 8px", borderRight: "1px solid #e5e7eb" }}>
         <input
           value={item.dueDate}
           onChange={(e) => onUpdate("dueDate", e.target.value)}
           style={inputStyle}
         />
       </td>
-      <td style={{ padding: "6px 8px" }}>
+      <td style={{ padding: "6px 8px", borderRight: "1px solid #e5e7eb" }}>
         <input
           value={item.rev}
           onChange={(e) => onUpdate("rev", e.target.value)}
