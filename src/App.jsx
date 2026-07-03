@@ -29,34 +29,83 @@ export default function App() {
   };
 
   const addTask = () => {
-    const newTask = {
-      id: Date.now(),
-      title: "New Task",
-      status: "To Do",
-      owner: "-",
-      priority: "Low",
-      deadline: "-",
-      progress: 0,
-    };
-    setTasks([...tasks, newTask]);
+    setTasks([
+      ...tasks,
+      {
+        id: Date.now(),
+        title: "New Task",
+        status: "To Do",
+        owner: "-",
+        priority: "Low",
+        deadline: "-",
+        progress: 0,
+      },
+    ]);
   };
 
   const deleteTask = (id) => {
     setTasks(tasks.filter((t) => t.id !== id));
   };
 
-  return (
-    <div style={{ padding: 20, fontFamily: "Arial" }}>
-      <h2>📊 Monday Style Task Table</h2>
+  const statusColor = (status) => {
+    switch (status) {
+      case "To Do":
+        return "#9ca3af";
+      case "Working":
+        return "#3b82f6";
+      case "Review":
+        return "#f59e0b";
+      case "Done":
+        return "#22c55e";
+      default:
+        return "#9ca3af";
+    }
+  };
 
-      <button onClick={addTask} style={{ marginBottom: 10 }}>
+  const priorityColor = (priority) => {
+    switch (priority) {
+      case "Low":
+        return "#22c55e";
+      case "Medium":
+        return "#f59e0b";
+      case "High":
+        return "#ef4444";
+      default:
+        return "#9ca3af";
+    }
+  };
+
+  return (
+    <div style={{ padding: 20, fontFamily: "Arial", background: "#f9fafb" }}>
+      <h2>📊 WorkOS Task Board</h2>
+
+      <button
+        onClick={addTask}
+        style={{
+          marginBottom: 15,
+          padding: "8px 12px",
+          border: "none",
+          background: "#111827",
+          color: "white",
+          borderRadius: 6,
+          cursor: "pointer",
+        }}
+      >
         + Add Task
       </button>
 
-      <table border="1" cellPadding="8" width="100%">
-        <thead>
+      <table
+        style={{
+          width: "100%",
+          borderCollapse: "collapse",
+          background: "white",
+          borderRadius: 10,
+          overflow: "hidden",
+        }}
+      >
+        <thead style={{ background: "#f3f4f6" }}>
           <tr>
-            <th>Task</th>
+            <th style={{ padding: 10 }}>Task</th>
             <th>Status</th>
             <th>Owner</th>
             <th>Priority</th>
@@ -68,28 +117,29 @@ export default function App() {
 
         <tbody>
           {tasks.map((task) => (
-            <tr key={task.id}>
+            <tr key={task.id} style={{ borderBottom: "1px solid #eee" }}>
               <td>
                 <input
                   value={task.title}
                   onChange={(e) =>
                     updateTask(task.id, "title", e.target.value)
                   }
+                  style={{ padding: 6 }}
                 />
               </td>
 
               <td>
-                <select
-                  value={task.status}
-                  onChange={(e) =>
-                    updateTask(task.id, "status", e.target.value)
-                  }
+                <span
+                  style={{
+                    background: statusColor(task.status),
+                    color: "white",
+                    padding: "4px 8px",
+                    borderRadius: 6,
+                    fontSize: 12,
+                  }}
                 >
-                  <option>To Do</option>
-                  <option>Working</option>
-                  <option>Review</option>
-                  <option>Done</option>
-                </select>
+                  {task.status}
+                </span>
               </td>
 
               <td>
@@ -102,16 +152,17 @@ export default function App() {
               </td>
 
               <td>
-                <select
-                  value={task.priority}
-                  onChange={(e) =>
-                    updateTask(task.id, "priority", e.target.value)
-                  }
+                <span
+                  style={{
+                    background: priorityColor(task.priority),
+                    color: "white",
+                    padding: "4px 8px",
+                    borderRadius: 6,
+                    fontSize: 12,
+                  }}
                 >
-                  <option>Low</option>
-                  <option>Medium</option>
-                  <option>High</option>
-                </select>
+                  {task.priority}
+                </span>
               </td>
 
               <td>
@@ -124,20 +175,28 @@ export default function App() {
                 />
               </td>
 
-              <td>
-                <input
-                  type="number"
-                  value={task.progress}
-                  onChange={(e) =>
-                    updateTask(task.id, "progress", e.target.value)
-                  }
-                />%
+              <td style={{ width: 120 }}>
+                <div
+                  style={{
+                    width: "100%",
+                    height: 8,
+                    background: "#e5e7eb",
+                    borderRadius: 5,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: `${task.progress}%`,
+                      height: "100%",
+                      background: "#3b82f6",
+                      borderRadius: 5,
+                    }}
+                  />
+                </div>
               </td>
 
               <td>
-                <button onClick={() => deleteTask(task.id)}>
-                  Delete
-                </button>
+                <button onClick={() => deleteTask(task.id)}>❌</button>
               </td>
             </tr>
           ))}
