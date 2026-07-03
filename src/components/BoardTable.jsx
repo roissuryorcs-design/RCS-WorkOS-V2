@@ -10,12 +10,12 @@ export default function BoardTable({
   onAddGroup,
   onDeleteGroup,
   onAddItem,
+  onOpenStatusManager,
 }) {
   const [popupGroup, setPopupGroup] = useState(null);
 
   const closePopup = () => setPopupGroup(null);
 
-  // Group items by GROUP
   const grouped = groups.reduce((acc, group) => {
     acc[group] = items.filter((item) => item.group === group);
     return acc;
@@ -108,7 +108,26 @@ export default function BoardTable({
                     <th style={{ padding: "8px 8px", width: "22%" }}>ITEM</th>
                     <th style={{ padding: "8px 8px", width: "20%" }}>NO. DOCUMENT</th>
                     <th style={{ padding: "8px 8px", width: "13%" }}>PEOPLE</th>
-                    <th style={{ padding: "8px 8px", width: "13%" }}>STATUS</th>
+                    <th style={{ padding: "8px 8px", width: "13%", position: "relative" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <span>STATUS</span>
+                        <button
+                          onClick={onOpenStatusManager}
+                          style={{
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            fontSize: 14,
+                            color: "#6b7280",
+                            padding: 0,
+                            display: "flex",
+                            alignItems: "center",
+                          }}
+                        >
+                          ⋮
+                        </button>
+                      </div>
+                    </th>
                     <th style={{ padding: "8px 8px", width: "13%" }}>DUE DATE</th>
                     <th style={{ padding: "8px 8px", width: "8%" }}>REV</th>
                     <th style={{ padding: "8px 8px", width: "6%", textAlign: "center" }}></th>
@@ -132,7 +151,6 @@ export default function BoardTable({
               </div>
             )}
 
-            {/* TOMBOL ADD TASK DI BAWAH TABEL */}
             <button
               onClick={() => onAddItem(groupName)}
               style={{
@@ -154,7 +172,7 @@ export default function BoardTable({
         );
       })}
 
-      {/* TOMBOL ADD NEW GROUP DI PALING BAWAH */}
+      {/* TOMBOL ADD NEW GROUP */}
       <div style={{ marginTop: 16 }}>
         <button
           onClick={onAddGroup}
