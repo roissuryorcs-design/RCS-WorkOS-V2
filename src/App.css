@@ -5,6 +5,7 @@
   font-family: Arial, sans-serif;
   transition: background 0.3s ease;
   overflow: visible; /* Penting untuk sticky */
+  position: relative;
 }
 
 .main-content {
@@ -13,7 +14,21 @@
   background: var(--bg-secondary);
   transition: background 0.3s ease;
   overflow: visible; /* Penting untuk sticky */
-  position: relative; /* Konteks stacking */
+  position: relative;
+  height: 100vh; /* Tambahkan tinggi viewport agar scroll berfungsi */
+  overflow-y: auto; /* Scroll di dalam main-content */
+}
+
+/* Scrollbar styling */
+.main-content::-webkit-scrollbar {
+  width: 8px;
+}
+.main-content::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+.main-content::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
 }
 
 .board-footer {
@@ -27,4 +42,9 @@
   color: var(--footer-text);
   flex-wrap: wrap;
   gap: 8px;
+  position: sticky;
+  bottom: 0;
+  background: var(--bg-secondary);
+  padding-bottom: 8px;
+  z-index: 30;
 }
