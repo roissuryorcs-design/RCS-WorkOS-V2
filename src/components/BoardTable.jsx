@@ -28,7 +28,6 @@ export default function BoardTable({
 
         return (
           <div key={groupName} style={{ marginBottom: 24, position: "relative" }}>
-            {/* HEADER GROUP */}
             <div style={{ display: "flex", alignItems: "center", marginBottom: 8 }}>
               <button
                 onClick={() => setPopupGroup(groupName)}
@@ -37,19 +36,27 @@ export default function BoardTable({
                   border: "none",
                   cursor: "pointer",
                   fontSize: 18,
-                  color: "#6b7280",
+                  color: "var(--text-secondary)",
                   padding: "0 8px 0 0",
                   marginRight: 8,
                 }}
               >
                 ⋮
               </button>
-              <h3 style={{ fontSize: 14, fontWeight: 600, color: "#1a1a2e", paddingBottom: 4, borderBottom: "2px solid #e5e7eb", flex: 1 }}>
+              <h3
+                style={{
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: "var(--text-primary)",
+                  paddingBottom: 4,
+                  borderBottom: "2px solid var(--border-color)",
+                  flex: 1,
+                }}
+              >
                 {groupName}
               </h3>
             </div>
 
-            {/* POPUP DELETE GROUP */}
             {popupGroup === groupName && (
               <>
                 <div
@@ -57,10 +64,10 @@ export default function BoardTable({
                     position: "absolute",
                     top: 24,
                     left: 0,
-                    background: "white",
-                    border: "1px solid #d1d5db",
+                    background: "var(--bg-modal)",
+                    border: "1px solid var(--border-color)",
                     borderRadius: 6,
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                    boxShadow: "var(--shadow-md)",
                     padding: "4px 0",
                     zIndex: 100,
                     minWidth: "160px",
@@ -100,15 +107,37 @@ export default function BoardTable({
               </>
             )}
 
-            {/* TABEL DENGAN BORDER VERTIKAL */}
             {tasks.length > 0 ? (
               <table width="100%" cellPadding="0" style={{ borderCollapse: "collapse" }}>
                 <thead>
-                  <tr style={{ textAlign: "left", fontSize: 12, color: "#6b7280", fontWeight: 600, borderBottom: "1px solid #e5e7eb", textTransform: "uppercase", letterSpacing: "0.3px" }}>
-                    <th style={{ padding: "8px 8px", width: "22%", borderRight: "1px solid #e5e7eb" }}>ITEM</th>
-                    <th style={{ padding: "8px 8px", width: "20%", borderRight: "1px solid #e5e7eb" }}>NO. DOCUMENT</th>
-                    <th style={{ padding: "8px 8px", width: "13%", borderRight: "1px solid #e5e7eb" }}>PEOPLE</th>
-                    <th style={{ padding: "8px 8px", width: "13%", borderRight: "1px solid #e5e7eb", position: "relative" }}>
+                  <tr
+                    style={{
+                      textAlign: "left",
+                      fontSize: 12,
+                      color: "var(--text-muted)",
+                      fontWeight: 600,
+                      borderBottom: "1px solid var(--border-color)",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.3px",
+                    }}
+                  >
+                    <th style={{ padding: "8px 8px", width: "22%", borderRight: "1px solid var(--border-color)" }}>
+                      ITEM
+                    </th>
+                    <th style={{ padding: "8px 8px", width: "20%", borderRight: "1px solid var(--border-color)" }}>
+                      NO. DOCUMENT
+                    </th>
+                    <th style={{ padding: "8px 8px", width: "13%", borderRight: "1px solid var(--border-color)" }}>
+                      PEOPLE
+                    </th>
+                    <th
+                      style={{
+                        padding: "8px 8px",
+                        width: "13%",
+                        borderRight: "1px solid var(--border-color)",
+                        position: "relative",
+                      }}
+                    >
                       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                         <span>STATUS</span>
                         <button
@@ -118,7 +147,7 @@ export default function BoardTable({
                             border: "none",
                             cursor: "pointer",
                             fontSize: 14,
-                            color: "#6b7280",
+                            color: "var(--text-secondary)",
                             padding: 0,
                             display: "flex",
                             alignItems: "center",
@@ -128,8 +157,12 @@ export default function BoardTable({
                         </button>
                       </div>
                     </th>
-                    <th style={{ padding: "8px 8px", width: "13%", borderRight: "1px solid #e5e7eb" }}>DUE DATE</th>
-                    <th style={{ padding: "8px 8px", width: "8%", borderRight: "1px solid #e5e7eb" }}>REV</th>
+                    <th style={{ padding: "8px 8px", width: "13%", borderRight: "1px solid var(--border-color)" }}>
+                      DUE DATE
+                    </th>
+                    <th style={{ padding: "8px 8px", width: "8%", borderRight: "1px solid var(--border-color)" }}>
+                      REV
+                    </th>
                     <th style={{ padding: "8px 8px", width: "6%", textAlign: "center" }}></th>
                   </tr>
                 </thead>
@@ -146,17 +179,25 @@ export default function BoardTable({
                 </tbody>
               </table>
             ) : (
-              <div style={{ padding: "12px", color: "#9ca3af", textAlign: "center", border: "1px dashed #e5e7eb", borderRadius: 4 }}>
-                No items in this group. 
-                <button 
-                  onClick={() => onAddItem(groupName)} 
-                  style={{ 
-                    color: "#3b82f6", 
-                    background: "none", 
-                    border: "none", 
+              <div
+                style={{
+                  padding: "12px",
+                  color: "var(--text-light)",
+                  textAlign: "center",
+                  border: "1px dashed var(--border-color)",
+                  borderRadius: 4,
+                }}
+              >
+                No items in this group.
+                <button
+                  onClick={() => onAddItem(groupName)}
+                  style={{
+                    color: "#3b82f6",
+                    background: "none",
+                    border: "none",
                     cursor: "pointer",
                     marginLeft: 4,
-                    textDecoration: "underline"
+                    textDecoration: "underline",
                   }}
                 >
                   Add task
@@ -167,7 +208,6 @@ export default function BoardTable({
         );
       })}
 
-      {/* TOMBOL ADD NEW GROUP DI PALING BAWAH (tetap) */}
       <div style={{ marginTop: 16 }}>
         <button
           onClick={onAddGroup}
@@ -175,7 +215,7 @@ export default function BoardTable({
             display: "block",
             width: "100%",
             padding: "10px",
-            border: "1px dashed #d1d5db",
+            border: "1px dashed var(--border-color)",
             borderRadius: 6,
             background: "transparent",
             color: "#3b82f6",
