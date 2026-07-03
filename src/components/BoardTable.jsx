@@ -14,14 +14,13 @@ export default function BoardTable({
   onAddItem,
   onOpenStatusManager,
 }) {
-  // State untuk collapse per group
   const [collapsed, setCollapsed] = useState({});
+  const [popupGroup, setPopupGroup] = useState(null);
 
   const toggleCollapse = (groupName) => {
     setCollapsed(prev => ({ ...prev, [groupName]: !prev[groupName] }));
   };
 
-  const [popupGroup, setPopupGroup] = useState(null);
   const closePopup = () => setPopupGroup(null);
 
   const grouped = groups.reduce((acc, group) => {
@@ -34,13 +33,12 @@ export default function BoardTable({
       {groups.map((groupName) => {
         const tasks = grouped[groupName] || [];
         const isCollapsed = collapsed[groupName] || false;
-        const groupColor = groupColors[groupName] || "#3b82f6"; // default biru
+        const groupColor = groupColors[groupName] || "#3b82f6";
 
         return (
           <div key={groupName} style={{ marginBottom: 24, position: "relative" }}>
             {/* HEADER GROUP */}
             <div style={{ display: "flex", alignItems: "center", marginBottom: 8 }}>
-              {/* Tombol Collapse */}
               <button
                 onClick={() => toggleCollapse(groupName)}
                 style={{
@@ -75,7 +73,7 @@ export default function BoardTable({
                 style={{
                   fontSize: 14,
                   fontWeight: 600,
-                  color: groupColor, // Warna teks sesuai group
+                  color: groupColor,
                   paddingBottom: 4,
                   borderBottom: `2px solid ${groupColor}`,
                   flex: 1,
@@ -85,7 +83,6 @@ export default function BoardTable({
                 {groupName}
               </h3>
 
-              {/* Color Picker untuk custom warna */}
               <input
                 type="color"
                 value={groupColor}
@@ -164,7 +161,7 @@ export default function BoardTable({
                       borderCollapse: "collapse",
                       border: "2px solid var(--border-color)",
                       borderRadius: 4,
-                      borderLeft: `4px solid ${groupColor}`, // BORDER KIRI 2x lipat + berwarna
+                      borderLeft: `4px solid ${groupColor}`,
                     }}
                   >
                     <thead>
@@ -179,31 +176,13 @@ export default function BoardTable({
                           letterSpacing: "0.3px",
                         }}
                       >
-                        <th
-                          style={{
-                            padding: "8px 8px",
-                            width: "22%",
-                            borderRight: "2px solid var(--border-color)",
-                          }}
-                        >
+                        <th style={{ padding: "8px 8px", width: "22%", borderRight: "2px solid var(--border-color)" }}>
                           ITEM
                         </th>
-                        <th
-                          style={{
-                            padding: "8px 8px",
-                            width: "20%",
-                            borderRight: "2px solid var(--border-color)",
-                          }}
-                        >
+                        <th style={{ padding: "8px 8px", width: "20%", borderRight: "2px solid var(--border-color)" }}>
                           NO. DOCUMENT
                         </th>
-                        <th
-                          style={{
-                            padding: "8px 8px",
-                            width: "13%",
-                            borderRight: "2px solid var(--border-color)",
-                          }}
-                        >
+                        <th style={{ padding: "8px 8px", width: "13%", borderRight: "2px solid var(--border-color)" }}>
                           PEOPLE
                         </th>
                         <th
@@ -233,22 +212,10 @@ export default function BoardTable({
                             </button>
                           </div>
                         </th>
-                        <th
-                          style={{
-                            padding: "8px 8px",
-                            width: "13%",
-                            borderRight: "2px solid var(--border-color)",
-                          }}
-                        >
+                        <th style={{ padding: "8px 8px", width: "13%", borderRight: "2px solid var(--border-color)" }}>
                           DUE DATE
                         </th>
-                        <th
-                          style={{
-                            padding: "8px 8px",
-                            width: "8%",
-                            borderRight: "2px solid var(--border-color)",
-                          }}
-                        >
+                        <th style={{ padding: "8px 8px", width: "8%", borderRight: "2px solid var(--border-color)" }}>
                           REV
                         </th>
                         <th style={{ padding: "8px 8px", width: "6%", textAlign: "center" }}></th>
@@ -260,7 +227,7 @@ export default function BoardTable({
                           key={item.id}
                           item={item}
                           statuses={statuses}
-                          groupColor={groupColor} // Kirim warna untuk border kiri baris
+                          groupColor={groupColor}
                           onUpdate={(field, value) => onUpdateItem(item.id, field, value)}
                           onDelete={() => onDeleteItem(item.id)}
                         />
@@ -279,21 +246,35 @@ export default function BoardTable({
                     }}
                   >
                     No items in this group.
-                    <button
-                      onClick={() => onAddItem(groupName)}
-                      style={{
-                        color: "#3b82f6",
-                        background: "none",
-                        border: "none",
-                        cursor: "pointer",
-                        marginLeft: 4,
-                        textDecoration: "underline",
-                      }}
-                    >
-                      Add task
-                    </button>
                   </div>
                 )}
+
+                {/* TOMBOL ADD TASK DI BAWAH TABEL (untuk semua group) */}
+                <button
+                  onClick={() => onAddItem(groupName)}
+                  style={{
+                    display: "block",
+                    width: "100%",
+                    padding: "6px 8px",
+                    border: "none",
+                    background: "transparent",
+                    color: "#3b82f6",
+                    cursor: "pointer",
+                    fontSize: 13,
+                    textAlign: "left",
+                    marginTop: 4,
+                    borderBottom: "2px solid var(--border-color)",
+                    borderLeft: `4px solid ${groupColor}`,
+                    borderRight: "2px solid var(--border-color)",
+                    borderBottomLeftRadius: 4,
+                    borderBottomRightRadius: 4,
+                    transition: "background 0.15s",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-hover)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                >
+                  + Add task
+                </button>
               </>
             )}
           </div>
