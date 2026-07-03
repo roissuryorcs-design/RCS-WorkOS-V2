@@ -8,16 +8,18 @@
 
 .toolbar-search {
   padding: 6px 12px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border-dark);
   border-radius: 4px;
   font-size: 13px;
   width: 200px;
+  background: var(--bg-input);
+  color: var(--text-primary);
 }
 
 .toolbar-add-btn {
   padding: 6px 14px;
-  background: #3b82f6;
-  color: white;
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -25,5 +27,21 @@
 }
 
 .toolbar-add-btn:hover {
-  background: #2563eb;
+  background: var(--btn-primary-hover);
+}
+
+.toolbar-undo-btn,
+.toolbar-export-btn {
+  padding: 6px 14px;
+  background: var(--btn-secondary-bg);
+  color: var(--btn-secondary-text);
+  border: 1px solid var(--btn-secondary-border);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.toolbar-undo-btn:hover:not(:disabled),
+.toolbar-export-btn:hover {
+  background: var(--bg-hover);
 }
