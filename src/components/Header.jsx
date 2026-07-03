@@ -1,25 +1,12 @@
 import "../css/header.css";
 
-export default function Header() {
+export default function Header({ title, subtitle }) {
   return (
-    <header className="header">
-      <div className="header-left">
-        <div className="breadcrumb">
-          Workspace / FOREL FP50 HVAC
-        </div>
-
-        <h1>Engineering Operating System</h1>
+    <div className="header">
+      <div>
+        <h1 className="header-title">{title || "FOREL FPSO HVAC"}</h1>
+        <p className="header-subtitle">{subtitle || "Engineering"}</p>
       </div>
-
-      <div className="header-right">
-        <button className="icon-btn">🔍</button>
-        <button className="icon-btn">🔔</button>
-        <button className="icon-btn">⚙</button>
-
-        <div className="user-avatar">
-          R
-        </div>
-      </div>
-    </header>
+    </div>
   );
 }
