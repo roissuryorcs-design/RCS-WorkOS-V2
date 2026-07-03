@@ -22,7 +22,6 @@ export default function App() {
       setItems(JSON.parse(savedItems));
     } else {
       setItems([
-        // Data default (7 item seperti sebelumnya)
         { id: 1, item: "Scope of Work", document: "", people: "Done", status: "Done", dueDate: "dd/mm/tttt", rev: "R0" },
         { id: 2, item: "GA Drawings", document: "", people: "Done", status: "Done", dueDate: "dd/mm/tttt", rev: "R0" },
         { id: 3, item: "General Arrangement", document: "ID-F-FT-NN1-GAD-FP-0", people: "RS", status: "Done", dueDate: "01/07/2026", rev: "R1" },
@@ -92,6 +91,44 @@ export default function App() {
     saveHistory([...items, newItem]);
   };
 
+  // ----- GROUP CRUD (BARU) -----
+  const addGroup = () => {
+    const name = prompt("Enter new group name (e.g., 'On Hold'):");
+    if (!name || !name.trim()) return;
+    
+    // Cek apakah status sudah ada
+    if (items.some(item => item.status === name.trim())) {
+      alert(`Group "${name.trim()}" already exists!`);
+      return;
+    }
+
+    // Tambahkan item contoh ke group baru
+    const newItem = {
+      id: Date.now(),
+      item: `New Task in ${name.trim()}`,
+      document: "",
+      people: "",
+      status: name.trim(),
+      dueDate: "-",
+      rev: "R0",
+    };
+    saveHistory([...items, newItem]);
+  };
+
+  const deleteGroup = (statusToDelete) => {
+    // Cek apakah ini status default (To Do, Working, Review, Done)
+    const defaultStatuses = ["To Do", "Working", "Review", "Done"];
+    if (defaultStatuses.includes(statusToDelete)) {
+      alert(`Cannot delete default group: "${statusToDelete}"`);
+      return;
+    }
+
+    if (!confirm(`Delete entire group "${statusToDelete}" and all its items?`)) return;
+
+    const newItems = items.filter((it) => it.status !== statusToDelete);
+    saveHistory(newItems);
+  };
+
   // Favorites
   const addFavorite = () => {
     const name = prompt("Enter favorite name:");
@@ -149,6 +186,8 @@ export default function App() {
           items={filteredItems}
           onUpdateItem={updateItem}
           onDeleteItem={deleteItem}
+          onAddGroup={addGroup}
+          onDeleteGroup={deleteGroup}
         />
 
         <div className="board-footer">
