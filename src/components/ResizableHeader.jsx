@@ -3,30 +3,37 @@ import ColumnMenu from "./ColumnMenu";
 
 export default function ResizableHeader({
   column,
+  index,
+  totalColumns,
   onResize,
   onRename,
   onToggle,
   onDelete,
+  onReorder,
   children,
-  isLast = false,
 }) {
   const [isResizing, setIsResizing] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [width, setWidth] = useState(column.width);
+  const [isDragging, setIsDragging] = useState(false);
   const thRef = useRef(null);
   const startXRef = useRef(0);
   const startWidthRef = useRef(0);
 
-  const handleMouseDown = (e) => {
+  const isAction = column.id === "action";
+  const isLast = index === totalColumns - 1;
+
+  // ----- RESIZE -----
+  const handleResizeMouseDown = (e) => {
     setIsResizing(true);
     startXRef.current = e.clientX;
     startWidthRef.current = thRef.current?.offsetWidth || column.width;
-    document.addEventListener("mousemove", handleMouseMove);
-    document.addEventListener("mouseup", handleMouseUp);
+    document.addEventListener("mousemove", handleResizeMouseMove);
+    document.addEventListener("mouseup", handleResizeMouseUp);
     e.preventDefault();
   };
 
-  const handleMouseMove = (e) => {
+  const handleResizeMouseMove = (e) => {
     if (!isResizing) return;
     const diff = e.clientX - startXRef.current;
     const newWidth = Math.max(30, startWidthRef.current + diff);
@@ -34,32 +41,80 @@ export default function ResizableHeader({
     onResize(column.id, newWidth);
   };
 
-  const handleMouseUp = () => {
+  const handleResizeMouseUp = () => {
     setIsResizing(false);
-    document.removeEventListener("mousemove", handleMouseMove);
-    document.removeEventListener("mouseup", handleMouseUp);
+    document.removeEventListener("mousemove", handleResizeMouseMove);
+    document.removeEventListener("mouseup", handleResizeMouseUp);
   };
 
   useEffect(() => {
     setWidth(column.width);
   }, [column.width]);
 
-  // Toggle menu dan close jika klik di luar
-  useEffect(() => {
-    if (showMenu) {
-      const handleClickOutside = (e) => {
-        if (thRef.current && !thRef.current.contains(e.target)) {
-          setShowMenu(false);
-        }
-      };
-      document.addEventListener("mousedown", handleClickOutside);
-      return () => document.removeEventListener("mousedown", handleClickOutside);
+  // ----- DRAG & DROP -----
+  const handleDragStart = (e) => {
+    if (isAction) {
+      e.preventDefault();
+      return;
     }
-  }, [showMenu]);
+    setIsDragging(true);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", index.toString());
+    // Styling saat drag
+    if (thRef.current) {
+      thRef.current.style.opacity = "0.5";
+    }
+  };
 
+  const handleDragEnd = (e) => {
+    setIsDragging(false);
+    if (thRef.current) {
+      thRef.current.style.opacity = "1";
+      thRef.current.style.borderLeft = "none";
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault(); // Required untuk drop
+    e.dataTransfer.dropEffect = "move";
+    if (thRef.current && !isAction) {
+      thRef.current.style.borderLeft = "2px solid var(--btn-primary-bg)";
+    }
+  };
+
+  const handleDragLeave = (e) => {
+    if (thRef.current) {
+      thRef.current.style.borderLeft = "none";
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    if (thRef.current) {
+      thRef.current.style.borderLeft = "none";
+      thRef.current.style.opacity = "1";
+    }
+    const fromIndex = parseInt(e.dataTransfer.getData("text/plain"));
+    const toIndex = index;
+    if (!isNaN(fromIndex) && fromIndex !== toIndex) {
+      onReorder(fromIndex, toIndex);
+    }
+    setIsDragging(false);
+  };
+
+  // ----- MENU -----
+  const toggleMenu = () => setShowMenu(!showMenu);
+
+  // ----- RENDER -----
   return (
     <th
       ref={thRef}
+      draggable={!isAction}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
       style={{
         padding: "8px 8px",
         width: `${width}%`,
@@ -67,7 +122,11 @@ export default function ResizableHeader({
         position: "relative",
         minWidth: 60,
         userSelect: "none",
+        cursor: isAction ? "default" : "grab",
+        background: isDragging ? "var(--bg-hover)" : "transparent",
+        transition: "background 0.2s, opacity 0.2s",
       }}
+      title={isAction ? "Fixed column" : "Drag to reorder"}
     >
       <div
         style={{
@@ -77,12 +136,15 @@ export default function ResizableHeader({
           gap: 4,
         }}
       >
-        <span>{children}</span>
+        <span style={{ pointerEvents: "none" }}>{children}</span>
 
-        <div style={{ display: "flex", alignItems: "center" }}>
-          {/* Tombol ⋮ untuk menu kolom */}
+        <div style={{ display: "flex", alignItems: "center", pointerEvents: "none" }}>
+          {/* Tombol ⋮ untuk menu kolom (tidak ikut drag) */}
           <button
-            onClick={() => setShowMenu(!showMenu)}
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleMenu();
+            }}
             style={{
               background: "none",
               border: "none",
@@ -92,6 +154,7 @@ export default function ResizableHeader({
               padding: "0 4px",
               opacity: 0.6,
               transition: "opacity 0.2s",
+              pointerEvents: "auto", // Agar bisa diklik
             }}
             onMouseEnter={(e) => (e.currentTarget.style.opacity = 1)}
             onMouseLeave={(e) => (e.currentTarget.style.opacity = 0.6)}
@@ -101,7 +164,7 @@ export default function ResizableHeader({
 
           {/* Resize handle */}
           <div
-            onMouseDown={handleMouseDown}
+            onMouseDown={handleResizeMouseDown}
             style={{
               position: "absolute",
               right: -4,
@@ -113,6 +176,7 @@ export default function ResizableHeader({
               opacity: isResizing ? 0.5 : 0,
               transition: "opacity 0.2s",
               borderRadius: 2,
+              pointerEvents: "auto", // Agar bisa di-drag
             }}
             onMouseEnter={(e) => (e.currentTarget.style.opacity = 0.5)}
             onMouseLeave={(e) => {
