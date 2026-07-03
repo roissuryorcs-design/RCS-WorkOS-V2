@@ -13,6 +13,10 @@ export default function Header({ title, subtitle }) {
         borderBottom: "1px solid var(--border-color)",
         marginBottom: 16,
         transition: "background 0.3s ease, border-color 0.3s ease",
+        // Tambahan untuk memastikan sticky
+        display: "block",
+        width: "100%",
+        backdropFilter: "blur(4px)", // Opsional: efek glass
       }}
     >
       <div>
@@ -20,7 +24,7 @@ export default function Header({ title, subtitle }) {
           style={{
             fontSize: 22,
             fontWeight: 600,
-            color: "var(--text-primary)", // ← Pakai CSS variables
+            color: "var(--text-primary)",
             margin: 0,
             transition: "color 0.3s ease",
           }}
@@ -30,7 +34,7 @@ export default function Header({ title, subtitle }) {
         <p 
           style={{
             fontSize: 14,
-            color: "var(--text-muted)", // ← Pakai CSS variables
+            color: "var(--text-muted)",
             marginTop: 2,
             transition: "color 0.3s ease",
           }}
