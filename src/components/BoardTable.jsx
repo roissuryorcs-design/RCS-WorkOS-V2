@@ -1,5 +1,7 @@
 import { useState } from "react";
 import Row from "./Row";
+import ResizableHeader from "./ResizableHeader";
+import { useColumns } from "../context/ColumnContext";
 
 export default function BoardTable({
   items,
@@ -14,11 +16,14 @@ export default function BoardTable({
   onAddItem,
   onOpenStatusManager,
 }) {
+  const { columns, updateColumnWidth, renameColumn, toggleColumn, deleteColumn, visibleColumns } =
+    useColumns();
+
   const [collapsed, setCollapsed] = useState({});
   const [popupGroup, setPopupGroup] = useState(null);
 
   const toggleCollapse = (groupName) => {
-    setCollapsed(prev => ({ ...prev, [groupName]: !prev[groupName] }));
+    setCollapsed((prev) => ({ ...prev, [groupName]: !prev[groupName] }));
   };
 
   const closePopup = () => setPopupGroup(null);
@@ -150,7 +155,7 @@ export default function BoardTable({
               </>
             )}
 
-            {/* TABEL - hanya tampil jika tidak collapsed */}
+            {/* TABEL */}
             {!isCollapsed && (
               <>
                 {tasks.length > 0 ? (
@@ -176,49 +181,22 @@ export default function BoardTable({
                           letterSpacing: "0.3px",
                         }}
                       >
-                        <th style={{ padding: "8px 8px", width: "22%", borderRight: "2px solid var(--border-color)" }}>
-                          ITEM
-                        </th>
-                        <th style={{ padding: "8px 8px", width: "20%", borderRight: "2px solid var(--border-color)" }}>
-                          NO. DOCUMENT
-                        </th>
-                        <th style={{ padding: "8px 8px", width: "13%", borderRight: "2px solid var(--border-color)" }}>
-                          PEOPLE
-                        </th>
-                        <th
-                          style={{
-                            padding: "8px 8px",
-                            width: "13%",
-                            borderRight: "2px solid var(--border-color)",
-                            position: "relative",
-                          }}
-                        >
-                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                            <span>STATUS</span>
-                            <button
-                              onClick={onOpenStatusManager}
-                              style={{
-                                background: "none",
-                                border: "none",
-                                cursor: "pointer",
-                                fontSize: 14,
-                                color: "var(--text-secondary)",
-                                padding: 0,
-                                display: "flex",
-                                alignItems: "center",
-                              }}
+                        {visibleColumns.map((col, idx) => {
+                          const isLast = idx === visibleColumns.length - 1;
+                          return (
+                            <ResizableHeader
+                              key={col.id}
+                              column={col}
+                              onResize={updateColumnWidth}
+                              onRename={renameColumn}
+                              onToggle={toggleColumn}
+                              onDelete={deleteColumn}
+                              isLast={isLast}
                             >
-                              ⋮
-                            </button>
-                          </div>
-                        </th>
-                        <th style={{ padding: "8px 8px", width: "13%", borderRight: "2px solid var(--border-color)" }}>
-                          DUE DATE
-                        </th>
-                        <th style={{ padding: "8px 8px", width: "8%", borderRight: "2px solid var(--border-color)" }}>
-                          REV
-                        </th>
-                        <th style={{ padding: "8px 8px", width: "6%", textAlign: "center" }}></th>
+                              {col.label}
+                            </ResizableHeader>
+                          );
+                        })}
                       </tr>
                     </thead>
                     <tbody>
@@ -228,6 +206,7 @@ export default function BoardTable({
                           item={item}
                           statuses={statuses}
                           groupColor={groupColor}
+                          visibleColumns={visibleColumns}
                           onUpdate={(field, value) => onUpdateItem(item.id, field, value)}
                           onDelete={() => onDeleteItem(item.id)}
                         />
@@ -249,7 +228,7 @@ export default function BoardTable({
                   </div>
                 )}
 
-                {/* TOMBOL ADD TASK DI BAWAH TABEL (untuk semua group) */}
+                {/* TOMBOL ADD TASK DI BAWAH TABEL */}
                 <button
                   onClick={() => onAddItem(groupName)}
                   style={{
