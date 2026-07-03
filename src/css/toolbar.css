@@ -1,17 +1,26 @@
 .toolbar {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  flex-wrap: wrap;
-  /* Sticky sudah diatur di inline style, tapi biarkan sebagai fallback */
   position: sticky;
-  top: 0;
-  z-index: 50;
+  top: 0; /* Akan mengikuti header, tapi karena header juga sticky, toolbar akan di bawah header */
+  z-index: 45;
   background: var(--bg-secondary);
   padding: 8px 0;
   border-bottom: 1px solid var(--border-color);
   margin-bottom: 16px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   transition: background 0.3s ease, border-color 0.3s ease;
+}
+
+/* Karena header dan toolbar sama-sama sticky dengan top: 0, 
+   toolbar akan berada di bawah header karena muncul setelah header di DOM.
+   Tapi jika header menutupi toolbar, kita perlu beri padding-top pada toolbar
+   atau gunakan top: 56px (tinggi header) */
+.toolbar {
+  top: 56px; /* Sesuaikan dengan tinggi header */
 }
 
 .toolbar-search {
