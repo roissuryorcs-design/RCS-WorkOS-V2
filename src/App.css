@@ -23,22 +23,3 @@
   flex-wrap: wrap;
   gap: 8px;
 }
-
-.footer-btn {
-  padding: 4px 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 4px;
-  background: transparent;
-  cursor: pointer;
-  font-size: 13px;
-  color: #4b5563;
-}
-
-.footer-btn:hover {
-  background: #f3f4f6;
-}
-
-.footer-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
