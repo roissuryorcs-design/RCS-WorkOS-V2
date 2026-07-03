@@ -78,12 +78,16 @@ export default function App() {
   };
 
   const addItem = () => {
+    // Jika tidak ada status sama sekali, beri default "To Do"
+    const allStatuses = [...new Set(items.map(item => item.status))];
+    const defaultStatus = allStatuses.length > 0 ? allStatuses[0] : "To Do";
+
     const newItem = {
       id: Date.now(),
       item: "New Item",
       document: "",
       people: "",
-      status: "To Do",
+      status: defaultStatus,
       dueDate: "-",
       rev: "R0",
     };
@@ -115,12 +119,7 @@ export default function App() {
   };
 
   const deleteGroup = (statusToDelete) => {
-    const defaultStatuses = ["To Do", "Working", "Review", "Done"];
-    if (defaultStatuses.includes(statusToDelete)) {
-      alert(`Cannot delete default group: "${statusToDelete}"`);
-      return;
-    }
-
+    // IZINKAN DELETE SEMUA GROUP (termasuk default)
     if (!confirm(`Delete entire group "${statusToDelete}" and all its items?`)) return;
 
     const newItems = items.filter((it) => it.status !== statusToDelete);
