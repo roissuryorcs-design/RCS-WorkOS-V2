@@ -1,0 +1,45 @@
+.group{
+
+background:#fff;
+
+border-radius:12px;
+
+border:1px solid #e5e7eb;
+
+margin-bottom:22px;
+
+overflow:hidden;
+
+}
+
+.group-header{
+
+padding:15px 18px;
+
+background:#f7f8fa;
+
+display:flex;
+
+align-items:center;
+
+gap:10px;
+
+font-size:18px;
+
+font-weight:700;
+
+border-bottom:1px solid #ececec;
+
+}
+
+.group-arrow{
+
+color:#0073ea;
+
+}
+
+.group-body{
+
+padding:0;
+
+}

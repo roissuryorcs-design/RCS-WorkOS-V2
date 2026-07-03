@@ -1,0 +1,30 @@
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Inter, Arial, Helvetica, sans-serif;
+}
+
+html,
+body,
+#root{
+    height:100%;
+}
+
+body{
+    background:#f5f6f8;
+    color:#323338;
+}
+
+.app{
+    display:flex;
+    min-height:100vh;
+}
+
+.main{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    min-height:100vh;
+    overflow-y:auto;
+}
