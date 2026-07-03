@@ -24,9 +24,8 @@ export default function StatusManager({
   };
 
   const handleDelete = (name) => {
-    // Cek apakah ini satu-satunya status yang tersisa
     if (statusKeys.length <= 1) {
-      alert("Cannot delete the last status. There must be at least one status.");
+      alert("Cannot delete the last status. At least one status must remain.");
       return;
     }
     if (!confirm(`Delete status "${name}"?`)) return;
@@ -51,22 +50,24 @@ export default function StatusManager({
     >
       <div
         style={{
-          background: "white",
+          background: "var(--bg-modal)",
           borderRadius: 8,
           padding: 24,
           maxWidth: 400,
           width: "100%",
           maxHeight: "80vh",
           overflowY: "auto",
+          color: "var(--text-primary)",
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 style={{ marginBottom: 16, fontSize: 18 }}>Manage Statuses</h3>
-        <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 12 }}>
-          At least one status must remain. The last status will be gray (default).
+        <h3 style={{ marginBottom: 16, fontSize: 18, color: "var(--text-primary)" }}>
+          Manage Statuses
+        </h3>
+        <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 12 }}>
+          At least one status must remain.
         </p>
 
-        {/* Daftar status */}
         <div style={{ marginBottom: 16 }}>
           {statusKeys.map((name) => (
             <div
@@ -76,7 +77,7 @@ export default function StatusManager({
                 alignItems: "center",
                 gap: 8,
                 padding: "6px 0",
-                borderBottom: "1px solid #f3f4f6",
+                borderBottom: "1px solid var(--border-light)",
               }}
             >
               <span
@@ -88,7 +89,9 @@ export default function StatusManager({
                   background: statuses[name],
                 }}
               />
-              <span style={{ flex: 1, fontSize: 14 }}>{name || "(unnamed)"}</span>
+              <span style={{ flex: 1, fontSize: 14, color: "var(--text-primary)" }}>
+                {name || "(unnamed)"}
+              </span>
               <input
                 type="color"
                 value={statuses[name]}
@@ -113,7 +116,6 @@ export default function StatusManager({
           ))}
         </div>
 
-        {/* Tambah status baru */}
         <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
           <input
             placeholder="Status name (optional)"
@@ -122,9 +124,11 @@ export default function StatusManager({
             style={{
               flex: 1,
               padding: "6px 10px",
-              border: "1px solid #d1d5db",
+              border: "1px solid var(--border-dark)",
               borderRadius: 4,
               fontSize: 13,
+              background: "var(--bg-input)",
+              color: "var(--text-primary)",
             }}
           />
           <input
@@ -137,8 +141,8 @@ export default function StatusManager({
             onClick={handleAdd}
             style={{
               padding: "6px 14px",
-              background: "#3b82f6",
-              color: "white",
+              background: "var(--btn-primary-bg)",
+              color: "var(--btn-primary-text)",
               border: "none",
               borderRadius: 4,
               cursor: "pointer",
@@ -153,11 +157,12 @@ export default function StatusManager({
           style={{
             width: "100%",
             padding: "8px",
-            background: "#e5e7eb",
+            background: "var(--bg-hover)",
             border: "none",
             borderRadius: 4,
             cursor: "pointer",
             fontSize: 14,
+            color: "var(--text-secondary)",
           }}
         >
           Close
