@@ -3,53 +3,35 @@ import Row from "./Row";
 
 export default function BoardTable({
   items,
+  groups,
+  statuses,
   onUpdateItem,
   onDeleteItem,
   onAddGroup,
   onDeleteGroup,
+  onAddItem,
 }) {
-  // State untuk popup
   const [popupGroup, setPopupGroup] = useState(null);
 
-  // Ambil semua status unik dari items
-  const allStatuses = [...new Set(items.map((item) => item.status || "To Do"))];
-  // Jika tidak ada item, tetap tampilkan default status sebagai placeholder
-  const defaultStatuses = ["To Do", "Working", "Review", "Done"];
-  const finalStatuses = allStatuses.length > 0 ? allStatuses : defaultStatuses;
+  const closePopup = () => setPopupGroup(null);
 
-  // Group items by status
-  const grouped = items.reduce((acc, item) => {
-    const key = item.status || "To Do";
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(item);
+  // Group items by GROUP
+  const grouped = groups.reduce((acc, group) => {
+    acc[group] = items.filter((item) => item.group === group);
     return acc;
   }, {});
 
-  // Tutup popup
-  const closePopup = () => setPopupGroup(null);
-
-  // Handle delete group dari popup
-  const handleDeleteGroup = (status) => {
-    closePopup();
-    onDeleteGroup(status);
-  };
-
   return (
     <div>
-      {/* Tabel untuk setiap group */}
-      {finalStatuses.map((statusKey) => {
-        const tasks = grouped[statusKey] || [];
-        // Jika tidak ada item dengan status ini, tetap tampilkan header kosong
-        // tapi kita skip jika tidak ada task dan status bukan dari item yang ada
-        if (tasks.length === 0 && !allStatuses.includes(statusKey)) return null;
+      {groups.map((groupName) => {
+        const tasks = grouped[groupName] || [];
 
         return (
-          <div key={statusKey} style={{ marginBottom: 24, position: "relative" }}>
-            {/* HEADER GROUP - Tombol ⋮ di KIRI */}
+          <div key={groupName} style={{ marginBottom: 24, position: "relative" }}>
+            {/* HEADER GROUP */}
             <div style={{ display: "flex", alignItems: "center", marginBottom: 8 }}>
-              {/* Tombol titik tiga di KIRI */}
               <button
-                onClick={() => setPopupGroup(statusKey)}
+                onClick={() => setPopupGroup(groupName)}
                 style={{
                   background: "none",
                   border: "none",
@@ -62,14 +44,13 @@ export default function BoardTable({
               >
                 ⋮
               </button>
-
               <h3 style={{ fontSize: 14, fontWeight: 600, color: "#1a1a2e", paddingBottom: 4, borderBottom: "2px solid #e5e7eb", flex: 1 }}>
-                {statusKey}
+                {groupName}
               </h3>
             </div>
 
-            {/* POPUP - Muncul di dekat tombol (kiri) */}
-            {popupGroup === statusKey && (
+            {/* POPUP DELETE GROUP */}
+            {popupGroup === groupName && (
               <>
                 <div
                   style={{
@@ -86,7 +67,10 @@ export default function BoardTable({
                   }}
                 >
                   <button
-                    onClick={() => handleDeleteGroup(statusKey)}
+                    onClick={() => {
+                      closePopup();
+                      onDeleteGroup(groupName);
+                    }}
                     style={{
                       display: "block",
                       width: "100%",
@@ -102,8 +86,6 @@ export default function BoardTable({
                     🗑️ Delete Group
                   </button>
                 </div>
-
-                {/* Overlay untuk menutup popup saat klik di luar */}
                 <div
                   style={{
                     position: "fixed",
@@ -118,8 +100,8 @@ export default function BoardTable({
               </>
             )}
 
-            {/* TABEL - Tampilkan hanya jika ada task */}
-            {tasks.length > 0 && (
+            {/* TABEL */}
+            {tasks.length > 0 ? (
               <table width="100%" cellPadding="0" style={{ borderCollapse: "collapse" }}>
                 <thead>
                   <tr style={{ textAlign: "left", fontSize: 12, color: "#6b7280", fontWeight: 600, borderBottom: "1px solid #e5e7eb", textTransform: "uppercase", letterSpacing: "0.3px" }}>
@@ -137,19 +119,42 @@ export default function BoardTable({
                     <Row
                       key={item.id}
                       item={item}
-                      allStatuses={finalStatuses}
+                      statuses={statuses}
                       onUpdate={(field, value) => onUpdateItem(item.id, field, value)}
                       onDelete={() => onDeleteItem(item.id)}
                     />
                   ))}
                 </tbody>
               </table>
+            ) : (
+              <div style={{ padding: "12px", color: "#9ca3af", textAlign: "center", border: "1px dashed #e5e7eb", borderRadius: 4 }}>
+                No items in this group. <button onClick={() => onAddItem(groupName)} style={{ color: "#3b82f6", background: "none", border: "none", cursor: "pointer" }}>Add task</button>
+              </div>
             )}
+
+            {/* TOMBOL ADD TASK DI BAWAH TABEL */}
+            <button
+              onClick={() => onAddItem(groupName)}
+              style={{
+                display: "block",
+                width: "100%",
+                padding: "6px",
+                border: "none",
+                background: "transparent",
+                color: "#3b82f6",
+                cursor: "pointer",
+                fontSize: 13,
+                textAlign: "left",
+                marginTop: 4,
+              }}
+            >
+              + Add task
+            </button>
           </div>
         );
       })}
 
-      {/* TOMBOL ADD GROUP DI PALING BAWAH */}
+      {/* TOMBOL ADD NEW GROUP DI PALING BAWAH */}
       <div style={{ marginTop: 16 }}>
         <button
           onClick={onAddGroup}
