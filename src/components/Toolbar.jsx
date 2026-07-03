@@ -12,7 +12,7 @@ export default function Toolbar({
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <div className="toolbar">
+    <div className="toolbar-sticky">
       <input
         className="toolbar-search"
         placeholder="🔍 Search items..."
