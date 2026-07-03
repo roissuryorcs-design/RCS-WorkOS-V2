@@ -6,7 +6,6 @@ import BoardTable from "./components/BoardTable";
 import "./App.css";
 
 export default function App() {
-  // State
   const [items, setItems] = useState([]);
   const [search, setSearch] = useState("");
   const [favorites, setFavorites] = useState([]);
@@ -64,7 +63,7 @@ export default function App() {
     setItems(prevState);
   };
 
-  // CRUD
+  // CRUD Item
   const updateItem = (id, field, value) => {
     const newItems = items.map((it) =>
       it.id === id ? { ...it, [field]: value } : it
@@ -91,11 +90,11 @@ export default function App() {
     saveHistory([...items, newItem]);
   };
 
-  // ----- GROUP CRUD (BARU) -----
+  // ----- GROUP CRUD -----
   const addGroup = () => {
     const name = prompt("Enter new group name (e.g., 'On Hold'):");
     if (!name || !name.trim()) return;
-    
+
     // Cek apakah status sudah ada
     if (items.some(item => item.status === name.trim())) {
       alert(`Group "${name.trim()}" already exists!`);
@@ -116,7 +115,6 @@ export default function App() {
   };
 
   const deleteGroup = (statusToDelete) => {
-    // Cek apakah ini status default (To Do, Working, Review, Done)
     const defaultStatuses = ["To Do", "Working", "Review", "Done"];
     if (defaultStatuses.includes(statusToDelete)) {
       alert(`Cannot delete default group: "${statusToDelete}"`);
