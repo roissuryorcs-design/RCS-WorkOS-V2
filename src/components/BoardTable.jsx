@@ -100,15 +100,15 @@ export default function BoardTable({
               </>
             )}
 
-            {/* TABEL */}
+            {/* TABEL DENGAN BORDER VERTIKAL */}
             {tasks.length > 0 ? (
               <table width="100%" cellPadding="0" style={{ borderCollapse: "collapse" }}>
                 <thead>
                   <tr style={{ textAlign: "left", fontSize: 12, color: "#6b7280", fontWeight: 600, borderBottom: "1px solid #e5e7eb", textTransform: "uppercase", letterSpacing: "0.3px" }}>
-                    <th style={{ padding: "8px 8px", width: "22%" }}>ITEM</th>
-                    <th style={{ padding: "8px 8px", width: "20%" }}>NO. DOCUMENT</th>
-                    <th style={{ padding: "8px 8px", width: "13%" }}>PEOPLE</th>
-                    <th style={{ padding: "8px 8px", width: "13%", position: "relative" }}>
+                    <th style={{ padding: "8px 8px", width: "22%", borderRight: "1px solid #e5e7eb" }}>ITEM</th>
+                    <th style={{ padding: "8px 8px", width: "20%", borderRight: "1px solid #e5e7eb" }}>NO. DOCUMENT</th>
+                    <th style={{ padding: "8px 8px", width: "13%", borderRight: "1px solid #e5e7eb" }}>PEOPLE</th>
+                    <th style={{ padding: "8px 8px", width: "13%", borderRight: "1px solid #e5e7eb", position: "relative" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                         <span>STATUS</span>
                         <button
@@ -128,8 +128,8 @@ export default function BoardTable({
                         </button>
                       </div>
                     </th>
-                    <th style={{ padding: "8px 8px", width: "13%" }}>DUE DATE</th>
-                    <th style={{ padding: "8px 8px", width: "8%" }}>REV</th>
+                    <th style={{ padding: "8px 8px", width: "13%", borderRight: "1px solid #e5e7eb" }}>DUE DATE</th>
+                    <th style={{ padding: "8px 8px", width: "8%", borderRight: "1px solid #e5e7eb" }}>REV</th>
                     <th style={{ padding: "8px 8px", width: "6%", textAlign: "center" }}></th>
                   </tr>
                 </thead>
@@ -147,32 +147,27 @@ export default function BoardTable({
               </table>
             ) : (
               <div style={{ padding: "12px", color: "#9ca3af", textAlign: "center", border: "1px dashed #e5e7eb", borderRadius: 4 }}>
-                No items in this group. <button onClick={() => onAddItem(groupName)} style={{ color: "#3b82f6", background: "none", border: "none", cursor: "pointer" }}>Add task</button>
+                No items in this group. 
+                <button 
+                  onClick={() => onAddItem(groupName)} 
+                  style={{ 
+                    color: "#3b82f6", 
+                    background: "none", 
+                    border: "none", 
+                    cursor: "pointer",
+                    marginLeft: 4,
+                    textDecoration: "underline"
+                  }}
+                >
+                  Add task
+                </button>
               </div>
             )}
-
-            <button
-              onClick={() => onAddItem(groupName)}
-              style={{
-                display: "block",
-                width: "100%",
-                padding: "6px",
-                border: "none",
-                background: "transparent",
-                color: "#3b82f6",
-                cursor: "pointer",
-                fontSize: 13,
-                textAlign: "left",
-                marginTop: 4,
-              }}
-            >
-              + Add task
-            </button>
           </div>
         );
       })}
 
-      {/* TOMBOL ADD NEW GROUP */}
+      {/* TOMBOL ADD NEW GROUP DI PALING BAWAH (tetap) */}
       <div style={{ marginTop: 16 }}>
         <button
           onClick={onAddGroup}
