@@ -17,11 +17,12 @@ export default function Toolbar({
       style={{
         position: "sticky",
         top: 0,
-        zIndex: 50,
+        zIndex: 50, // Lebih tinggi dari header (40)
         background: "var(--bg-secondary)",
         padding: "8px 0",
         borderBottom: "1px solid var(--border-color)",
         marginBottom: 16,
+        backdropFilter: "blur(4px)",
       }}
     >
       <input
@@ -51,7 +52,6 @@ export default function Toolbar({
         📤 Export
       </button>
 
-      {/* TOMBOL DARK MODE */}
       <button
         onClick={toggleTheme}
         className="toolbar-theme-btn"
