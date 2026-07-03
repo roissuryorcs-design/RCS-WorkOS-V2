@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 
 export default function App() {
   const [tasks, setTasks] = useState([
@@ -21,6 +21,11 @@ export default function App() {
       progress: 100,
     },
   ]);
+
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [priorityFilter, setPriorityFilter] = useState("All");
+  const [sortBy, setSortBy] = useState("none");
 
   const updateTask = (id, field, value) => {
     setTasks((prev) =>
@@ -47,65 +52,83 @@ export default function App() {
     setTasks(tasks.filter((t) => t.id !== id));
   };
 
-  const statusColor = (status) => {
-    switch (status) {
-      case "To Do":
-        return "#9ca3af";
-      case "Working":
-        return "#3b82f6";
-      case "Review":
-        return "#f59e0b";
-      case "Done":
-        return "#22c55e";
-      default:
-        return "#9ca3af";
-    }
-  };
+  const filteredTasks = useMemo(() => {
+    let data = [...tasks];
 
-  const priorityColor = (priority) => {
-    switch (priority) {
-      case "Low":
-        return "#22c55e";
-      case "Medium":
-        return "#f59e0b";
-      case "High":
-        return "#ef4444";
-      default:
-        return "#9ca3af";
+    // SEARCH
+    if (search) {
+      data = data.filter(
+        (t) =>
+          t.title.toLowerCase().includes(search.toLowerCase()) ||
+          t.owner.toLowerCase().includes(search.toLowerCase())
+      );
     }
-  };
+
+    // STATUS FILTER
+    if (statusFilter !== "All") {
+      data = data.filter((t) => t.status === statusFilter);
+    }
+
+    // PRIORITY FILTER
+    if (priorityFilter !== "All") {
+      data = data.filter((t) => t.priority === priorityFilter);
+    }
+
+    // SORTING
+    if (sortBy === "deadline") {
+      data.sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
+    } else if (sortBy === "progress") {
+      data.sort((a, b) => b.progress - a.progress);
+    } else if (sortBy === "priority") {
+      const order = { High: 3, Medium: 2, Low: 1 };
+      data.sort((a, b) => order[b.priority] - order[a.priority]);
+    }
+
+    return data;
+  }, [tasks, search, statusFilter, priorityFilter, sortBy]);
 
   return (
     <div style={{ padding: 20, fontFamily: "Arial", background: "#f9fafb" }}>
-      <h2>📊 WorkOS Task Board</h2>
+      <h2>📊 WorkOS Advanced Dashboard</h2>
 
-      <button
-        onClick={addTask}
-        style={{
-          marginBottom: 15,
-          padding: "8px 12px",
-          border: "none",
-          background: "#111827",
-          color: "white",
-          borderRadius: 6,
-          cursor: "pointer",
-        }}
-      >
-        + Add Task
-      </button>
+      {/* CONTROL BAR */}
+      <div style={{ marginBottom: 15, display: "flex", gap: 10, flexWrap: "wrap" }}>
+        <input
+          placeholder="Search task / owner..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
 
-      <table
-        style={{
-          width: "100%",
-          borderCollapse: "collapse",
-          background: "white",
-          borderRadius: 10,
-          overflow: "hidden",
-        }}
-      >
-        <thead style={{ background: "#f3f4f6" }}>
+        <select onChange={(e) => setStatusFilter(e.target.value)}>
+          <option>All</option>
+          <option>To Do</option>
+          <option>Working</option>
+          <option>Review</option>
+          <option>Done</option>
+        </select>
+
+        <select onChange={(e) => setPriorityFilter(e.target.value)}>
+          <option>All</option>
+          <option>Low</option>
+          <option>Medium</option>
+          <option>High</option>
+        </select>
+
+        <select onChange={(e) => setSortBy(e.target.value)}>
+          <option value="none">No Sort</option>
+          <option value="deadline">Sort by Deadline</option>
+          <option value="progress">Sort by Progress</option>
+          <option value="priority">Sort by Priority</option>
+        </select>
+
+        <button onClick={addTask}>+ Add Task</button>
+      </div>
+
+      {/* TABLE */}
+      <table width="100%" border="1" cellPadding="8">
+        <thead>
           <tr>
-            <th style={{ padding: 10 }}>Task</th>
+            <th>Task</th>
             <th>Status</th>
             <th>Owner</th>
             <th>Priority</th>
@@ -116,84 +139,23 @@ export default function App() {
         </thead>
 
         <tbody>
-          {tasks.map((task) => (
-            <tr key={task.id} style={{ borderBottom: "1px solid #eee" }}>
+          {filteredTasks.map((task) => (
+            <tr key={task.id}>
               <td>
                 <input
                   value={task.title}
                   onChange={(e) =>
                     updateTask(task.id, "title", e.target.value)
                   }
-                  style={{ padding: 6 }}
                 />
               </td>
 
-              <td>
-                <span
-                  style={{
-                    background: statusColor(task.status),
-                    color: "white",
-                    padding: "4px 8px",
-                    borderRadius: 6,
-                    fontSize: 12,
-                  }}
-                >
-                  {task.status}
-                </span>
-              </td>
+              <td>{task.status}</td>
+              <td>{task.owner}</td>
+              <td>{task.priority}</td>
+              <td>{task.deadline}</td>
 
-              <td>
-                <input
-                  value={task.owner}
-                  onChange={(e) =>
-                    updateTask(task.id, "owner", e.target.value)
-                  }
-                />
-              </td>
-
-              <td>
-                <span
-                  style={{
-                    background: priorityColor(task.priority),
-                    color: "white",
-                    padding: "4px 8px",
-                    borderRadius: 6,
-                    fontSize: 12,
-                  }}
-                >
-                  {task.priority}
-                </span>
-              </td>
-
-              <td>
-                <input
-                  type="date"
-                  value={task.deadline}
-                  onChange={(e) =>
-                    updateTask(task.id, "deadline", e.target.value)
-                  }
-                />
-              </td>
-
-              <td style={{ width: 120 }}>
-                <div
-                  style={{
-                    width: "100%",
-                    height: 8,
-                    background: "#e5e7eb",
-                    borderRadius: 5,
-                  }}
-                >
-                  <div
-                    style={{
-                      width: `${task.progress}%`,
-                      height: "100%",
-                      background: "#3b82f6",
-                      borderRadius: 5,
-                    }}
-                  />
-                </div>
-              </td>
+              <td>{task.progress}%</td>
 
               <td>
                 <button onClick={() => deleteTask(task.id)}>❌</button>
