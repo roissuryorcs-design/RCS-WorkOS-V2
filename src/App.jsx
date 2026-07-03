@@ -21,16 +21,16 @@ export default function App() {
     const savedStatuses = localStorage.getItem("forelStatuses");
     const savedFavs = localStorage.getItem("forelFavorites");
 
-    // Default statuses
-    const defaultStatuses = {
-      "To Do": "#9ca3af",
-      "Working": "#3b82f6",
-      "Review": "#f59e0b",
-      "Done": "#22c55e",
-    };
+    const defaultStatuses = { "Default": "#9ca3af" };
 
     if (savedStatuses) {
-      setStatuses(JSON.parse(savedStatuses));
+      const parsed = JSON.parse(savedStatuses);
+      // Pastikan setidaknya ada satu status
+      if (Object.keys(parsed).length === 0) {
+        setStatuses(defaultStatuses);
+      } else {
+        setStatuses(parsed);
+      }
     } else {
       setStatuses(defaultStatuses);
     }
@@ -39,11 +39,11 @@ export default function App() {
       setItems(JSON.parse(savedItems));
     } else {
       setItems([
-        { id: 1, group: "Target & PLANNING", item: "Scope of Work", document: "", people: "Done", status: "Done", dueDate: "dd/mm/tttt", rev: "R0" },
-        { id: 2, group: "Target & PLANNING", item: "GA Drawings", document: "", people: "Done", status: "Done", dueDate: "dd/mm/tttt", rev: "R0" },
-        { id: 3, group: "Target & PLANNING", item: "General Arrangement", document: "ID-F-FT-NN1-GAD-FP-0", people: "RS", status: "Done", dueDate: "01/07/2026", rev: "R1" },
-        { id: 4, group: "Completed", item: "HVAC Room Arrangement DI", document: "P2104-V-D-GSHD-ME-GA", people: "Done", status: "Done", dueDate: "dd/mm/tttt", rev: "R0" },
-        { id: 5, group: "Completed", item: "Layout Drawings", document: "", people: "Done", status: "Done", dueDate: "dd/mm/tttt", rev: "R0" },
+        { id: 1, group: "Target & PLANNING", item: "Scope of Work", document: "", people: "Done", status: "Default", dueDate: "dd/mm/tttt", rev: "R0" },
+        { id: 2, group: "Target & PLANNING", item: "GA Drawings", document: "", people: "Done", status: "Default", dueDate: "dd/mm/tttt", rev: "R0" },
+        { id: 3, group: "Target & PLANNING", item: "General Arrangement", document: "ID-F-FT-NN1-GAD-FP-0", people: "RS", status: "Default", dueDate: "01/07/2026", rev: "R1" },
+        { id: 4, group: "Completed", item: "HVAC Room Arrangement DI", document: "P2104-V-D-GSHD-ME-GA", people: "Done", status: "Default", dueDate: "dd/mm/tttt", rev: "R0" },
+        { id: 5, group: "Completed", item: "Layout Drawings", document: "", people: "Done", status: "Default", dueDate: "dd/mm/tttt", rev: "R0" },
       ]);
     }
 
@@ -95,7 +95,7 @@ export default function App() {
   };
 
   const addItem = (groupName) => {
-    const firstStatus = Object.keys(statuses)[0] || "To Do";
+    const firstStatus = Object.keys(statuses)[0] || "Default";
     const newItem = {
       id: Date.now(),
       group: groupName || "Target & PLANNING",
@@ -117,8 +117,7 @@ export default function App() {
       alert(`Group "${name.trim()}" already exists!`);
       return;
     }
-    // Tambahkan item contoh ke group baru
-    const firstStatus = Object.keys(statuses)[0] || "To Do";
+    const firstStatus = Object.keys(statuses)[0] || "Default";
     const newItem = {
       id: Date.now(),
       group: name.trim(),
@@ -140,12 +139,12 @@ export default function App() {
 
   // ----- STATUS CRUD -----
   const addStatus = (name, color) => {
-    if (!name || !name.trim()) return;
-    if (statuses[name.trim()]) {
-      alert(`Status "${name.trim()}" already exists!`);
+    const finalName = name.trim() || "Default";
+    if (statuses[finalName]) {
+      alert(`Status "${finalName}" already exists!`);
       return;
     }
-    setStatuses({ ...statuses, [name.trim()]: color || "#8b5cf6" });
+    setStatuses({ ...statuses, [finalName]: color || "#9ca3af" });
   };
 
   const updateStatusColor = (name, color) => {
@@ -153,14 +152,15 @@ export default function App() {
   };
 
   const deleteStatus = (name) => {
-    const defaultStatuses = ["To Do", "Working", "Review", "Done"];
-    if (defaultStatuses.includes(name)) {
-      alert(`Cannot delete default status: "${name}"`);
+    const currentKeys = Object.keys(statuses);
+    if (currentKeys.length <= 1) {
+      alert("Cannot delete the last status. At least one status must remain.");
       return;
     }
-    // Ubah item dengan status ini ke "To Do"
+    // Ubah item dengan status ini ke status pertama yang tersisa (selain yang dihapus)
+    const remainingStatus = currentKeys.find(k => k !== name) || "Default";
     const newItems = items.map((it) =>
-      it.status === name ? { ...it, status: "To Do" } : it
+      it.status === name ? { ...it, status: remainingStatus } : it
     );
     const newStatuses = { ...statuses };
     delete newStatuses[name];
@@ -200,7 +200,6 @@ export default function App() {
     it.people.toLowerCase().includes(search.toLowerCase())
   );
 
-  // Ambil daftar group unik
   const allGroups = [...new Set(items.map(item => item.group))];
 
   const totalItems = filteredItems.length;
@@ -225,7 +224,6 @@ export default function App() {
             const firstGroup = allGroups[0] || "Target & PLANNING";
             addItem(firstGroup);
           }}
-          onOpenStatusManager={() => setShowStatusManager(true)}
         />
 
         <BoardTable
@@ -237,6 +235,7 @@ export default function App() {
           onAddGroup={addGroup}
           onDeleteGroup={deleteGroup}
           onAddItem={addItem}
+          onOpenStatusManager={() => setShowStatusManager(true)}
         />
 
         <div className="board-footer">
