@@ -1,118 +1,85 @@
-import React, { useState } from "react";
+import Row from "./Row";
 
-export default function BoardTable() {
-  // =========================
-  // DATA TASK (KANBAN SOURCE)
-  // =========================
-  const [tasks] = useState([
-    {
-      id: 1,
-      item: "HVAC Drawing",
-      doc: "HV-001",
-      status: "Working",
-      pic: "Roy",
-      due: "12 Jul 2026",
-    },
-    {
-      id: 2,
-      item: "Structural Report",
-      doc: "ST-022",
-      status: "Done",
-      pic: "Andi",
-      due: "15 Jul 2026",
-    },
-    {
-      id: 3,
-      item: "Electrical Plan",
-      doc: "EL-010",
-      status: "Working",
-      pic: "Budi",
-      due: "20 Jul 2026",
-    },
-  ]);
-
-  // =========================
-  // FILTER BY STATUS
-  // =========================
-  const workingTasks = tasks.filter((t) => t.status === "Working");
-  const doneTasks = tasks.filter((t) => t.status === "Done");
-
-  return (
-    <div style={styles.wrapper}>
-      
-      {/* HEADER */}
-      <h2 style={styles.title}>📋 Engineering Kanban Board</h2>
-
-      {/* BOARD */}
-      <div style={styles.board}>
-
-        {/* WORKING COLUMN */}
-        <div style={styles.column}>
-          <h3>🟡 Working</h3>
-          {workingTasks.map((task) => (
-            <TaskCard key={task.id} task={task} />
-          ))}
-        </div>
-
-        {/* DONE COLUMN */}
-        <div style={styles.column}>
-          <h3>🟢 Done</h3>
-          {doneTasks.map((task) => (
-            <TaskCard key={task.id} task={task} />
-          ))}
-        </div>
-
+export default function BoardTable({ items, onUpdateItem, onDeleteItem }) {
+  if (items.length === 0) {
+    return (
+      <div
+        style={{
+          padding: "40px",
+          textAlign: "center",
+          color: "#9ca3af",
+          background: "#f9fafb",
+          borderRadius: 8,
+        }}
+      >
+        <p>No items yet. Click "+ Add Item" to get started.</p>
       </div>
-    </div>
-  );
-}
+    );
+  }
 
-// =========================
-// TASK CARD COMPONENT
-// =========================
-function TaskCard({ task }) {
+  const statusOrder = ["To Do", "Working", "Review", "Done"];
+  const grouped = items.reduce((acc, item) => {
+    const key = item.status || "To Do";
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(item);
+    return acc;
+  }, {});
+
   return (
-    <div style={styles.card}>
-      <h4 style={{ margin: "0 0 6px 0" }}>{task.item}</h4>
-      <div>📄 Doc: {task.doc}</div>
-      <div>👤 PIC: {task.pic}</div>
-      <div>📅 Due: {task.due}</div>
+    <div>
+      {statusOrder.map(
+        (statusKey) =>
+          grouped[statusKey] && (
+            <div key={statusKey} style={{ marginBottom: 24 }}>
+              <h3
+                style={{
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: "#1a1a2e",
+                  marginBottom: 8,
+                  paddingBottom: 4,
+                  borderBottom: "2px solid #e5e7eb",
+                }}
+              >
+                {statusKey}
+              </h3>
+
+              <table width="100%" cellPadding="0" style={{ borderCollapse: "collapse" }}>
+                <thead>
+                  <tr
+                    style={{
+                      textAlign: "left",
+                      fontSize: 12,
+                      color: "#6b7280",
+                      fontWeight: 600,
+                      borderBottom: "1px solid #e5e7eb",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.3px",
+                    }}
+                  >
+                    <th style={{ padding: "8px 8px", width: "22%" }}>ITEM</th>
+                    <th style={{ padding: "8px 8px", width: "25%" }}>NO. DOCUMENT</th>
+                    <th style={{ padding: "8px 8px", width: "15%" }}>PEOPLE</th>
+                    <th style={{ padding: "8px 8px", width: "15%" }}>STATUS</th>
+                    <th style={{ padding: "8px 8px", width: "15%" }}>DUE DATE</th>
+                    <th style={{ padding: "8px 8px", width: "8%" }}>REV</th>
+                    <th style={{ padding: "8px 8px", width: "5%", textAlign: "center" }}></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {grouped[statusKey].map((item) => (
+                    <Row
+                      key={item.id}
+                      item={item}
+                      onUpdate={(field, value) => onUpdateItem(item.id, field, value)}
+                      onDelete={() => onDeleteItem(item.id)}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )
+      )}
     </div>
   );
 }
-
-// =========================
-// STYLES
-// =========================
-const styles = {
-  wrapper: {
-    padding: 20,
-    fontFamily: "Arial",
-  },
-
-  title: {
-    marginBottom: 16,
-  },
-
-  board: {
-    display: "flex",
-    gap: 16,
-    alignItems: "flex-start",
-  },
-
-  column: {
-    flex: 1,
-    background: "#f4f6f8",
-    padding: 12,
-    borderRadius: 10,
-    minHeight: "300px",
-  },
-
-  card: {
-    background: "white",
-    padding: 10,
-    marginTop: 10,
-    borderRadius: 8,
-    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-  },
-};
