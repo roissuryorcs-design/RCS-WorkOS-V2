@@ -1,49 +1,29 @@
-.toolbar{
-
-display:flex;
-
-justify-content:space-between;
-
-align-items:center;
-
-margin-bottom:20px;
-
+.toolbar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
 }
 
-.toolbar-search{
-
-width:350px;
-
-padding:11px 14px;
-
-border:1px solid #ddd;
-
-border-radius:8px;
-
-outline:none;
-
+.toolbar-search {
+  padding: 6px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 13px;
+  width: 200px;
 }
 
-.new-btn{
-
-background:#0073ea;
-
-color:white;
-
-border:none;
-
-padding:11px 18px;
-
-border-radius:8px;
-
-cursor:pointer;
-
-font-weight:bold;
-
+.toolbar-add-btn {
+  padding: 6px 14px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
 }
 
-.new-btn:hover{
-
-opacity:.9;
-
+.toolbar-add-btn:hover {
+  background: #2563eb;
 }
