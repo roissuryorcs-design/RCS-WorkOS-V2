@@ -1,6 +1,6 @@
 import StatusCell from "./StatusCell";
 
-export default function Row({ item, statuses, onUpdate, onDelete }) {
+export default function Row({ item, statuses, groupColor, onUpdate, onDelete }) {
   const inputStyle = {
     border: "none",
     background: "transparent",
@@ -15,9 +15,10 @@ export default function Row({ item, statuses, onUpdate, onDelete }) {
   return (
     <tr
       style={{
-        borderBottom: "2px solid var(--border-color)", // ← TETAP TEBAL
+        borderBottom: "2px solid var(--border-color)",
         fontSize: 13,
         background: "var(--bg-secondary)",
+        borderLeft: `4px solid ${groupColor}`, // BORDER KIRI PER BARIS
       }}
       onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-hover)")}
       onMouseLeave={(e) => (e.currentTarget.style.background = "var(--bg-secondary)")}
