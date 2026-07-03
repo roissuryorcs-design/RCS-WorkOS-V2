@@ -1,7 +1,7 @@
 .sidebar {
-  width: 220px;
+  width: 240px;
   background: #f5f6f8;
-  padding: 24px 16px;
+  padding: 16px 12px;
   border-right: 1px solid #e5e7eb;
   height: 100vh;
   position: sticky;
@@ -10,66 +10,85 @@
   flex-shrink: 0;
 }
 
-.sidebar-title {
-  font-size: 18px;
+.sidebar-header {
+  padding: 4px 8px 16px 8px;
+  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 12px;
+}
+
+.sidebar-logo {
+  font-size: 16px;
   font-weight: 600;
   color: #1a1a2e;
+}
+
+.nav-section {
   margin-bottom: 20px;
 }
 
-.sidebar-section {
-  margin-bottom: 24px;
-}
-
-.sidebar-section-title {
-  font-size: 11px;
-  font-weight: 600;
-  color: #9ca3af;
-  letter-spacing: 0.5px;
-  margin-bottom: 8px;
-  text-transform: uppercase;
-}
-
-.sidebar-item {
-  padding: 6px 12px;
-  border-radius: 4px;
-  font-size: 13px;
-  color: #1a1a2e;
-  cursor: pointer;
-  margin-bottom: 2px;
-}
-
-.sidebar-item.active {
-  background: #e5e7eb;
-  font-weight: 600;
-}
-
-.sidebar-item:hover {
-  background: #e5e7eb;
-}
-
-.sidebar-board {
-  padding: 6px 12px;
-  padding-left: 24px;
+.nav-item {
+  padding: 6px 10px;
   border-radius: 4px;
   font-size: 13px;
   color: #4b5563;
   cursor: pointer;
   margin-bottom: 2px;
+  transition: 0.15s;
 }
 
-.sidebar-board.active {
+.nav-item.active {
   background: #e5e7eb;
+  font-weight: 500;
+  color: #1a1a2e;
+}
+
+.nav-item:hover {
+  background: #e5e7eb;
+}
+
+.sub-item {
+  padding-left: 24px;
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 2px;
+}
+
+.sidebar-section {
+  margin-bottom: 20px;
+}
+
+.section-title {
+  font-size: 11px;
   font-weight: 600;
+  color: #9ca3af;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+  text-transform: uppercase;
 }
 
-.sidebar-board:hover {
-  background: #e5e7eb;
-}
-
-.sidebar-add-btn {
+.favorite-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 4px;
   font-size: 13px;
-  padding: 6px 12px;
+  color: #4b5563;
+  margin-bottom: 2px;
+}
+
+.favorite-remove-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #9ca3af;
+  font-size: 12px;
+  padding: 0 4px;
+}
+
+.add-favorite-btn {
+  font-size: 13px;
+  padding: 4px 10px;
   border-radius: 4px;
   color: #3b82f6;
   border: 1px dashed #3b82f6;
@@ -78,6 +97,6 @@
   margin-top: 4px;
 }
 
-.sidebar-add-btn:hover {
+.add-favorite-btn:hover {
   background: #eff6ff;
 }
