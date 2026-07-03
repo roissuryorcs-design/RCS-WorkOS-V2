@@ -108,7 +108,15 @@ export default function BoardTable({
             )}
 
             {tasks.length > 0 ? (
-              <table width="100%" cellPadding="0" style={{ borderCollapse: "collapse" }}>
+              <table
+                width="100%"
+                cellPadding="0"
+                style={{
+                  borderCollapse: "collapse",
+                  border: "2px solid var(--border-color)", // ← BORDER LUAR TABEL
+                  borderRadius: 4,
+                }}
+              >
                 <thead>
                   <tr
                     style={{
@@ -116,25 +124,43 @@ export default function BoardTable({
                       fontSize: 12,
                       color: "var(--text-muted)",
                       fontWeight: 600,
-                      borderBottom: "1px solid var(--border-color)",
+                      borderBottom: "2px solid var(--border-color)",
                       textTransform: "uppercase",
                       letterSpacing: "0.3px",
                     }}
                   >
-                    <th style={{ padding: "8px 8px", width: "22%", borderRight: "1px solid var(--border-color)" }}>
+                    <th
+                      style={{
+                        padding: "8px 8px",
+                        width: "22%",
+                        borderRight: "2px solid var(--border-color)", // ← DIPERTEBAL
+                      }}
+                    >
                       ITEM
                     </th>
-                    <th style={{ padding: "8px 8px", width: "20%", borderRight: "1px solid var(--border-color)" }}>
+                    <th
+                      style={{
+                        padding: "8px 8px",
+                        width: "20%",
+                        borderRight: "2px solid var(--border-color)",
+                      }}
+                    >
                       NO. DOCUMENT
                     </th>
-                    <th style={{ padding: "8px 8px", width: "13%", borderRight: "1px solid var(--border-color)" }}>
+                    <th
+                      style={{
+                        padding: "8px 8px",
+                        width: "13%",
+                        borderRight: "2px solid var(--border-color)",
+                      }}
+                    >
                       PEOPLE
                     </th>
                     <th
                       style={{
                         padding: "8px 8px",
                         width: "13%",
-                        borderRight: "1px solid var(--border-color)",
+                        borderRight: "2px solid var(--border-color)",
                         position: "relative",
                       }}
                     >
@@ -157,10 +183,22 @@ export default function BoardTable({
                         </button>
                       </div>
                     </th>
-                    <th style={{ padding: "8px 8px", width: "13%", borderRight: "1px solid var(--border-color)" }}>
+                    <th
+                      style={{
+                        padding: "8px 8px",
+                        width: "13%",
+                        borderRight: "2px solid var(--border-color)",
+                      }}
+                    >
                       DUE DATE
                     </th>
-                    <th style={{ padding: "8px 8px", width: "8%", borderRight: "1px solid var(--border-color)" }}>
+                    <th
+                      style={{
+                        padding: "8px 8px",
+                        width: "8%",
+                        borderRight: "2px solid var(--border-color)",
+                      }}
+                    >
                       REV
                     </th>
                     <th style={{ padding: "8px 8px", width: "6%", textAlign: "center" }}></th>
@@ -184,7 +222,7 @@ export default function BoardTable({
                   padding: "12px",
                   color: "var(--text-light)",
                   textAlign: "center",
-                  border: "1px dashed var(--border-color)",
+                  border: "2px solid var(--border-color)", // ← DIPERTEBAL
                   borderRadius: 4,
                 }}
               >
@@ -215,7 +253,7 @@ export default function BoardTable({
             display: "block",
             width: "100%",
             padding: "10px",
-            border: "1px dashed var(--border-color)",
+            border: "2px dashed var(--border-color)", // ← DIPERTEBAL
             borderRadius: 6,
             background: "transparent",
             color: "#3b82f6",
