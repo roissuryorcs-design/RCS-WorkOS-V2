@@ -79,7 +79,7 @@ export default function App() {
         title: "New Task",
         status: "To Do",
         files: 0,
-        budget: 0,
+        budget: 0, // ✅ PASTIKAN ADA NILAI DEFAULT
         lastUpdated: "Just now",
         priority: "Low",
         notes: "-",
@@ -95,7 +95,6 @@ export default function App() {
   const addNewGroup = () => {
     const groupName = prompt("Enter new group name:");
     if (groupName && groupName.trim()) {
-      // Add a new group with a sample task
       setTasks([
         ...tasks,
         {
@@ -103,7 +102,7 @@ export default function App() {
           title: "New Task",
           status: "To Do",
           files: 0,
-          budget: 0,
+          budget: 0, // ✅ PASTIKAN ADA NILAI DEFAULT
           lastUpdated: "Just now",
           priority: "Low",
           notes: "-",
@@ -188,41 +187,121 @@ export default function App() {
 
         {/* Main Menu */}
         <div style={{ marginBottom: 24 }}>
-          <p style={{ fontSize: 14, padding: "8px 12px", borderRadius: 6, background: "#e5e7eb", fontWeight: 500 }}>
+          <p
+            style={{
+              fontSize: 14,
+              padding: "8px 12px",
+              borderRadius: 6,
+              background: "#e5e7eb",
+              fontWeight: 500,
+            }}
+          >
             🏠 Home
           </p>
-          <p style={{ fontSize: 14, padding: "8px 12px", borderRadius: 6, color: "#4b5563" }}>
+          <p
+            style={{
+              fontSize: 14,
+              padding: "8px 12px",
+              borderRadius: 6,
+              color: "#4b5563",
+            }}
+          >
             📋 My work
           </p>
-          <p style={{ fontSize: 14, padding: "8px 12px", borderRadius: 6, color: "#4b5563" }}>
+          <p
+            style={{
+              fontSize: 14,
+              padding: "8px 12px",
+              borderRadius: 6,
+              color: "#4b5563",
+            }}
+          >
             ➕ More
           </p>
-          <p style={{ fontSize: 14, padding: "8px 12px", borderRadius: 6, color: "#4b5563" }}>
+          <p
+            style={{
+              fontSize: 14,
+              padding: "8px 12px",
+              borderRadius: 6,
+              color: "#4b5563",
+            }}
+          >
             🤖 Monday AI
           </p>
         </div>
 
         {/* Favorites */}
         <div>
-          <p style={{ fontSize: 12, fontWeight: 600, color: "#9ca3af", marginBottom: 8, letterSpacing: "0.5px" }}>
+          <p
+            style={{
+              fontSize: 12,
+              fontWeight: 600,
+              color: "#9ca3af",
+              marginBottom: 8,
+              letterSpacing: "0.5px",
+            }}
+          >
             FAVORITES
           </p>
-          <div style={{ fontSize: 14, padding: "8px 12px", borderRadius: 6, background: "#e5e7eb", fontWeight: 500 }}>
+          <div
+            style={{
+              fontSize: 14,
+              padding: "8px 12px",
+              borderRadius: 6,
+              background: "#e5e7eb",
+              fontWeight: 500,
+            }}
+          >
             📁 Workspace
           </div>
-          <div style={{ fontSize: 14, padding: "8px 12px", borderRadius: 6, color: "#4b5563" }}>
+          <div
+            style={{
+              fontSize: 14,
+              padding: "8px 12px",
+              borderRadius: 6,
+              color: "#4b5563",
+            }}
+          >
             📁 Administration
           </div>
-          <div style={{ fontSize: 14, padding: "8px 12px", borderRadius: 6, color: "#4b5563" }}>
+          <div
+            style={{
+              fontSize: 14,
+              padding: "8px 12px",
+              borderRadius: 6,
+              color: "#4b5563",
+            }}
+          >
             📁 New Folder
           </div>
-          <div style={{ fontSize: 14, padding: "8px 12px", borderRadius: 6, color: "#4b5563" }}>
+          <div
+            style={{
+              fontSize: 14,
+              padding: "8px 12px",
+              borderRadius: 6,
+              color: "#4b5563",
+            }}
+          >
             📁 New Folder
           </div>
-          <div style={{ fontSize: 14, padding: "8px 12px", borderRadius: 6, color: "#4b5563" }}>
+          <div
+            style={{
+              fontSize: 14,
+              padding: "8px 12px",
+              borderRadius: 6,
+              color: "#4b5563",
+            }}
+          >
             💰 Finance
           </div>
-          <div style={{ fontSize: 14, padding: "8px 12px", borderRadius: 6, color: "#4b5563" }}>
+          <div
+            style={{
+              fontSize: 14,
+              padding: "8px 12px",
+              borderRadius: 6,
+              color: "#4b5563",
+            }}
+          >
             📁 New Folder
           </div>
         </div>
@@ -245,7 +324,14 @@ export default function App() {
             Administration
           </h1>
 
-          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+          <div
+            style={{
+              display: "flex",
+              gap: 8,
+              alignItems: "center",
+              flexWrap: "wrap",
+            }}
+          >
             <button style={buttonStyle}>📊 Main table</button>
             <button style={buttonStyle}>📅 Calendar</button>
             <button style={buttonStyle}>🔮 Build Vibe view</button>
@@ -332,9 +418,20 @@ export default function App() {
               {groupName}
             </h3>
 
-            <table width="100%" cellPadding="10" style={{ borderCollapse: "collapse" }}>
+            <table
+              width="100%"
+              cellPadding="10"
+              style={{ borderCollapse: "collapse" }}
+            >
               <thead>
-                <tr style={{ textAlign: "left", fontSize: 13, color: "#6b7280", fontWeight: 500 }}>
+                <tr
+                  style={{
+                    textAlign: "left",
+                    fontSize: 13,
+                    color: "#6b7280",
+                    fontWeight: 500,
+                  }}
+                >
                   <th style={{ width: "25%" }}>Task</th>
                   <th style={{ width: "12%" }}>Status</th>
                   <th style={{ width: "10%" }}>Files</th>
@@ -391,10 +488,14 @@ export default function App() {
 
                     <td>
                       <input
-                        value={task.budget === 0 ? "Rp. 0" : `Rp. ${task.budget.toLocaleString()}`}
+                        value={
+                          task.budget !== undefined && task.budget !== null
+                            ? `Rp. ${task.budget.toLocaleString()}`
+                            : "Rp. 0"
+                        }
                         onChange={(e) => {
                           const value = e.target.value.replace(/[^0-9]/g, "");
-                          updateTask(task.id, "budget", parseInt(value) || 0);
+                          updateTask(task.id, "budget", value ? parseInt(value) : 0);
                         }}
                         style={inputStyle}
                       />
