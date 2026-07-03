@@ -4,9 +4,20 @@
   z-index: 40;
   background: var(--bg-secondary);
   padding: 12px 0 8px 0;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 2px solid var(--border-color);
   margin-bottom: 16px;
   transition: background 0.3s ease, border-color 0.3s ease;
+  width: 100%;
+  display: block;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+/* Fallback untuk browser yang tidak support backdrop-filter */
+@supports not (backdrop-filter: blur(4px)) {
+  .header {
+    backdrop-filter: none;
+  }
 }
 
 .header-title {
