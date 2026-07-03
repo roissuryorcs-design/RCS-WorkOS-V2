@@ -1,6 +1,6 @@
 import StatusCell from "./StatusCell";
 
-export default function Row({ item, onUpdate, onDelete }) {
+export default function Row({ item, allStatuses, onUpdate, onDelete }) {
   const inputStyle = {
     border: "none",
     background: "transparent",
@@ -40,7 +40,11 @@ export default function Row({ item, onUpdate, onDelete }) {
         />
       </td>
       <td style={{ padding: "6px 8px" }}>
-        <StatusCell status={item.status} />
+        <StatusCell
+          status={item.status}
+          allStatuses={allStatuses}
+          onChange={(val) => onUpdate("status", val)}
+        />
       </td>
       <td style={{ padding: "6px 8px" }}>
         <input
