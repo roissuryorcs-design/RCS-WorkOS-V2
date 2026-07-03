@@ -10,56 +10,56 @@ export default function App() {
           {
             id: 1,
             item: "Scope of Work",
-            document: "ID-F-T-NN1-GAD-FP-C",
+            document: "",
             people: "Done",
-            status: "Done",
-            dueDate: "dd/mm/ttt",
-            rev: "RO",
+            status: "",
+            dueDate: "dd/mm/tttt",
+            rev: "R0",
           },
           {
             id: 2,
             item: "GA Drawings",
-            document: "P2104-V-D-GSHD-ME-<",
+            document: "",
             people: "Done",
-            status: "Done",
-            dueDate: "dd/mm/ttt",
-            rev: "RO",
+            status: "",
+            dueDate: "dd/mm/tttt",
+            rev: "R0",
           },
           {
             id: 3,
             item: "General Arrangement",
-            document: "P2104-V-D-GSHD-ME-I",
+            document: "ID-F-FT-NN1-GAD-FP-0",
             people: "RS",
-            status: "Done",
-            dueDate: "dd/mm/ttt",
-            rev: "RO",
+            status: "",
+            dueDate: "",
+            rev: "R1",
           },
           {
             id: 4,
-            item: "HVAC Room Arrang",
-            document: "",
+            item: "HVAC Room Arrangement",
+            document: "P2104-V-D-GSHD-ME-GA",
             people: "Done",
-            status: "Done",
-            dueDate: "dd/mm/ttd",
-            rev: "RO",
+            status: "",
+            dueDate: "",
+            rev: "R0",
           },
           {
             id: 5,
             item: "Layout Drawings",
             document: "",
             people: "Done",
-            status: "Done",
-            dueDate: "dd/mm/ttt",
-            rev: "RO",
+            status: "",
+            dueDate: "dd/mm/tttt",
+            rev: "R0",
           },
           {
             id: 6,
             item: "HVAC System Layout",
-            document: "",
+            document: "P2104-V-D-GSHD-ME-LA",
             people: "Done",
-            status: "Done",
-            dueDate: "dd/mm/ttd",
-            rev: "RO",
+            status: "",
+            dueDate: "",
+            rev: "R0",
           },
         ];
   });
@@ -109,16 +109,26 @@ export default function App() {
     });
   }, [items, search]);
 
+  // Calculate statistics
+  const totalItems = filtered.length;
+  const doneItems = filtered.filter((item) => item.people === "Done").length;
+  const pendingItems = totalItems - doneItems;
+
   return (
-    <div style={{ display: "flex", minHeight: "100vh", fontFamily: "Arial, sans-serif" }}>
+    <div style={{ display: "flex", minHeight: "100vh", fontFamily: "Arial, sans-serif", background: "#f0f2f5" }}>
       {/* SIDEBAR */}
       <div
         style={{
-          width: 240,
-          background: "#f5f6f8",
-          padding: "24px 16px",
+          width: 220,
+          background: "#ffffff",
+          padding: "20px 16px",
           borderRight: "1px solid #e5e7eb",
           flexShrink: 0,
+          display: "flex",
+          flexDirection: "column",
+          height: "100vh",
+          position: "sticky",
+          top: 0,
         }}
       >
         <h2 style={{ fontSize: 18, fontWeight: 600, color: "#1a1a2e", marginBottom: 24 }}>
@@ -126,7 +136,7 @@ export default function App() {
         </h2>
 
         {/* PROJECT SECTION */}
-        <div style={{ marginBottom: 32 }}>
+        <div style={{ flex: 1 }}>
           <p
             style={{
               fontSize: 11,
@@ -140,41 +150,45 @@ export default function App() {
             Project
           </p>
 
-          <div style={{ fontSize: 14, fontWeight: 500, color: "#1a1a2e", marginBottom: 4 }}>
-            Engineering
-          </div>
-          <div style={{ paddingLeft: 16, fontSize: 13, color: "#4b5563", marginBottom: 2 }}>
-            • GA Drawings
-          </div>
-          <div style={{ paddingLeft: 16, fontSize: 13, color: "#4b5563", marginBottom: 2 }}>
-            • Layout Drawings
-          </div>
-          <div style={{ paddingLeft: 16, fontSize: 13, color: "#4b5563", marginBottom: 2 }}>
-            • D&D
-          </div>
-          <div style={{ paddingLeft: 16, fontSize: 13, color: "#4b5563", marginBottom: 2 }}>
-            • P&D 1
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 13, fontWeight: 500, color: "#1a1a2e", marginBottom: 4 }}>
+              Engineering
+            </div>
+            <div style={{ paddingLeft: 16, fontSize: 12, color: "#4b5563", marginBottom: 2 }}>
+              • GA Drawings
+            </div>
+            <div style={{ paddingLeft: 16, fontSize: 12, color: "#4b5563", marginBottom: 2 }}>
+              • Layout Drawings
+            </div>
+            <div style={{ paddingLeft: 16, fontSize: 12, color: "#4b5563", marginBottom: 2 }}>
+              • D&D
+            </div>
+            <div style={{ paddingLeft: 16, fontSize: 12, color: "#4b5563", marginBottom: 2 }}>
+              • P&D 1
+            </div>
+            <div style={{ paddingLeft: 16, fontSize: 12, color: "#4b5563", marginBottom: 2 }}>
+              • Equipment Schedule 4
+            </div>
           </div>
 
-          <div style={{ fontSize: 14, fontWeight: 500, color: "#1a1a2e", marginTop: 8, marginBottom: 4 }}>
-            Equipment Schedule 4
-          </div>
-          <div style={{ paddingLeft: 16, fontSize: 13, color: "#4b5563", marginBottom: 2 }}>
-            • Commissioning
-          </div>
-          <div style={{ paddingLeft: 16, fontSize: 13, color: "#4b5563", marginBottom: 2 }}>
-            • FAT
-          </div>
-          <div style={{ paddingLeft: 16, fontSize: 13, color: "#4b5563", marginBottom: 2 }}>
-            • SAT
-          </div>
-          <div style={{ paddingLeft: 16, fontSize: 13, color: "#4b5563", marginBottom: 2 }}>
-            • O&M
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 13, fontWeight: 500, color: "#1a1a2e", marginBottom: 4 }}>
+              Commissioning
+            </div>
+            <div style={{ paddingLeft: 16, fontSize: 12, color: "#4b5563", marginBottom: 2 }}>
+              • FAT
+            </div>
+            <div style={{ paddingLeft: 16, fontSize: 12, color: "#4b5563", marginBottom: 2 }}>
+              • SAT
+            </div>
+            <div style={{ paddingLeft: 16, fontSize: 12, color: "#4b5563", marginBottom: 2 }}>
+              • O&M
+            </div>
           </div>
         </div>
 
         {/* FAVORITES */}
-        <div>
+        <div style={{ marginTop: "auto", paddingTop: 16, borderTop: "1px solid #e5e7eb" }}>
           <p
             style={{
               fontSize: 11,
@@ -204,9 +218,9 @@ export default function App() {
       </div>
 
       {/* MAIN CONTENT */}
-      <div style={{ flex: 1, background: "#ffffff", padding: "24px 32px" }}>
+      <div style={{ flex: 1, padding: "20px 32px", maxWidth: "calc(100% - 220px)" }}>
         {/* HEADER */}
-        <div style={{ marginBottom: 16 }}>
+        <div style={{ marginBottom: 20 }}>
           <h1 style={{ fontSize: 22, fontWeight: 600, color: "#1a1a2e" }}>
             FOREL FPSO HVAC
           </h1>
@@ -215,15 +229,13 @@ export default function App() {
           </p>
         </div>
 
-        {/* SEARCH & FILTER BAR */}
+        {/* SEARCH BAR */}
         <div
           style={{
             display: "flex",
             gap: 12,
             marginBottom: 20,
             alignItems: "center",
-            borderBottom: "1px solid #e5e7eb",
-            paddingBottom: 12,
           }}
         >
           <input
@@ -235,7 +247,7 @@ export default function App() {
               border: "1px solid #d1d5db",
               borderRadius: 4,
               fontSize: 13,
-              width: 220,
+              width: 200,
               background: "white",
             }}
           />
@@ -256,26 +268,60 @@ export default function App() {
             <option value="Engineering">Engineering</option>
           </select>
 
-          <button
-            onClick={addItem}
-            style={{
-              padding: "6px 14px",
-              background: "#3b82f6",
-              color: "white",
-              border: "none",
-              borderRadius: 4,
-              cursor: "pointer",
-              fontSize: 13,
-              marginLeft: "auto",
-            }}
-          >
-            + Add Item
-          </button>
+          <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+            <button
+              onClick={addItem}
+              style={{
+                padding: "6px 14px",
+                background: "#3b82f6",
+                color: "white",
+                border: "none",
+                borderRadius: 4,
+                cursor: "pointer",
+                fontSize: 13,
+              }}
+            >
+              + Add
+            </button>
+            <button
+              style={{
+                padding: "6px 14px",
+                background: "transparent",
+                color: "#6b7280",
+                border: "1px solid #d1d5db",
+                borderRadius: 4,
+                cursor: "pointer",
+                fontSize: 13,
+              }}
+            >
+              ↩ Undo
+            </button>
+            <button
+              style={{
+                padding: "6px 14px",
+                background: "transparent",
+                color: "#6b7280",
+                border: "1px solid #d1d5db",
+                borderRadius: 4,
+                cursor: "pointer",
+                fontSize: 13,
+              }}
+            >
+              📤 Export
+            </button>
+          </div>
         </div>
 
         {/* TABLE */}
-        <div style={{ overflowX: "auto" }}>
-          <table width="100%" cellPadding="8" style={{ borderCollapse: "collapse" }}>
+        <div
+          style={{
+            background: "white",
+            borderRadius: 8,
+            overflow: "hidden",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+          }}
+        >
+          <table width="100%" cellPadding="0" style={{ borderCollapse: "collapse" }}>
             <thead>
               <tr
                 style={{
@@ -283,28 +329,29 @@ export default function App() {
                   fontSize: 12,
                   color: "#6b7280",
                   fontWeight: 600,
-                  borderBottom: "2px solid #e5e7eb",
+                  borderBottom: "1px solid #e5e7eb",
                   textTransform: "uppercase",
                   letterSpacing: "0.3px",
+                  background: "#f9fafb",
                 }}
               >
-                <th style={{ width: "22%", paddingBottom: 8 }}>Item</th>
-                <th style={{ width: "28%", paddingBottom: 8 }}>No. Document</th>
-                <th style={{ width: "15%", paddingBottom: 8 }}>People</th>
-                <th style={{ width: "15%", paddingBottom: 8 }}>Status</th>
-                <th style={{ width: "15%", paddingBottom: 8 }}>Due Date</th>
-                <th style={{ width: "8%", paddingBottom: 8 }}>Rev</th>
-                <th style={{ width: "5%", paddingBottom: 8, textAlign: "center" }}>Action</th>
+                <th style={{ padding: "10px 12px", width: "22%" }}>Item</th>
+                <th style={{ padding: "10px 12px", width: "28%" }}>No. Document</th>
+                <th style={{ padding: "10px 12px", width: "15%" }}>People</th>
+                <th style={{ padding: "10px 12px", width: "15%" }}>Status</th>
+                <th style={{ padding: "10px 12px", width: "15%" }}>Due Date</th>
+                <th style={{ padding: "10px 12px", width: "10%" }}>Rev</th>
+                <th style={{ padding: "10px 12px", width: "5%", textAlign: "center" }}></th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map((item) => (
+              {filtered.map((item, index) => (
                 <tr
                   key={item.id}
                   style={{
-                    borderBottom: "1px solid #f3f4f6",
+                    borderBottom: index === filtered.length - 1 ? "none" : "1px solid #f3f4f6",
                     transition: "0.15s",
-                    fontSize: 14,
+                    fontSize: 13,
                   }}
                   onMouseEnter={(e) =>
                     (e.currentTarget.style.background = "#f9fafb")
@@ -313,7 +360,7 @@ export default function App() {
                     (e.currentTarget.style.background = "white")
                   }
                 >
-                  <td style={{ padding: "6px 4px" }}>
+                  <td style={{ padding: "8px 12px" }}>
                     <input
                       value={item.item}
                       onChange={(e) =>
@@ -327,7 +374,7 @@ export default function App() {
                     />
                   </td>
 
-                  <td style={{ padding: "6px 4px" }}>
+                  <td style={{ padding: "8px 12px" }}>
                     <input
                       value={item.document}
                       onChange={(e) =>
@@ -337,7 +384,7 @@ export default function App() {
                     />
                   </td>
 
-                  <td style={{ padding: "6px 4px" }}>
+                  <td style={{ padding: "8px 12px" }}>
                     <input
                       value={item.people}
                       onChange={(e) =>
@@ -347,7 +394,7 @@ export default function App() {
                     />
                   </td>
 
-                  <td style={{ padding: "6px 4px" }}>
+                  <td style={{ padding: "8px 12px" }}>
                     <input
                       value={item.status}
                       onChange={(e) =>
@@ -357,7 +404,7 @@ export default function App() {
                     />
                   </td>
 
-                  <td style={{ padding: "6px 4px" }}>
+                  <td style={{ padding: "8px 12px" }}>
                     <input
                       value={item.dueDate}
                       onChange={(e) =>
@@ -367,7 +414,7 @@ export default function App() {
                     />
                   </td>
 
-                  <td style={{ padding: "6px 4px" }}>
+                  <td style={{ padding: "8px 12px" }}>
                     <input
                       value={item.rev}
                       onChange={(e) =>
@@ -377,7 +424,7 @@ export default function App() {
                     />
                   </td>
 
-                  <td style={{ padding: "6px 4px", textAlign: "center" }}>
+                  <td style={{ padding: "8px 12px", textAlign: "center" }}>
                     <button
                       onClick={() => deleteItem(item.id)}
                       style={{
@@ -397,6 +444,29 @@ export default function App() {
             </tbody>
           </table>
         </div>
+
+        {/* FOOTER */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginTop: 12,
+            padding: "8px 4px",
+            fontSize: 12,
+            color: "#6b7280",
+          }}
+        >
+          <div>
+            Total: <strong>{totalItems}</strong> item
+          </div>
+          <div>
+            Done: <strong style={{ color: "#22c55e" }}>{doneItems}</strong> | Pending: <strong style={{ color: "#f59e0b" }}>{pendingItems}</strong>
+          </div>
+          <div>
+            <span style={{ color: "#9ca3af" }}>💾 Saved</span>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -405,7 +475,7 @@ export default function App() {
 const inputStyle = {
   border: "none",
   background: "transparent",
-  fontSize: 14,
+  fontSize: 13,
   padding: "4px 2px",
   width: "100%",
   color: "#1a1a2e",
