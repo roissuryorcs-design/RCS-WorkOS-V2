@@ -2,243 +2,272 @@ import { useState, useMemo, useEffect } from "react";
 
 export default function App() {
   // ✅ LOAD FROM LOCALSTORAGE
-  const [tasks, setTasks] = useState(() => {
-    const saved = localStorage.getItem("tasks");
+  const [items, setItems] = useState(() => {
+    const saved = localStorage.getItem("forelItems");
     return saved
       ? JSON.parse(saved)
       : [
-          // Target & PLANNING
+          // Engineering items
           {
             id: 1,
-            title: "Design UI",
-            status: "Working",
-            files: 13,
-            budget: 0,
-            lastUpdated: "5 months ago",
-            priority: "High",
-            notes: "Meeting notes",
-            group: "Target & PLANNING",
+            item: "Scope of Work",
+            document: "ID-F-FT-NN1-GAD-FP-0",
+            people: "Done",
+            status: "Done",
+            dueDate: "dd/mm/tttt",
+            rev: "RO",
+            category: "Engineering",
+            project: "FOREL FPSO HVAC",
           },
           {
             id: 2,
-            title: "API Setup",
-            status: "Review",
-            files: 1,
-            budget: 0,
-            lastUpdated: "4 months ago",
-            priority: "Low",
-            notes: "Action items",
-            group: "Target & PLANNING",
+            item: "GA Drawings",
+            document: "P2104-V-D-GSHD-ME-GA",
+            people: "Done",
+            status: "Done",
+            dueDate: "dd/mm/tttt",
+            rev: "RO",
+            category: "Engineering",
+            project: "FOREL FPSO HVAC",
           },
-          // Completed
           {
             id: 3,
-            title: "Database Migration",
+            item: "General Arrangement",
+            document: "P2104-V-D-GSHD-ME-LA",
+            people: "RS",
             status: "Done",
-            files: 3,
-            budget: 6000000,
-            lastUpdated: "5 months ago",
-            priority: "Medium",
-            notes: "Other",
-            group: "Completed",
+            dueDate: "dd/mm/tttt",
+            rev: "RO",
+            category: "Engineering",
+            project: "FOREL FPSO HVAC",
           },
           {
             id: 4,
-            title: "User Testing",
+            item: "HVAC Room Arrang",
+            document: "",
+            people: "Done",
             status: "Done",
-            files: 1,
-            budget: 0,
-            lastUpdated: "5 months ago",
-            priority: "Low",
-            notes: "Other",
-            group: "Completed",
+            dueDate: "dd/mm/tdd",
+            rev: "RO",
+            category: "Engineering",
+            project: "FOREL FPSO HVAC",
+          },
+          {
+            id: 5,
+            item: "Layout Drawings",
+            document: "",
+            people: "Done",
+            status: "Done",
+            dueDate: "",
+            rev: "",
+            category: "Engineering",
+            project: "FOREL FPSO HVAC",
+          },
+          {
+            id: 6,
+            item: "HVAC System Layout",
+            document: "",
+            people: "",
+            status: "",
+            dueDate: "",
+            rev: "",
+            category: "Engineering",
+            project: "FOREL FPSO HVAC",
           },
         ];
   });
 
   // ✅ AUTO SAVE
   useEffect(() => {
-    localStorage.setItem("tasks", JSON.stringify(tasks));
-  }, [tasks]);
+    localStorage.setItem("forelItems", JSON.stringify(items));
+  }, [items]);
 
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("All");
-  const [priorityFilter, setPriorityFilter] = useState("All");
+  const [categoryFilter, setCategoryFilter] = useState("All");
 
-  const updateTask = (id, field, value) => {
-    setTasks((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, [field]: value } : t))
+  const updateItem = (id, field, value) => {
+    setItems((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, [field]: value } : item))
     );
   };
 
-  const addTask = (group) => {
-    setTasks([
-      ...tasks,
+  const addItem = () => {
+    setItems([
+      ...items,
       {
         id: Date.now(),
-        title: "New Task",
-        status: "To Do",
-        files: 0,
-        budget: 0, // ✅ PASTIKAN ADA NILAI DEFAULT
-        lastUpdated: "Just now",
-        priority: "Low",
-        notes: "-",
-        group: group || "Target & PLANNING",
+        item: "New Item",
+        document: "",
+        people: "",
+        status: "",
+        dueDate: "",
+        rev: "",
+        category: "Engineering",
+        project: "FOREL FPSO HVAC",
       },
     ]);
   };
 
-  const deleteTask = (id) => {
-    setTasks(tasks.filter((t) => t.id !== id));
-  };
-
-  const addNewGroup = () => {
-    const groupName = prompt("Enter new group name:");
-    if (groupName && groupName.trim()) {
-      setTasks([
-        ...tasks,
-        {
-          id: Date.now(),
-          title: "New Task",
-          status: "To Do",
-          files: 0,
-          budget: 0, // ✅ PASTIKAN ADA NILAI DEFAULT
-          lastUpdated: "Just now",
-          priority: "Low",
-          notes: "-",
-          group: groupName.trim(),
-        },
-      ]);
-    }
-  };
-
-  const statusColor = (status) => {
-    switch (status) {
-      case "To Do":
-        return "#9ca3af";
-      case "Working":
-        return "#3b82f6";
-      case "Review":
-        return "#f59e0b";
-      case "Done":
-        return "#22c55e";
-      default:
-        return "#9ca3af";
-    }
-  };
-
-  const priorityColor = (p) => {
-    switch (p) {
-      case "Low":
-        return "#22c55e";
-      case "Medium":
-        return "#f59e0b";
-      case "High":
-        return "#ef4444";
-      default:
-        return "#9ca3af";
-    }
+  const deleteItem = (id) => {
+    setItems(items.filter((item) => item.id !== id));
   };
 
   // FILTER SYSTEM
   const filtered = useMemo(() => {
-    return tasks.filter((t) => {
+    return items.filter((item) => {
       const matchSearch =
-        t.title.toLowerCase().includes(search.toLowerCase()) ||
-        t.notes.toLowerCase().includes(search.toLowerCase());
+        item.item.toLowerCase().includes(search.toLowerCase()) ||
+        item.document.toLowerCase().includes(search.toLowerCase());
 
-      const matchStatus =
-        statusFilter === "All" || t.status === statusFilter;
+      const matchCategory =
+        categoryFilter === "All" || item.category === categoryFilter;
 
-      const matchPriority =
-        priorityFilter === "All" || t.priority === priorityFilter;
-
-      return matchSearch && matchStatus && matchPriority;
+      return matchSearch && matchCategory;
     });
-  }, [tasks, search, statusFilter, priorityFilter]);
-
-  // Group tasks by 'group' property
-  const groupedTasks = useMemo(() => {
-    const groups = {};
-    filtered.forEach((task) => {
-      const groupName = task.group || "Uncategorized";
-      if (!groups[groupName]) {
-        groups[groupName] = [];
-      }
-      groups[groupName].push(task);
-    });
-    return groups;
-  }, [filtered]);
+  }, [items, search, categoryFilter]);
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", fontFamily: "Arial" }}>
-      {/* SIDEBAR - Monday.com Style */}
+      {/* SIDEBAR */}
       <div
         style={{
           width: 260,
-          background: "#f5f6f8",
+          background: "#1a1a2e",
+          color: "white",
           padding: "20px 16px",
-          borderRight: "1px solid #e5e7eb",
         }}
       >
-        <h2 style={{ fontSize: 18, marginBottom: 20, color: "#1a1a2e" }}>
-          📊 WorkOS
+        <h2 style={{ fontSize: 20, marginBottom: 8, color: "#fff" }}>
+          FOREL FPSO
         </h2>
 
-        {/* Main Menu */}
-        <div style={{ marginBottom: 24 }}>
-          <p
-            style={{
-              fontSize: 14,
-              padding: "8px 12px",
-              borderRadius: 6,
-              background: "#e5e7eb",
-              fontWeight: 500,
-            }}
-          >
-            🏠 Home
-          </p>
-          <p
-            style={{
-              fontSize: 14,
-              padding: "8px 12px",
-              borderRadius: 6,
-              color: "#4b5563",
-            }}
-          >
-            📋 My work
-          </p>
-          <p
-            style={{
-              fontSize: 14,
-              padding: "8px 12px",
-              borderRadius: 6,
-              color: "#4b5563",
-            }}
-          >
-            ➕ More
-          </p>
-          <p
-            style={{
-              fontSize: 14,
-              padding: "8px 12px",
-              borderRadius: 6,
-              color: "#4b5563",
-            }}
-          >
-            🤖 Monday AI
-          </p>
-        </div>
-
-        {/* Favorites */}
-        <div>
+        {/* PROJECT SECTION */}
+        <div style={{ marginTop: 24 }}>
           <p
             style={{
               fontSize: 12,
               fontWeight: 600,
               color: "#9ca3af",
-              marginBottom: 8,
               letterSpacing: "0.5px",
+              marginBottom: 12,
+            }}
+          >
+            PROJECT
+          </p>
+
+          <div
+            style={{
+              fontSize: 14,
+              padding: "8px 12px",
+              borderRadius: 6,
+              background: "#2d2d44",
+              fontWeight: 500,
+              marginBottom: 4,
+            }}
+          >
+            📁 Engineering
+          </div>
+          <div
+            style={{
+              paddingLeft: 20,
+              fontSize: 13,
+              color: "#c4c4d6",
+              marginBottom: 4,
+            }}
+          >
+            • GA Drawings
+          </div>
+          <div
+            style={{
+              paddingLeft: 20,
+              fontSize: 13,
+              color: "#c4c4d6",
+              marginBottom: 4,
+            }}
+          >
+            • Layout Drawings
+          </div>
+          <div
+            style={{
+              paddingLeft: 20,
+              fontSize: 13,
+              color: "#c4c4d6",
+              marginBottom: 4,
+            }}
+          >
+            • D&D
+          </div>
+          <div
+            style={{
+              paddingLeft: 20,
+              fontSize: 13,
+              color: "#c4c4d6",
+              marginBottom: 4,
+            }}
+          >
+            • P&D 1
+          </div>
+          <div
+            style={{
+              paddingLeft: 20,
+              fontSize: 13,
+              color: "#c4c4d6",
+              marginBottom: 4,
+            }}
+          >
+            • Equipment Schedule 4
+          </div>
+          <div
+            style={{
+              paddingLeft: 20,
+              fontSize: 13,
+              color: "#c4c4d6",
+              marginBottom: 4,
+            }}
+          >
+            • Commissioning
+          </div>
+          <div
+            style={{
+              paddingLeft: 20,
+              fontSize: 13,
+              color: "#c4c4d6",
+              marginBottom: 4,
+            }}
+          >
+            • FAT
+          </div>
+          <div
+            style={{
+              paddingLeft: 20,
+              fontSize: 13,
+              color: "#c4c4d6",
+              marginBottom: 4,
+            }}
+          >
+            • SAT
+          </div>
+          <div
+            style={{
+              paddingLeft: 20,
+              fontSize: 13,
+              color: "#c4c4d6",
+              marginBottom: 4,
+            }}
+          >
+            • O&M
+          </div>
+        </div>
+
+        {/* FAVORITES */}
+        <div style={{ marginTop: 32 }}>
+          <p
+            style={{
+              fontSize: 12,
+              fontWeight: 600,
+              color: "#9ca3af",
+              letterSpacing: "0.5px",
+              marginBottom: 8,
             }}
           >
             FAVORITES
@@ -248,108 +277,55 @@ export default function App() {
               fontSize: 14,
               padding: "8px 12px",
               borderRadius: 6,
-              background: "#e5e7eb",
-              fontWeight: 500,
+              color: "#c4c4d6",
+              border: "1px dashed #4b4b66",
             }}
           >
-            📁 Workspace
-          </div>
-          <div
-            style={{
-              fontSize: 14,
-              padding: "8px 12px",
-              borderRadius: 6,
-              color: "#4b5563",
-            }}
-          >
-            📁 Administration
-          </div>
-          <div
-            style={{
-              fontSize: 14,
-              padding: "8px 12px",
-              borderRadius: 6,
-              color: "#4b5563",
-            }}
-          >
-            📁 New Folder
-          </div>
-          <div
-            style={{
-              fontSize: 14,
-              padding: "8px 12px",
-              borderRadius: 6,
-              color: "#4b5563",
-            }}
-          >
-            📁 New Folder
-          </div>
-          <div
-            style={{
-              fontSize: 14,
-              padding: "8px 12px",
-              borderRadius: 6,
-              color: "#4b5563",
-            }}
-          >
-            💰 Finance
-          </div>
-          <div
-            style={{
-              fontSize: 14,
-              padding: "8px 12px",
-              borderRadius: 6,
-              color: "#4b5563",
-            }}
-          >
-            📁 New Folder
+            + Add favorites
           </div>
         </div>
       </div>
 
       {/* MAIN CONTENT */}
-      <div style={{ flex: 1, background: "#ffffff", padding: "24px 32px" }}>
-        {/* TOP BAR - Administration Header */}
+      <div style={{ flex: 1, background: "#f8f9fc", padding: "24px 32px" }}>
+        {/* HEADER */}
         <div
           style={{
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
             marginBottom: 20,
-            flexWrap: "wrap",
-            gap: 10,
           }}
         >
-          <h1 style={{ fontSize: 24, fontWeight: 600, color: "#1a1a2e" }}>
-            Administration
-          </h1>
+          <div>
+            <h1 style={{ fontSize: 24, fontWeight: 600, color: "#1a1a2e" }}>
+              FOREL FPSO HVAC
+            </h1>
+            <p style={{ fontSize: 14, color: "#6b7280", marginTop: 4 }}>
+              Engineering
+            </p>
+          </div>
 
-          <div
-            style={{
-              display: "flex",
-              gap: 8,
-              alignItems: "center",
-              flexWrap: "wrap",
-            }}
-          >
-            <button style={buttonStyle}>📊 Main table</button>
-            <button style={buttonStyle}>📅 Calendar</button>
-            <button style={buttonStyle}>🔮 Build Vibe view</button>
+          <div style={{ display: "flex", gap: 8 }}>
             <button
+              onClick={addItem}
               style={{
-                ...buttonStyle,
+                padding: "8px 16px",
                 background: "#3b82f6",
                 color: "white",
                 border: "none",
+                borderRadius: 6,
+                cursor: "pointer",
+                fontSize: 13,
+                fontWeight: 500,
               }}
-              onClick={() => addTask("Target & PLANNING")}
             >
-              + New task
+              + Add Item
             </button>
           </div>
         </div>
 
-        {/* SEARCH & FILTER BAR */}
+        {/* SEARCH & FILTER */}
         <div
           style={{
             display: "flex",
@@ -357,12 +333,10 @@ export default function App() {
             marginBottom: 20,
             flexWrap: "wrap",
             alignItems: "center",
-            borderBottom: "1px solid #e5e7eb",
-            paddingBottom: 12,
           }}
         >
           <input
-            placeholder="🔍 Search"
+            placeholder="🔍 Search items..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             style={{
@@ -370,264 +344,188 @@ export default function App() {
               border: "1px solid #d1d5db",
               borderRadius: 6,
               fontSize: 14,
-              width: 200,
+              width: 250,
+              background: "white",
             }}
           />
 
           <select
-            onChange={(e) => setStatusFilter(e.target.value)}
-            style={selectStyle}
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+            style={{
+              padding: "8px 14px",
+              border: "1px solid #d1d5db",
+              borderRadius: 6,
+              fontSize: 14,
+              background: "white",
+              cursor: "pointer",
+            }}
           >
-            <option>All</option>
-            <option>To Do</option>
-            <option>Working</option>
-            <option>Review</option>
-            <option>Done</option>
+            <option value="All">All Categories</option>
+            <option value="Engineering">Engineering</option>
           </select>
-
-          <select
-            onChange={(e) => setPriorityFilter(e.target.value)}
-            style={selectStyle}
-          >
-            <option>All</option>
-            <option>Low</option>
-            <option>Medium</option>
-            <option>High</option>
-          </select>
-
-          <button style={filterButtonStyle}>👤 Person</button>
-          <button style={filterButtonStyle}>🔽 Filter</button>
-          <button style={filterButtonStyle}>↕ Sort</button>
-          <button style={filterButtonStyle}>👁️ Hide</button>
-          <button style={filterButtonStyle}>📊 Group by</button>
         </div>
 
-        {/* TASKS BY GROUP - Monday.com Style */}
-        {Object.entries(groupedTasks).map(([groupName, groupTasks]) => (
-          <div key={groupName} style={{ marginBottom: 32 }}>
-            <h3
-              style={{
-                fontSize: 16,
-                fontWeight: 600,
-                color: "#1a1a2e",
-                marginBottom: 12,
-                paddingBottom: 4,
-                borderBottom: "2px solid #e5e7eb",
-              }}
-            >
-              {groupName}
-            </h3>
-
-            <table
-              width="100%"
-              cellPadding="10"
-              style={{ borderCollapse: "collapse" }}
-            >
-              <thead>
+        {/* TABLE */}
+        <div
+          style={{
+            background: "white",
+            borderRadius: 12,
+            padding: 12,
+            boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+          }}
+        >
+          <table width="100%" cellPadding="10" style={{ borderCollapse: "collapse" }}>
+            <thead>
+              <tr
+                style={{
+                  textAlign: "left",
+                  fontSize: 13,
+                  color: "#6b7280",
+                  fontWeight: 600,
+                  borderBottom: "2px solid #e5e7eb",
+                }}
+              >
+                <th style={{ width: "25%" }}>ITEM</th>
+                <th style={{ width: "25%" }}>NO. DOCUMENT</th>
+                <th style={{ width: "15%" }}>PEOPLE</th>
+                <th style={{ width: "15%" }}>STATUS</th>
+                <th style={{ width: "15%" }}>DUE DATE</th>
+                <th style={{ width: "10%" }}>REV</th>
+                <th style={{ width: "5%" }}>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((item) => (
                 <tr
+                  key={item.id}
                   style={{
-                    textAlign: "left",
-                    fontSize: 13,
-                    color: "#6b7280",
-                    fontWeight: 500,
+                    borderBottom: "1px solid #f3f4f6",
+                    transition: "0.15s",
                   }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.background = "#f9fafb")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.background = "white")
+                  }
                 >
-                  <th style={{ width: "25%" }}>Task</th>
-                  <th style={{ width: "12%" }}>Status</th>
-                  <th style={{ width: "10%" }}>Files</th>
-                  <th style={{ width: "15%" }}>Budget</th>
-                  <th style={{ width: "15%" }}>Last updated</th>
-                  <th style={{ width: "10%" }}>Priority</th>
-                  <th style={{ width: "13%" }}>Notes</th>
-                  <th style={{ width: "5%" }}>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {groupTasks.map((task) => (
-                  <tr
-                    key={task.id}
-                    style={{
-                      borderBottom: "1px solid #f3f4f6",
-                      transition: "0.15s",
-                    }}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.background = "#f9fafb")
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.background = "white")
-                    }
-                  >
-                    <td>
-                      <input
-                        value={task.title}
-                        onChange={(e) =>
-                          updateTask(task.id, "title", e.target.value)
-                        }
-                        style={inputStyle}
-                      />
-                    </td>
+                  <td>
+                    <input
+                      value={item.item}
+                      onChange={(e) =>
+                        updateItem(item.id, "item", e.target.value)
+                      }
+                      style={inputStyle}
+                    />
+                  </td>
 
-                    <td>
-                      <span
-                        style={{
-                          background: statusColor(task.status),
-                          color: "white",
-                          padding: "4px 10px",
-                          borderRadius: 12,
-                          fontSize: 12,
-                          fontWeight: 500,
-                        }}
-                      >
-                        {task.status}
-                      </span>
-                    </td>
+                  <td>
+                    <input
+                      value={item.document}
+                      onChange={(e) =>
+                        updateItem(item.id, "document", e.target.value)
+                      }
+                      style={inputStyle}
+                    />
+                  </td>
 
-                    <td style={{ fontSize: 14, color: "#4b5563" }}>
-                      📎 +{task.files}
-                    </td>
+                  <td>
+                    <input
+                      value={item.people}
+                      onChange={(e) =>
+                        updateItem(item.id, "people", e.target.value)
+                      }
+                      style={inputStyle}
+                    />
+                  </td>
 
-                    <td>
-                      <input
-                        value={
-                          task.budget !== undefined && task.budget !== null
-                            ? `Rp. ${task.budget.toLocaleString()}`
-                            : "Rp. 0"
-                        }
-                        onChange={(e) => {
-                          const value = e.target.value.replace(/[^0-9]/g, "");
-                          updateTask(task.id, "budget", value ? parseInt(value) : 0);
-                        }}
-                        style={inputStyle}
-                      />
-                    </td>
+                  <td>
+                    <select
+                      value={item.status}
+                      onChange={(e) =>
+                        updateItem(item.id, "status", e.target.value)
+                      }
+                      style={{
+                        padding: "4px 8px",
+                        border: "1px solid #d1d5db",
+                        borderRadius: 4,
+                        fontSize: 13,
+                        background: "white",
+                        cursor: "pointer",
+                        width: "100%",
+                      }}
+                    >
+                      <option value="">-</option>
+                      <option value="To Do">To Do</option>
+                      <option value="Working">Working</option>
+                      <option value="Review">Review</option>
+                      <option value="Done">Done</option>
+                    </select>
+                  </td>
 
-                    <td style={{ fontSize: 13, color: "#6b7280" }}>
-                      {task.lastUpdated}
-                    </td>
+                  <td>
+                    <input
+                      value={item.dueDate}
+                      onChange={(e) =>
+                        updateItem(item.id, "dueDate", e.target.value)
+                      }
+                      style={inputStyle}
+                    />
+                  </td>
 
-                    <td>
-                      <span
-                        style={{
-                          background: priorityColor(task.priority),
-                          color: "white",
-                          padding: "4px 10px",
-                          borderRadius: 12,
-                          fontSize: 12,
-                          fontWeight: 500,
-                        }}
-                      >
-                        {task.priority}
-                      </span>
-                    </td>
+                  <td>
+                    <input
+                      value={item.rev}
+                      onChange={(e) =>
+                        updateItem(item.id, "rev", e.target.value)
+                      }
+                      style={inputStyle}
+                    />
+                  </td>
 
-                    <td>
-                      <input
-                        value={task.notes}
-                        onChange={(e) =>
-                          updateTask(task.id, "notes", e.target.value)
-                        }
-                        style={inputStyle}
-                      />
-                    </td>
-
-                    <td>
-                      <button
-                        onClick={() => deleteTask(task.id)}
-                        style={{
-                          background: "none",
-                          border: "none",
-                          cursor: "pointer",
-                          fontSize: 16,
-                          color: "#9ca3af",
-                        }}
-                      >
-                        ✕
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-                {/* Add task button inside group */}
-                <tr>
-                  <td colSpan="8">
+                  <td>
                     <button
-                      onClick={() => addTask(groupName)}
+                      onClick={() => deleteItem(item.id)}
                       style={{
                         background: "none",
                         border: "none",
-                        color: "#3b82f6",
-                        padding: "8px 0",
                         cursor: "pointer",
-                        fontSize: 14,
-                        fontWeight: 500,
-                        width: "100%",
-                        textAlign: "left",
+                        fontSize: 16,
+                        color: "#9ca3af",
                       }}
                     >
-                      + Add task
+                      ✕
                     </button>
                   </td>
                 </tr>
-              </tbody>
-            </table>
-          </div>
-        ))}
+              ))}
+            </tbody>
+          </table>
+        </div>
 
-        {/* ADD NEW GROUP BUTTON */}
-        <button
-          onClick={addNewGroup}
+        {/* FOOTER */}
+        <div
           style={{
-            background: "none",
-            border: "1px dashed #d1d5db",
-            borderRadius: 8,
-            padding: "12px 20px",
-            cursor: "pointer",
-            fontSize: 14,
+            display: "flex",
+            gap: 16,
+            marginTop: 20,
+            paddingTop: 16,
+            borderTop: "1px solid #e5e7eb",
+            fontSize: 13,
             color: "#6b7280",
-            width: "100%",
-            marginTop: 12,
-            transition: "0.2s",
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = "#f9fafb")}
-          onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
         >
-          + Add new group
-        </button>
+          <span>🔖 Semua Bookmark</span>
+          <span>+ Add</span>
+          <span>↩ Undo</span>
+          <span>📤 Export</span>
+          <span>📉 Collapse</span>
+        </div>
       </div>
     </div>
   );
 }
-
-// STYLE HELPERS
-const buttonStyle = {
-  padding: "6px 14px",
-  border: "1px solid #d1d5db",
-  borderRadius: 6,
-  background: "white",
-  cursor: "pointer",
-  fontSize: 13,
-  color: "#4b5563",
-  transition: "0.2s",
-};
-
-const selectStyle = {
-  padding: "8px 14px",
-  border: "1px solid #d1d5db",
-  borderRadius: 6,
-  fontSize: 14,
-  background: "white",
-  color: "#4b5563",
-  cursor: "pointer",
-};
-
-const filterButtonStyle = {
-  padding: "6px 14px",
-  border: "1px solid #d1d5db",
-  borderRadius: 6,
-  background: "white",
-  cursor: "pointer",
-  fontSize: 13,
-  color: "#4b5563",
-};
 
 const inputStyle = {
   border: "none",
