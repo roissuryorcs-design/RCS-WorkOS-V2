@@ -25,7 +25,6 @@ export default function App() {
 
     if (savedStatuses) {
       const parsed = JSON.parse(savedStatuses);
-      // Pastikan setidaknya ada satu status
       if (Object.keys(parsed).length === 0) {
         setStatuses(defaultStatuses);
       } else {
@@ -157,7 +156,6 @@ export default function App() {
       alert("Cannot delete the last status. At least one status must remain.");
       return;
     }
-    // Ubah item dengan status ini ke status pertama yang tersisa (selain yang dihapus)
     const remainingStatus = currentKeys.find(k => k !== name) || "Default";
     const newItems = items.map((it) =>
       it.status === name ? { ...it, status: remainingStatus } : it
@@ -220,10 +218,10 @@ export default function App() {
         <Toolbar
           search={search}
           onSearchChange={setSearch}
-          onAddItem={() => {
-            const firstGroup = allGroups[0] || "Target & PLANNING";
-            addItem(firstGroup);
-          }}
+          onAddGroup={addGroup}
+          onUndo={undo}
+          onExport={exportData}
+          canUndo={history.length > 0}
         />
 
         <BoardTable
@@ -244,15 +242,8 @@ export default function App() {
             Done: <strong style={{ color: "#22c55e" }}>{doneItems}</strong> | Pending:{" "}
             <strong style={{ color: "#f59e0b" }}>{pendingItems}</strong>
           </div>
-          <div style={{ display: "flex", gap: 8 }}>
-            <button className="footer-btn" onClick={() => {
-              const firstGroup = allGroups[0] || "Target & PLANNING";
-              addItem(firstGroup);
-            }}>Add</button>
-            <button className="footer-btn" onClick={undo} disabled={history.length === 0}>
-              Undo
-            </button>
-            <button className="footer-btn" onClick={exportData}>Export</button>
+          <div>
+            <span style={{ color: "#9ca3af" }}>💾</span> Saved
           </div>
         </div>
       </div>
