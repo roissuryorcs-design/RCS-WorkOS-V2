@@ -12,7 +12,18 @@ export default function Toolbar({
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <div className="toolbar">
+    <div 
+      className="toolbar"
+      style={{
+        position: "sticky",
+        top: 0,
+        zIndex: 50,
+        background: "var(--bg-secondary)",
+        padding: "8px 0",
+        borderBottom: "1px solid var(--border-color)",
+        marginBottom: 16,
+      }}
+    >
       <input
         className="toolbar-search"
         placeholder="🔍 Search items..."
