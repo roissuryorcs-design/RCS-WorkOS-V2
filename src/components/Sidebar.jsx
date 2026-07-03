@@ -7,7 +7,6 @@ export default function Sidebar({ favorites, onAddFavorite, onRemoveFavorite }) 
         <span className="sidebar-logo">📊 RCS WorkOS</span>
       </div>
 
-      {/* Navigation Menu */}
       <div className="nav-section">
         <div className="nav-item active">🏠 Home</div>
         <div className="nav-item">📋 My work</div>
@@ -15,26 +14,17 @@ export default function Sidebar({ favorites, onAddFavorite, onRemoveFavorite }) 
         <div className="nav-item">🤖 monday AI</div>
       </div>
 
-      {/* Favorites */}
       <div className="sidebar-section">
         <div className="section-title">FAVORITES</div>
         {favorites.map((fav, idx) => (
           <div key={idx} className="favorite-item">
             <span>📁 {fav}</span>
-            <button
-              onClick={() => onRemoveFavorite(idx)}
-              className="favorite-remove-btn"
-            >
-              ✕
-            </button>
+            <button onClick={() => onRemoveFavorite(idx)} className="favorite-remove-btn">✕</button>
           </div>
         ))}
-        <div onClick={onAddFavorite} className="add-favorite-btn">
-          + Add favorites
-        </div>
+        <div onClick={onAddFavorite} className="add-favorite-btn">+ Add favorites</div>
       </div>
 
-      {/* FOREL FPSO Project */}
       <div className="sidebar-section">
         <div className="section-title">FOREL FPSO</div>
         <div className="nav-item">📁 Engineering</div>
@@ -49,7 +39,6 @@ export default function Sidebar({ favorites, onAddFavorite, onRemoveFavorite }) 
         <div className="sub-item">• O&M</div>
       </div>
 
-      {/* MORE */}
       <div className="sidebar-section">
         <div className="section-title">MORE</div>
         <div className="nav-item">Monday AI</div>
