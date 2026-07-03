@@ -2,9 +2,16 @@
   display: flex;
   gap: 12px;
   align-items: center;
-  margin-bottom: 16px;
   flex-wrap: wrap;
-  padding: 4px 0;
+  /* Sticky sudah diatur di inline style, tapi biarkan sebagai fallback */
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--bg-secondary);
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 16px;
+  transition: background 0.3s ease, border-color 0.3s ease;
 }
 
 .toolbar-search {
