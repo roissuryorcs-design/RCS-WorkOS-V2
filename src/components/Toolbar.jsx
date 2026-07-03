@@ -12,19 +12,7 @@ export default function Toolbar({
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <div 
-      className="toolbar"
-      style={{
-        position: "sticky",
-        top: 0,
-        zIndex: 50, // Lebih tinggi dari header (40)
-        background: "var(--bg-secondary)",
-        padding: "8px 0",
-        borderBottom: "1px solid var(--border-color)",
-        marginBottom: 16,
-        backdropFilter: "blur(4px)",
-      }}
-    >
+    <div className="toolbar">
       <input
         className="toolbar-search"
         placeholder="🔍 Search items..."
@@ -55,16 +43,6 @@ export default function Toolbar({
       <button
         onClick={toggleTheme}
         className="toolbar-theme-btn"
-        style={{
-          padding: "6px 14px",
-          background: "var(--bg-hover)",
-          color: "var(--text-secondary)",
-          border: "1px solid var(--border-color)",
-          borderRadius: 4,
-          cursor: "pointer",
-          fontSize: 13,
-          transition: "0.2s",
-        }}
       >
         {theme === "light" ? "🌙 Dark" : "☀️ Light"}
       </button>
