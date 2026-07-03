@@ -1,10 +1,36 @@
+import { useTheme } from "../context/ThemeContext";
 import "../css/sidebar.css";
 
 export default function Sidebar({ favorites, onAddFavorite, onRemoveFavorite }) {
+  const { theme, toggleTheme } = useTheme();
+
   return (
     <div className="sidebar">
       <div className="sidebar-header">
         <span className="sidebar-logo">📊 RCS WorkOS</span>
+      </div>
+
+      {/* TOGGLE DARK MODE */}
+      <div className="sidebar-toggle">
+        <button
+          onClick={toggleTheme}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            background: "none",
+            border: "1px solid var(--border-color)",
+            borderRadius: 4,
+            padding: "4px 10px",
+            cursor: "pointer",
+            color: "var(--text-secondary)",
+            fontSize: 13,
+            width: "100%",
+            justifyContent: "center",
+          }}
+        >
+          {theme === "light" ? "🌙 Dark Mode" : "☀️ Light Mode"}
+        </button>
       </div>
 
       <div className="nav-section">
