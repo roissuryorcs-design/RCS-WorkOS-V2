@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 
 export default function App() {
   // ✅ LOAD FROM LOCALSTORAGE
@@ -13,7 +13,7 @@ export default function App() {
             document: "",
             people: "Done",
             status: "",
-            dueDate: "dd/mm/tttt",
+            dueDate: "dd/mm/tTTT",
             rev: "R0",
           },
           {
@@ -22,25 +22,25 @@ export default function App() {
             document: "",
             people: "Done",
             status: "",
-            dueDate: "dd/mm/tttt",
+            dueDate: "dd/mm/tTTT",
             rev: "R0",
           },
           {
             id: 3,
             item: "General Arrangement",
-            document: "ID-F-FT-NN1-GAD-FP-0",
+            document: "ID-F-PT-NN1-GAD-FP-0",
             people: "RS",
             status: "",
-            dueDate: "",
+            dueDate: "01/07/2026",
             rev: "R1",
           },
           {
             id: 4,
-            item: "HVAC Room Arrangement",
+            item: "HVAC Room Arrangement DI",
             document: "P2104-V-D-GSHD-ME-GA",
             people: "Done",
             status: "",
-            dueDate: "",
+            dueDate: "dd/mm/tTTT",
             rev: "R0",
           },
           {
@@ -49,16 +49,25 @@ export default function App() {
             document: "",
             people: "Done",
             status: "",
-            dueDate: "dd/mm/tttt",
+            dueDate: "dd/mm/tTTT",
             rev: "R0",
           },
           {
             id: 6,
-            item: "HVAC System Layout",
+            item: "HVAC System Layout Drawir",
             document: "P2104-V-D-GSHD-ME-LA",
             people: "Done",
             status: "",
-            dueDate: "",
+            dueDate: "dd/mm/tTTT",
+            rev: "R0",
+          },
+          {
+            id: 7,
+            item: "HVAC System Layout Drawir",
+            document: "P2104-V-D-GSHD-ME-LA",
+            people: "Done",
+            status: "",
+            dueDate: "dd/mm/tTTT",
             rev: "R0",
           },
         ];
@@ -69,66 +78,35 @@ export default function App() {
     localStorage.setItem("forelItems", JSON.stringify(items));
   }, [items]);
 
-  const [search, setSearch] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("All");
-
   const updateItem = (id, field, value) => {
     setItems((prev) =>
       prev.map((item) => (item.id === id ? { ...item, [field]: value } : item))
     );
   };
 
-  const addItem = () => {
-    setItems([
-      ...items,
-      {
-        id: Date.now(),
-        item: "New Item",
-        document: "",
-        people: "",
-        status: "",
-        dueDate: "",
-        rev: "",
-      },
-    ]);
-  };
-
   const deleteItem = (id) => {
     setItems(items.filter((item) => item.id !== id));
   };
 
-  // FILTER SYSTEM
-  const filtered = useMemo(() => {
-    return items.filter((item) => {
-      const matchSearch =
-        item.item.toLowerCase().includes(search.toLowerCase()) ||
-        item.document.toLowerCase().includes(search.toLowerCase()) ||
-        item.people.toLowerCase().includes(search.toLowerCase());
-
-      return matchSearch;
-    });
-  }, [items, search]);
-
   // Calculate statistics
-  const totalItems = filtered.length;
-  const doneItems = filtered.filter((item) => item.people === "Done").length;
+  const totalItems = items.length;
+  const doneItems = items.filter((item) => item.people === "Done").length;
   const pendingItems = totalItems - doneItems;
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", fontFamily: "Arial, sans-serif", background: "#f0f2f5" }}>
+    <div style={{ display: "flex", minHeight: "100vh", fontFamily: "Arial, sans-serif", background: "#f5f6f8" }}>
       {/* SIDEBAR */}
       <div
         style={{
           width: 220,
           background: "#ffffff",
-          padding: "20px 16px",
+          padding: "24px 16px",
           borderRight: "1px solid #e5e7eb",
           flexShrink: 0,
-          display: "flex",
-          flexDirection: "column",
           height: "100vh",
           position: "sticky",
           top: 0,
+          overflowY: "auto",
         }}
       >
         <h2 style={{ fontSize: 18, fontWeight: 600, color: "#1a1a2e", marginBottom: 24 }}>
@@ -136,7 +114,7 @@ export default function App() {
         </h2>
 
         {/* PROJECT SECTION */}
-        <div style={{ flex: 1 }}>
+        <div style={{ marginBottom: 24 }}>
           <p
             style={{
               fontSize: 11,
@@ -147,10 +125,10 @@ export default function App() {
               textTransform: "uppercase",
             }}
           >
-            Project
+            PROJECT
           </p>
 
-          <div style={{ marginBottom: 16 }}>
+          <div style={{ marginBottom: 12 }}>
             <div style={{ fontSize: 13, fontWeight: 500, color: "#1a1a2e", marginBottom: 4 }}>
               Engineering
             </div>
@@ -171,24 +149,22 @@ export default function App() {
             </div>
           </div>
 
-          <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 13, fontWeight: 500, color: "#1a1a2e", marginBottom: 4 }}>
-              Commissioning
-            </div>
-            <div style={{ paddingLeft: 16, fontSize: 12, color: "#4b5563", marginBottom: 2 }}>
-              • FAT
-            </div>
-            <div style={{ paddingLeft: 16, fontSize: 12, color: "#4b5563", marginBottom: 2 }}>
-              • SAT
-            </div>
-            <div style={{ paddingLeft: 16, fontSize: 12, color: "#4b5563", marginBottom: 2 }}>
-              • O&M
-            </div>
+          <div style={{ fontSize: 13, fontWeight: 500, color: "#1a1a2e", marginBottom: 4 }}>
+            Commissioning
+          </div>
+          <div style={{ paddingLeft: 16, fontSize: 12, color: "#4b5563", marginBottom: 2 }}>
+            • FAT
+          </div>
+          <div style={{ paddingLeft: 16, fontSize: 12, color: "#4b5563", marginBottom: 2 }}>
+            • SAT
+          </div>
+          <div style={{ paddingLeft: 16, fontSize: 12, color: "#4b5563", marginBottom: 2 }}>
+            • O&M
           </div>
         </div>
 
         {/* FAVORITES */}
-        <div style={{ marginTop: "auto", paddingTop: 16, borderTop: "1px solid #e5e7eb" }}>
+        <div style={{ marginBottom: 24 }}>
           <p
             style={{
               fontSize: 11,
@@ -215,10 +191,32 @@ export default function App() {
             + Add favorites
           </div>
         </div>
+
+        {/* MORE */}
+        <div>
+          <p
+            style={{
+              fontSize: 11,
+              fontWeight: 600,
+              color: "#9ca3af",
+              letterSpacing: "0.5px",
+              marginBottom: 8,
+              textTransform: "uppercase",
+            }}
+          >
+            MORE
+          </p>
+          <div style={{ fontSize: 13, color: "#4b5563", marginBottom: 4 }}>
+            Monday AI
+          </div>
+          <div style={{ fontSize: 13, color: "#4b5563", marginBottom: 4 }}>
+            Automate
+          </div>
+        </div>
       </div>
 
       {/* MAIN CONTENT */}
-      <div style={{ flex: 1, padding: "20px 32px", maxWidth: "calc(100% - 220px)" }}>
+      <div style={{ flex: 1, padding: "24px 32px", background: "#ffffff" }}>
         {/* HEADER */}
         <div style={{ marginBottom: 20 }}>
           <h1 style={{ fontSize: 22, fontWeight: 600, color: "#1a1a2e" }}>
@@ -229,98 +227,8 @@ export default function App() {
           </p>
         </div>
 
-        {/* SEARCH BAR */}
-        <div
-          style={{
-            display: "flex",
-            gap: 12,
-            marginBottom: 20,
-            alignItems: "center",
-          }}
-        >
-          <input
-            placeholder="Search items..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            style={{
-              padding: "6px 12px",
-              border: "1px solid #d1d5db",
-              borderRadius: 4,
-              fontSize: 13,
-              width: 200,
-              background: "white",
-            }}
-          />
-
-          <select
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-            style={{
-              padding: "6px 12px",
-              border: "1px solid #d1d5db",
-              borderRadius: 4,
-              fontSize: 13,
-              background: "white",
-              cursor: "pointer",
-            }}
-          >
-            <option value="All">All Categories</option>
-            <option value="Engineering">Engineering</option>
-          </select>
-
-          <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
-            <button
-              onClick={addItem}
-              style={{
-                padding: "6px 14px",
-                background: "#3b82f6",
-                color: "white",
-                border: "none",
-                borderRadius: 4,
-                cursor: "pointer",
-                fontSize: 13,
-              }}
-            >
-              + Add
-            </button>
-            <button
-              style={{
-                padding: "6px 14px",
-                background: "transparent",
-                color: "#6b7280",
-                border: "1px solid #d1d5db",
-                borderRadius: 4,
-                cursor: "pointer",
-                fontSize: 13,
-              }}
-            >
-              ↩ Undo
-            </button>
-            <button
-              style={{
-                padding: "6px 14px",
-                background: "transparent",
-                color: "#6b7280",
-                border: "1px solid #d1d5db",
-                borderRadius: 4,
-                cursor: "pointer",
-                fontSize: 13,
-              }}
-            >
-              📤 Export
-            </button>
-          </div>
-        </div>
-
         {/* TABLE */}
-        <div
-          style={{
-            background: "white",
-            borderRadius: 8,
-            overflow: "hidden",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
-          }}
-        >
+        <div style={{ overflowX: "auto" }}>
           <table width="100%" cellPadding="0" style={{ borderCollapse: "collapse" }}>
             <thead>
               <tr
@@ -329,38 +237,30 @@ export default function App() {
                   fontSize: 12,
                   color: "#6b7280",
                   fontWeight: 600,
-                  borderBottom: "1px solid #e5e7eb",
+                  borderBottom: "2px solid #e5e7eb",
                   textTransform: "uppercase",
                   letterSpacing: "0.3px",
-                  background: "#f9fafb",
                 }}
               >
-                <th style={{ padding: "10px 12px", width: "22%" }}>Item</th>
-                <th style={{ padding: "10px 12px", width: "28%" }}>No. Document</th>
-                <th style={{ padding: "10px 12px", width: "15%" }}>People</th>
-                <th style={{ padding: "10px 12px", width: "15%" }}>Status</th>
-                <th style={{ padding: "10px 12px", width: "15%" }}>Due Date</th>
-                <th style={{ padding: "10px 12px", width: "10%" }}>Rev</th>
-                <th style={{ padding: "10px 12px", width: "5%", textAlign: "center" }}></th>
+                <th style={{ padding: "10px 8px", width: "22%" }}>ITEM</th>
+                <th style={{ padding: "10px 8px", width: "28%" }}>NO. DOCUMENT</th>
+                <th style={{ padding: "10px 8px", width: "15%" }}>PEOPLE</th>
+                <th style={{ padding: "10px 8px", width: "15%" }}>STATUS</th>
+                <th style={{ padding: "10px 8px", width: "15%" }}>DUE DATE</th>
+                <th style={{ padding: "10px 8px", width: "10%" }}>REV</th>
+                <th style={{ padding: "10px 8px", width: "5%", textAlign: "center" }}></th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map((item, index) => (
+              {items.map((item, index) => (
                 <tr
                   key={item.id}
                   style={{
-                    borderBottom: index === filtered.length - 1 ? "none" : "1px solid #f3f4f6",
-                    transition: "0.15s",
+                    borderBottom: index === items.length - 1 ? "none" : "1px solid #f3f4f6",
                     fontSize: 13,
                   }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.background = "#f9fafb")
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.background = "white")
-                  }
                 >
-                  <td style={{ padding: "8px 12px" }}>
+                  <td style={{ padding: "8px 8px" }}>
                     <input
                       value={item.item}
                       onChange={(e) =>
@@ -374,7 +274,7 @@ export default function App() {
                     />
                   </td>
 
-                  <td style={{ padding: "8px 12px" }}>
+                  <td style={{ padding: "8px 8px" }}>
                     <input
                       value={item.document}
                       onChange={(e) =>
@@ -384,7 +284,7 @@ export default function App() {
                     />
                   </td>
 
-                  <td style={{ padding: "8px 12px" }}>
+                  <td style={{ padding: "8px 8px" }}>
                     <input
                       value={item.people}
                       onChange={(e) =>
@@ -394,7 +294,7 @@ export default function App() {
                     />
                   </td>
 
-                  <td style={{ padding: "8px 12px" }}>
+                  <td style={{ padding: "8px 8px" }}>
                     <input
                       value={item.status}
                       onChange={(e) =>
@@ -404,7 +304,7 @@ export default function App() {
                     />
                   </td>
 
-                  <td style={{ padding: "8px 12px" }}>
+                  <td style={{ padding: "8px 8px" }}>
                     <input
                       value={item.dueDate}
                       onChange={(e) =>
@@ -414,7 +314,7 @@ export default function App() {
                     />
                   </td>
 
-                  <td style={{ padding: "8px 12px" }}>
+                  <td style={{ padding: "8px 8px" }}>
                     <input
                       value={item.rev}
                       onChange={(e) =>
@@ -424,7 +324,7 @@ export default function App() {
                     />
                   </td>
 
-                  <td style={{ padding: "8px 12px", textAlign: "center" }}>
+                  <td style={{ padding: "8px 8px", textAlign: "center" }}>
                     <button
                       onClick={() => deleteItem(item.id)}
                       style={{
@@ -451,9 +351,10 @@ export default function App() {
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            marginTop: 12,
-            padding: "8px 4px",
-            fontSize: 12,
+            marginTop: 16,
+            paddingTop: 12,
+            borderTop: "1px solid #e5e7eb",
+            fontSize: 13,
             color: "#6b7280",
           }}
         >
@@ -462,9 +363,6 @@ export default function App() {
           </div>
           <div>
             Done: <strong style={{ color: "#22c55e" }}>{doneItems}</strong> | Pending: <strong style={{ color: "#f59e0b" }}>{pendingItems}</strong>
-          </div>
-          <div>
-            <span style={{ color: "#9ca3af" }}>💾 Saved</span>
           </div>
         </div>
       </div>
