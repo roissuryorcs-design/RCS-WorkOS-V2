@@ -1,6 +1,6 @@
 .toolbar-sticky {
   position: sticky;
-  top: 60px; /* Sesuai tinggi header (56-60px) */
+  top: 56px; /* Sesuai tinggi header */
   z-index: 99;
   background: var(--bg-secondary);
   border-bottom: 2px solid var(--border-color);
@@ -41,7 +41,8 @@
 
 .toolbar-undo-btn,
 .toolbar-export-btn,
-.toolbar-theme-btn {
+.toolbar-theme-btn,
+.toolbar-column-btn {
   padding: 6px 14px;
   background: var(--btn-secondary-bg);
   color: var(--btn-secondary-text);
@@ -54,7 +55,8 @@
 
 .toolbar-undo-btn:hover:not(:disabled),
 .toolbar-export-btn:hover,
-.toolbar-theme-btn:hover {
+.toolbar-theme-btn:hover,
+.toolbar-column-btn:hover {
   background: var(--bg-hover);
 }
 
