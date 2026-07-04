@@ -1,4 +1,5 @@
 import { useTheme } from "../context/ThemeContext";
+import { useColumns } from "../context/ColumnContext";
 import "../css/toolbar.css";
 
 export default function Toolbar({
@@ -10,6 +11,14 @@ export default function Toolbar({
   canUndo,
 }) {
   const { theme, toggleTheme } = useTheme();
+  const { addColumn } = useColumns();
+
+  const handleAddColumn = () => {
+    const name = prompt("Enter column name:");
+    if (name && name.trim()) {
+      addColumn(name.trim());
+    }
+  };
 
   return (
     <div className="toolbar-sticky">
@@ -22,6 +31,11 @@ export default function Toolbar({
 
       <button className="toolbar-add-btn" onClick={onAddGroup}>
         + Add new group
+      </button>
+
+      {/* Tombol Add Column */}
+      <button className="toolbar-column-btn" onClick={handleAddColumn}>
+        + Add Column
       </button>
 
       <button
@@ -40,10 +54,7 @@ export default function Toolbar({
         📤 Export
       </button>
 
-      <button
-        onClick={toggleTheme}
-        className="toolbar-theme-btn"
-      >
+      <button onClick={toggleTheme} className="toolbar-theme-btn">
         {theme === "light" ? "🌙 Dark" : "☀️ Light"}
       </button>
     </div>
