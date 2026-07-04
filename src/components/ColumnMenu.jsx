@@ -19,6 +19,7 @@ export default function ColumnMenu({
   }, [isRenaming]);
 
   const handleRename = () => {
+    console.log("Rename column:", column.id, "to:", newLabel); // ← DEBUG
     if (newLabel.trim()) {
       onRename(column.id, newLabel.trim());
     }
@@ -133,6 +134,7 @@ export default function ColumnMenu({
                 </button>
                 <button
                   onClick={() => {
+                    console.log("Toggle visibility for:", column.id); // ← DEBUG
                     onToggle(column.id);
                     onClose();
                   }}
@@ -142,6 +144,7 @@ export default function ColumnMenu({
                 </button>
                 <button
                   onClick={() => {
+                    console.log("Delete column:", column.id); // ← DEBUG
                     if (confirm(`Delete column "${column.label}"?`)) {
                       onDelete(column.id);
                     }
@@ -185,9 +188,4 @@ const menuButtonStyle = {
   cursor: "pointer",
   fontSize: 13,
   color: "var(--text-primary)",
-};
-
-// Tambahkan hover style
-menuButtonStyle[":hover"] = {
-  background: "var(--bg-hover)",
 };
