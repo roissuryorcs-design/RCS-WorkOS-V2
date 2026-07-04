@@ -11,12 +11,26 @@ export default function Toolbar({
   canUndo,
 }) {
   const { theme, toggleTheme } = useTheme();
-  const { addColumn } = useColumns();
+  const { addColumn, columns, toggleColumn } = useColumns();
 
   const handleAddColumn = () => {
     const name = prompt("Enter column name:");
     if (name && name.trim()) {
       addColumn(name.trim());
+    }
+  };
+
+  const handleManageColumns = () => {
+    const hiddenCols = columns.filter(c => !c.visible && c.id !== 'action');
+    if (hiddenCols.length === 0) {
+      alert("All columns are visible.");
+      return;
+    }
+    const choices = hiddenCols.map((c, i) => `${i+1}. ${c.label}`).join('\n');
+    const input = prompt(`Hidden columns:\n${choices}\n\nEnter number to show:`);
+    const idx = parseInt(input) - 1;
+    if (!isNaN(idx) && idx >= 0 && idx < hiddenCols.length) {
+      toggleColumn(hiddenCols[idx].id);
     }
   };
 
@@ -33,9 +47,12 @@ export default function Toolbar({
         + Add new group
       </button>
 
-      {/* Tombol Add Column */}
       <button className="toolbar-column-btn" onClick={handleAddColumn}>
         + Add Column
+      </button>
+
+      <button className="toolbar-column-btn" onClick={handleManageColumns}>
+        📋 Manage Columns
       </button>
 
       <button
