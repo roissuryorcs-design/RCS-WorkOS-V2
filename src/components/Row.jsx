@@ -1,6 +1,13 @@
 import StatusCell from "./StatusCell";
 
-export default function Row({ item, statuses, groupColor, onUpdate, onDelete }) {
+export default function Row({
+  item,
+  statuses,
+  groupColor,
+  visibleColumns,
+  onUpdate,
+  onDelete,
+}) {
   const inputStyle = {
     border: "none",
     background: "transparent",
@@ -12,60 +19,9 @@ export default function Row({ item, statuses, groupColor, onUpdate, onDelete }) 
     fontFamily: "Arial, sans-serif",
   };
 
-  return (
-    <tr
-      style={{
-        borderBottom: "2px solid var(--border-color)",
-        fontSize: 13,
-        background: "var(--bg-secondary)",
-        borderLeft: `4px solid ${groupColor}`, // BORDER KIRI PER BARIS
-      }}
-      onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-hover)")}
-      onMouseLeave={(e) => (e.currentTarget.style.background = "var(--bg-secondary)")}
-    >
-      <td style={{ padding: "6px 8px", borderRight: "2px solid var(--border-color)" }}>
-        <input
-          value={item.item}
-          onChange={(e) => onUpdate("item", e.target.value)}
-          style={inputStyle}
-        />
-      </td>
-      <td style={{ padding: "6px 8px", borderRight: "2px solid var(--border-color)" }}>
-        <input
-          value={item.document}
-          onChange={(e) => onUpdate("document", e.target.value)}
-          style={inputStyle}
-        />
-      </td>
-      <td style={{ padding: "6px 8px", borderRight: "2px solid var(--border-color)" }}>
-        <input
-          value={item.people}
-          onChange={(e) => onUpdate("people", e.target.value)}
-          style={inputStyle}
-        />
-      </td>
-      <td style={{ padding: "6px 8px", borderRight: "2px solid var(--border-color)" }}>
-        <StatusCell
-          status={item.status}
-          statuses={statuses}
-          onChange={(val) => onUpdate("status", val)}
-        />
-      </td>
-      <td style={{ padding: "6px 8px", borderRight: "2px solid var(--border-color)" }}>
-        <input
-          value={item.dueDate}
-          onChange={(e) => onUpdate("dueDate", e.target.value)}
-          style={inputStyle}
-        />
-      </td>
-      <td style={{ padding: "6px 8px", borderRight: "2px solid var(--border-color)" }}>
-        <input
-          value={item.rev}
-          onChange={(e) => onUpdate("rev", e.target.value)}
-          style={inputStyle}
-        />
-      </td>
-      <td style={{ padding: "6px 8px", textAlign: "center" }}>
+  const renderCell = (col) => {
+    if (col.id === "action") {
+      return (
         <button
           onClick={onDelete}
           style={{
@@ -78,7 +34,57 @@ export default function Row({ item, statuses, groupColor, onUpdate, onDelete }) 
         >
           ✕
         </button>
-      </td>
+      );
+    }
+
+    if (col.id === "status") {
+      return (
+        <StatusCell
+          status={item.status}
+          statuses={statuses}
+          onChange={(val) => onUpdate("status", val)}
+        />
+      );
+    }
+
+    const value = item[col.id] !== undefined ? item[col.id] : "";
+    return (
+      <input
+        value={value}
+        onChange={(e) => onUpdate(col.id, e.target.value)}
+        style={inputStyle}
+        placeholder={col.label}
+      />
+    );
+  };
+
+  return (
+    <tr
+      style={{
+        borderBottom: "2px solid var(--border-color)",
+        fontSize: 13,
+        background: "var(--bg-secondary)",
+        borderLeft: `4px solid ${groupColor}`,
+      }}
+      onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-hover)")}
+      onMouseLeave={(e) => (e.currentTarget.style.background = "var(--bg-secondary)")}
+    >
+      {visibleColumns.map((col, idx) => {
+        const isLast = idx === visibleColumns.length - 1;
+        return (
+          <td
+            key={col.id}
+            style={{
+              padding: "6px 8px",
+              borderRight: isLast ? "none" : "2px solid var(--border-color)",
+              width: `${col.width}%`,
+              minWidth: 60,
+            }}
+          >
+            {renderCell(col)}
+          </td>
+        );
+      })}
     </tr>
   );
 }
