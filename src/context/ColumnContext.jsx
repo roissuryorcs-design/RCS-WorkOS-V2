@@ -24,6 +24,7 @@ export function ColumnProvider({ children }) {
 
   // Update lebar kolom
   const updateColumnWidth = (id, width) => {
+    console.log("updateColumnWidth:", id, width); // ← DEBUG
     setColumns((prev) =>
       prev.map((col) => (col.id === id ? { ...col, width: Math.max(3, width) } : col))
     );
@@ -31,23 +32,26 @@ export function ColumnProvider({ children }) {
 
   // Tambah kolom baru
   const addColumn = (label) => {
+    console.log("addColumn called with:", label); // ← DEBUG
     if (!label || !label.trim()) return;
     const newId = `col_${Date.now()}`;
     setColumns((prev) => [
-      ...prev.slice(0, -1), // semua kecuali action
+      ...prev.slice(0, -1),
       { id: newId, label: label.trim(), width: 15, visible: true },
-      prev[prev.length - 1], // action tetap di akhir
+      prev[prev.length - 1],
     ]);
   };
 
-  // Hapus kolom (kecuali action)
+  // Hapus kolom
   const deleteColumn = (id) => {
+    console.log("deleteColumn called with:", id); // ← DEBUG
     if (id === "action") return;
     setColumns((prev) => prev.filter((col) => col.id !== id));
   };
 
   // Toggle visibility
   const toggleColumn = (id) => {
+    console.log("toggleColumn called with:", id); // ← DEBUG
     setColumns((prev) =>
       prev.map((col) =>
         col.id === id ? { ...col, visible: !col.visible } : col
@@ -55,8 +59,9 @@ export function ColumnProvider({ children }) {
     );
   };
 
-  // Rename column label
+  // Rename
   const renameColumn = (id, newLabel) => {
+    console.log("renameColumn:", id, "->", newLabel); // ← DEBUG
     if (!newLabel || !newLabel.trim()) return;
     setColumns((prev) =>
       prev.map((col) =>
@@ -65,8 +70,9 @@ export function ColumnProvider({ children }) {
     );
   };
 
-  // REORDER COLUMNS (BARU)
+  // Reorder
   const reorderColumns = (fromIndex, toIndex) => {
+    console.log("reorderColumns: from", fromIndex, "to", toIndex); // ← DEBUG
     if (fromIndex === toIndex) return;
     const newColumns = [...columns];
     const [moved] = newColumns.splice(fromIndex, 1);
@@ -74,8 +80,9 @@ export function ColumnProvider({ children }) {
     setColumns(newColumns);
   };
 
-  // Reset ke default
+  // Reset
   const resetColumns = () => {
+    console.log("resetColumns called"); // ← DEBUG
     setColumns(defaultColumns);
   };
 
@@ -88,7 +95,7 @@ export function ColumnProvider({ children }) {
         deleteColumn,
         toggleColumn,
         renameColumn,
-        reorderColumns, // ← EXPOSE
+        reorderColumns,
         resetColumns,
         visibleColumns: columns.filter((col) => col.visible),
       }}
