@@ -4,7 +4,7 @@
   background: var(--bg-primary);
   font-family: Arial, sans-serif;
   transition: background 0.3s ease;
-  overflow: hidden; /* Biarkan hidden di sini */
+  overflow: hidden;
   position: relative;
 }
 
@@ -13,43 +13,21 @@
   padding: 24px 32px;
   background: var(--bg-secondary);
   transition: background 0.3s ease;
-  /* HAPUS overflow-y: auto di sini */
-  /* Biarkan browser (body) yang menangani scroll */
-  height: 100vh;
-  overflow-y: auto; /* YANG INI DIPAKAI UNTUK SCROLL */
-}
-
-/* Sidebar jangan di-scroll */
-.sidebar {
-  height: 100vh;
-  overflow-y: auto;
+  height: 100vh; /* ← PENTING: agar scroll bekerja */
+  overflow-y: auto; /* ← PENTING: agar scroll bekerja */
   overflow-x: hidden;
 }
 
-/* Sticky Header di dalam main-content */
-.header-sticky {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  background: var(--bg-secondary);
-  border-bottom: 1px solid var(--border-color);
-  padding: 12px 0 8px 0;
-  margin-bottom: 16px;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+/* Scrollbar styling */
+.main-content::-webkit-scrollbar {
+  width: 8px;
 }
-
-/* Toolbar Sticky */
-.toolbar-sticky {
-  position: sticky;
-  top: 60px; /* Sesuai tinggi header (kurang lebih 56-60px) */
-  z-index: 99;
-  background: var(--bg-secondary);
-  border-bottom: 1px solid var(--border-color);
-  padding: 8px 0;
-  margin-bottom: 16px;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+.main-content::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+.main-content::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
 }
 
 .board-footer {
@@ -63,9 +41,7 @@
   color: var(--footer-text);
   flex-wrap: wrap;
   gap: 8px;
-  position: sticky;
-  bottom: 0;
-  background: var(--bg-secondary);
   padding-bottom: 8px;
-  z-index: 30;
 }
+
+/* Sticky Header - dipindahkan ke komponen */
