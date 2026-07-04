@@ -1,6 +1,6 @@
 .toolbar-sticky {
   position: sticky;
-  top: 56px; /* Sesuai tinggi header */
+  top: 56px;
   z-index: 99;
   background: var(--bg-secondary);
   border-bottom: 2px solid var(--border-color);
@@ -34,7 +34,6 @@
   cursor: pointer;
   font-size: 13px;
 }
-
 .toolbar-add-btn:hover {
   background: var(--btn-primary-hover);
 }
