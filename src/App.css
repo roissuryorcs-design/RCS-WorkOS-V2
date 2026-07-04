@@ -10,12 +10,13 @@
 
 .main-content {
   flex: 1;
-  padding: 24px 32px;
+  padding: 0 32px 24px 32px; /* Hapus padding atas, beri padding bawah */
   background: var(--bg-secondary);
   transition: background 0.3s ease;
-  height: 100vh; /* ← PENTING: agar scroll bekerja */
-  overflow-y: auto; /* ← PENTING: agar scroll bekerja */
+  height: 100vh;
+  overflow-y: auto;
   overflow-x: hidden;
+  position: relative;
 }
 
 /* Scrollbar styling */
@@ -42,6 +43,12 @@
   flex-wrap: wrap;
   gap: 8px;
   padding-bottom: 8px;
+  position: sticky;
+  bottom: 0;
+  background: var(--bg-secondary);
+  z-index: 20;
 }
 
-/* Sticky Header - dipindahkan ke komponen */
+.board-table-wrapper {
+  margin-top: 8px;
+}
