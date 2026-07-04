@@ -1,6 +1,21 @@
-// Di App.jsx, hapus atau komentari ColumnManager
-// Karena sekarang menu kolom sudah ada langsung di header tabel
+import { useState, useEffect } from "react";
+import { ThemeProvider } from "./context/ThemeContext";
+import { ColumnProvider } from "./context/ColumnContext";
+import Sidebar from "./components/Sidebar";
+import Header from "./components/Header";
+import Toolbar from "./components/Toolbar";
+import BoardTable from "./components/BoardTable";
+import StatusManager from "./components/StatusManager";
+import "./App.css";
 
-// Hapus import ColumnManager
-// Hapus state showColumnManager
-// Hapus tombol "Manage Columns" dari BoardTable (sudah di dalam header)
+// ... (semua state dan fungsi seperti sebelumnya, tidak diubah)
+
+export default function App() {
+  return (
+    <ThemeProvider>
+      <ColumnProvider> {/* ← PASTIKAN INI ADA */}
+        <AppContent />
+      </ColumnProvider>
+    </ThemeProvider>
+  );
+}
