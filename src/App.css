@@ -1,3 +1,145 @@
+/* ============================================================
+   ROOT & RESET
+   ============================================================ */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+button {
+  font-family: inherit;
+}
+
+input,
+select {
+  font-family: inherit;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  border-color: var(--border-dark);
+}
+
+input:focus,
+select:focus {
+  outline: 2px solid var(--btn-primary-bg);
+  outline-offset: 1px;
+}
+
+/* ============================================================
+   LIGHT THEME (default)
+   ============================================================ */
+:root,
+body.light {
+  --bg-primary: #f5f6f8;
+  --bg-secondary: #ffffff;
+  --bg-sidebar: #f5f6f8;
+  --bg-hover: #e5e7eb;
+  --bg-active: #e5e7eb;
+  --bg-input: #ffffff;
+  --bg-modal: #ffffff;
+  --bg-card: #ffffff;
+
+  --text-primary: #1a1a2e;
+  --text-secondary: #4b5563;
+  --text-muted: #6b7280;
+  --text-light: #9ca3af;
+
+  --border-color: #e5e7eb;
+  --border-light: #f3f4f6;
+  --border-dark: #d1d5db;
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 6px 20px rgba(0, 0, 0, 0.15);
+
+  --btn-primary-bg: #3b82f6;
+  --btn-primary-hover: #2563eb;
+  --btn-primary-text: #ffffff;
+
+  --btn-secondary-bg: transparent;
+  --btn-secondary-border: #d1d5db;
+  --btn-secondary-text: #4b5563;
+
+  --status-todo: #9ca3af;
+  --status-working: #3b82f6;
+  --status-review: #f59e0b;
+  --status-done: #22c55e;
+
+  --footer-text: #6b7280;
+  --footer-border: #e5e7eb;
+}
+
+/* ============================================================
+   DARK THEME
+   ============================================================ */
+body.dark {
+  --bg-primary: #0f1117;
+  --bg-secondary: #1a1d27;
+  --bg-sidebar: #1a1d27;
+  --bg-hover: #2a2d3a;
+  --bg-active: #2a2d3a;
+  --bg-input: #252837;
+  --bg-modal: #1a1d27;
+  --bg-card: #1a1d27;
+
+  --text-primary: #e8edf5;
+  --text-secondary: #b0b8c8;
+  --text-muted: #8a94a6;
+  --text-light: #6b7488;
+
+  --border-color: #2a2d3a;
+  --border-light: #1e212b;
+  --border-dark: #3a3d4a;
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 6px 20px rgba(0, 0, 0, 0.5);
+
+  --btn-primary-bg: #3b82f6;
+  --btn-primary-hover: #60a5fa;
+  --btn-primary-text: #ffffff;
+
+  --btn-secondary-bg: transparent;
+  --btn-secondary-border: #3a3d4a;
+  --btn-secondary-text: #b0b8c8;
+
+  --status-todo: #6b7488;
+  --status-working: #3b82f6;
+  --status-review: #f59e0b;
+  --status-done: #22c55e;
+
+  --footer-text: #8a94a6;
+  --footer-border: #2a2d3a;
+}
+
+/* ============================================================
+   SCROLLBAR DARK MODE
+   ============================================================ */
+body.dark ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+body.dark ::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+body.dark ::-webkit-scrollbar-thumb {
+  background: var(--bg-hover);
+  border-radius: 4px;
+}
+body.dark ::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* ============================================================
+   APP CONTAINER
+   ============================================================ */
 .app-container {
   display: flex;
   min-height: 100vh;
@@ -8,18 +150,24 @@
   position: relative;
 }
 
+/* ============================================================
+   MAIN CONTENT – SCROLL VERTIKAL DI SINI
+   ============================================================ */
 .main-content {
   flex: 1;
-  padding: 0 32px 24px 32px; /* Hapus padding atas, beri padding bawah */
+  padding: 24px 32px;
+  padding-bottom: 0;
   background: var(--bg-secondary);
   transition: background 0.3s ease;
   height: 100vh;
-  overflow-y: auto;
+  overflow-y: auto; /* ← SCROLL VERTIKAL */
   overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
   position: relative;
 }
 
-/* Scrollbar styling */
+/* Scrollbar styling untuk main-content */
 .main-content::-webkit-scrollbar {
   width: 8px;
 }
@@ -31,6 +179,17 @@
   border-radius: 4px;
 }
 
+/* ============================================================
+   BOARD TABLE WRAPPER (untuk horizontal scroll)
+   ============================================================ */
+.board-table-wrapper {
+  flex: 1;
+  min-width: 100%;
+}
+
+/* ============================================================
+   BOARD FOOTER (sticky di bawah)
+   ============================================================ */
 .board-footer {
   display: flex;
   justify-content: space-between;
@@ -47,8 +206,40 @@
   bottom: 0;
   background: var(--bg-secondary);
   z-index: 20;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
-.board-table-wrapper {
-  margin-top: 8px;
+/* ============================================================
+   EMPTY STATE
+   ============================================================ */
+.empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
+  color: var(--text-muted);
+}
+
+.empty-state h3 {
+  font-size: 20px;
+  margin-bottom: 8px;
+  color: var(--text-primary);
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 768px) {
+  .main-content {
+    padding: 16px;
+  }
+
+  .board-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
 }
