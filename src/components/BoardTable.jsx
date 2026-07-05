@@ -39,16 +39,16 @@ export default function BoardTable({
     return acc;
   }, {});
 
-  // Pastikan kolom ITEM selalu ada di visibleColumns
-  const safeVisibleColumns = visibleColumns.length > 0 ? visibleColumns : [
-    { id: "item", label: "ITEM", width: 22, visible: true },
-    { id: "document", label: "NO. DOCUMENT", width: 20, visible: true },
-    { id: "people", label: "PEOPLE", width: 13, visible: true },
-    { id: "status", label: "STATUS", width: 13, visible: true },
-    { id: "dueDate", label: "DUE DATE", width: 13, visible: true },
-    { id: "rev", label: "REV", width: 8, visible: true },
-    { id: "action", label: "", width: 6, visible: true },
-  ];
+  // --- PASTIKAN KOLOM ITEM SELALU ADA ---
+  const safeColumns = (() => {
+    const hasItem = visibleColumns.some((col) => col.id === "item");
+    if (hasItem) return visibleColumns;
+    // Jika ITEM hilang, tambahkan kembali
+    return [
+      { id: "item", label: "ITEM", width: 22, visible: true },
+      ...visibleColumns,
+    ];
+  })();
 
   return (
     <div className="board-table-wrapper">
@@ -180,7 +180,7 @@ export default function BoardTable({
                       border: "2px solid var(--border-color)",
                       borderRadius: 4,
                       borderLeft: `4px solid ${groupColor}`,
-                      tableLayout: "fixed", // ← PENTING UNTUK RESIZE
+                      tableLayout: "fixed",
                     }}
                   >
                     <thead>
@@ -195,12 +195,12 @@ export default function BoardTable({
                           letterSpacing: "0.3px",
                         }}
                       >
-                        {safeVisibleColumns.map((col, idx) => (
+                        {safeColumns.map((col, idx) => (
                           <ResizableHeader
                             key={col.id}
                             column={col}
                             index={idx}
-                            totalColumns={safeVisibleColumns.length}
+                            totalColumns={safeColumns.length}
                             onResize={updateColumnWidth}
                             onRename={renameColumn}
                             onToggle={toggleColumn}
@@ -219,7 +219,7 @@ export default function BoardTable({
                           item={item}
                           statuses={statuses}
                           groupColor={groupColor}
-                          visibleColumns={safeVisibleColumns}
+                          visibleColumns={safeColumns}
                           onUpdate={(field, value) => onUpdateItem(item.id, field, value)}
                           onDelete={() => onDeleteItem(item.id)}
                         />
