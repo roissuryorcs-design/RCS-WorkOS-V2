@@ -98,7 +98,9 @@ function AppContent() {
 
   // ----- CRUD ITEM -----
   const updateItem = (id, field, value) => {
-    const newItems = items.map((it) => it.id === id ? { ...it, [field]: value } : it);
+    const newItems = items.map((it) =>
+      it.id === id ? { ...it, [field]: value } : it
+    );
     saveHistory(newItems);
   };
 
@@ -180,7 +182,9 @@ function AppContent() {
       return;
     }
     const remainingStatus = currentKeys.find((k) => k !== name) || "Default";
-    const newItems = items.map((it) => it.status === name ? { ...it, status: remainingStatus } : it);
+    const newItems = items.map((it) =>
+      it.status === name ? { ...it, status: remainingStatus } : it
+    );
     const newStatuses = { ...statuses };
     delete newStatuses[name];
     setStatuses(newStatuses);
@@ -222,7 +226,9 @@ function AppContent() {
   // ----- STATS -----
   const totalItems = filteredItems.length;
   const hasDoneStatus = Object.keys(statuses).includes("Done");
-  const doneItems = hasDoneStatus ? filteredItems.filter((it) => it.status === "Done").length : 0;
+  const doneItems = hasDoneStatus
+    ? filteredItems.filter((it) => it.status === "Done").length
+    : 0;
   const pendingItems = totalItems - doneItems;
   const allGroups = [...new Set(items.map((item) => item.group))];
 
@@ -247,7 +253,7 @@ function AppContent() {
           canUndo={history.length > 0}
         />
 
-        {/* CONTAINER SCROLL HORIZONTAL DENGAN FOOTER STICKY DI DALAM */}
+        {/* CONTAINER SCROLL HORIZONTAL – hanya horizontal, vertikal tidak terpengaruh */}
         <div
           style={{
             overflowX: "auto",
@@ -259,7 +265,6 @@ function AppContent() {
             background: "var(--bg-secondary)",
           }}
         >
-          {/* WRAPPER KONTEN (agar footer mengikuti lebar tabel) */}
           <div style={{ display: "table", width: "100%" }}>
             <BoardTable
               items={filteredItems}
@@ -276,7 +281,7 @@ function AppContent() {
             />
           </div>
 
-          {/* FOOTER STICKY DI BAWAH – IKUT SCROLL HORIZONTAL */}
+          {/* FOOTER STICKY DI BAWAH */}
           <div
             style={{
               position: "sticky",
