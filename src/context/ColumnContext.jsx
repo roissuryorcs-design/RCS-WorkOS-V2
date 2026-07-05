@@ -17,7 +17,6 @@ export function ColumnProvider({ children }) {
     const saved = localStorage.getItem("forelColumns");
     if (saved) {
       const parsed = JSON.parse(saved);
-      // Pastikan ITEM dan ACTION selalu ada
       const hasItem = parsed.some((c) => c.id === "item");
       const hasAction = parsed.some((c) => c.id === "action");
       let result = [...parsed];
