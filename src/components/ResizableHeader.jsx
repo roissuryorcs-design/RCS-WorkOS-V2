@@ -13,7 +13,7 @@ export default function ResizableHeader({
   children,
   isSticky = false,
   stickyLeft = 0,
-  isLast = false, // ← tambahan
+  isLast = false,
 }) {
   const [width, setWidth] = useState(column.width);
   const [isResizing, setIsResizing] = useState(false);
@@ -137,15 +137,15 @@ export default function ResizableHeader({
   }, [column.width]);
 
   // ============================================================
-  // STICKY
+  // STICKY – dengan border dan z-index tinggi
   // ============================================================
   const stickyStyle = isSticky
     ? {
         position: "sticky",
         left: stickyLeft || 0,
-        zIndex: 11,
+        zIndex: 12, // ← sama dengan checkbox agar border di atas
         background: "var(--bg-secondary)",
-        borderRight: "2px solid var(--border-color)", // ← border sticky
+        borderRight: "2px solid var(--border-color)", // ← border tetap terlihat
       }
     : {};
 
@@ -166,7 +166,7 @@ export default function ResizableHeader({
         minWidth: 40,
         maxWidth: `${width}px`,
         padding: "8px 8px",
-        borderRight: isLast ? "none" : "2px solid var(--border-color)", // ← PERUBAHAN UTAMA
+        borderRight: isLast ? "none" : "2px solid var(--border-color)",
         position: "relative",
         userSelect: "none",
         cursor: isResizingRef.current ? "col-resize" : "default",
