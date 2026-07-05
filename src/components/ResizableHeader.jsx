@@ -24,7 +24,7 @@ export default function ResizableHeader({
   const isLast = index === totalColumns - 1;
 
   // ============================================================
-  // RESIZE (Perbaikan)
+  // RESIZE (Perbaikan Total - Pakai px)
   // ============================================================
   const handleResizeMouseDown = (e) => {
     e.stopPropagation();
@@ -34,6 +34,7 @@ export default function ResizableHeader({
     // Nonaktifkan drag sementara
     if (thRef.current) {
       thRef.current.draggable = false;
+      thRef.current.style.userSelect = "none";
     }
     
     setIsResizing(true);
@@ -51,9 +52,11 @@ export default function ResizableHeader({
     const diff = e.clientX - startXRef.current;
     const newWidthPx = Math.max(40, startWidthRef.current + diff);
     
-    // Hitung ulang dalam persen
+    // Hitung dalam persen berdasarkan parent
     const parentWidth = thRef.current?.parentElement?.offsetWidth || 800;
-    const newWidthPercent = (newWidthPx / parentWidth) * 100;
+    const newWidthPercent = Math.min(50, Math.max(5, (newWidthPx / parentWidth) * 100));
+    
+    console.log(`📐 Resize: ${newWidthPx}px → ${newWidthPercent.toFixed(1)}%`);
     
     setWidth(newWidthPercent);
     onResize(column.id, newWidthPercent);
@@ -65,6 +68,7 @@ export default function ResizableHeader({
     // Aktifkan kembali drag
     if (thRef.current) {
       thRef.current.draggable = true;
+      thRef.current.style.userSelect = "";
     }
     
     document.removeEventListener("mousemove", handleResizeMouseMove);
@@ -72,7 +76,7 @@ export default function ResizableHeader({
   };
 
   // ============================================================
-  // DRAG & DROP (Perbaikan)
+  // DRAG & DROP
   // ============================================================
   const handleDragStart = (e) => {
     if (isAction || isResizing) {
@@ -140,7 +144,6 @@ export default function ResizableHeader({
         onReorder(fromIndex, index);
       }
     } catch (err) {
-      // Fallback
       const fromIndex = parseInt(e.dataTransfer.getData("text/plain"));
       if (!isNaN(fromIndex) && fromIndex !== index) {
         console.log(`🔄 Reordering from ${fromIndex} to ${index} (fallback)`);
@@ -177,10 +180,12 @@ export default function ResizableHeader({
         borderRight: isLast ? "none" : "2px solid var(--border-color)",
         position: "relative",
         minWidth: 60,
+        maxWidth: `${width}%`,
         userSelect: "none",
         cursor: isAction ? "default" : isResizing ? "col-resize" : "grab",
         background: isDragging ? "var(--bg-hover)" : "transparent",
         transition: "background 0.2s, opacity 0.2s, border-color 0.2s",
+        pointerEvents: isResizing ? "auto" : "auto",
       }}
       title={isAction ? "Fixed column" : isResizing ? "Resizing..." : "Drag to reorder"}
     >
@@ -219,26 +224,33 @@ export default function ResizableHeader({
             ⋮
           </button>
 
-          {/* Resize handle */}
+          {/* Resize handle - DIPERBESAR & DIPERJELAS */}
           <div
             onMouseDown={handleResizeMouseDown}
             style={{
               position: "absolute",
-              right: -4,
+              right: -6,
               top: 0,
-              width: 10,
+              width: 12,
               height: "100%",
               cursor: "col-resize",
               background: isResizing ? "var(--btn-primary-bg)" : "transparent",
-              opacity: isResizing ? 0.6 : 0,
+              opacity: isResizing ? 0.8 : 0,
               transition: "opacity 0.2s, background 0.2s",
               borderRadius: 2,
               pointerEvents: "auto",
-              zIndex: 10,
+              zIndex: 20,
+              borderLeft: isResizing ? "2px solid var(--btn-primary-bg)" : "none",
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.opacity = 0.5)}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.opacity = 0.6;
+              e.currentTarget.style.background = "var(--btn-primary-bg)";
+            }}
             onMouseLeave={(e) => {
-              if (!isResizing) e.currentTarget.style.opacity = 0;
+              if (!isResizing) {
+                e.currentTarget.style.opacity = 0;
+                e.currentTarget.style.background = "transparent";
+              }
             }}
           />
         </div>
