@@ -117,7 +117,7 @@ export default function Row({
         );
       })}
 
-      {/* Kolom "+" (padding) */}
+      {/* Kolom "+" padding DENGAN BORDER KIRI */}
       <td
         style={{
           padding: "6px 8px",
@@ -125,6 +125,7 @@ export default function Row({
           minWidth: "50px",
           maxWidth: "50px",
           borderRight: "none",
+          borderLeft: "2px solid var(--border-color)",
           boxSizing: "border-box",
         }}
       />
