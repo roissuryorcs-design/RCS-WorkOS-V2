@@ -21,15 +21,16 @@ export default function ResizableHeader({
   const startWidthRef = useRef(0);
 
   const isAction = column.id === "action";
+  const isItem = column.id === "item"; // ← Kolom ITEM tidak bisa di-delete & drag
   const isLast = index === totalColumns - 1;
 
   // ============================================================
-  // RESIZE (Perbaikan Total - Pakai px)
+  // RESIZE (Perbaikan dengan lebih banyak log)
   // ============================================================
   const handleResizeMouseDown = (e) => {
     e.stopPropagation();
     e.preventDefault();
-    console.log("🟢 Resize started for column:", column.id);
+    console.log("🟢 Resize MOUSE DOWN for column:", column.id);
     
     // Nonaktifkan drag sementara
     if (thRef.current) {
@@ -40,6 +41,7 @@ export default function ResizableHeader({
     setIsResizing(true);
     startXRef.current = e.clientX;
     startWidthRef.current = thRef.current?.getBoundingClientRect().width || 60;
+    console.log("📐 Start width (px):", startWidthRef.current);
     
     document.addEventListener("mousemove", handleResizeMouseMove);
     document.addEventListener("mouseup", handleResizeMouseUp);
@@ -64,6 +66,7 @@ export default function ResizableHeader({
 
   const handleResizeMouseUp = () => {
     setIsResizing(false);
+    console.log("🔴 Resize MOUSE UP for column:", column.id);
     
     // Aktifkan kembali drag
     if (thRef.current) {
@@ -76,11 +79,12 @@ export default function ResizableHeader({
   };
 
   // ============================================================
-  // DRAG & DROP
+  // DRAG & DROP (Kolom ITEM tidak bisa di-drag)
   // ============================================================
   const handleDragStart = (e) => {
-    if (isAction || isResizing) {
+    if (isAction || isResizing || isItem) { // ← ITEM tidak bisa di-drag
       e.preventDefault();
+      console.log(`⛔ Drag blocked for ${column.id}`);
       return;
     }
     console.log("🟢 Drag start for column:", column.id, "index:", index);
@@ -112,7 +116,7 @@ export default function ResizableHeader({
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
     
-    if (thRef.current && !isAction && !isResizing) {
+    if (thRef.current && !isAction && !isResizing && !isItem) {
       thRef.current.style.borderLeft = "3px solid var(--btn-primary-bg)";
       thRef.current.style.background = "var(--bg-hover)";
     }
@@ -165,10 +169,13 @@ export default function ResizableHeader({
   // ============================================================
   // RENDER
   // ============================================================
+  // Cursor: item → default (tidak bisa drag), action → default, lainnya → grab
+  const cursorType = isAction ? "default" : isItem ? "default" : isResizing ? "col-resize" : "grab";
+
   return (
     <th
       ref={thRef}
-      draggable={!isAction && !isResizing}
+      draggable={!isAction && !isResizing && !isItem} // ← ITEM tidak draggable
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
       onDragOver={handleDragOver}
@@ -182,12 +189,12 @@ export default function ResizableHeader({
         minWidth: 60,
         maxWidth: `${width}%`,
         userSelect: "none",
-        cursor: isAction ? "default" : isResizing ? "col-resize" : "grab",
+        cursor: cursorType,
         background: isDragging ? "var(--bg-hover)" : "transparent",
         transition: "background 0.2s, opacity 0.2s, border-color 0.2s",
         pointerEvents: isResizing ? "auto" : "auto",
       }}
-      title={isAction ? "Fixed column" : isResizing ? "Resizing..." : "Drag to reorder"}
+      title={isAction ? "Fixed column" : isItem ? "Protected column (cannot delete/drag)" : isResizing ? "Resizing..." : "Drag to reorder"}
     >
       <div
         style={{
@@ -224,35 +231,37 @@ export default function ResizableHeader({
             ⋮
           </button>
 
-          {/* Resize handle - DIPERBESAR & DIPERJELAS */}
-          <div
-            onMouseDown={handleResizeMouseDown}
-            style={{
-              position: "absolute",
-              right: -6,
-              top: 0,
-              width: 12,
-              height: "100%",
-              cursor: "col-resize",
-              background: isResizing ? "var(--btn-primary-bg)" : "transparent",
-              opacity: isResizing ? 0.8 : 0,
-              transition: "opacity 0.2s, background 0.2s",
-              borderRadius: 2,
-              pointerEvents: "auto",
-              zIndex: 20,
-              borderLeft: isResizing ? "2px solid var(--btn-primary-bg)" : "none",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.opacity = 0.6;
-              e.currentTarget.style.background = "var(--btn-primary-bg)";
-            }}
-            onMouseLeave={(e) => {
-              if (!isResizing) {
-                e.currentTarget.style.opacity = 0;
-                e.currentTarget.style.background = "transparent";
-              }
-            }}
-          />
+          {/* Resize handle - Hanya muncul jika bukan action */}
+          {!isAction && (
+            <div
+              onMouseDown={handleResizeMouseDown}
+              style={{
+                position: "absolute",
+                right: -6,
+                top: 0,
+                width: 12,
+                height: "100%",
+                cursor: "col-resize",
+                background: isResizing ? "var(--btn-primary-bg)" : "transparent",
+                opacity: isResizing ? 0.8 : 0,
+                transition: "opacity 0.2s, background 0.2s",
+                borderRadius: 2,
+                pointerEvents: "auto",
+                zIndex: 20,
+                borderLeft: isResizing ? "2px solid var(--btn-primary-bg)" : "none",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.opacity = 0.6;
+                e.currentTarget.style.background = "var(--btn-primary-bg)";
+              }}
+              onMouseLeave={(e) => {
+                if (!isResizing) {
+                  e.currentTarget.style.opacity = 0;
+                  e.currentTarget.style.background = "transparent";
+                }
+              }}
+            />
+          )}
         </div>
       </div>
 
