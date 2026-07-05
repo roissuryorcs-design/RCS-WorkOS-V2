@@ -11,6 +11,7 @@ export default function ResizableHeader({
   onDelete,
   onReorder,
   children,
+  isSticky = false,
 }) {
   const [width, setWidth] = useState(column.width);
   const [isResizing, setIsResizing] = useState(false);
@@ -23,9 +24,6 @@ export default function ResizableHeader({
   const isProtected = column.id === "item" || column.id === "action";
   const isLast = index === totalColumns - 1;
 
-  // ============================================================
-  // RESIZE - dengan px
-  // ============================================================
   const handleResizeStart = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -35,7 +33,6 @@ export default function ResizableHeader({
     setIsResizing(true);
     startX.current = e.clientX;
     startWidth.current = thRef.current?.offsetWidth || 60;
-
     console.log("📏 Start width (px):", startWidth.current);
 
     const onMove = (ev) => {
@@ -44,12 +41,9 @@ export default function ResizableHeader({
         return;
       }
       ev.preventDefault();
-      
       const diff = ev.clientX - startX.current;
       const newWidth = Math.max(40, startWidth.current + diff);
-      
       console.log(`📐 Resize: ${newWidth}px`);
-      
       setWidth(newWidth);
       onResize(column.id, newWidth);
     };
@@ -70,9 +64,6 @@ export default function ResizableHeader({
     setWidth(column.width);
   }, [column.width]);
 
-  // ============================================================
-  // DRAG & DROP
-  // ============================================================
   const handleDragStart = (e) => {
     if (isProtected) {
       e.preventDefault();
@@ -116,9 +107,16 @@ export default function ResizableHeader({
     }
   };
 
-  // ============================================================
-  // RENDER
-  // ============================================================
+  const stickyStyle = isSticky
+    ? {
+        position: "sticky",
+        left: 0,
+        zIndex: 10,
+        background: "var(--bg-secondary)",
+        borderRight: "2px solid var(--border-color)",
+      }
+    : {};
+
   return (
     <th
       ref={thRef}
@@ -140,6 +138,7 @@ export default function ResizableHeader({
         background: "transparent",
         transition: "background 0.15s, opacity 0.15s",
         pointerEvents: "auto",
+        ...stickyStyle,
       }}
     >
       <div
