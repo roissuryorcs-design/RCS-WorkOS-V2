@@ -44,7 +44,7 @@ export default function BoardTable({
     const hasItem = visibleColumns.some((col) => col.id === "item");
     if (hasItem) return visibleColumns;
     return [
-      { id: "item", label: "ITEM", width: 22, visible: true },
+      { id: "item", label: "ITEM", width: 150, visible: true },
       ...visibleColumns,
     ];
   })();
@@ -181,7 +181,7 @@ export default function BoardTable({
                       border: "2px solid var(--border-color)",
                       borderRadius: 4,
                       borderLeft: `4px solid ${groupColor}`,
-                      tableLayout: "fixed",
+                      tableLayout: "auto", // ← ubah ke auto
                     }}
                   >
                     <thead>
