@@ -15,6 +15,7 @@ export default function BoardTable({
   onDeleteGroup,
   onAddItem,
   onOpenStatusManager,
+  onOpenColumnManager,
 }) {
   const {
     updateColumnWidth,
@@ -144,7 +145,23 @@ export default function BoardTable({
 
         return (
           <div key={groupName} style={{ marginBottom: 24, position: "relative" }}>
-            <div style={{ display: "flex", alignItems: "center", marginBottom: 8 }}>
+            {/* ============================================================
+                HEADER GROUP – STICKY KIRI
+                ============================================================ */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                marginBottom: 8,
+                position: "sticky",
+                left: 0,
+                zIndex: 15,
+                background: "var(--bg-secondary)",
+                padding: "4px 0",
+                borderBottom: `2px solid ${groupColor}`,
+              }}
+            >
+              {/* Tombol Collapse */}
               <button
                 onClick={() => toggleCollapse(groupName)}
                 style={{
@@ -160,6 +177,28 @@ export default function BoardTable({
                 {isCollapsed ? "▶" : "▼"}
               </button>
 
+              {/* Tombol Manage Columns (⚙️) */}
+              <button
+                onClick={onOpenColumnManager}
+                style={{
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: 16,
+                  color: "var(--text-secondary)",
+                  padding: "0 4px 0 0",
+                  marginRight: 4,
+                  opacity: 0.6,
+                  transition: "opacity 0.2s",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.opacity = 1)}
+                onMouseLeave={(e) => (e.currentTarget.style.opacity = 0.6)}
+                title="Manage Columns"
+              >
+                ⚙️
+              </button>
+
+              {/* Tombol ⋮ untuk Delete Group */}
               <button
                 onClick={() => setPopupGroup(groupName)}
                 style={{
@@ -180,8 +219,6 @@ export default function BoardTable({
                   fontSize: 14,
                   fontWeight: 600,
                   color: groupColor,
-                  paddingBottom: 4,
-                  borderBottom: `2px solid ${groupColor}`,
                   flex: 1,
                 }}
               >
@@ -203,6 +240,7 @@ export default function BoardTable({
               />
             </div>
 
+            {/* POPUP DELETE GROUP */}
             {popupGroup === groupName && (
               <>
                 <div
@@ -253,6 +291,7 @@ export default function BoardTable({
               </>
             )}
 
+            {/* TABEL */}
             {!isCollapsed && (
               <>
                 {tasks.length > 0 ? (
@@ -365,7 +404,6 @@ export default function BoardTable({
                           );
                         })}
 
-                        {/* KOLOM "+" DENGAN BORDER KIRI */}
                         <th
                           style={{
                             padding: "8px 8px",
@@ -405,12 +443,19 @@ export default function BoardTable({
                         />
                       ))}
 
+                      {/* ============================================================
+                          BARIS "+ Add item" – STICKY KIRI
+                          ============================================================ */}
                       <tr>
                         <td
                           colSpan={totalCols}
                           style={{
                             padding: 0,
                             border: "none",
+                            position: "sticky",
+                            left: 0,
+                            zIndex: 5,
+                            background: "var(--bg-secondary)",
                           }}
                         >
                           <button
