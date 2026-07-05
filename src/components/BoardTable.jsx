@@ -146,19 +146,21 @@ export default function BoardTable({
         return (
           <div key={groupName} style={{ marginBottom: 24, position: "relative" }}>
             {/* ============================================================
-                HEADER GROUP – STICKY KIRI
+                JUDUL GROUP – STICKY KIRI (khusus bagian header)
                 ============================================================ */}
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
                 marginBottom: 8,
-                position: "sticky",
-                left: 0,
-                zIndex: 15,
-                background: "var(--bg-secondary)",
                 padding: "4px 0",
                 borderBottom: `2px solid ${groupColor}`,
+                position: "sticky",
+                left: 0,
+                zIndex: 20,
+                background: "var(--bg-secondary)",
+                width: "100%",
+                boxSizing: "border-box",
               }}
             >
               {/* Tombol Collapse */}
