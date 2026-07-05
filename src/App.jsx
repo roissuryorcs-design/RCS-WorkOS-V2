@@ -212,7 +212,7 @@ function AppContent() {
     setGroupColors(prev => ({ ...prev, [groupName]: color }));
   };
 
-  // ----- STATUS CRUD -----
+  // ----- STATUS CRUD (LENGKAP) -----
   const addStatus = (name, color) => {
     const finalName = name.trim() || "Default";
     if (statuses[finalName]) {
@@ -334,6 +334,7 @@ function AppContent() {
         </div>
       </div>
 
+      {/* STATUS MANAGER MODAL */}
       {showStatusManager && (
         <StatusManager
           statuses={statuses}
