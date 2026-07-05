@@ -9,7 +9,6 @@ import StatusManager from "./components/StatusManager";
 import "./App.css";
 
 function AppContent() {
-  // ----- STATE -----
   const [items, setItems] = useState([]);
   const [statuses, setStatuses] = useState({});
   const [search, setSearch] = useState("");
@@ -18,7 +17,6 @@ function AppContent() {
   const [showStatusManager, setShowStatusManager] = useState(false);
   const [groupColors, setGroupColors] = useState({});
 
-  // ----- LOAD DATA -----
   useEffect(() => {
     const savedItems = localStorage.getItem("forelItems");
     const savedStatuses = localStorage.getItem("forelStatuses");
@@ -42,56 +40,11 @@ function AppContent() {
       setItems(JSON.parse(savedItems));
     } else {
       setItems([
-        {
-          id: 1,
-          group: "Target & PLANNING",
-          item: "Scope of Work",
-          document: "",
-          people: "Done",
-          status: "Default",
-          dueDate: "dd/mm/tttt",
-          rev: "R0",
-        },
-        {
-          id: 2,
-          group: "Target & PLANNING",
-          item: "GA Drawings",
-          document: "",
-          people: "Done",
-          status: "Default",
-          dueDate: "dd/mm/tttt",
-          rev: "R0",
-        },
-        {
-          id: 3,
-          group: "Target & PLANNING",
-          item: "General Arrangement",
-          document: "ID-F-FT-NN1-GAD-FP-0",
-          people: "RS",
-          status: "Default",
-          dueDate: "01/07/2026",
-          rev: "R1",
-        },
-        {
-          id: 4,
-          group: "Completed",
-          item: "HVAC Room Arrangement DI",
-          document: "P2104-V-D-GSHD-ME-GA",
-          people: "Done",
-          status: "Default",
-          dueDate: "dd/mm/tttt",
-          rev: "R0",
-        },
-        {
-          id: 5,
-          group: "Completed",
-          item: "Layout Drawings",
-          document: "",
-          people: "Done",
-          status: "Default",
-          dueDate: "dd/mm/tttt",
-          rev: "R0",
-        },
+        { id: 1, group: "Target & PLANNING", item: "Scope of Work", document: "", people: "Done", status: "Default", dueDate: "dd/mm/tttt", rev: "R0" },
+        { id: 2, group: "Target & PLANNING", item: "GA Drawings", document: "", people: "Done", status: "Default", dueDate: "dd/mm/tttt", rev: "R0" },
+        { id: 3, group: "Target & PLANNING", item: "General Arrangement", document: "ID-F-FT-NN1-GAD-FP-0", people: "RS", status: "Default", dueDate: "01/07/2026", rev: "R1" },
+        { id: 4, group: "Completed", item: "HVAC Room Arrangement DI", document: "P2104-V-D-GSHD-ME-GA", people: "Done", status: "Default", dueDate: "dd/mm/tttt", rev: "R0" },
+        { id: 5, group: "Completed", item: "Layout Drawings", document: "", people: "Done", status: "Default", dueDate: "dd/mm/tttt", rev: "R0" },
       ]);
     }
 
@@ -106,14 +59,11 @@ function AppContent() {
     } else {
       const defaultColors = {};
       const groups = [...new Set(JSON.parse(savedItems || "[]").map(item => item.group))];
-      groups.forEach(g => {
-        defaultColors[g] = "#3b82f6";
-      });
+      groups.forEach(g => { defaultColors[g] = "#3b82f6"; });
       setGroupColors(defaultColors);
     }
   }, []);
 
-  // ----- AUTO SAVE -----
   useEffect(() => {
     localStorage.setItem("forelItems", JSON.stringify(items));
   }, [items]);
@@ -130,7 +80,6 @@ function AppContent() {
     localStorage.setItem("forelGroupColors", JSON.stringify(groupColors));
   }, [groupColors]);
 
-  // ----- UNDO -----
   const saveHistory = (newItems) => {
     setHistory((prev) => [...prev, items]);
     setItems(newItems);
@@ -143,11 +92,8 @@ function AppContent() {
     setItems(prevState);
   };
 
-  // ----- CRUD ITEM -----
   const updateItem = (id, field, value) => {
-    const newItems = items.map((it) =>
-      it.id === id ? { ...it, [field]: value } : it
-    );
+    const newItems = items.map((it) => it.id === id ? { ...it, [field]: value } : it);
     saveHistory(newItems);
   };
 
@@ -172,7 +118,6 @@ function AppContent() {
     saveHistory([...items, newItem]);
   };
 
-  // ----- GROUP CRUD -----
   const addGroup = () => {
     const name = prompt("Enter new group name:");
     if (!name || !name.trim()) return;
@@ -204,12 +149,10 @@ function AppContent() {
     setGroupColors(newColors);
   };
 
-  // ----- WARNA GROUP -----
   const updateGroupColor = (groupName, color) => {
     setGroupColors(prev => ({ ...prev, [groupName]: color }));
   };
 
-  // ----- STATUS CRUD -----
   const addStatus = (name, color) => {
     const finalName = name.trim() || "Default";
     if (statuses[finalName]) {
@@ -230,16 +173,13 @@ function AppContent() {
       return;
     }
     const remainingStatus = currentKeys.find((k) => k !== name) || "Default";
-    const newItems = items.map((it) =>
-      it.status === name ? { ...it, status: remainingStatus } : it
-    );
+    const newItems = items.map((it) => it.status === name ? { ...it, status: remainingStatus } : it);
     const newStatuses = { ...statuses };
     delete newStatuses[name];
     setStatuses(newStatuses);
     setItems(newItems);
   };
 
-  // ----- FAVORITES -----
   const addFavorite = () => {
     const name = prompt("Enter favorite name:");
     if (name && name.trim()) {
@@ -252,7 +192,6 @@ function AppContent() {
     setFavorites(newFavs);
   };
 
-  // ----- EXPORT -----
   const exportData = () => {
     const dataStr = JSON.stringify({ items, statuses, groupColors }, null, 2);
     const blob = new Blob([dataStr], { type: "application/json" });
@@ -264,24 +203,18 @@ function AppContent() {
     URL.revokeObjectURL(url);
   };
 
-  // ----- FILTER -----
   const filteredItems = items.filter((it) =>
     it.item.toLowerCase().includes(search.toLowerCase()) ||
     it.document.toLowerCase().includes(search.toLowerCase()) ||
     it.people.toLowerCase().includes(search.toLowerCase())
   );
 
-  // ----- STATS -----
   const totalItems = filteredItems.length;
   const hasDoneStatus = Object.keys(statuses).includes("Done");
-  const doneItems = hasDoneStatus
-    ? filteredItems.filter((it) => it.status === "Done").length
-    : 0;
+  const doneItems = hasDoneStatus ? filteredItems.filter((it) => it.status === "Done").length : 0;
   const pendingItems = totalItems - doneItems;
-
   const allGroups = [...new Set(items.map((item) => item.group))];
 
-  // ----- RENDER -----
   return (
     <div className="app-container">
       <Sidebar
@@ -302,64 +235,51 @@ function AppContent() {
           canUndo={history.length > 0}
         />
 
-        {/* WRAPPER SCROLL (HORIZONTAL & VERTIKAL) */}
+        {/* CONTAINER TABEL DENGAN SCROLL HORIZONTAL (tanpa batasan tinggi) */}
+        <div style={{ overflowX: "auto", width: "100%" }}>
+          <BoardTable
+            items={filteredItems}
+            groups={allGroups}
+            statuses={statuses}
+            groupColors={groupColors}
+            onUpdateGroupColor={updateGroupColor}
+            onUpdateItem={updateItem}
+            onDeleteItem={deleteItem}
+            onAddGroup={addGroup}
+            onDeleteGroup={deleteGroup}
+            onAddItem={addItem}
+            onOpenStatusManager={() => setShowStatusManager(true)}
+          />
+        </div>
+
+        {/* FOOTER STICKY DI BAWAH */}
         <div
           style={{
-            overflow: "auto",
-            width: "100%",
-            height: "calc(100vh - 220px)",
-            position: "relative",
-            border: "1px solid var(--border-color)",
-            borderRadius: 4,
+            position: "sticky",
+            bottom: 0,
+            background: "var(--bg-secondary)",
+            borderTop: "1px solid var(--border-color)",
+            padding: "8px 16px",
+            zIndex: 20,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            fontSize: 13,
+            color: "var(--footer-text)",
+            gap: 16,
+            backdropFilter: "blur(8px)",
+            marginTop: 16,
           }}
         >
-          {/* KONTEN TABEL (min-width agar scroll horizontal muncul) */}
-          <div style={{ minWidth: "max-content" }}>
-            <BoardTable
-              items={filteredItems}
-              groups={allGroups}
-              statuses={statuses}
-              groupColors={groupColors}
-              onUpdateGroupColor={updateGroupColor}
-              onUpdateItem={updateItem}
-              onDeleteItem={deleteItem}
-              onAddGroup={addGroup}
-              onDeleteGroup={deleteGroup}
-              onAddItem={addItem}
-              onOpenStatusManager={() => setShowStatusManager(true)}
-            />
+          <div>
+            Total: <strong>{totalItems}</strong> items
           </div>
-
-          {/* FOOTER STICKY DI BAWAH (dalam container scroll) */}
-          <div
-            style={{
-              position: "sticky",
-              bottom: 0,
-              background: "var(--bg-secondary)",
-              borderTop: "1px solid var(--border-color)",
-              padding: "8px 16px",
-              zIndex: 20,
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              fontSize: 13,
-              color: "var(--footer-text)",
-              gap: 16,
-              width: "100%",
-              minWidth: "max-content",
-              backdropFilter: "blur(8px)",
-            }}
-          >
-            <div>
-              Total: <strong>{totalItems}</strong> items
-            </div>
-            <div>
-              Done: <strong style={{ color: "#22c55e" }}>{doneItems}</strong> | Pending:{" "}
-              <strong style={{ color: "#f59e0b" }}>{pendingItems}</strong>
-            </div>
-            <div>
-              <span style={{ color: "var(--text-light)" }}>💾</span> Saved
-            </div>
+          <div>
+            Done: <strong style={{ color: "#22c55e" }}>{doneItems}</strong> | Pending:{" "}
+            <strong style={{ color: "#f59e0b" }}>{pendingItems}</strong>
+          </div>
+          <div>
+            <span style={{ color: "var(--text-light)" }}>💾</span> Saved
           </div>
         </div>
       </div>
