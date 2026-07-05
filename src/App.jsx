@@ -18,7 +18,7 @@ function AppContent() {
   const [showStatusManager, setShowStatusManager] = useState(false);
   const [groupColors, setGroupColors] = useState({});
 
-  // ----- LOAD DATA FROM LOCALSTORAGE -----
+  // ----- LOAD DATA -----
   useEffect(() => {
     const savedItems = localStorage.getItem("forelItems");
     const savedStatuses = localStorage.getItem("forelStatuses");
@@ -130,7 +130,7 @@ function AppContent() {
     localStorage.setItem("forelGroupColors", JSON.stringify(groupColors));
   }, [groupColors]);
 
-  // ----- UNDO HELPER -----
+  // ----- UNDO -----
   const saveHistory = (newItems) => {
     setHistory((prev) => [...prev, items]);
     setItems(newItems);
@@ -204,7 +204,7 @@ function AppContent() {
     setGroupColors(newColors);
   };
 
-  // ----- UPDATE WARNA GROUP -----
+  // ----- WARNA GROUP -----
   const updateGroupColor = (groupName, color) => {
     setGroupColors(prev => ({ ...prev, [groupName]: color }));
   };
@@ -271,7 +271,7 @@ function AppContent() {
     it.people.toLowerCase().includes(search.toLowerCase())
   );
 
-  // ----- PERHITUNGAN DONE / PENDING -----
+  // ----- STATS -----
   const totalItems = filteredItems.length;
   const hasDoneStatus = Object.keys(statuses).includes("Done");
   const doneItems = hasDoneStatus
@@ -279,7 +279,6 @@ function AppContent() {
     : 0;
   const pendingItems = totalItems - doneItems;
 
-  // ----- GROUPS UNIK -----
   const allGroups = [...new Set(items.map((item) => item.group))];
 
   // ----- RENDER -----
@@ -303,22 +302,66 @@ function AppContent() {
           canUndo={history.length > 0}
         />
 
-        <BoardTable
-          items={filteredItems}
-          groups={allGroups}
-          statuses={statuses}
-          groupColors={groupColors}
-          onUpdateGroupColor={updateGroupColor}
-          onUpdateItem={updateItem}
-          onDeleteItem={deleteItem}
-          onAddGroup={addGroup}
-          onDeleteGroup={deleteGroup}
-          onAddItem={addItem}
-          onOpenStatusManager={() => setShowStatusManager(true)}
-          totalItems={totalItems}
-          doneItems={doneItems}
-          pendingItems={pendingItems}
-        />
+        {/* WRAPPER SCROLL (HORIZONTAL & VERTIKAL) */}
+        <div
+          style={{
+            overflow: "auto",
+            width: "100%",
+            height: "calc(100vh - 220px)",
+            position: "relative",
+            border: "1px solid var(--border-color)",
+            borderRadius: 4,
+          }}
+        >
+          {/* KONTEN TABEL (min-width agar scroll horizontal muncul) */}
+          <div style={{ minWidth: "max-content" }}>
+            <BoardTable
+              items={filteredItems}
+              groups={allGroups}
+              statuses={statuses}
+              groupColors={groupColors}
+              onUpdateGroupColor={updateGroupColor}
+              onUpdateItem={updateItem}
+              onDeleteItem={deleteItem}
+              onAddGroup={addGroup}
+              onDeleteGroup={deleteGroup}
+              onAddItem={addItem}
+              onOpenStatusManager={() => setShowStatusManager(true)}
+            />
+          </div>
+
+          {/* FOOTER STICKY DI BAWAH (dalam container scroll) */}
+          <div
+            style={{
+              position: "sticky",
+              bottom: 0,
+              background: "var(--bg-secondary)",
+              borderTop: "1px solid var(--border-color)",
+              padding: "8px 16px",
+              zIndex: 20,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              fontSize: 13,
+              color: "var(--footer-text)",
+              gap: 16,
+              width: "100%",
+              minWidth: "max-content",
+              backdropFilter: "blur(8px)",
+            }}
+          >
+            <div>
+              Total: <strong>{totalItems}</strong> items
+            </div>
+            <div>
+              Done: <strong style={{ color: "#22c55e" }}>{doneItems}</strong> | Pending:{" "}
+              <strong style={{ color: "#f59e0b" }}>{pendingItems}</strong>
+            </div>
+            <div>
+              <span style={{ color: "var(--text-light)" }}>💾</span> Saved
+            </div>
+          </div>
+        </div>
       </div>
 
       {showStatusManager && (
