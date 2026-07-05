@@ -9,6 +9,7 @@ const defaultColumns = [
   { id: "status", label: "STATUS", width: 120, visible: true },
   { id: "dueDate", label: "DUE DATE", width: 120, visible: true },
   { id: "rev", label: "REV", width: 80, visible: true },
+  // ACTION sudah dihapus
 ];
 
 export function ColumnProvider({ children }) {
