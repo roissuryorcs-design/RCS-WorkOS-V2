@@ -144,9 +144,7 @@ export default function BoardTable({
 
         return (
           <div key={groupName} style={{ marginBottom: 24, position: "relative" }}>
-            {/* ============================================================
-                HEADER GROUP – STICKY KIRI (tanpa duplikasi border)
-                ============================================================ */}
+            {/* HEADER GROUP – STICKY SEDERHANA */}
             <div
               style={{
                 display: "flex",
@@ -158,9 +156,6 @@ export default function BoardTable({
                 left: 0,
                 zIndex: 20,
                 background: "var(--bg-secondary)",
-                width: "max-content",
-                minWidth: "100%",
-                boxSizing: "border-box",
               }}
             >
               <button
@@ -451,9 +446,7 @@ export default function BoardTable({
                   </div>
                 )}
 
-                {/* ============================================================
-                    BARIS "+ Add item" – STICKY KIRI
-                    ============================================================ */}
+                {/* BARIS "+ Add item" – STICKY SEDERHANA */}
                 <div
                   style={{
                     position: "sticky",
@@ -465,11 +458,8 @@ export default function BoardTable({
                     borderRight: "2px solid var(--border-color)",
                     borderBottomLeftRadius: 4,
                     borderBottomRightRadius: 4,
+                    padding: "0",
                     marginTop: 0,
-                    padding: 0,
-                    width: "max-content",
-                    minWidth: "100%",
-                    boxSizing: "border-box",
                   }}
                 >
                   <button
