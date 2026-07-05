@@ -3,13 +3,13 @@ import { createContext, useState, useContext, useEffect } from "react";
 const ColumnContext = createContext();
 
 const defaultColumns = [
-  { id: "item", label: "ITEM", width: 22, visible: true },
-  { id: "document", label: "NO. DOCUMENT", width: 20, visible: true },
-  { id: "people", label: "PEOPLE", width: 13, visible: true },
-  { id: "status", label: "STATUS", width: 13, visible: true },
-  { id: "dueDate", label: "DUE DATE", width: 13, visible: true },
-  { id: "rev", label: "REV", width: 8, visible: true },
-  { id: "action", label: "", width: 6, visible: true },
+  { id: "item", label: "ITEM", width: 150, visible: true },
+  { id: "document", label: "NO. DOCUMENT", width: 200, visible: true },
+  { id: "people", label: "PEOPLE", width: 120, visible: true },
+  { id: "status", label: "STATUS", width: 120, visible: true },
+  { id: "dueDate", label: "DUE DATE", width: 120, visible: true },
+  { id: "rev", label: "REV", width: 80, visible: true },
+  { id: "action", label: "", width: 60, visible: true },
 ];
 
 export function ColumnProvider({ children }) {
@@ -22,10 +22,10 @@ export function ColumnProvider({ children }) {
       const hasAction = parsed.some((c) => c.id === "action");
       let result = [...parsed];
       if (!hasItem) {
-        result.unshift({ id: "item", label: "ITEM", width: 22, visible: true });
+        result.unshift({ id: "item", label: "ITEM", width: 150, visible: true });
       }
       if (!hasAction) {
-        result.push({ id: "action", label: "", width: 6, visible: true });
+        result.push({ id: "action", label: "", width: 60, visible: true });
       }
       return result;
     }
@@ -38,7 +38,7 @@ export function ColumnProvider({ children }) {
 
   const updateColumnWidth = (id, width) => {
     setColumns((prev) =>
-      prev.map((col) => (col.id === id ? { ...col, width: Math.max(3, width) } : col))
+      prev.map((col) => (col.id === id ? { ...col, width: Math.max(40, width) } : col))
     );
   };
 
@@ -51,7 +51,7 @@ export function ColumnProvider({ children }) {
       newCols.splice(actionIndex, 0, {
         id: newId,
         label: label.trim(),
-        width: 15,
+        width: 150,
         visible: true,
       });
       return newCols;
