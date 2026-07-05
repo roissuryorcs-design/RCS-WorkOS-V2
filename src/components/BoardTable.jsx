@@ -144,7 +144,9 @@ export default function BoardTable({
 
         return (
           <div key={groupName} style={{ marginBottom: 24, position: "relative" }}>
-            {/* HEADER GROUP – STICKY SEDERHANA */}
+            {/* ============================================================
+                HEADER GROUP – STICKY KIRI
+                ============================================================ */}
             <div
               style={{
                 display: "flex",
@@ -156,6 +158,9 @@ export default function BoardTable({
                 left: 0,
                 zIndex: 20,
                 background: "var(--bg-secondary)",
+                width: "max-content",
+                minWidth: "100%",
+                boxSizing: "border-box",
               }}
             >
               <button
@@ -292,6 +297,7 @@ export default function BoardTable({
                           letterSpacing: "0.3px",
                         }}
                       >
+                        {/* CHECKBOX – STICKY */}
                         <th
                           style={{
                             padding: "8px 8px",
@@ -302,7 +308,7 @@ export default function BoardTable({
                             textAlign: "center",
                             position: "sticky",
                             left: 0,
-                            zIndex: 10,
+                            zIndex: 12,
                             background: "var(--bg-secondary)",
                           }}
                         >
@@ -320,6 +326,7 @@ export default function BoardTable({
                         {safeColumns.map((col, idx) => {
                           const isStatus = col.id === "status";
                           const isItem = col.id === "item";
+                          const isLast = idx === safeColumns.length - 1;
                           return (
                             <ResizableHeader
                               key={col.id}
@@ -333,6 +340,7 @@ export default function BoardTable({
                               onReorder={reorderColumns}
                               isSticky={isItem}
                               stickyLeft={isItem ? 36 : 0}
+                              isLast={isLast}
                             >
                               {isStatus ? (
                                 <div
@@ -378,6 +386,7 @@ export default function BoardTable({
                           );
                         })}
 
+                        {/* KOLOM "+" – TIDAK STICKY */}
                         <th
                           style={{
                             padding: "8px 8px",
@@ -446,7 +455,7 @@ export default function BoardTable({
                   </div>
                 )}
 
-                {/* BARIS "+ Add item" – STICKY SEDERHANA */}
+                {/* BARIS "+ Add item" – STICKY KIRI */}
                 <div
                   style={{
                     position: "sticky",
@@ -458,8 +467,11 @@ export default function BoardTable({
                     borderRight: "2px solid var(--border-color)",
                     borderBottomLeftRadius: 4,
                     borderBottomRightRadius: 4,
-                    padding: "0",
+                    padding: 0,
                     marginTop: 0,
+                    width: "max-content",
+                    minWidth: "100%",
+                    boxSizing: "border-box",
                   }}
                 >
                   <button
