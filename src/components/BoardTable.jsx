@@ -27,6 +27,8 @@ export default function BoardTable({
 
   const [collapsed, setCollapsed] = useState({});
   const [popupGroup, setPopupGroup] = useState(null);
+  const [selectedItems, setSelectedItems] = useState([]);
+  const [showDeletePopup, setShowDeletePopup] = useState(false);
 
   const toggleCollapse = (groupName) => {
     setCollapsed((prev) => ({ ...prev, [groupName]: !prev[groupName] }));
@@ -39,7 +41,6 @@ export default function BoardTable({
     return acc;
   }, {});
 
-  // Pastikan kolom ITEM selalu ada
   const safeColumns = (() => {
     const hasItem = visibleColumns.some((col) => col.id === "item");
     if (hasItem) return visibleColumns;
@@ -49,16 +50,90 @@ export default function BoardTable({
     ];
   })();
 
-  // Hitung total lebar kolom non-ACTION
-  const fixedWidth = safeColumns
-    .filter((col) => col.id !== "action")
+  // Hapus kolom action dari visibleColumns
+  const columnsWithoutAction = safeColumns.filter((col) => col.id !== "action");
+
+  const fixedWidth = columnsWithoutAction
     .reduce((sum, col) => sum + col.width, 0);
-  // Tambahkan padding/border ekstra
   const tableMinWidth = fixedWidth + 60;
+
+  // Handle checkbox
+  const toggleSelectItem = (itemId) => {
+    setSelectedItems((prev) =>
+      prev.includes(itemId)
+        ? prev.filter((id) => id !== itemId)
+        : [...prev, itemId]
+    );
+  };
+
+  const handleDeleteSelected = () => {
+    if (selectedItems.length === 0) return;
+    if (confirm(`Delete ${selectedItems.length} selected item(s)?`)) {
+      selectedItems.forEach((id) => onDeleteItem(id));
+      setSelectedItems([]);
+    }
+    setShowDeletePopup(false);
+  };
+
+  const selectAll = () => {
+    const allIds = items.map((item) => item.id);
+    if (selectedItems.length === allIds.length) {
+      setSelectedItems([]);
+    } else {
+      setSelectedItems(allIds);
+    }
+  };
 
   return (
     <div className="board-table-wrapper">
-      {/* WRAPPER SCROLL HORIZONTAL DI LUAR GROUP */}
+      {/* SELECTION TOOLBAR */}
+      {selectedItems.length > 0 && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            padding: "8px 12px",
+            background: "var(--bg-hover)",
+            borderRadius: 6,
+            marginBottom: 12,
+            border: "1px solid var(--border-color)",
+          }}
+        >
+          <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>
+            {selectedItems.length} item(s) selected
+          </span>
+          <button
+            onClick={handleDeleteSelected}
+            style={{
+              padding: "4px 12px",
+              background: "#ef4444",
+              color: "white",
+              border: "none",
+              borderRadius: 4,
+              cursor: "pointer",
+              fontSize: 13,
+            }}
+          >
+            🗑️ Delete
+          </button>
+          <button
+            onClick={() => setSelectedItems([])}
+            style={{
+              padding: "4px 12px",
+              background: "transparent",
+              border: "1px solid var(--border-color)",
+              borderRadius: 4,
+              cursor: "pointer",
+              fontSize: 13,
+              color: "var(--text-secondary)",
+            }}
+          >
+            Cancel
+          </button>
+        </div>
+      )}
+
       <div style={{ overflowX: "auto", width: "100%" }}>
         {groups.map((groupName) => {
           const tasks = grouped[groupName] || [];
@@ -67,7 +142,6 @@ export default function BoardTable({
 
           return (
             <div key={groupName} style={{ marginBottom: 24, position: "relative" }}>
-              {/* HEADER GROUP */}
               <div style={{ display: "flex", alignItems: "center", marginBottom: 8 }}>
                 <button
                   onClick={() => toggleCollapse(groupName)}
@@ -127,7 +201,6 @@ export default function BoardTable({
                 />
               </div>
 
-              {/* POPUP DELETE GROUP */}
               {popupGroup === groupName && (
                 <>
                   <div
@@ -178,7 +251,6 @@ export default function BoardTable({
                 </>
               )}
 
-              {/* TABEL */}
               {!isCollapsed && (
                 <>
                   {tasks.length > 0 ? (
@@ -206,15 +278,38 @@ export default function BoardTable({
                             letterSpacing: "0.3px",
                           }}
                         >
-                          {safeColumns.map((col, idx) => {
+                          {/* Kolom Checkbox (Select All) */}
+                          <th
+                            style={{
+                              padding: "8px 8px",
+                              width: "36px",
+                              minWidth: "36px",
+                              maxWidth: "36px",
+                              borderRight: "2px solid var(--border-color)",
+                              textAlign: "center",
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={
+                                tasks.length > 0 &&
+                                tasks.every((t) => selectedItems.includes(t.id))
+                              }
+                              onChange={selectAll}
+                              style={{ cursor: "pointer", width: 16, height: 16 }}
+                            />
+                          </th>
+
+                          {columnsWithoutAction.map((col, idx) => {
                             const isStatus = col.id === "status";
                             const isItem = col.id === "item";
+                            const isLast = idx === columnsWithoutAction.length - 1;
                             return (
                               <ResizableHeader
                                 key={col.id}
                                 column={col}
                                 index={idx}
-                                totalColumns={safeColumns.length}
+                                totalColumns={columnsWithoutAction.length}
                                 onResize={updateColumnWidth}
                                 onRename={renameColumn}
                                 onToggle={toggleColumn}
@@ -274,7 +369,9 @@ export default function BoardTable({
                             item={item}
                             statuses={statuses}
                             groupColor={groupColor}
-                            visibleColumns={safeColumns}
+                            visibleColumns={columnsWithoutAction}
+                            isSelected={selectedItems.includes(item.id)}
+                            onToggleSelect={() => toggleSelectItem(item.id)}
                             onUpdate={(field, value) => onUpdateItem(item.id, field, value)}
                             onDelete={() => onDeleteItem(item.id)}
                           />
@@ -296,7 +393,6 @@ export default function BoardTable({
                     </div>
                   )}
 
-                  {/* TOMBOL ADD TASK */}
                   <button
                     onClick={() => onAddItem(groupName)}
                     style={{
@@ -324,7 +420,7 @@ export default function BoardTable({
                       (e.currentTarget.style.background = "transparent")
                     }
                   >
-                    + Add task
+                    + Add item
                   </button>
                 </>
               )}
@@ -333,7 +429,6 @@ export default function BoardTable({
         })}
       </div>
 
-      {/* TOMBOL ADD NEW GROUP */}
       <div style={{ marginTop: 16 }}>
         <button
           onClick={onAddGroup}
