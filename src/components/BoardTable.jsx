@@ -29,7 +29,7 @@ export default function BoardTable({
 
   const [collapsed, setCollapsed] = useState({});
   const [popupGroup, setPopupGroup] = useState(null);
-  const [selectedItems, setSelectedItems] = useState({}); // per group
+  const [selectedItems, setSelectedItems] = useState([]); // GLOBAL
 
   const toggleCollapse = (groupName) => {
     setCollapsed((prev) => ({ ...prev, [groupName]: !prev[groupName] }));
@@ -52,39 +52,35 @@ export default function BoardTable({
     ];
   })();
 
-  // Hitung total lebar kolom (tanpa ACTION)
+  // Hitung total lebar kolom
   const fixedWidth = safeColumns.reduce((sum, col) => sum + col.width, 0);
-  const tableMinWidth = fixedWidth + 100; // + untuk checkbox dan kolom +
+  const tableMinWidth = fixedWidth + 100; // checkbox + kolom +
 
-  // Handle checkbox per group
-  const toggleSelectItem = (groupId, itemId) => {
-    setSelectedItems((prev) => {
-      const groupSelected = prev[groupId] || [];
-      return {
-        ...prev,
-        [groupId]: groupSelected.includes(itemId)
-          ? groupSelected.filter((id) => id !== itemId)
-          : [...groupSelected, itemId],
-      };
-    });
+  // Handle checkbox GLOBAL
+  const toggleSelectItem = (itemId) => {
+    setSelectedItems((prev) =>
+      prev.includes(itemId)
+        ? prev.filter((id) => id !== itemId)
+        : [...prev, itemId]
+    );
   };
 
-  const handleDeleteSelected = (groupId) => {
-    const ids = selectedItems[groupId] || [];
-    if (ids.length === 0) return;
-    if (confirm(`Delete ${ids.length} selected item(s)?`)) {
-      ids.forEach((id) => onDeleteItem(id));
-      setSelectedItems((prev) => ({ ...prev, [groupId]: [] }));
+  const handleDeleteSelected = () => {
+    if (selectedItems.length === 0) return;
+    if (confirm(`Delete ${selectedItems.length} selected item(s)?`)) {
+      selectedItems.forEach((id) => onDeleteItem(id));
+      setSelectedItems([]);
     }
   };
 
   const selectAllInGroup = (groupId, tasks) => {
     const allIds = tasks.map((item) => item.id);
-    const currentSelected = selectedItems[groupId] || [];
-    if (currentSelected.length === allIds.length) {
-      setSelectedItems((prev) => ({ ...prev, [groupId]: [] }));
+    const allSelected = allIds.every((id) => selectedItems.includes(id));
+    if (allSelected) {
+      setSelectedItems((prev) => prev.filter((id) => !allIds.includes(id)));
     } else {
-      setSelectedItems((prev) => ({ ...prev, [groupId]: allIds }));
+      const newIds = allIds.filter((id) => !selectedItems.includes(id));
+      setSelectedItems((prev) => [...prev, ...newIds]);
     }
   };
 
@@ -96,72 +92,71 @@ export default function BoardTable({
     }
   };
 
+  // Hitung total kolom (checkbox + safeColumns + kolom +)
+  const totalCols = 1 + safeColumns.length + 1;
+
   return (
     <div className="board-table-wrapper">
-      {/* WRAPPER SCROLL */}
+      {/* SELECTION TOOLBAR GLOBAL - STICKY */}
+      {selectedItems.length > 0 && (
+        <div
+          style={{
+            position: "sticky",
+            top: 112,
+            zIndex: 30,
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            padding: "8px 12px",
+            background: "var(--bg-hover)",
+            borderRadius: 6,
+            marginBottom: 12,
+            border: "1px solid var(--border-color)",
+            backdropFilter: "blur(8px)",
+          }}
+        >
+          <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>
+            {selectedItems.length} item(s) selected
+          </span>
+          <button
+            onClick={handleDeleteSelected}
+            style={{
+              padding: "4px 12px",
+              background: "#ef4444",
+              color: "white",
+              border: "none",
+              borderRadius: 4,
+              cursor: "pointer",
+              fontSize: 13,
+            }}
+          >
+            🗑️ Delete
+          </button>
+          <button
+            onClick={() => setSelectedItems([])}
+            style={{
+              padding: "4px 12px",
+              background: "transparent",
+              border: "1px solid var(--border-color)",
+              borderRadius: 4,
+              cursor: "pointer",
+              fontSize: 13,
+              color: "var(--text-secondary)",
+            }}
+          >
+            Cancel
+          </button>
+        </div>
+      )}
+
       <div style={{ overflowX: "auto", width: "100%" }}>
         {groups.map((groupName) => {
           const tasks = grouped[groupName] || [];
           const isCollapsed = collapsed[groupName] || false;
           const groupColor = groupColors[groupName] || "#3b82f6";
-          const selectedIds = selectedItems[groupName] || [];
 
           return (
             <div key={groupName} style={{ marginBottom: 24, position: "relative" }}>
-              {/* SELECTION TOOLBAR PER GROUP - STICKY */}
-              {selectedIds.length > 0 && (
-                <div
-                  style={{
-                    position: "sticky",
-                    top: 112,
-                    zIndex: 30,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 12,
-                    padding: "8px 12px",
-                    background: "var(--bg-hover)",
-                    borderRadius: 6,
-                    marginBottom: 8,
-                    border: "1px solid var(--border-color)",
-                    backdropFilter: "blur(8px)",
-                  }}
-                >
-                  <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>
-                    {selectedIds.length} item(s) selected
-                  </span>
-                  <button
-                    onClick={() => handleDeleteSelected(groupName)}
-                    style={{
-                      padding: "4px 12px",
-                      background: "#ef4444",
-                      color: "white",
-                      border: "none",
-                      borderRadius: 4,
-                      cursor: "pointer",
-                      fontSize: 13,
-                    }}
-                  >
-                    🗑️ Delete
-                  </button>
-                  <button
-                    onClick={() =>
-                      setSelectedItems((prev) => ({ ...prev, [groupName]: [] }))
-                    }
-                    style={{
-                      padding: "4px 12px",
-                      background: "transparent",
-                      border: "1px solid var(--border-color)",
-                      borderRadius: 4,
-                      cursor: "pointer",
-                      fontSize: 13,
-                      color: "var(--text-secondary)",
-                    }}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              )}
-
               {/* HEADER GROUP */}
               <div style={{ display: "flex", alignItems: "center", marginBottom: 8 }}>
                 <button
@@ -320,7 +315,7 @@ export default function BoardTable({
                               type="checkbox"
                               checked={
                                 tasks.length > 0 &&
-                                tasks.every((t) => selectedIds.includes(t.id))
+                                tasks.every((t) => selectedItems.includes(t.id))
                               }
                               onChange={() => selectAllInGroup(groupName, tasks)}
                               style={{ cursor: "pointer", width: 16, height: 16 }}
@@ -392,8 +387,9 @@ export default function BoardTable({
                           <th
                             style={{
                               padding: "8px 8px",
-                              width: "auto",
+                              width: "50px",
                               minWidth: "50px",
+                              maxWidth: "50px",
                               borderRight: "none",
                               textAlign: "center",
                               cursor: "pointer",
@@ -419,12 +415,53 @@ export default function BoardTable({
                             statuses={statuses}
                             groupColor={groupColor}
                             visibleColumns={safeColumns}
-                            isSelected={selectedIds.includes(item.id)}
-                            onToggleSelect={() => toggleSelectItem(groupName, item.id)}
+                            isSelected={selectedItems.includes(item.id)}
+                            onToggleSelect={() => toggleSelectItem(item.id)}
                             onUpdate={(field, value) => onUpdateItem(item.id, field, value)}
                             onDelete={() => onDeleteItem(item.id)}
                           />
                         ))}
+
+                        {/* BARIS "+ Add task" - mengikuti lebar kolom */}
+                        <tr>
+                          <td
+                            colSpan={totalCols}
+                            style={{
+                              padding: 0,
+                              border: "none",
+                            }}
+                          >
+                            <button
+                              onClick={() => onAddItem(groupName)}
+                              style={{
+                                display: "block",
+                                width: "100%",
+                                padding: "6px 8px",
+                                border: "none",
+                                background: "transparent",
+                                color: "#3b82f6",
+                                cursor: "pointer",
+                                fontSize: 13,
+                                textAlign: "left",
+                                borderBottom: "2px solid var(--border-color)",
+                                borderLeft: `4px solid ${groupColor}`,
+                                borderRight: "2px solid var(--border-color)",
+                                borderBottomLeftRadius: 4,
+                                borderBottomRightRadius: 4,
+                                transition: "background 0.15s",
+                                boxSizing: "border-box",
+                              }}
+                              onMouseEnter={(e) =>
+                                (e.currentTarget.style.background = "var(--bg-hover)")
+                              }
+                              onMouseLeave={(e) =>
+                                (e.currentTarget.style.background = "transparent")
+                              }
+                            >
+                              + Add item
+                            </button>
+                          </td>
+                        </tr>
                       </tbody>
                     </table>
                   ) : (
@@ -439,38 +476,21 @@ export default function BoardTable({
                       }}
                     >
                       No items in this group.
+                      <button
+                        onClick={() => onAddItem(groupName)}
+                        style={{
+                          color: "#3b82f6",
+                          background: "none",
+                          border: "none",
+                          cursor: "pointer",
+                          marginLeft: 4,
+                          textDecoration: "underline",
+                        }}
+                      >
+                        Add item
+                      </button>
                     </div>
                   )}
-
-                  <button
-                    onClick={() => onAddItem(groupName)}
-                    style={{
-                      display: "block",
-                      width: "100%",
-                      padding: "6px 8px",
-                      border: "none",
-                      background: "transparent",
-                      color: "#3b82f6",
-                      cursor: "pointer",
-                      fontSize: 13,
-                      textAlign: "left",
-                      marginTop: 4,
-                      borderBottom: "2px solid var(--border-color)",
-                      borderLeft: `4px solid ${groupColor}`,
-                      borderRight: "2px solid var(--border-color)",
-                      borderBottomLeftRadius: 4,
-                      borderBottomRightRadius: 4,
-                      transition: "background 0.15s",
-                    }}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.background = "var(--bg-hover)")
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.background = "transparent")
-                    }
-                  >
-                    + Add item
-                  </button>
                 </>
               )}
             </div>
