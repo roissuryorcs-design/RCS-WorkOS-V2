@@ -23,12 +23,12 @@ export default function ResizableHeader({
   const isLast = index === totalColumns - 1;
 
   // ============================================================
-  // RESIZE - Perbaikan utama
+  // RESIZE
   // ============================================================
   const handleResizeStart = (e) => {
     e.preventDefault();
-    e.stopPropagation(); // ← PENTING: cegah event drag
-    console.log("🔵 Resize start:", column.id);
+    e.stopPropagation();
+    console.log("🔵 Resize start for column:", column.id); // ← Harusnya cetak nama kolom
 
     setIsResizing(true);
     startX.current = e.clientX;
@@ -37,20 +37,20 @@ export default function ResizableHeader({
     const onMove = (ev) => {
       if (!isResizing) return;
       ev.preventDefault();
-      
+
       const diff = ev.clientX - startX.current;
       const newWidth = Math.max(40, startWidth.current + diff);
       const parentWidth = thRef.current?.parentElement?.offsetWidth || 800;
       const percent = Math.min(50, Math.max(5, (newWidth / parentWidth) * 100));
-      
+
       console.log(`📐 Resize: ${newWidth}px → ${percent.toFixed(1)}%`);
-      
+
       setWidth(percent);
       onResize(column.id, percent);
     };
 
     const onUp = () => {
-      console.log("🔴 Resize end:", column.id);
+      console.log("🔴 Resize end for column:", column.id);
       setIsResizing(false);
       document.removeEventListener("mousemove", onMove);
       document.removeEventListener("mouseup", onUp);
@@ -65,7 +65,7 @@ export default function ResizableHeader({
   }, [column.width]);
 
   // ============================================================
-  // DRAG & DROP (tetap)
+  // DRAG & DROP
   // ============================================================
   const handleDragStart = (e) => {
     if (isProtected) {
@@ -147,7 +147,6 @@ export default function ResizableHeader({
         <span>{children}</span>
 
         <div style={{ display: "flex", alignItems: "center" }}>
-          {/* Tombol Menu */}
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -169,7 +168,6 @@ export default function ResizableHeader({
             ⋮
           </button>
 
-          {/* Resize Handle - Hanya untuk non-proteksi */}
           {!isProtected && (
             <div
               onMouseDown={handleResizeStart}
