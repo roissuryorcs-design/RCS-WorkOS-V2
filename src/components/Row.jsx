@@ -72,19 +72,41 @@ export default function Row({
     >
       {visibleColumns.map((col, idx) => {
         const isLast = idx === visibleColumns.length - 1;
+        const isItem = col.id === "item";
+        const isAction = col.id === "action";
+
+        const stickyStyle = isItem
+          ? {
+              position: "sticky",
+              left: 0,
+              zIndex: 5,
+              background: "var(--bg-secondary)",
+            }
+          : {};
+
+        const actionStyle = isAction
+          ? {
+              width: "auto",
+              minWidth: "60px",
+              maxWidth: "none",
+            }
+          : {};
+
         return (
           <td
             key={col.id}
             style={{
               padding: "6px 8px",
               borderRight: isLast ? "none" : "2px solid var(--border-color)",
-              width: `${col.width}px`,
-              minWidth: `${col.width}px`,
-              maxWidth: `${col.width}px`,
+              width: isAction ? "auto" : `${col.width}px`,
+              minWidth: isAction ? "60px" : `${col.width}px`,
+              maxWidth: isAction ? "none" : `${col.width}px`,
               boxSizing: "border-box",
               overflow: "hidden",
               textOverflow: "ellipsis",
               whiteSpace: "nowrap",
+              ...stickyStyle,
+              ...actionStyle,
             }}
           >
             {renderCell(col)}
