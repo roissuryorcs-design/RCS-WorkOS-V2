@@ -8,9 +8,6 @@ import BoardTable from "./components/BoardTable";
 import StatusManager from "./components/StatusManager";
 import "./App.css";
 
-// ============================================================
-// APP CONTENT
-// ============================================================
 function AppContent() {
   // ----- STATE -----
   const [items, setItems] = useState([]);
@@ -318,47 +315,10 @@ function AppContent() {
           onDeleteGroup={deleteGroup}
           onAddItem={addItem}
           onOpenStatusManager={() => setShowStatusManager(true)}
+          totalItems={totalItems}
+          doneItems={doneItems}
+          pendingItems={pendingItems}
         />
-
-        {/* FOOTER STICKY DENGAN SCROLL HORIZONTAL */}
-        <div
-          style={{
-            position: "sticky",
-            bottom: 0,
-            background: "var(--bg-secondary)",
-            borderTop: "1px solid var(--border-color)",
-            padding: "8px 0",
-            zIndex: 20,
-            overflowX: "auto",
-            width: "100%",
-            backdropFilter: "blur(8px)",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              fontSize: 13,
-              color: "var(--footer-text)",
-              padding: "0 16px",
-              minWidth: "100%",
-              width: "max-content",
-              gap: 16,
-            }}
-          >
-            <div>
-              Total: <strong>{totalItems}</strong> items
-            </div>
-            <div>
-              Done: <strong style={{ color: "#22c55e" }}>{doneItems}</strong> | Pending:{" "}
-              <strong style={{ color: "#f59e0b" }}>{pendingItems}</strong>
-            </div>
-            <div>
-              <span style={{ color: "var(--text-light)" }}>💾</span> Saved
-            </div>
-          </div>
-        </div>
       </div>
 
       {showStatusManager && (
@@ -374,9 +334,6 @@ function AppContent() {
   );
 }
 
-// ============================================================
-// APP UTAMA dengan ThemeProvider & ColumnProvider
-// ============================================================
 export default function App() {
   return (
     <ThemeProvider>
