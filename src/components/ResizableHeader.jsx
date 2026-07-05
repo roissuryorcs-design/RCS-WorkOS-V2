@@ -15,10 +15,120 @@ export default function ResizableHeader({
   stickyLeft = 0,
   isLast = false,
 }) {
-  // ... (semua state dan fungsi tetap sama)
+  const [width, setWidth] = useState(column.width);
+  const [isResizing, setIsResizing] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const thRef = useRef(null);
+  const startX = useRef(0);
+  const startWidth = useRef(0);
+  const isResizingRef = useRef(false);
+
+  const handleResizeStart = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const th = thRef.current;
+    if (th) {
+      th.draggable = false;
+      th.style.userSelect = "none";
+      th.style.cursor = "col-resize";
+    }
+
+    isResizingRef.current = true;
+    setIsResizing(true);
+
+    const rect = th?.getBoundingClientRect();
+    startX.current = e.clientX;
+    startWidth.current = rect?.width || 60;
+
+    console.log("🔵 Resize start:", column.id, "width:", startWidth.current);
+
+    const onMove = (ev) => {
+      if (!isResizingRef.current) return;
+      ev.preventDefault();
+
+      const diff = ev.clientX - startX.current;
+      const newWidth = Math.max(40, startWidth.current + diff);
+
+      if (th) {
+        th.style.width = newWidth + "px";
+      }
+
+      onResize(column.id, newWidth);
+      setWidth(newWidth);
+    };
+
+    const onUp = () => {
+      console.log("🔴 Resize end:", column.id);
+      isResizingRef.current = false;
+      setIsResizing(false);
+
+      if (th) {
+        th.draggable = true;
+        th.style.userSelect = "";
+        th.style.cursor = "";
+      }
+
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+    };
+
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+  };
+
+  const handleDragStart = (e) => {
+    if (isResizingRef.current || column.id === "item") {
+      e.preventDefault();
+      return;
+    }
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", JSON.stringify({ from: index }));
+    e.currentTarget.style.opacity = "0.4";
+  };
+
+  const handleDragEnd = (e) => {
+    e.currentTarget.style.opacity = "1";
+    e.currentTarget.style.borderLeft = "none";
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    if (column.id !== "item" && !isResizingRef.current) {
+      e.currentTarget.style.borderLeft = "3px solid var(--btn-primary-bg)";
+      e.currentTarget.style.background = "var(--bg-hover)";
+    }
+  };
+
+  const handleDragLeave = (e) => {
+    e.currentTarget.style.borderLeft = "none";
+    e.currentTarget.style.background = "transparent";
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.currentTarget.style.borderLeft = "none";
+    e.currentTarget.style.background = "transparent";
+    e.currentTarget.style.opacity = "1";
+    try {
+      const data = JSON.parse(e.dataTransfer.getData("text/plain"));
+      if (data.from !== undefined && data.from !== index) {
+        onReorder(data.from, index);
+      }
+    } catch {
+      // fallback
+    }
+  };
+
+  useEffect(() => {
+    setWidth(column.width);
+    if (thRef.current) {
+      thRef.current.style.width = column.width + "px";
+    }
+  }, [column.width]);
 
   // ============================================================
-  // STICKY – dengan border menggunakan box-shadow
+  // STICKY – dengan box-shadow untuk border
   // ============================================================
   const stickyStyle = isSticky
     ? {
@@ -26,10 +136,108 @@ export default function ResizableHeader({
         left: stickyLeft || 0,
         zIndex: 20,
         background: "var(--bg-secondary)",
-        // Gunakan box-shadow untuk border kanan
-        boxShadow: "inset -2px 0 0 0 var(--border-color)",
+        boxShadow: "inset -2px 0 0 0 var(--border-color)", // ← border kanan
       }
     : {};
 
-  // ... (render)
+  return (
+    <th
+      ref={thRef}
+      draggable={!isResizingRef.current && column.id !== "item"}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+      style={{
+        width: `${width}px`,
+        minWidth: 40,
+        maxWidth: `${width}px`,
+        padding: "8px 8px",
+        borderRight: isLast ? "none" : "2px solid var(--border-color)",
+        position: "relative",
+        userSelect: "none",
+        cursor: isResizingRef.current ? "col-resize" : "default",
+        background: "transparent",
+        transition: "background 0.15s",
+        pointerEvents: "auto",
+        ...stickyStyle,
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 4,
+          pointerEvents: isResizingRef.current ? "none" : "auto",
+        }}
+      >
+        <span>{children}</span>
+
+        <div style={{ display: "flex", alignItems: "center" }}>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowMenu(!showMenu);
+            }}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              fontSize: 14,
+              color: "var(--text-muted)",
+              padding: "0 4px",
+              opacity: 0.5,
+              transition: "opacity 0.2s",
+              pointerEvents: isResizingRef.current ? "none" : "auto",
+            }}
+          >
+            ⋮
+          </button>
+
+          <div
+            onMouseDown={handleResizeStart}
+            style={{
+              position: "absolute",
+              right: -6,
+              top: 0,
+              width: 14,
+              height: "100%",
+              cursor: "col-resize",
+              background: isResizingRef.current ? "var(--btn-primary-bg)" : "transparent",
+              opacity: isResizingRef.current ? 0.8 : 0,
+              transition: "opacity 0.2s, background 0.2s",
+              borderRadius: 2,
+              zIndex: 20,
+              borderLeft: isResizingRef.current ? "2px solid var(--btn-primary-bg)" : "none",
+              pointerEvents: "auto",
+            }}
+            onMouseEnter={(e) => {
+              if (!isResizingRef.current) {
+                e.currentTarget.style.opacity = 0.6;
+                e.currentTarget.style.background = "var(--btn-primary-bg)";
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!isResizingRef.current) {
+                e.currentTarget.style.opacity = 0;
+                e.currentTarget.style.background = "transparent";
+              }
+            }}
+          />
+        </div>
+      </div>
+
+      {showMenu && (
+        <ColumnMenu
+          column={column}
+          onRename={onRename}
+          onToggle={onToggle}
+          onDelete={onDelete}
+          onClose={() => setShowMenu(false)}
+        />
+      )}
+    </th>
+  );
 }
