@@ -1,12 +1,10 @@
 export default function StatusCell({ status, statuses, onChange }) {
-  // Fungsi untuk mendapatkan warna status
+  const statusKeys = Object.keys(statuses);
+  const safeStatuses = statusKeys.length > 0 ? statusKeys : ["Default"];
+
   const getColor = (s) => {
     return statuses[s] || "#9ca3af";
   };
-
-  // Jika statuses kosong atau tidak ada, gunakan default
-  const statusKeys = Object.keys(statuses);
-  const safeStatuses = statusKeys.length > 0 ? statusKeys : ["Default"];
 
   return (
     <select
