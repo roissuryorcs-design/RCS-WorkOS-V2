@@ -73,22 +73,22 @@ export default function Row({
       {visibleColumns.map((col, idx) => {
         const isLast = idx === visibleColumns.length - 1;
         return (
-          <td
-            key={col.id}
-            style={{
-              padding: "6px 8px",
-              borderRight: isLast ? "none" : "2px solid var(--border-color)",
-              width: `${col.width}px`,
-              minWidth: `${col.width}px`,
-              maxWidth: `${col.width}px`,
-              boxSizing: "border-box", // ← Tambahkan ini
-              overflow: "hidden", // ← Cegah konten meluber
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {renderCell(col)}
-          </td>
+        <td
+  key={col.id}
+  style={{
+    padding: "6px 8px",
+    borderRight: isLast ? "none" : "2px solid var(--border-color)",
+    width: `${col.width}px`,
+    minWidth: `${col.width}px`,
+    maxWidth: `${col.width}px`,
+    boxSizing: "border-box",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  }}
+>
+  {renderCell(col)}
+</td>
         );
       })}
     </tr>
