@@ -41,7 +41,7 @@ export default function BoardTable({
   }, {});
 
   return (
-    <div>
+    <div className="board-table-wrapper">
       {groups.map((groupName) => {
         const tasks = grouped[groupName] || [];
         const isCollapsed = collapsed[groupName] || false;
