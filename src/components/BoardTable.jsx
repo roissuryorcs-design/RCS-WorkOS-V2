@@ -55,9 +55,7 @@ export default function BoardTable({
 
   const toggleSelectItem = (itemId) => {
     setSelectedItems((prev) =>
-      prev.includes(itemId)
-        ? prev.filter((id) => id !== itemId)
-        : [...prev, itemId]
+      prev.includes(itemId) ? prev.filter((id) => id !== itemId) : [...prev, itemId]
     );
   };
 
@@ -90,7 +88,7 @@ export default function BoardTable({
   const totalCols = 1 + safeColumns.length + 1;
 
   return (
-    <div className="board-table-wrapper">
+    <div className="board-table-wrapper" style={{ minWidth: tableMinWidth }}>
       {selectedItems.length > 0 && (
         <div
           style={{
