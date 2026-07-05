@@ -145,7 +145,7 @@ export default function BoardTable({
         return (
           <div key={groupName} style={{ marginBottom: 24, position: "relative" }}>
             {/* ============================================================
-                HEADER GROUP – STICKY KIRI (di luar tabel)
+                HEADER GROUP – STICKY KIRI (tanpa duplikasi border)
                 ============================================================ */}
             <div
               style={{
@@ -161,12 +161,8 @@ export default function BoardTable({
                 width: "max-content",
                 minWidth: "100%",
                 boxSizing: "border-box",
-                borderTop: `2px solid ${groupColor}`,
-                borderTopLeftRadius: 4,
-                borderTopRightRadius: 4,
               }}
             >
-              {/* Tombol Collapse */}
               <button
                 onClick={() => toggleCollapse(groupName)}
                 style={{
@@ -182,7 +178,6 @@ export default function BoardTable({
                 {isCollapsed ? "▶" : "▼"}
               </button>
 
-              {/* Tombol ⋮ untuk Delete Group */}
               <button
                 onClick={() => setPopupGroup(groupName)}
                 style={{
@@ -457,7 +452,7 @@ export default function BoardTable({
                 )}
 
                 {/* ============================================================
-                    BARIS "+ Add item" – STICKY KIRI (di luar tabel)
+                    BARIS "+ Add item" – STICKY KIRI
                     ============================================================ */}
                 <div
                   style={{
