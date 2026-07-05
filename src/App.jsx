@@ -247,7 +247,7 @@ function AppContent() {
             overflowX: "auto",
             overflowY: "visible",
             width: "100%",
-            flex: 1,
+            position: "relative",
           }}
         >
           <BoardTable
