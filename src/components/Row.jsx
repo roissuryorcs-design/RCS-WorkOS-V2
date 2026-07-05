@@ -117,12 +117,13 @@ export default function Row({
         );
       })}
 
-      {/* Kolom kosong untuk padding (+ kolom sudah di handle di header) */}
+      {/* Kolom "+" (kosong, hanya padding) */}
       <td
         style={{
           padding: "6px 8px",
-          width: "auto",
+          width: "50px",
           minWidth: "50px",
+          maxWidth: "50px",
           borderRight: "none",
           boxSizing: "border-box",
         }}
