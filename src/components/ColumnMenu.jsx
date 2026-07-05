@@ -19,7 +19,6 @@ export default function ColumnMenu({
   }, [isRenaming]);
 
   const handleRename = () => {
-    console.log("Rename column:", column.id, "to:", newLabel);
     if (newLabel.trim()) {
       onRename(column.id, newLabel.trim());
     }
@@ -40,6 +39,7 @@ export default function ColumnMenu({
 
   return (
     <>
+      {/* Overlay */}
       <div
         style={{
           position: "fixed",
@@ -124,7 +124,7 @@ export default function ColumnMenu({
           </div>
         ) : (
           <>
-            {/* Rename - semua kolom bisa rename */}
+            {/* Rename – semua kolom */}
             <button
               onClick={() => setIsRenaming(true)}
               style={menuButtonStyle}
@@ -132,11 +132,10 @@ export default function ColumnMenu({
               ✏️ Rename
             </button>
 
-            {/* Hide - hanya untuk kolom non-action dan non-item */}
+            {/* Hide – hanya untuk non-action dan non-item */}
             {!isAction && !isItem && (
               <button
                 onClick={() => {
-                  console.log("Toggle visibility for:", column.id);
                   onToggle(column.id);
                   onClose();
                 }}
@@ -146,11 +145,10 @@ export default function ColumnMenu({
               </button>
             )}
 
-            {/* Delete - hanya untuk kolom non-action dan non-item */}
+            {/* Delete – hanya untuk non-action dan non-item */}
             {!isAction && !isItem && (
               <button
                 onClick={() => {
-                  console.log("Delete column:", column.id);
                   if (confirm(`Delete column "${column.label}"?`)) {
                     onDelete(column.id);
                   }
@@ -176,7 +174,9 @@ export default function ColumnMenu({
                   borderTop: "1px solid var(--border-color)",
                 }}
               >
-                {isAction ? "🔒 Fixed column" : "🔒 ITEM column (cannot delete/hide/drag)"}
+                {isAction
+                  ? "🔒 Fixed column"
+                  : "🔒 ITEM column (cannot delete, hide, or drag)"}
               </div>
             )}
           </>
