@@ -22,8 +22,7 @@ export default function ResizableHeader({
   const startWidth = useRef(0);
   const isResizingRef = useRef(false);
 
-  const isAction = column.id === "action";
-  const isProtected = column.id === "action"; // HANYA ACTION yang diproteksi
+  const isProtected = column.id === "item"; // Hanya ITEM yang diproteksi
 
   const handleResizeStart = (e) => {
     e.preventDefault();
@@ -37,10 +36,7 @@ export default function ResizableHeader({
     console.log("📏 Start width (px):", startWidth.current);
 
     const onMove = (ev) => {
-      if (!isResizingRef.current) {
-        console.log("⏭️ Resize skipped: not resizing");
-        return;
-      }
+      if (!isResizingRef.current) return;
       ev.preventDefault();
       const diff = ev.clientX - startX.current;
       const newWidth = Math.max(40, startWidth.current + diff);
@@ -118,9 +114,6 @@ export default function ResizableHeader({
       }
     : {};
 
-  // ITEM tidak diproteksi untuk resize
-  const isResizeDisabled = column.id === "action";
-
   return (
     <th
       ref={thRef}
@@ -177,8 +170,8 @@ export default function ResizableHeader({
             ⋮
           </button>
 
-          {/* Resize handle - hanya untuk ACTION yang tidak bisa resize */}
-          {!isResizeDisabled && (
+          {/* Resize handle - semua kolom bisa resize kecuali ITEM */}
+          {!isProtected && (
             <div
               onMouseDown={handleResizeStart}
               style={{
