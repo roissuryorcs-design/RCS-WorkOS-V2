@@ -23,14 +23,23 @@ export default function ResizableHeader({
   const isAction = column.id === "action";
   const isLast = index === totalColumns - 1;
 
-  // ----- RESIZE (Perbaikan) -----
+  // ============================================================
+  // RESIZE (Perbaikan)
+  // ============================================================
   const handleResizeMouseDown = (e) => {
     e.stopPropagation();
     e.preventDefault();
-    console.log("Resize started for column:", column.id);
+    console.log("🟢 Resize started for column:", column.id);
+    
+    // Nonaktifkan drag sementara
+    if (thRef.current) {
+      thRef.current.draggable = false;
+    }
+    
     setIsResizing(true);
     startXRef.current = e.clientX;
-    startWidthRef.current = thRef.current?.offsetWidth || column.width;
+    startWidthRef.current = thRef.current?.getBoundingClientRect().width || 60;
+    
     document.addEventListener("mousemove", handleResizeMouseMove);
     document.addEventListener("mouseup", handleResizeMouseUp);
   };
@@ -38,54 +47,69 @@ export default function ResizableHeader({
   const handleResizeMouseMove = (e) => {
     if (!isResizing) return;
     e.preventDefault();
+    
     const diff = e.clientX - startXRef.current;
-    const newWidth = Math.max(30, startWidthRef.current + diff);
-    setWidth(newWidth);
-    onResize(column.id, (newWidth / thRef.current?.parentElement?.offsetWidth) * 100);
+    const newWidthPx = Math.max(40, startWidthRef.current + diff);
+    
+    // Hitung ulang dalam persen
+    const parentWidth = thRef.current?.parentElement?.offsetWidth || 800;
+    const newWidthPercent = (newWidthPx / parentWidth) * 100;
+    
+    setWidth(newWidthPercent);
+    onResize(column.id, newWidthPercent);
   };
 
   const handleResizeMouseUp = () => {
     setIsResizing(false);
+    
+    // Aktifkan kembali drag
+    if (thRef.current) {
+      thRef.current.draggable = true;
+    }
+    
     document.removeEventListener("mousemove", handleResizeMouseMove);
     document.removeEventListener("mouseup", handleResizeMouseUp);
   };
 
-  useEffect(() => {
-    setWidth(column.width);
-  }, [column.width]);
-
-  // ----- DRAG & DROP (Perbaikan) -----
+  // ============================================================
+  // DRAG & DROP (Perbaikan)
+  // ============================================================
   const handleDragStart = (e) => {
-    if (isAction) {
+    if (isAction || isResizing) {
       e.preventDefault();
       return;
     }
-    console.log("Drag start for column:", column.id, "index:", index);
+    console.log("🟢 Drag start for column:", column.id, "index:", index);
     setIsDragging(true);
+    
     e.dataTransfer.effectAllowed = "move";
-    e.dataTransfer.setData("text/plain", index.toString());
-    // Tambahkan drag image agar lebih jelas
+    e.dataTransfer.setData("text/plain", JSON.stringify({
+      fromIndex: index,
+      columnId: column.id
+    }));
+    
     if (thRef.current) {
-      thRef.current.style.opacity = "0.5";
-      e.dataTransfer.setDragImage(thRef.current, 20, 10);
+      thRef.current.style.opacity = "0.4";
+      thRef.current.style.background = "var(--bg-hover)";
     }
   };
 
   const handleDragEnd = (e) => {
-    console.log("Drag end for column:", column.id);
+    console.log("🔴 Drag end for column:", column.id);
     setIsDragging(false);
     if (thRef.current) {
       thRef.current.style.opacity = "1";
-      thRef.current.style.borderLeft = "none";
       thRef.current.style.background = "transparent";
+      thRef.current.style.borderLeft = "none";
     }
   };
 
   const handleDragOver = (e) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
-    if (thRef.current && !isAction) {
-      thRef.current.style.borderLeft = "2px solid var(--btn-primary-bg)";
+    
+    if (thRef.current && !isAction && !isResizing) {
+      thRef.current.style.borderLeft = "3px solid var(--btn-primary-bg)";
       thRef.current.style.background = "var(--bg-hover)";
     }
   };
@@ -99,33 +123,49 @@ export default function ResizableHeader({
 
   const handleDrop = (e) => {
     e.preventDefault();
-    console.log("Drop on column:", column.id, "index:", index);
+    console.log("🟢 Drop on column:", column.id, "index:", index);
+    
     if (thRef.current) {
       thRef.current.style.borderLeft = "none";
-      thRef.current.style.opacity = "1";
       thRef.current.style.background = "transparent";
+      thRef.current.style.opacity = "1";
     }
-    const fromIndex = parseInt(e.dataTransfer.getData("text/plain"));
-    const toIndex = index;
-    if (!isNaN(fromIndex) && fromIndex !== toIndex) {
-      console.log("Reordering from", fromIndex, "to", toIndex);
-      // Panggil onReorder langsung
-      onReorder(fromIndex, toIndex);
+    
+    try {
+      const data = JSON.parse(e.dataTransfer.getData("text/plain"));
+      const fromIndex = data.fromIndex;
+      
+      if (fromIndex !== undefined && fromIndex !== index) {
+        console.log(`🔄 Reordering from ${fromIndex} to ${index}`);
+        onReorder(fromIndex, index);
+      }
+    } catch (err) {
+      // Fallback
+      const fromIndex = parseInt(e.dataTransfer.getData("text/plain"));
+      if (!isNaN(fromIndex) && fromIndex !== index) {
+        console.log(`🔄 Reordering from ${fromIndex} to ${index} (fallback)`);
+        onReorder(fromIndex, index);
+      }
     }
+    
     setIsDragging(false);
   };
 
-  // ----- MENU -----
+  // ============================================================
+  // MENU
+  // ============================================================
   const toggleMenu = () => {
-    console.log("Toggle menu for column:", column.id);
+    console.log("🟢 Toggle menu for column:", column.id);
     setShowMenu(!showMenu);
   };
 
-  // ----- RENDER -----
+  // ============================================================
+  // RENDER
+  // ============================================================
   return (
     <th
       ref={thRef}
-      draggable={!isAction}
+      draggable={!isAction && !isResizing}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
       onDragOver={handleDragOver}
@@ -138,11 +178,11 @@ export default function ResizableHeader({
         position: "relative",
         minWidth: 60,
         userSelect: "none",
-        cursor: isAction ? "default" : "grab",
+        cursor: isAction ? "default" : isResizing ? "col-resize" : "grab",
         background: isDragging ? "var(--bg-hover)" : "transparent",
         transition: "background 0.2s, opacity 0.2s, border-color 0.2s",
       }}
-      title={isAction ? "Fixed column" : "Drag to reorder"}
+      title={isAction ? "Fixed column" : isResizing ? "Resizing..." : "Drag to reorder"}
     >
       <div
         style={{
@@ -150,6 +190,7 @@ export default function ResizableHeader({
           alignItems: "center",
           justifyContent: "space-between",
           gap: 4,
+          pointerEvents: isResizing ? "none" : "auto",
         }}
       >
         <span style={{ pointerEvents: "none" }}>{children}</span>
@@ -185,11 +226,11 @@ export default function ResizableHeader({
               position: "absolute",
               right: -4,
               top: 0,
-              width: 8,
+              width: 10,
               height: "100%",
               cursor: "col-resize",
               background: isResizing ? "var(--btn-primary-bg)" : "transparent",
-              opacity: isResizing ? 0.5 : 0,
+              opacity: isResizing ? 0.6 : 0,
               transition: "opacity 0.2s, background 0.2s",
               borderRadius: 2,
               pointerEvents: "auto",
