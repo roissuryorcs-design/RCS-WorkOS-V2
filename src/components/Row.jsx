@@ -77,8 +77,9 @@ export default function Row({
             style={{
               padding: "6px 8px",
               borderRight: isLast ? "none" : "2px solid var(--border-color)",
-              width: `${col.width}%`,
-              minWidth: 60,
+              width: `${col.width}px`,
+              minWidth: 40,
+              maxWidth: `${col.width}px`,
             }}
           >
             {renderCell(col)}
