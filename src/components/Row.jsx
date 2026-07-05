@@ -59,7 +59,7 @@ export default function Row({
         }
       }}
     >
-      {/* Checkbox */}
+      {/* Checkbox – STICKY */}
       <td
         style={{
           padding: "6px 8px",
@@ -71,8 +71,8 @@ export default function Row({
           boxSizing: "border-box",
           position: "sticky",
           left: 0,
-          zIndex: 5,
-          background: isSelected ? "var(--bg-hover)" : "var(--bg-secondary)",
+          zIndex: 12,
+          background: "var(--bg-secondary)",
         }}
       >
         <input
@@ -91,8 +91,9 @@ export default function Row({
           ? {
               position: "sticky",
               left: "36px",
-              zIndex: 5,
-              background: isSelected ? "var(--bg-hover)" : "var(--bg-secondary)",
+              zIndex: 12, // ← sama dengan checkbox
+              background: "var(--bg-secondary)",
+              borderRight: "2px solid var(--border-color)", // ← border tetap terlihat
             }
           : {};
 
@@ -117,7 +118,7 @@ export default function Row({
         );
       })}
 
-      {/* Kolom "+" padding DENGAN BORDER KIRI */}
+      {/* Kolom "+" (padding) */}
       <td
         style={{
           padding: "6px 8px",
