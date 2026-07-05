@@ -19,7 +19,7 @@ export default function ColumnMenu({
   }, [isRenaming]);
 
   const handleRename = () => {
-    console.log("Rename column:", column.id, "to:", newLabel); // ← DEBUG
+    console.log("Rename column:", column.id, "to:", newLabel);
     if (newLabel.trim()) {
       onRename(column.id, newLabel.trim());
     }
@@ -36,10 +36,10 @@ export default function ColumnMenu({
   };
 
   const isAction = column.id === "action";
+  const isItem = column.id === "item"; // ← ITEM tidak bisa di-delete
 
   return (
     <>
-      {/* Overlay untuk tutup popup */}
       <div
         style={{
           position: "fixed",
@@ -124,51 +124,59 @@ export default function ColumnMenu({
           </div>
         ) : (
           <>
+            {/* Rename - semua kolom bisa rename */}
+            <button
+              onClick={() => setIsRenaming(true)}
+              style={menuButtonStyle}
+            >
+              ✏️ Rename
+            </button>
+
+            {/* Toggle Hide/Show - semua kolom (kecuali action) bisa hide */}
             {!isAction && (
-              <>
-                <button
-                  onClick={() => setIsRenaming(true)}
-                  style={menuButtonStyle}
-                >
-                  ✏️ Rename
-                </button>
-                <button
-                  onClick={() => {
-                    console.log("Toggle visibility for:", column.id); // ← DEBUG
-                    onToggle(column.id);
-                    onClose();
-                  }}
-                  style={menuButtonStyle}
-                >
-                  {column.visible ? "👁️ Hide" : "👁️ Show"}
-                </button>
-                <button
-                  onClick={() => {
-                    console.log("Delete column:", column.id); // ← DEBUG
-                    if (confirm(`Delete column "${column.label}"?`)) {
-                      onDelete(column.id);
-                    }
-                    onClose();
-                  }}
-                  style={{
-                    ...menuButtonStyle,
-                    color: "#ef4444",
-                    borderTop: "1px solid var(--border-color)",
-                  }}
-                >
-                  🗑️ Delete
-                </button>
-              </>
+              <button
+                onClick={() => {
+                  console.log("Toggle visibility for:", column.id);
+                  onToggle(column.id);
+                  onClose();
+                }}
+                style={menuButtonStyle}
+              >
+                {column.visible ? "👁️ Hide" : "👁️ Show"}
+              </button>
             )}
-            {isAction && (
+
+            {/* Delete - hanya untuk kolom non-action dan non-item */}
+            {!isAction && !isItem && (
+              <button
+                onClick={() => {
+                  console.log("Delete column:", column.id);
+                  if (confirm(`Delete column "${column.label}"?`)) {
+                    onDelete(column.id);
+                  }
+                  onClose();
+                }}
+                style={{
+                  ...menuButtonStyle,
+                  color: "#ef4444",
+                  borderTop: "1px solid var(--border-color)",
+                }}
+              >
+                🗑️ Delete
+              </button>
+            )}
+
+            {/* Jika action atau item, tampilkan pesan */}
+            {(isAction || isItem) && (
               <div
                 style={{
                   padding: "6px 12px",
                   fontSize: 13,
                   color: "var(--text-muted)",
+                  borderTop: "1px solid var(--border-color)",
                 }}
               >
-                Fixed column
+                {isAction ? "🔒 Fixed column (cannot delete/drag)" : "🔒 ITEM column (cannot delete/drag)"}
               </div>
             )}
           </>
