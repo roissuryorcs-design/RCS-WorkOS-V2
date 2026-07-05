@@ -117,7 +117,7 @@ export default function Row({
         );
       })}
 
-      {/* Kolom "+" (kosong, hanya padding) */}
+      {/* Kolom "+" (padding) */}
       <td
         style={{
           padding: "6px 8px",
