@@ -47,7 +47,15 @@ export function ColumnProvider({ children }) {
     console.log("deleteColumn called with:", id); // ← DEBUG
     if (id === "action") return;
     setColumns((prev) => prev.filter((col) => col.id !== id));
-  };
+  };// Di dalam deleteColumn, tambahkan:
+const deleteColumn = (id) => {
+  console.log("deleteColumn called with:", id);
+  if (id === "action" || id === "item") { // ← ITEM juga tidak bisa dihapus
+    console.log(`⛔ Cannot delete column: ${id}`);
+    return;
+  }
+  setColumns((prev) => prev.filter((col) => col.id !== id));
+};
 
   // Toggle visibility
   const toggleColumn = (id) => {
