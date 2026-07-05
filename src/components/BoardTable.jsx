@@ -17,7 +17,6 @@ export default function BoardTable({
   onOpenStatusManager,
 }) {
   const {
-    columns,
     updateColumnWidth,
     renameColumn,
     toggleColumn,
@@ -39,6 +38,17 @@ export default function BoardTable({
     acc[group] = items.filter((item) => item.group === group);
     return acc;
   }, {});
+
+  // Pastikan kolom ITEM selalu ada di visibleColumns
+  const safeVisibleColumns = visibleColumns.length > 0 ? visibleColumns : [
+    { id: "item", label: "ITEM", width: 22, visible: true },
+    { id: "document", label: "NO. DOCUMENT", width: 20, visible: true },
+    { id: "people", label: "PEOPLE", width: 13, visible: true },
+    { id: "status", label: "STATUS", width: 13, visible: true },
+    { id: "dueDate", label: "DUE DATE", width: 13, visible: true },
+    { id: "rev", label: "REV", width: 8, visible: true },
+    { id: "action", label: "", width: 6, visible: true },
+  ];
 
   return (
     <div className="board-table-wrapper">
@@ -89,7 +99,6 @@ export default function BoardTable({
                   paddingBottom: 4,
                   borderBottom: `2px solid ${groupColor}`,
                   flex: 1,
-                  transition: "color 0.2s",
                 }}
               >
                 {groupName}
@@ -107,11 +116,9 @@ export default function BoardTable({
                   background: "transparent",
                   marginLeft: 8,
                 }}
-                title="Pilih warna group"
               />
             </div>
 
-            {/* POPUP DELETE GROUP */}
             {popupGroup === groupName && (
               <>
                 <div
@@ -162,7 +169,6 @@ export default function BoardTable({
               </>
             )}
 
-            {/* TABEL */}
             {!isCollapsed && (
               <>
                 {tasks.length > 0 ? (
@@ -189,12 +195,12 @@ export default function BoardTable({
                           letterSpacing: "0.3px",
                         }}
                       >
-                        {visibleColumns.map((col, idx) => (
+                        {safeVisibleColumns.map((col, idx) => (
                           <ResizableHeader
                             key={col.id}
                             column={col}
                             index={idx}
-                            totalColumns={visibleColumns.length}
+                            totalColumns={safeVisibleColumns.length}
                             onResize={updateColumnWidth}
                             onRename={renameColumn}
                             onToggle={toggleColumn}
@@ -213,7 +219,7 @@ export default function BoardTable({
                           item={item}
                           statuses={statuses}
                           groupColor={groupColor}
-                          visibleColumns={visibleColumns}
+                          visibleColumns={safeVisibleColumns}
                           onUpdate={(field, value) => onUpdateItem(item.id, field, value)}
                           onDelete={() => onDeleteItem(item.id)}
                         />
@@ -235,7 +241,6 @@ export default function BoardTable({
                   </div>
                 )}
 
-                {/* TOMBOL ADD TASK DI BAWAH TABEL */}
                 <button
                   onClick={() => onAddItem(groupName)}
                   style={{
@@ -256,8 +261,12 @@ export default function BoardTable({
                     borderBottomRightRadius: 4,
                     transition: "background 0.15s",
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-hover)")}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.background = "var(--bg-hover)")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.background = "transparent")
+                  }
                 >
                   + Add task
                 </button>
