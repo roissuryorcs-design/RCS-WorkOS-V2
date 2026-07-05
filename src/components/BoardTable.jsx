@@ -149,79 +149,76 @@ export default function BoardTable({
         return (
           <div key={groupName} style={{ marginBottom: 24, position: "relative" }}>
             {/* ============================================================
-                HEADER GROUP – STICKY DENGAN width: max-content
+                HEADER GROUP – DI LUAR TABEL (seperti Monday.com)
                 ============================================================ */}
             <div
               style={{
-                display: "inline-block", // ← agar lebar mengikuti konten
                 position: "sticky",
                 left: 0,
                 zIndex: 20,
                 background: "var(--bg-secondary)",
-                padding: "8px 8px",
                 borderBottom: `3px solid ${groupColor}`,
+                padding: "8px 12px",
                 marginBottom: 8,
-                width: "max-content",
-                minWidth: "100%",
+                display: "flex",
+                alignItems: "center",
+                width: "100%",
                 boxSizing: "border-box",
               }}
             >
-              <div style={{ display: "flex", alignItems: "center" }}>
-                <button
-                  onClick={() => toggleCollapse(groupName)}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    fontSize: 16,
-                    color: "var(--text-secondary)",
-                    padding: "0 4px 0 0",
-                    marginRight: 4,
-                  }}
-                >
-                  {isCollapsed ? "▶" : "▼"}
-                </button>
+              <button
+                onClick={() => toggleCollapse(groupName)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: 16,
+                  color: "var(--text-secondary)",
+                  padding: "0 4px 0 0",
+                  marginRight: 8,
+                }}
+              >
+                {isCollapsed ? "▶" : "▼"}
+              </button>
 
-                <button
-                  onClick={() => setPopupGroup(groupName)}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    fontSize: 18,
-                    color: "var(--text-secondary)",
-                    padding: "0 8px 0 0",
-                    marginRight: 4,
-                  }}
-                >
-                  ⋮
-                </button>
+              <button
+                onClick={() => setPopupGroup(groupName)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: 18,
+                  color: "var(--text-secondary)",
+                  padding: "0 8px 0 0",
+                  marginRight: 8,
+                }}
+              >
+                ⋮
+              </button>
 
-                <h3
-                  style={{
-                    fontSize: 14,
-                    fontWeight: 600,
-                    color: groupColor,
-                    flex: 1,
-                  }}
-                >
-                  {groupName}
-                </h3>
+              <h3
+                style={{
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: groupColor,
+                  flex: 1,
+                }}
+              >
+                {groupName}
+              </h3>
 
-                <input
-                  type="color"
-                  value={groupColor}
-                  onChange={(e) => onUpdateGroupColor(groupName, e.target.value)}
-                  style={{
-                    width: 24,
-                    height: 24,
-                    border: "none",
-                    cursor: "pointer",
-                    background: "transparent",
-                    marginLeft: 8,
-                  }}
-                />
-              </div>
+              <input
+                type="color"
+                value={groupColor}
+                onChange={(e) => onUpdateGroupColor(groupName, e.target.value)}
+                style={{
+                  width: 24,
+                  height: 24,
+                  border: "none",
+                  cursor: "pointer",
+                  background: "transparent",
+                }}
+              />
             </div>
 
             {/* POPUP DELETE GROUP */}
@@ -275,157 +272,167 @@ export default function BoardTable({
               </>
             )}
 
-            {/* TABEL */}
+            {/* ============================================================
+                TABEL – DI DALAM CONTAINER SCROLL (horizontal)
+                ============================================================ */}
             {!isCollapsed && (
               <>
                 {tasks.length > 0 ? (
-                  <table
-                    cellPadding="0"
-                    style={{
-                      borderCollapse: "collapse",
-                      border: "2px solid var(--border-color)",
-                      borderRadius: 4,
-                      borderLeft: `4px solid ${groupColor}`,
-                      tableLayout: "fixed",
-                      width: "100%",
-                    }}
-                  >
-                    <thead>
-                      <tr
-                        style={{
-                          textAlign: "left",
-                          fontSize: 12,
-                          color: "var(--text-muted)",
-                          fontWeight: 600,
-                          borderBottom: "2px solid var(--border-color)",
-                          textTransform: "uppercase",
-                          letterSpacing: "0.3px",
-                        }}
-                      >
-                        <th
+                  <div style={{ overflowX: "auto", width: "100%" }}>
+                    <table
+                      cellPadding="0"
+                      style={{
+                        borderCollapse: "collapse",
+                        border: "2px solid var(--border-color)",
+                        borderRadius: 4,
+                        borderLeft: `4px solid ${groupColor}`,
+                        tableLayout: "fixed",
+                        width: "auto",
+                      }}
+                    >
+                      <thead>
+                        <tr
                           style={{
-                            padding: "8px 8px",
-                            width: "36px",
-                            minWidth: "36px",
-                            maxWidth: "36px",
-                            borderRight: "2px solid var(--border-color)",
-                            textAlign: "center",
+                            textAlign: "left",
+                            fontSize: 12,
+                            color: "var(--text-muted)",
+                            fontWeight: 600,
+                            borderBottom: "2px solid var(--border-color)",
+                            textTransform: "uppercase",
+                            letterSpacing: "0.3px",
                           }}
                         >
-                          <input
-                            type="checkbox"
-                            checked={
-                              tasks.length > 0 &&
-                              tasks.every((t) => selectedItems.includes(t.id))
-                            }
-                            onChange={() => selectAllInGroup(groupName, tasks)}
-                            style={{ cursor: "pointer", width: 16, height: 16 }}
-                          />
-                        </th>
+                          {/* CHECKBOX – STICKY */}
+                          <th
+                            style={{
+                              padding: "8px 8px",
+                              width: "36px",
+                              minWidth: "36px",
+                              maxWidth: "36px",
+                              borderRight: "2px solid var(--border-color)",
+                              textAlign: "center",
+                              position: "sticky",
+                              left: 0,
+                              zIndex: 12,
+                              background: "var(--bg-secondary)",
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={
+                                tasks.length > 0 &&
+                                tasks.every((t) => selectedItems.includes(t.id))
+                              }
+                              onChange={() => selectAllInGroup(groupName, tasks)}
+                              style={{ cursor: "pointer", width: 16, height: 16 }}
+                            />
+                          </th>
 
-                        {safeColumns.map((col, idx) => {
-                          const isStatus = col.id === "status";
-                          const isItem = col.id === "item";
-                          const isLast = idx === safeColumns.length - 1;
-                          return (
-                            <ResizableHeader
-                              key={col.id}
-                              column={col}
-                              index={idx}
-                              totalColumns={safeColumns.length}
-                              onResize={updateColumnWidth}
-                              onRename={renameColumn}
-                              onToggle={toggleColumn}
-                              onDelete={deleteColumn}
-                              onReorder={reorderColumns}
-                              isSticky={isItem}
-                              stickyLeft={isItem ? 36 : 0}
-                              isLast={isLast}
-                            >
-                              {isStatus ? (
-                                <div
-                                  style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 4,
-                                  }}
-                                >
-                                  <span>STATUS</span>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      onOpenStatusManager();
-                                    }}
+                          {safeColumns.map((col, idx) => {
+                            const isStatus = col.id === "status";
+                            const isItem = col.id === "item";
+                            const isLast = idx === safeColumns.length - 1;
+                            return (
+                              <ResizableHeader
+                                key={col.id}
+                                column={col}
+                                index={idx}
+                                totalColumns={safeColumns.length}
+                                onResize={updateColumnWidth}
+                                onRename={renameColumn}
+                                onToggle={toggleColumn}
+                                onDelete={deleteColumn}
+                                onReorder={reorderColumns}
+                                isSticky={isItem}
+                                stickyLeft={isItem ? 36 : 0}
+                                isLast={isLast}
+                              >
+                                {isStatus ? (
+                                  <div
                                     style={{
-                                      background: "none",
-                                      border: "none",
-                                      cursor: "pointer",
-                                      fontSize: 16,
-                                      color: "var(--text-secondary)",
-                                      padding: 0,
                                       display: "flex",
                                       alignItems: "center",
-                                      opacity: 0.6,
-                                      transition: "opacity 0.2s",
+                                      gap: 4,
                                     }}
-                                    onMouseEnter={(e) =>
-                                      (e.currentTarget.style.opacity = 1)
-                                    }
-                                    onMouseLeave={(e) =>
-                                      (e.currentTarget.style.opacity = 0.6)
-                                    }
-                                    title="Kelola status"
                                   >
-                                    🔽
-                                  </button>
-                                </div>
-                              ) : (
-                                col.label
-                              )}
-                            </ResizableHeader>
-                          );
-                        })}
+                                    <span>STATUS</span>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        onOpenStatusManager();
+                                      }}
+                                      style={{
+                                        background: "none",
+                                        border: "none",
+                                        cursor: "pointer",
+                                        fontSize: 16,
+                                        color: "var(--text-secondary)",
+                                        padding: 0,
+                                        display: "flex",
+                                        alignItems: "center",
+                                        opacity: 0.6,
+                                        transition: "opacity 0.2s",
+                                      }}
+                                      onMouseEnter={(e) =>
+                                        (e.currentTarget.style.opacity = 1)
+                                      }
+                                      onMouseLeave={(e) =>
+                                        (e.currentTarget.style.opacity = 0.6)
+                                      }
+                                      title="Kelola status"
+                                    >
+                                      🔽
+                                    </button>
+                                  </div>
+                                ) : (
+                                  col.label
+                                )}
+                              </ResizableHeader>
+                            );
+                          })}
 
-                        <th
-                          style={{
-                            padding: "8px 8px",
-                            width: "50px",
-                            minWidth: "50px",
-                            maxWidth: "50px",
-                            borderRight: "none",
-                            borderLeft: "2px solid var(--border-color)",
-                            textAlign: "center",
-                            cursor: "pointer",
-                            color: "var(--text-muted)",
-                          }}
-                          onClick={handleAddColumn}
-                          onMouseEnter={(e) =>
-                            (e.currentTarget.style.background = "var(--bg-hover)")
-                          }
-                          onMouseLeave={(e) =>
-                            (e.currentTarget.style.background = "transparent")
-                          }
-                        >
-                          <span style={{ fontSize: 18, fontWeight: 300 }}>+</span>
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {tasks.map((item) => (
-                        <Row
-                          key={item.id}
-                          item={item}
-                          statuses={statuses}
-                          groupColor={groupColor}
-                          visibleColumns={safeColumns}
-                          isSelected={selectedItems.includes(item.id)}
-                          onToggleSelect={() => toggleSelectItem(item.id)}
-                          onUpdate={(field, value) => onUpdateItem(item.id, field, value)}
-                          onDelete={() => onDeleteItem(item.id)}
-                        />
-                      ))}
-                    </tbody>
-                  </table>
+                          {/* KOLOM "+" – TIDAK STICKY */}
+                          <th
+                            style={{
+                              padding: "8px 8px",
+                              width: "50px",
+                              minWidth: "50px",
+                              maxWidth: "50px",
+                              borderRight: "none",
+                              borderLeft: "2px solid var(--border-color)",
+                              textAlign: "center",
+                              cursor: "pointer",
+                              color: "var(--text-muted)",
+                            }}
+                            onClick={handleAddColumn}
+                            onMouseEnter={(e) =>
+                              (e.currentTarget.style.background = "var(--bg-hover)")
+                            }
+                            onMouseLeave={(e) =>
+                              (e.currentTarget.style.background = "transparent")
+                            }
+                          >
+                            <span style={{ fontSize: 18, fontWeight: 300 }}>+</span>
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {tasks.map((item) => (
+                          <Row
+                            key={item.id}
+                            item={item}
+                            statuses={statuses}
+                            groupColor={groupColor}
+                            visibleColumns={safeColumns}
+                            isSelected={selectedItems.includes(item.id)}
+                            onToggleSelect={() => toggleSelectItem(item.id)}
+                            onUpdate={(field, value) => onUpdateItem(item.id, field, value)}
+                            onDelete={() => onDeleteItem(item.id)}
+                          />
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 ) : (
                   <div
                     style={{
@@ -453,6 +460,50 @@ export default function BoardTable({
                     </button>
                   </div>
                 )}
+
+                {/* BARIS "+ Add item" – STICKY KIRI (di luar tabel) */}
+                <div
+                  style={{
+                    position: "sticky",
+                    left: 0,
+                    zIndex: 5,
+                    background: "var(--bg-secondary)",
+                    borderBottom: "2px solid var(--border-color)",
+                    borderLeft: `4px solid ${groupColor}`,
+                    borderRight: "2px solid var(--border-color)",
+                    borderBottomLeftRadius: 4,
+                    borderBottomRightRadius: 4,
+                    padding: 0,
+                    marginTop: 0,
+                    width: "100%",
+                    boxSizing: "border-box",
+                  }}
+                >
+                  <button
+                    onClick={() => onAddItem(groupName)}
+                    style={{
+                      display: "block",
+                      width: "100%",
+                      padding: "6px 8px",
+                      border: "none",
+                      background: "transparent",
+                      color: "#3b82f6",
+                      cursor: "pointer",
+                      fontSize: 13,
+                      textAlign: "left",
+                      transition: "background 0.15s",
+                      boxSizing: "border-box",
+                    }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.background = "var(--bg-hover)")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.background = "transparent")
+                    }
+                  >
+                    + Add item
+                  </button>
+                </div>
               </>
             )}
           </div>
