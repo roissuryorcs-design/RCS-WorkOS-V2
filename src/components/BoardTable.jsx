@@ -1,8 +1,8 @@
-// Di bagian <table>, ubah:
+// Cari bagian <table> dan ubah menjadi:
 <table
   cellPadding="0"
   style={{
-    borderCollapse: "separate", // ← ubah dari collapse
+    borderCollapse: "separate", // ← ubah
     borderSpacing: 0, // ← tambahkan
     border: "2px solid var(--border-color)",
     borderRadius: 4,
