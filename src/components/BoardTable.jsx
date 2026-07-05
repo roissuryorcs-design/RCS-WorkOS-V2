@@ -51,7 +51,7 @@ export default function BoardTable({
   })();
 
   const fixedWidth = safeColumns.reduce((sum, col) => sum + col.width, 0);
-  const tableMinWidth = fixedWidth + 100;
+  const tableMinWidth = fixedWidth + 100; // checkbox + kolom +
 
   const toggleSelectItem = (itemId) => {
     setSelectedItems((prev) =>
