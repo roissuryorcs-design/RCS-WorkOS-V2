@@ -71,7 +71,7 @@ export default function Row({
           boxSizing: "border-box",
           position: "sticky",
           left: 0,
-          zIndex: 12,
+          zIndex: 20,
           background: "var(--bg-secondary)",
         }}
       >
@@ -91,9 +91,9 @@ export default function Row({
           ? {
               position: "sticky",
               left: "36px",
-              zIndex: 12, // ← sama dengan checkbox
+              zIndex: 20,
               background: "var(--bg-secondary)",
-              borderRight: "2px solid var(--border-color)", // ← border tetap terlihat
+              boxShadow: "inset -2px 0 0 0 var(--border-color)", // ← border kanan
             }
           : {};
 
