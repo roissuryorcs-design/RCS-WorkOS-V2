@@ -141,156 +141,144 @@ export default function BoardTable({
         </div>
       )}
 
-      {/* ============================================================
-          SATU CONTAINER SCROLL UNTUK SEMUA GROUP
-          ============================================================ */}
-      <div
-        style={{
-          overflowX: "auto",
-          overflowY: "visible",
-          width: "100%",
-          position: "relative",
-        }}
-      >
-        {groups.map((groupName) => {
-          const tasks = grouped[groupName] || [];
-          const isCollapsed = collapsed[groupName] || false;
-          const groupColor = groupColors[groupName] || "#3b82f6";
+      {groups.map((groupName) => {
+        const tasks = grouped[groupName] || [];
+        const isCollapsed = collapsed[groupName] || false;
+        const groupColor = groupColors[groupName] || "#3b82f6";
 
-          // Hitung total lebar kolom untuk menentukan lebar tabel
-          const totalWidth = safeColumns.reduce((sum, col) => sum + col.width, 0) + 100;
-
-          return (
-            <div key={groupName} style={{ marginBottom: 24, position: "relative" }}>
-              {/* ============================================================
-                  HEADER GROUP – STICKY KIRI (di luar tabel)
-                  ============================================================ */}
-              <div
+        return (
+          <div key={groupName} style={{ marginBottom: 24, position: "relative" }}>
+            {/* ============================================================
+                HEADER GROUP – STICKY KIRI (berhasil)
+                ============================================================ */}
+            <div
+              style={{
+                position: "sticky",
+                left: 0,
+                zIndex: 20,
+                background: "var(--bg-secondary)",
+                borderBottom: `3px solid ${groupColor}`,
+                padding: "8px 12px",
+                marginBottom: 8,
+                display: "flex",
+                alignItems: "center",
+                width: "100%",
+                boxSizing: "border-box",
+              }}
+            >
+              <button
+                onClick={() => toggleCollapse(groupName)}
                 style={{
-                  position: "sticky",
-                  left: 0,
-                  zIndex: 20,
-                  background: "var(--bg-secondary)",
-                  borderBottom: `3px solid ${groupColor}`,
-                  padding: "8px 12px",
-                  marginBottom: 8,
-                  display: "flex",
-                  alignItems: "center",
-                  width: "100%",
-                  boxSizing: "border-box",
-                  minWidth: totalWidth + "px",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: 16,
+                  color: "var(--text-secondary)",
+                  padding: "0 4px 0 0",
+                  marginRight: 8,
                 }}
               >
-                <button
-                  onClick={() => toggleCollapse(groupName)}
+                {isCollapsed ? "▶" : "▼"}
+              </button>
+
+              <button
+                onClick={() => setPopupGroup(groupName)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: 18,
+                  color: "var(--text-secondary)",
+                  padding: "0 8px 0 0",
+                  marginRight: 8,
+                }}
+              >
+                ⋮
+              </button>
+
+              <h3
+                style={{
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: groupColor,
+                  flex: 1,
+                }}
+              >
+                {groupName}
+              </h3>
+
+              <input
+                type="color"
+                value={groupColor}
+                onChange={(e) => onUpdateGroupColor(groupName, e.target.value)}
+                style={{
+                  width: 24,
+                  height: 24,
+                  border: "none",
+                  cursor: "pointer",
+                  background: "transparent",
+                }}
+              />
+            </div>
+
+            {/* POPUP DELETE GROUP */}
+            {popupGroup === groupName && (
+              <>
+                <div
                   style={{
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    fontSize: 16,
-                    color: "var(--text-secondary)",
-                    padding: "0 4px 0 0",
-                    marginRight: 8,
+                    position: "absolute",
+                    top: 30,
+                    left: 0,
+                    background: "var(--bg-modal)",
+                    border: "1px solid var(--border-color)",
+                    borderRadius: 6,
+                    boxShadow: "var(--shadow-md)",
+                    padding: "4px 0",
+                    zIndex: 100,
+                    minWidth: "160px",
                   }}
                 >
-                  {isCollapsed ? "▶" : "▼"}
-                </button>
-
-                <button
-                  onClick={() => setPopupGroup(groupName)}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    fontSize: 18,
-                    color: "var(--text-secondary)",
-                    padding: "0 8px 0 0",
-                    marginRight: 8,
-                  }}
-                >
-                  ⋮
-                </button>
-
-                <h3
-                  style={{
-                    fontSize: 14,
-                    fontWeight: 600,
-                    color: groupColor,
-                    flex: 1,
-                  }}
-                >
-                  {groupName}
-                </h3>
-
-                <input
-                  type="color"
-                  value={groupColor}
-                  onChange={(e) => onUpdateGroupColor(groupName, e.target.value)}
-                  style={{
-                    width: 24,
-                    height: 24,
-                    border: "none",
-                    cursor: "pointer",
-                    background: "transparent",
-                  }}
-                />
-              </div>
-
-              {/* POPUP DELETE GROUP */}
-              {popupGroup === groupName && (
-                <>
-                  <div
+                  <button
+                    onClick={() => {
+                      closePopup();
+                      onDeleteGroup(groupName);
+                    }}
                     style={{
-                      position: "absolute",
-                      top: 30,
-                      left: 0,
-                      background: "var(--bg-modal)",
-                      border: "1px solid var(--border-color)",
-                      borderRadius: 6,
-                      boxShadow: "var(--shadow-md)",
-                      padding: "4px 0",
-                      zIndex: 100,
-                      minWidth: "160px",
+                      display: "block",
+                      width: "100%",
+                      padding: "6px 16px",
+                      background: "none",
+                      border: "none",
+                      textAlign: "left",
+                      cursor: "pointer",
+                      color: "#ef4444",
+                      fontSize: 13,
                     }}
                   >
-                    <button
-                      onClick={() => {
-                        closePopup();
-                        onDeleteGroup(groupName);
-                      }}
-                      style={{
-                        display: "block",
-                        width: "100%",
-                        padding: "6px 16px",
-                        background: "none",
-                        border: "none",
-                        textAlign: "left",
-                        cursor: "pointer",
-                        color: "#ef4444",
-                        fontSize: 13,
-                      }}
-                    >
-                      🗑️ Delete Group
-                    </button>
-                  </div>
-                  <div
-                    style={{
-                      position: "fixed",
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      zIndex: 99,
-                    }}
-                    onClick={closePopup}
-                  />
-                </>
-              )}
+                    🗑️ Delete Group
+                  </button>
+                </div>
+                <div
+                  style={{
+                    position: "fixed",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    zIndex: 99,
+                  }}
+                  onClick={closePopup}
+                />
+              </>
+            )}
 
-              {/* TABEL */}
-              {!isCollapsed && (
-                <>
-                  {tasks.length > 0 ? (
+            {/* ============================================================
+                TABEL DENGAN SCROLL HORIZONTAL PER GROUP
+                ============================================================ */}
+            {!isCollapsed && (
+              <>
+                {tasks.length > 0 ? (
+                  <div style={{ overflowX: "auto", width: "100%" }}>
                     <table
                       cellPadding="0"
                       style={{
@@ -299,8 +287,7 @@ export default function BoardTable({
                         borderRadius: 4,
                         borderLeft: `4px solid ${groupColor}`,
                         tableLayout: "fixed",
-                        width: "100%",
-                        minWidth: totalWidth + "px",
+                        width: "auto",
                       }}
                     >
                       <thead>
@@ -445,59 +432,58 @@ export default function BoardTable({
                         ))}
                       </tbody>
                     </table>
-                  ) : (
-                    <div
+                  </div>
+                ) : (
+                  <div
+                    style={{
+                      padding: "12px",
+                      color: "var(--text-light)",
+                      textAlign: "center",
+                      border: "2px solid var(--border-color)",
+                      borderRadius: 4,
+                      borderLeft: `4px solid ${groupColor}`,
+                    }}
+                  >
+                    No items in this group.
+                    <button
+                      onClick={() => onAddItem(groupName)}
                       style={{
-                        padding: "12px",
-                        color: "var(--text-light)",
-                        textAlign: "center",
-                        border: "2px solid var(--border-color)",
-                        borderRadius: 4,
-                        borderLeft: `4px solid ${groupColor}`,
+                        color: "#3b82f6",
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        marginLeft: 4,
+                        textDecoration: "underline",
                       }}
                     >
-                      No items in this group.
-                      <button
-                        onClick={() => onAddItem(groupName)}
-                        style={{
-                          color: "#3b82f6",
-                          background: "none",
-                          border: "none",
-                          cursor: "pointer",
-                          marginLeft: 4,
-                          textDecoration: "underline",
-                        }}
-                      >
-                        Add item
-                      </button>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          );
-        })}
+                      Add item
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        );
+      })}
 
-        {/* TOMBOL ADD NEW GROUP (di dalam container scroll) */}
-        <div style={{ marginTop: 16 }}>
-          <button
-            onClick={onAddGroup}
-            style={{
-              display: "block",
-              width: "100%",
-              padding: "10px",
-              border: "2px dashed var(--border-color)",
-              borderRadius: 6,
-              background: "transparent",
-              color: "#3b82f6",
-              cursor: "pointer",
-              fontSize: 14,
-              textAlign: "center",
-            }}
-          >
-            + Add new group
-          </button>
-        </div>
+      <div style={{ marginTop: 16 }}>
+        <button
+          onClick={onAddGroup}
+          style={{
+            display: "block",
+            width: "100%",
+            padding: "10px",
+            border: "2px dashed var(--border-color)",
+            borderRadius: 6,
+            background: "transparent",
+            color: "#3b82f6",
+            cursor: "pointer",
+            fontSize: 14,
+            textAlign: "center",
+          }}
+        >
+          + Add new group
+        </button>
       </div>
     </div>
   );
