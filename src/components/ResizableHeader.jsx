@@ -12,6 +12,7 @@ export default function ResizableHeader({
   onReorder,
   children,
   isSticky = false,
+  stickyLeft = 0,
 }) {
   const [width, setWidth] = useState(column.width);
   const [isResizing, setIsResizing] = useState(false);
@@ -22,7 +23,6 @@ export default function ResizableHeader({
   const isResizingRef = useRef(false);
 
   const isProtected = column.id === "item" || column.id === "action";
-  const isLast = index === totalColumns - 1;
 
   const handleResizeStart = (e) => {
     e.preventDefault();
@@ -110,7 +110,7 @@ export default function ResizableHeader({
   const stickyStyle = isSticky
     ? {
         position: "sticky",
-        left: 0,
+        left: stickyLeft || 0,
         zIndex: 10,
         background: "var(--bg-secondary)",
         borderRight: "2px solid var(--border-color)",
@@ -131,7 +131,7 @@ export default function ResizableHeader({
         minWidth: 40,
         maxWidth: `${width}px`,
         padding: "8px 8px",
-        borderRight: isLast ? "none" : "2px solid var(--border-color)",
+        borderRight: "2px solid var(--border-color)",
         position: "relative",
         userSelect: "none",
         cursor: isProtected ? "default" : isResizing ? "col-resize" : "grab",
