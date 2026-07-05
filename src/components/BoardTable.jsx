@@ -157,10 +157,13 @@ export default function BoardTable({
           const isCollapsed = collapsed[groupName] || false;
           const groupColor = groupColors[groupName] || "#3b82f6";
 
+          // Hitung total lebar kolom untuk menentukan lebar tabel
+          const totalWidth = safeColumns.reduce((sum, col) => sum + col.width, 0) + 100;
+
           return (
             <div key={groupName} style={{ marginBottom: 24, position: "relative" }}>
               {/* ============================================================
-                  HEADER GROUP – STICKY KIRI (di dalam container scroll)
+                  HEADER GROUP – STICKY KIRI (di luar tabel)
                   ============================================================ */}
               <div
                 style={{
@@ -175,6 +178,7 @@ export default function BoardTable({
                   alignItems: "center",
                   width: "100%",
                   boxSizing: "border-box",
+                  minWidth: totalWidth + "px",
                 }}
               >
                 <button
@@ -295,7 +299,8 @@ export default function BoardTable({
                         borderRadius: 4,
                         borderLeft: `4px solid ${groupColor}`,
                         tableLayout: "fixed",
-                        width: "auto",
+                        width: "100%",
+                        minWidth: totalWidth + "px",
                       }}
                     >
                       <thead>
