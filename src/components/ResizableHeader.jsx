@@ -18,28 +18,26 @@ export default function ResizableHeader({
   const thRef = useRef(null);
   const startX = useRef(0);
   const startWidth = useRef(0);
-  const isResizingRef = useRef(false); // ← REF untuk flag resize
+  const isResizingRef = useRef(false);
 
   const isProtected = column.id === "item" || column.id === "action";
   const isLast = index === totalColumns - 1;
 
   // ============================================================
-  // RESIZE - Dengan REF agar event mousemove bisa baca flag
+  // RESIZE - dengan px
   // ============================================================
   const handleResizeStart = (e) => {
     e.preventDefault();
     e.stopPropagation();
     console.log("🔵 Resize start for column:", column.id);
 
-    // Set flag via ref dan state
     isResizingRef.current = true;
     setIsResizing(true);
     startX.current = e.clientX;
     startWidth.current = thRef.current?.offsetWidth || 60;
 
-    console.log("📏 Start width:", startWidth.current);
+    console.log("📏 Start width (px):", startWidth.current);
 
-    // Definisikan handler di sini agar bisa akses isResizingRef
     const onMove = (ev) => {
       if (!isResizingRef.current) {
         console.log("⏭️ Resize skipped: not resizing");
@@ -49,13 +47,11 @@ export default function ResizableHeader({
       
       const diff = ev.clientX - startX.current;
       const newWidth = Math.max(40, startWidth.current + diff);
-      const parentWidth = thRef.current?.parentElement?.offsetWidth || 800;
-      const percent = Math.min(50, Math.max(5, (newWidth / parentWidth) * 100));
       
-      console.log(`📐 Resize: ${newWidth}px → ${percent.toFixed(1)}%`);
+      console.log(`📐 Resize: ${newWidth}px`);
       
-      setWidth(percent);
-      onResize(column.id, percent);
+      setWidth(newWidth);
+      onResize(column.id, newWidth);
     };
 
     const onUp = () => {
@@ -66,7 +62,6 @@ export default function ResizableHeader({
       document.removeEventListener("mouseup", onUp);
     };
 
-    // Daftarkan event listener
     document.addEventListener("mousemove", onMove);
     document.addEventListener("mouseup", onUp);
   };
@@ -76,7 +71,7 @@ export default function ResizableHeader({
   }, [column.width]);
 
   // ============================================================
-  // DRAG & DROP (tetap)
+  // DRAG & DROP
   // ============================================================
   const handleDragStart = (e) => {
     if (isProtected) {
@@ -134,9 +129,9 @@ export default function ResizableHeader({
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       style={{
-        width: `${width}%`,
-        minWidth: 60,
-        maxWidth: `${width}%`,
+        width: `${width}px`,
+        minWidth: 40,
+        maxWidth: `${width}px`,
         padding: "8px 8px",
         borderRight: isLast ? "none" : "2px solid var(--border-color)",
         position: "relative",
