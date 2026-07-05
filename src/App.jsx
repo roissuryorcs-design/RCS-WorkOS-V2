@@ -8,11 +8,7 @@ import BoardTable from "./components/BoardTable";
 import StatusManager from "./components/StatusManager";
 import "./App.css";
 
-// ============================================================
-// APP CONTENT (semua state & fungsi)
-// ============================================================
 function AppContent() {
-  // ----- STATE -----
   const [items, setItems] = useState([]);
   const [statuses, setStatuses] = useState({});
   const [search, setSearch] = useState("");
@@ -21,7 +17,6 @@ function AppContent() {
   const [showStatusManager, setShowStatusManager] = useState(false);
   const [groupColors, setGroupColors] = useState({});
 
-  // ----- LOAD DATA FROM LOCALSTORAGE -----
   useEffect(() => {
     const savedItems = localStorage.getItem("forelItems");
     const savedStatuses = localStorage.getItem("forelStatuses");
@@ -116,7 +111,6 @@ function AppContent() {
     }
   }, []);
 
-  // ----- AUTO SAVE -----
   useEffect(() => {
     localStorage.setItem("forelItems", JSON.stringify(items));
   }, [items]);
@@ -133,7 +127,6 @@ function AppContent() {
     localStorage.setItem("forelGroupColors", JSON.stringify(groupColors));
   }, [groupColors]);
 
-  // ----- UNDO HELPER -----
   const saveHistory = (newItems) => {
     setHistory((prev) => [...prev, items]);
     setItems(newItems);
@@ -146,7 +139,6 @@ function AppContent() {
     setItems(prevState);
   };
 
-  // ----- CRUD ITEM -----
   const updateItem = (id, field, value) => {
     const newItems = items.map((it) =>
       it.id === id ? { ...it, [field]: value } : it
@@ -175,7 +167,6 @@ function AppContent() {
     saveHistory([...items, newItem]);
   };
 
-  // ----- GROUP CRUD -----
   const addGroup = () => {
     const name = prompt("Enter new group name:");
     if (!name || !name.trim()) return;
@@ -207,12 +198,10 @@ function AppContent() {
     setGroupColors(newColors);
   };
 
-  // ----- UPDATE WARNA GROUP -----
   const updateGroupColor = (groupName, color) => {
     setGroupColors(prev => ({ ...prev, [groupName]: color }));
   };
 
-  // ----- STATUS CRUD (LENGKAP) -----
   const addStatus = (name, color) => {
     const finalName = name.trim() || "Default";
     if (statuses[finalName]) {
@@ -242,7 +231,6 @@ function AppContent() {
     setItems(newItems);
   };
 
-  // ----- FAVORITES -----
   const addFavorite = () => {
     const name = prompt("Enter favorite name:");
     if (name && name.trim()) {
@@ -255,7 +243,6 @@ function AppContent() {
     setFavorites(newFavs);
   };
 
-  // ----- EXPORT -----
   const exportData = () => {
     const dataStr = JSON.stringify({ items, statuses, groupColors }, null, 2);
     const blob = new Blob([dataStr], { type: "application/json" });
@@ -267,14 +254,12 @@ function AppContent() {
     URL.revokeObjectURL(url);
   };
 
-  // ----- FILTER -----
   const filteredItems = items.filter((it) =>
     it.item.toLowerCase().includes(search.toLowerCase()) ||
     it.document.toLowerCase().includes(search.toLowerCase()) ||
     it.people.toLowerCase().includes(search.toLowerCase())
   );
 
-  // ----- PERHITUNGAN DONE / PENDING -----
   const totalItems = filteredItems.length;
   const hasDoneStatus = Object.keys(statuses).includes("Done");
   const doneItems = hasDoneStatus
@@ -282,10 +267,8 @@ function AppContent() {
     : 0;
   const pendingItems = totalItems - doneItems;
 
-  // ----- GROUPS UNIK -----
   const allGroups = [...new Set(items.map((item) => item.group))];
 
-  // ----- RENDER -----
   return (
     <div className="app-container">
       <Sidebar
@@ -306,19 +289,22 @@ function AppContent() {
           canUndo={history.length > 0}
         />
 
-        <BoardTable
-          items={filteredItems}
-          groups={allGroups}
-          statuses={statuses}
-          groupColors={groupColors}
-          onUpdateGroupColor={updateGroupColor}
-          onUpdateItem={updateItem}
-          onDeleteItem={deleteItem}
-          onAddGroup={addGroup}
-          onDeleteGroup={deleteGroup}
-          onAddItem={addItem}
-          onOpenStatusManager={() => setShowStatusManager(true)}
-        />
+        {/* WRAPPER SCROLL DI ATAS FOOTER */}
+        <div style={{ overflowX: "auto", width: "100%", marginBottom: 16 }}>
+          <BoardTable
+            items={filteredItems}
+            groups={allGroups}
+            statuses={statuses}
+            groupColors={groupColors}
+            onUpdateGroupColor={updateGroupColor}
+            onUpdateItem={updateItem}
+            onDeleteItem={deleteItem}
+            onAddGroup={addGroup}
+            onDeleteGroup={deleteGroup}
+            onAddItem={addItem}
+            onOpenStatusManager={() => setShowStatusManager(true)}
+          />
+        </div>
 
         <div className="board-footer">
           <div>
@@ -334,7 +320,6 @@ function AppContent() {
         </div>
       </div>
 
-      {/* STATUS MANAGER MODAL */}
       {showStatusManager && (
         <StatusManager
           statuses={statuses}
@@ -348,9 +333,6 @@ function AppContent() {
   );
 }
 
-// ============================================================
-// APP UTAMA dengan ThemeProvider & ColumnProvider
-// ============================================================
 export default function App() {
   return (
     <ThemeProvider>
