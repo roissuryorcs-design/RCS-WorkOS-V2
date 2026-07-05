@@ -84,6 +84,11 @@ export default function BoardTable({
 
   const totalCols = 1 + safeColumns.length + 1;
 
+  // Cek apakah ada group
+  if (groups.length === 0) {
+    return <div style={{ padding: 20, color: "var(--text-muted)" }}>No groups found. Add a new group.</div>;
+  }
+
   return (
     <div className="board-table-wrapper">
       {selectedItems.length > 0 && (
@@ -145,21 +150,20 @@ export default function BoardTable({
         return (
           <div key={groupName} style={{ marginBottom: 24, position: "relative" }}>
             {/* ============================================================
-                HEADER GROUP – STICKY KIRI
+                HEADER GROUP – STICKY KIRI (terpisah dari tabel)
                 ============================================================ */}
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
+                padding: "8px 8px",
                 marginBottom: 8,
-                padding: "6px 8px",
-                borderBottom: `2px solid ${groupColor}`,
+                borderBottom: `3px solid ${groupColor}`,
                 position: "sticky",
                 left: 0,
                 zIndex: 20,
                 background: "var(--bg-secondary)",
-                width: "max-content",
-                minWidth: "100%",
+                width: "100%",
                 boxSizing: "border-box",
               }}
             >
@@ -282,7 +286,7 @@ export default function BoardTable({
                       borderRadius: 4,
                       borderLeft: `4px solid ${groupColor}`,
                       tableLayout: "fixed",
-                      width: "auto",
+                      width: "100%",
                     }}
                   >
                     <thead>
@@ -297,7 +301,6 @@ export default function BoardTable({
                           letterSpacing: "0.3px",
                         }}
                       >
-                        {/* CHECKBOX – STICKY */}
                         <th
                           style={{
                             padding: "8px 8px",
@@ -306,10 +309,6 @@ export default function BoardTable({
                             maxWidth: "36px",
                             borderRight: "2px solid var(--border-color)",
                             textAlign: "center",
-                            position: "sticky",
-                            left: 0,
-                            zIndex: 12,
-                            background: "var(--bg-secondary)",
                           }}
                         >
                           <input
@@ -386,7 +385,6 @@ export default function BoardTable({
                           );
                         })}
 
-                        {/* KOLOM "+" – TIDAK STICKY */}
                         <th
                           style={{
                             padding: "8px 8px",
@@ -454,51 +452,6 @@ export default function BoardTable({
                     </button>
                   </div>
                 )}
-
-                {/* BARIS "+ Add item" – STICKY KIRI */}
-                <div
-                  style={{
-                    position: "sticky",
-                    left: 0,
-                    zIndex: 5,
-                    background: "var(--bg-secondary)",
-                    borderBottom: "2px solid var(--border-color)",
-                    borderLeft: `4px solid ${groupColor}`,
-                    borderRight: "2px solid var(--border-color)",
-                    borderBottomLeftRadius: 4,
-                    borderBottomRightRadius: 4,
-                    padding: 0,
-                    marginTop: 0,
-                    width: "max-content",
-                    minWidth: "100%",
-                    boxSizing: "border-box",
-                  }}
-                >
-                  <button
-                    onClick={() => onAddItem(groupName)}
-                    style={{
-                      display: "block",
-                      width: "100%",
-                      padding: "6px 8px",
-                      border: "none",
-                      background: "transparent",
-                      color: "#3b82f6",
-                      cursor: "pointer",
-                      fontSize: 13,
-                      textAlign: "left",
-                      transition: "background 0.15s",
-                      boxSizing: "border-box",
-                    }}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.background = "var(--bg-hover)")
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.background = "transparent")
-                    }
-                  >
-                    + Add item
-                  </button>
-                </div>
               </>
             )}
           </div>
