@@ -22,34 +22,57 @@ export default function ResizableHeader({
   const startWidth = useRef(0);
   const isResizingRef = useRef(false);
 
-  // Tidak ada proteksi untuk resize – semua kolom bisa di-resize
-  const isProtected = false; // Semua kolom bisa di-resize
-
+  // ============================================================
+  // RESIZE - Lebih stabil
+  // ============================================================
   const handleResizeStart = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log("🔵 Resize start:", column.id);
+
+    // Nonaktifkan drag sementara
+    const th = thRef.current;
+    if (th) {
+      th.draggable = false;
+      th.style.userSelect = "none";
+      th.style.cursor = "col-resize";
+    }
 
     isResizingRef.current = true;
     setIsResizing(true);
+
+    const rect = th?.getBoundingClientRect();
     startX.current = e.clientX;
-    startWidth.current = thRef.current?.offsetWidth || 60;
-    console.log("📏 Start width:", startWidth.current);
+    startWidth.current = rect?.width || 60;
+
+    console.log("🔵 Resize start:", column.id, "width:", startWidth.current);
 
     const onMove = (ev) => {
       if (!isResizingRef.current) return;
       ev.preventDefault();
+
       const diff = ev.clientX - startX.current;
       const newWidth = Math.max(40, startWidth.current + diff);
-      console.log(`📐 Resize: ${newWidth}px`);
-      setWidth(newWidth);
+      
+      // Update langsung tanpa state agar responsif
+      if (th) {
+        th.style.width = newWidth + "px";
+      }
+      
       onResize(column.id, newWidth);
+      setWidth(newWidth);
     };
 
     const onUp = () => {
       console.log("🔴 Resize end:", column.id);
       isResizingRef.current = false;
       setIsResizing(false);
+
+      if (th) {
+        th.draggable = true;
+        th.style.userSelect = "";
+        th.style.cursor = "";
+      }
+
       document.removeEventListener("mousemove", onMove);
       document.removeEventListener("mouseup", onUp);
     };
@@ -58,13 +81,12 @@ export default function ResizableHeader({
     document.addEventListener("mouseup", onUp);
   };
 
-  useEffect(() => {
-    setWidth(column.width);
-  }, [column.width]);
-
+  // ============================================================
+  // DRAG & DROP - Tidak aktif saat resize
+  // ============================================================
   const handleDragStart = (e) => {
-    if (column.id === "item") {
-      e.preventDefault(); // ITEM tidak bisa di-drag (pindah posisi)
+    if (isResizingRef.current || column.id === "item") {
+      e.preventDefault();
       return;
     }
     e.dataTransfer.effectAllowed = "move";
@@ -79,7 +101,7 @@ export default function ResizableHeader({
 
   const handleDragOver = (e) => {
     e.preventDefault();
-    if (column.id !== "item") {
+    if (column.id !== "item" && !isResizingRef.current) {
       e.currentTarget.style.borderLeft = "3px solid var(--btn-primary-bg)";
       e.currentTarget.style.background = "var(--bg-hover)";
     }
@@ -105,6 +127,19 @@ export default function ResizableHeader({
     }
   };
 
+  // ============================================================
+  // SYNC WIDTH
+  // ============================================================
+  useEffect(() => {
+    setWidth(column.width);
+    if (thRef.current) {
+      thRef.current.style.width = column.width + "px";
+    }
+  }, [column.width]);
+
+  // ============================================================
+  // STICKY
+  // ============================================================
   const stickyStyle = isSticky
     ? {
         position: "sticky",
@@ -115,10 +150,13 @@ export default function ResizableHeader({
       }
     : {};
 
+  // ============================================================
+  // RENDER
+  // ============================================================
   return (
     <th
       ref={thRef}
-      draggable={column.id !== "item"}
+      draggable={!isResizingRef.current && column.id !== "item"}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
       onDragOver={handleDragOver}
@@ -132,9 +170,9 @@ export default function ResizableHeader({
         borderRight: "2px solid var(--border-color)",
         position: "relative",
         userSelect: "none",
-        cursor: isResizing ? "col-resize" : "default",
+        cursor: isResizingRef.current ? "col-resize" : "default",
         background: "transparent",
-        transition: "background 0.15s, opacity 0.15s",
+        transition: "background 0.15s",
         pointerEvents: "auto",
         ...stickyStyle,
       }}
@@ -145,6 +183,7 @@ export default function ResizableHeader({
           alignItems: "center",
           justifyContent: "space-between",
           gap: 4,
+          pointerEvents: isResizingRef.current ? "none" : "auto",
         }}
       >
         <span>{children}</span>
@@ -164,14 +203,13 @@ export default function ResizableHeader({
               padding: "0 4px",
               opacity: 0.5,
               transition: "opacity 0.2s",
+              pointerEvents: isResizingRef.current ? "none" : "auto",
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.opacity = 1)}
-            onMouseLeave={(e) => (e.currentTarget.style.opacity = 0.5)}
           >
             ⋮
           </button>
 
-          {/* RESIZE HANDLE – semua kolom bisa di-resize */}
+          {/* RESIZE HANDLE */}
           <div
             onMouseDown={handleResizeStart}
             style={{
@@ -181,19 +219,22 @@ export default function ResizableHeader({
               width: 14,
               height: "100%",
               cursor: "col-resize",
-              background: isResizing ? "var(--btn-primary-bg)" : "transparent",
-              opacity: isResizing ? 0.8 : 0,
+              background: isResizingRef.current ? "var(--btn-primary-bg)" : "transparent",
+              opacity: isResizingRef.current ? 0.8 : 0,
               transition: "opacity 0.2s, background 0.2s",
               borderRadius: 2,
               zIndex: 20,
-              borderLeft: isResizing ? "2px solid var(--btn-primary-bg)" : "none",
+              borderLeft: isResizingRef.current ? "2px solid var(--btn-primary-bg)" : "none",
+              pointerEvents: "auto",
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.opacity = 0.6;
-              e.currentTarget.style.background = "var(--btn-primary-bg)";
+              if (!isResizingRef.current) {
+                e.currentTarget.style.opacity = 0.6;
+                e.currentTarget.style.background = "var(--btn-primary-bg)";
+              }
             }}
             onMouseLeave={(e) => {
-              if (!isResizing) {
+              if (!isResizingRef.current) {
                 e.currentTarget.style.opacity = 0;
                 e.currentTarget.style.background = "transparent";
               }
