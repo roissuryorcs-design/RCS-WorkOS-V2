@@ -21,18 +21,17 @@ export default function ResizableHeader({
   const startWidthRef = useRef(0);
 
   const isAction = column.id === "action";
-  const isItem = column.id === "item"; // ← Kolom ITEM tidak bisa di-delete & drag
+  const isItem = column.id === "item";
   const isLast = index === totalColumns - 1;
 
   // ============================================================
-  // RESIZE (Perbaikan dengan lebih banyak log)
+  // RESIZE (Dengan event yang lebih robust)
   // ============================================================
   const handleResizeMouseDown = (e) => {
     e.stopPropagation();
     e.preventDefault();
     console.log("🟢 Resize MOUSE DOWN for column:", column.id);
     
-    // Nonaktifkan drag sementara
     if (thRef.current) {
       thRef.current.draggable = false;
       thRef.current.style.userSelect = "none";
@@ -54,7 +53,7 @@ export default function ResizableHeader({
     const diff = e.clientX - startXRef.current;
     const newWidthPx = Math.max(40, startWidthRef.current + diff);
     
-    // Hitung dalam persen berdasarkan parent
+    // Hitung persen berdasarkan parent tabel
     const parentWidth = thRef.current?.parentElement?.offsetWidth || 800;
     const newWidthPercent = Math.min(50, Math.max(5, (newWidthPx / parentWidth) * 100));
     
@@ -68,7 +67,6 @@ export default function ResizableHeader({
     setIsResizing(false);
     console.log("🔴 Resize MOUSE UP for column:", column.id);
     
-    // Aktifkan kembali drag
     if (thRef.current) {
       thRef.current.draggable = true;
       thRef.current.style.userSelect = "";
@@ -79,10 +77,10 @@ export default function ResizableHeader({
   };
 
   // ============================================================
-  // DRAG & DROP (Kolom ITEM tidak bisa di-drag)
+  // DRAG & DROP (ITEM tidak bisa di-drag)
   // ============================================================
   const handleDragStart = (e) => {
-    if (isAction || isResizing || isItem) { // ← ITEM tidak bisa di-drag
+    if (isAction || isResizing || isItem) {
       e.preventDefault();
       console.log(`⛔ Drag blocked for ${column.id}`);
       return;
@@ -169,13 +167,12 @@ export default function ResizableHeader({
   // ============================================================
   // RENDER
   // ============================================================
-  // Cursor: item → default (tidak bisa drag), action → default, lainnya → grab
   const cursorType = isAction ? "default" : isItem ? "default" : isResizing ? "col-resize" : "grab";
 
   return (
     <th
       ref={thRef}
-      draggable={!isAction && !isResizing && !isItem} // ← ITEM tidak draggable
+      draggable={!isAction && !isResizing && !isItem}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
       onDragOver={handleDragOver}
@@ -194,7 +191,7 @@ export default function ResizableHeader({
         transition: "background 0.2s, opacity 0.2s, border-color 0.2s",
         pointerEvents: isResizing ? "auto" : "auto",
       }}
-      title={isAction ? "Fixed column" : isItem ? "Protected column (cannot delete/drag)" : isResizing ? "Resizing..." : "Drag to reorder"}
+      title={isAction ? "Fixed column" : isItem ? "Protected column (cannot delete/drag/hide)" : isResizing ? "Resizing..." : "Drag to reorder"}
     >
       <div
         style={{
@@ -231,7 +228,7 @@ export default function ResizableHeader({
             ⋮
           </button>
 
-          {/* Resize handle - Hanya muncul jika bukan action */}
+          {/* Resize handle - hanya untuk non-action */}
           {!isAction && (
             <div
               onMouseDown={handleResizeMouseDown}
@@ -239,7 +236,7 @@ export default function ResizableHeader({
                 position: "absolute",
                 right: -6,
                 top: 0,
-                width: 12,
+                width: 14,
                 height: "100%",
                 cursor: "col-resize",
                 background: isResizing ? "var(--btn-primary-bg)" : "transparent",
