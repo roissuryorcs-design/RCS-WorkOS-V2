@@ -9,7 +9,6 @@ const defaultColumns = [
   { id: "status", label: "STATUS", width: 120, visible: true },
   { id: "dueDate", label: "DUE DATE", width: 120, visible: true },
   { id: "rev", label: "REV", width: 80, visible: true },
-  // ACTION sudah dihapus
 ];
 
 export function ColumnProvider({ children }) {
@@ -53,7 +52,7 @@ export function ColumnProvider({ children }) {
 
   const deleteColumn = (id) => {
     if (id === "item") {
-      console.warn(`Cannot delete protected column: ${id}`);
+      console.warn("Cannot delete ITEM column");
       return;
     }
     setColumns((prev) => prev.filter((col) => col.id !== id));
@@ -61,7 +60,7 @@ export function ColumnProvider({ children }) {
 
   const toggleColumn = (id) => {
     if (id === "item") {
-      console.warn(`Cannot toggle protected column: ${id}`);
+      console.warn("Cannot hide ITEM column");
       return;
     }
     setColumns((prev) =>
