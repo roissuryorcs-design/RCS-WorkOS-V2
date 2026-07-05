@@ -15,51 +15,62 @@ const defaultColumns = [
 export function ColumnProvider({ children }) {
   const [columns, setColumns] = useState(() => {
     const saved = localStorage.getItem("forelColumns");
-    return saved ? JSON.parse(saved) : defaultColumns;
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      // Pastikan ITEM dan ACTION selalu ada
+      const hasItem = parsed.some((c) => c.id === "item");
+      const hasAction = parsed.some((c) => c.id === "action");
+      let result = [...parsed];
+      if (!hasItem) {
+        result.unshift({ id: "item", label: "ITEM", width: 22, visible: true });
+      }
+      if (!hasAction) {
+        result.push({ id: "action", label: "", width: 6, visible: true });
+      }
+      return result;
+    }
+    return defaultColumns;
   });
 
   useEffect(() => {
     localStorage.setItem("forelColumns", JSON.stringify(columns));
   }, [columns]);
 
-  // Update lebar kolom
   const updateColumnWidth = (id, width) => {
-    console.log("updateColumnWidth:", id, width); // ← DEBUG
     setColumns((prev) =>
       prev.map((col) => (col.id === id ? { ...col, width: Math.max(3, width) } : col))
     );
   };
 
-  // Tambah kolom baru
   const addColumn = (label) => {
-    console.log("addColumn called with:", label); // ← DEBUG
     if (!label || !label.trim()) return;
     const newId = `col_${Date.now()}`;
-    setColumns((prev) => [
-      ...prev.slice(0, -1),
-      { id: newId, label: label.trim(), width: 15, visible: true },
-      prev[prev.length - 1],
-    ]);
+    setColumns((prev) => {
+      const actionIndex = prev.length - 1;
+      const newCols = [...prev];
+      newCols.splice(actionIndex, 0, {
+        id: newId,
+        label: label.trim(),
+        width: 15,
+        visible: true,
+      });
+      return newCols;
+    });
   };
 
-  // Hapus kolom
   const deleteColumn = (id) => {
-    console.log("deleteColumn called with:", id); // ← DEBUG
-    if (id === "action") return;
+    if (id === "item" || id === "action") {
+      console.warn(`Cannot delete protected column: ${id}`);
+      return;
+    }
     setColumns((prev) => prev.filter((col) => col.id !== id));
-  };// Di dalam deleteColumn, tambahkan:
-const deleteColumn = (id) => {
-  console.log("deleteColumn called with:", id);
-  if (id === "action" || id === "item") { // ← ITEM juga tidak bisa dihapus
-    console.log(`⛔ Cannot delete column: ${id}`);
-    return;
-  }
-  setColumns((prev) => prev.filter((col) => col.id !== id));
-};
+  };
 
-  // Toggle visibility
   const toggleColumn = (id) => {
-    console.log("toggleColumn called with:", id); // ← DEBUG
+    if (id === "item" || id === "action") {
+      console.warn(`Cannot toggle protected column: ${id}`);
+      return;
+    }
     setColumns((prev) =>
       prev.map((col) =>
         col.id === id ? { ...col, visible: !col.visible } : col
@@ -67,9 +78,7 @@ const deleteColumn = (id) => {
     );
   };
 
-  // Rename
   const renameColumn = (id, newLabel) => {
-    console.log("renameColumn:", id, "->", newLabel); // ← DEBUG
     if (!newLabel || !newLabel.trim()) return;
     setColumns((prev) =>
       prev.map((col) =>
@@ -78,26 +87,25 @@ const deleteColumn = (id) => {
     );
   };
 
-  // Reorder
   const reorderColumns = (fromIndex, toIndex) => {
-    console.log("reorderColumns: from", fromIndex, "to", toIndex); // ← DEBUG
     if (fromIndex === toIndex) return;
-    const newColumns = [...columns];
-    const [moved] = newColumns.splice(fromIndex, 1);
-    newColumns.splice(toIndex, 0, moved);
-    setColumns(newColumns);
+    setColumns((prev) => {
+      const newCols = [...prev];
+      const [moved] = newCols.splice(fromIndex, 1);
+      newCols.splice(toIndex, 0, moved);
+      return newCols;
+    });
   };
 
-  // Reset
-  const resetColumns = () => {
-    console.log("resetColumns called"); // ← DEBUG
-    setColumns(defaultColumns);
-  };
+  const resetColumns = () => setColumns(defaultColumns);
+
+  const visibleColumns = columns.filter((col) => col.visible);
 
   return (
     <ColumnContext.Provider
       value={{
         columns,
+        visibleColumns,
         updateColumnWidth,
         addColumn,
         deleteColumn,
@@ -105,7 +113,6 @@ const deleteColumn = (id) => {
         renameColumn,
         reorderColumns,
         resetColumns,
-        visibleColumns: columns.filter((col) => col.visible),
       }}
     >
       {children}
