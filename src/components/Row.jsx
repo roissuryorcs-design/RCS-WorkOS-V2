@@ -59,7 +59,7 @@ export default function Row({
         }
       }}
     >
-      {/* Kolom Checkbox */}
+      {/* Checkbox */}
       <td
         style={{
           padding: "6px 8px",
@@ -116,6 +116,17 @@ export default function Row({
           </td>
         );
       })}
+
+      {/* Kolom kosong untuk padding (+ kolom sudah di handle di header) */}
+      <td
+        style={{
+          padding: "6px 8px",
+          width: "auto",
+          minWidth: "50px",
+          borderRight: "none",
+          boxSizing: "border-box",
+        }}
+      />
     </tr>
   );
 }
