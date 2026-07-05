@@ -11,6 +11,8 @@ export default function ColumnMenu({
   const [newLabel, setNewLabel] = useState(column.label || "");
   const inputRef = useRef(null);
 
+  const isProtected = column.id === "item" || column.id === "action";
+
   useEffect(() => {
     if (isRenaming && inputRef.current) {
       inputRef.current.focus();
@@ -33,9 +35,6 @@ export default function ColumnMenu({
       setNewLabel(column.label || "");
     }
   };
-
-  const isAction = column.id === "action";
-  const isItem = column.id === "item";
 
   return (
     <>
@@ -124,29 +123,26 @@ export default function ColumnMenu({
           </div>
         ) : (
           <>
-            {/* Rename – semua kolom */}
-            <button
-              onClick={() => setIsRenaming(true)}
-              style={menuButtonStyle}
-            >
+            {/* Rename - semua kolom */}
+            <button onClick={() => setIsRenaming(true)} style={menuStyle}>
               ✏️ Rename
             </button>
 
-            {/* Hide – hanya untuk non-action dan non-item */}
-            {!isAction && !isItem && (
+            {/* Hide/Show - hanya untuk non-proteksi */}
+            {!isProtected && (
               <button
                 onClick={() => {
                   onToggle(column.id);
                   onClose();
                 }}
-                style={menuButtonStyle}
+                style={menuStyle}
               >
                 {column.visible ? "👁️ Hide" : "👁️ Show"}
               </button>
             )}
 
-            {/* Delete – hanya untuk non-action dan non-item */}
-            {!isAction && !isItem && (
+            {/* Delete - hanya untuk non-proteksi */}
+            {!isProtected && (
               <button
                 onClick={() => {
                   if (confirm(`Delete column "${column.label}"?`)) {
@@ -155,7 +151,7 @@ export default function ColumnMenu({
                   onClose();
                 }}
                 style={{
-                  ...menuButtonStyle,
+                  ...menuStyle,
                   color: "#ef4444",
                   borderTop: "1px solid var(--border-color)",
                 }}
@@ -164,8 +160,8 @@ export default function ColumnMenu({
               </button>
             )}
 
-            {/* Pesan untuk ITEM & ACTION */}
-            {(isAction || isItem) && (
+            {/* Pesan untuk kolom proteksi */}
+            {isProtected && (
               <div
                 style={{
                   padding: "6px 12px",
@@ -174,9 +170,7 @@ export default function ColumnMenu({
                   borderTop: "1px solid var(--border-color)",
                 }}
               >
-                {isAction
-                  ? "🔒 Fixed column"
-                  : "🔒 ITEM column (cannot delete, hide, or drag)"}
+                🔒 {column.id === "item" ? "ITEM column (protected)" : "Fixed column"}
               </div>
             )}
           </>
@@ -186,7 +180,7 @@ export default function ColumnMenu({
   );
 }
 
-const menuButtonStyle = {
+const menuStyle = {
   display: "block",
   width: "100%",
   padding: "6px 14px",
