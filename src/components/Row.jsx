@@ -75,6 +75,7 @@ export default function Row({
         const isItem = col.id === "item";
         const isAction = col.id === "action";
 
+        // Sticky untuk kolom ITEM
         const stickyStyle = isItem
           ? {
               position: "sticky",
@@ -84,6 +85,7 @@ export default function Row({
             }
           : {};
 
+        // ACTION: mengisi sisa layar
         const actionStyle = isAction
           ? {
               width: "auto",
