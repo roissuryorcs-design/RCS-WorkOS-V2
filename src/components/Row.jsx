@@ -5,6 +5,8 @@ export default function Row({
   statuses,
   groupColor,
   visibleColumns,
+  isSelected,
+  onToggleSelect,
   onUpdate,
   onDelete,
 }) {
@@ -21,23 +23,6 @@ export default function Row({
   };
 
   const renderCell = (col) => {
-    if (col.id === "action") {
-      return (
-        <button
-          onClick={onDelete}
-          style={{
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            fontSize: 14,
-            color: "var(--text-light)",
-          }}
-        >
-          ✕
-        </button>
-      );
-    }
-
     if (col.id === "status") {
       return (
         <StatusCell
@@ -64,33 +49,50 @@ export default function Row({
       style={{
         borderBottom: "2px solid var(--border-color)",
         fontSize: 13,
-        background: "var(--bg-secondary)",
+        background: isSelected ? "var(--bg-hover)" : "var(--bg-secondary)",
         borderLeft: `4px solid ${groupColor}`,
       }}
       onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-hover)")}
-      onMouseLeave={(e) => (e.currentTarget.style.background = "var(--bg-secondary)")}
+      onMouseLeave={(e) => {
+        if (!isSelected) {
+          e.currentTarget.style.background = "var(--bg-secondary)";
+        }
+      }}
     >
+      {/* Kolom Checkbox */}
+      <td
+        style={{
+          padding: "6px 8px",
+          width: "36px",
+          minWidth: "36px",
+          maxWidth: "36px",
+          borderRight: "2px solid var(--border-color)",
+          textAlign: "center",
+          boxSizing: "border-box",
+          position: "sticky",
+          left: 0,
+          zIndex: 5,
+          background: isSelected ? "var(--bg-hover)" : "var(--bg-secondary)",
+        }}
+      >
+        <input
+          type="checkbox"
+          checked={isSelected}
+          onChange={onToggleSelect}
+          style={{ cursor: "pointer", width: 16, height: 16 }}
+        />
+      </td>
+
       {visibleColumns.map((col, idx) => {
         const isLast = idx === visibleColumns.length - 1;
         const isItem = col.id === "item";
-        const isAction = col.id === "action";
 
-        // Sticky untuk kolom ITEM
         const stickyStyle = isItem
           ? {
               position: "sticky",
-              left: 0,
+              left: "36px",
               zIndex: 5,
-              background: "var(--bg-secondary)",
-            }
-          : {};
-
-        // ACTION: mengisi sisa layar
-        const actionStyle = isAction
-          ? {
-              width: "auto",
-              minWidth: "60px",
-              maxWidth: "none",
+              background: isSelected ? "var(--bg-hover)" : "var(--bg-secondary)",
             }
           : {};
 
@@ -100,15 +102,14 @@ export default function Row({
             style={{
               padding: "6px 8px",
               borderRight: isLast ? "none" : "2px solid var(--border-color)",
-              width: isAction ? "auto" : `${col.width}px`,
-              minWidth: isAction ? "60px" : `${col.width}px`,
-              maxWidth: isAction ? "none" : `${col.width}px`,
+              width: `${col.width}px`,
+              minWidth: `${col.width}px`,
+              maxWidth: `${col.width}px`,
               boxSizing: "border-box",
               overflow: "hidden",
               textOverflow: "ellipsis",
               whiteSpace: "nowrap",
               ...stickyStyle,
-              ...actionStyle,
             }}
           >
             {renderCell(col)}
