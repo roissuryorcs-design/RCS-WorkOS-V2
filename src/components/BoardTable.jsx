@@ -14,7 +14,7 @@ export default function BoardTable({
   onAddGroup,
   onDeleteGroup,
   onAddItem,
-  onOpenStatusManager, // ← ini yang akan dipanggil dari tombol ⋮ STATUS
+  onOpenStatusManager,
 }) {
   const {
     updateColumnWidth,
@@ -197,7 +197,6 @@ export default function BoardTable({
                         }}
                       >
                         {safeColumns.map((col, idx) => {
-                          // TOMBOL ⋮ DI HEADER STATUS
                           const isStatus = col.id === "status";
                           return (
                             <ResizableHeader
