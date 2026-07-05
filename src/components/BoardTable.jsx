@@ -173,16 +173,18 @@ export default function BoardTable({
             {!isCollapsed && (
               <>
                 {tasks.length > 0 ? (
-                  <table
-                    width="100%"
-                    cellPadding="0"
-                    style={{
-                      borderCollapse: "collapse",
-                      border: "2px solid var(--border-color)",
-                      borderRadius: 4,
-                      borderLeft: `4px solid ${groupColor}`,
-                      tableLayout: "auto", // ← ubah ke auto
-                    }}
+               <table
+  width="100%"
+  cellPadding="0"
+  style={{
+    borderCollapse: "collapse",
+    border: "2px solid var(--border-color)",
+    borderRadius: 4,
+    borderLeft: `4px solid ${groupColor}`,
+    tableLayout: "fixed", // ← PASTIKAN FIXED
+    width: "100%",
+  }}
+>
                   >
                     <thead>
                       <tr
