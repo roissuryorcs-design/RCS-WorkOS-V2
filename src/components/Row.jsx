@@ -17,6 +17,7 @@ export default function Row({
     color: "var(--text-primary)",
     outline: "none",
     fontFamily: "Arial, sans-serif",
+    boxSizing: "border-box", // ← Tambahkan ini
   };
 
   const renderCell = (col) => {
@@ -78,8 +79,12 @@ export default function Row({
               padding: "6px 8px",
               borderRight: isLast ? "none" : "2px solid var(--border-color)",
               width: `${col.width}px`,
-              minWidth: 40,
+              minWidth: `${col.width}px`,
               maxWidth: `${col.width}px`,
+              boxSizing: "border-box", // ← Tambahkan ini
+              overflow: "hidden", // ← Cegah konten meluber
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
             }}
           >
             {renderCell(col)}
