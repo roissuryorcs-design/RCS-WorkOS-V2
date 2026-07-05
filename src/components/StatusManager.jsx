@@ -61,13 +61,12 @@ export default function StatusManager({
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 style={{ marginBottom: 16, fontSize: 18, color: "var(--text-primary)" }}>
-          Manage Statuses
-        </h3>
+        <h3 style={{ marginBottom: 16, fontSize: 18 }}>Manage Statuses</h3>
         <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 12 }}>
-          At least one status must remain.
+          At least one status must remain. Click color picker to change color.
         </p>
 
+        {/* Daftar status */}
         <div style={{ marginBottom: 16 }}>
           {statusKeys.map((name) => (
             <div
@@ -83,14 +82,14 @@ export default function StatusManager({
               <span
                 style={{
                   display: "inline-block",
-                  width: 12,
-                  height: 12,
+                  width: 16,
+                  height: 16,
                   borderRadius: 4,
                   background: statuses[name],
                 }}
               />
               <span style={{ flex: 1, fontSize: 14, color: "var(--text-primary)" }}>
-                {name || "(unnamed)"}
+                {name}
               </span>
               <input
                 type="color"
@@ -116,9 +115,10 @@ export default function StatusManager({
           ))}
         </div>
 
+        {/* Tambah status baru */}
         <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
           <input
-            placeholder="Status name (optional)"
+            placeholder="New status name"
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             style={{
