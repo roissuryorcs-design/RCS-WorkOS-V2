@@ -36,7 +36,7 @@ export default function ColumnMenu({
   };
 
   const isAction = column.id === "action";
-  const isItem = column.id === "item"; // ← ITEM tidak bisa di-delete
+  const isItem = column.id === "item";
 
   return (
     <>
@@ -132,8 +132,8 @@ export default function ColumnMenu({
               ✏️ Rename
             </button>
 
-            {/* Toggle Hide/Show - semua kolom (kecuali action) bisa hide */}
-            {!isAction && (
+            {/* Hide - hanya untuk kolom non-action dan non-item */}
+            {!isAction && !isItem && (
               <button
                 onClick={() => {
                   console.log("Toggle visibility for:", column.id);
@@ -166,7 +166,7 @@ export default function ColumnMenu({
               </button>
             )}
 
-            {/* Jika action atau item, tampilkan pesan */}
+            {/* Pesan untuk ITEM & ACTION */}
             {(isAction || isItem) && (
               <div
                 style={{
@@ -176,7 +176,7 @@ export default function ColumnMenu({
                   borderTop: "1px solid var(--border-color)",
                 }}
               >
-                {isAction ? "🔒 Fixed column (cannot delete/drag)" : "🔒 ITEM column (cannot delete/drag)"}
+                {isAction ? "🔒 Fixed column" : "🔒 ITEM column (cannot delete/hide/drag)"}
               </div>
             )}
           </>
