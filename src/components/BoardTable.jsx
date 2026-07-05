@@ -39,7 +39,6 @@ export default function BoardTable({
     return acc;
   }, {});
 
-  // Pastikan kolom ITEM selalu ada
   const safeColumns = (() => {
     const hasItem = visibleColumns.some((col) => col.id === "item");
     if (hasItem) return visibleColumns;
@@ -49,17 +48,13 @@ export default function BoardTable({
     ];
   })();
 
-  // Hitung total lebar kolom (kecuali ACTION karena akan fleksibel)
   const totalWidth = safeColumns
     .filter((col) => col.id !== "action")
     .reduce((sum, col) => sum + col.width, 0);
-
-  // Tentukan lebar untuk tabel (tanpa ACTION)
-  const tableMinWidth = totalWidth + 60; // tambahan untuk padding/border
+  const tableMinWidth = totalWidth + 60;
 
   return (
     <div className="board-table-wrapper">
-      {/* WRAPPER SCROLL HORIZONTAL DI LUAR GROUP */}
       <div style={{ overflowX: "auto", width: "100%" }}>
         {groups.map((groupName) => {
           const tasks = grouped[groupName] || [];
@@ -68,7 +63,6 @@ export default function BoardTable({
 
           return (
             <div key={groupName} style={{ marginBottom: 24, position: "relative" }}>
-              {/* HEADER GROUP */}
               <div style={{ display: "flex", alignItems: "center", marginBottom: 8 }}>
                 <button
                   onClick={() => toggleCollapse(groupName)}
@@ -128,7 +122,6 @@ export default function BoardTable({
                 />
               </div>
 
-              {/* POPUP DELETE GROUP */}
               {popupGroup === groupName && (
                 <>
                   <div
@@ -179,7 +172,6 @@ export default function BoardTable({
                 </>
               )}
 
-              {/* TABEL */}
               {!isCollapsed && (
                 <>
                   {tasks.length > 0 ? (
@@ -192,7 +184,7 @@ export default function BoardTable({
                         borderLeft: `4px solid ${groupColor}`,
                         tableLayout: "fixed",
                         minWidth: tableMinWidth,
-                        width: "100%", // agar ACTION bisa mengisi sisa
+                        width: "100%",
                       }}
                     >
                       <thead>
@@ -209,7 +201,6 @@ export default function BoardTable({
                         >
                           {safeColumns.map((col, idx) => {
                             const isStatus = col.id === "status";
-                            const isAction = col.id === "action";
                             const isItem = col.id === "item";
                             return (
                               <ResizableHeader
@@ -222,7 +213,7 @@ export default function BoardTable({
                                 onToggle={toggleColumn}
                                 onDelete={deleteColumn}
                                 onReorder={reorderColumns}
-                                isSticky={isItem} // untuk sticky
+                                isSticky={isItem}
                               >
                                 {isStatus ? (
                                   <div
@@ -298,7 +289,6 @@ export default function BoardTable({
                     </div>
                   )}
 
-                  {/* TOMBOL ADD TASK */}
                   <button
                     onClick={() => onAddItem(groupName)}
                     style={{
@@ -335,7 +325,6 @@ export default function BoardTable({
         })}
       </div>
 
-      {/* TOMBOL ADD NEW GROUP */}
       <div style={{ marginTop: 16 }}>
         <button
           onClick={onAddGroup}
