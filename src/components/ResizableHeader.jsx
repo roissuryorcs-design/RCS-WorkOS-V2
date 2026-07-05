@@ -12,159 +12,121 @@ export default function ResizableHeader({
   onReorder,
   children,
 }) {
+  const [width, setWidth] = useState(column.width);
   const [isResizing, setIsResizing] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
-  const [width, setWidth] = useState(column.width);
-  const [isDragging, setIsDragging] = useState(false);
   const thRef = useRef(null);
-  const startXRef = useRef(0);
-  const startWidthRef = useRef(0);
+  const startX = useRef(0);
+  const startWidth = useRef(0);
 
-  const isAction = column.id === "action";
-  const isItem = column.id === "item";
+  const isProtected = column.id === "item" || column.id === "action";
   const isLast = index === totalColumns - 1;
 
-  // ===== RESIZE =====
-  const handleResizeMouseDown = (e) => {
+  // ============================================================
+  // RESIZE - Menggunakan pointer events yang lebih andal
+  // ============================================================
+  const handleResizeStart = (e) => {
+    e.preventDefault();
     e.stopPropagation();
-    e.preventDefault();
-    console.log("🔵 Resize start:", column.id);
-
-    if (thRef.current) {
-      thRef.current.draggable = false;
-      thRef.current.style.userSelect = "none";
-    }
-
     setIsResizing(true);
-    startXRef.current = e.clientX;
-    startWidthRef.current = thRef.current?.getBoundingClientRect().width || 60;
+    startX.current = e.clientX;
+    startWidth.current = thRef.current?.offsetWidth || 60;
 
-    document.addEventListener("mousemove", handleResizeMouseMove);
-    document.addEventListener("mouseup", handleResizeMouseUp);
+    const onMove = (ev) => {
+      if (!isResizing) return;
+      const diff = ev.clientX - startX.current;
+      const newWidth = Math.max(40, startWidth.current + diff);
+      const parentWidth = thRef.current?.parentElement?.offsetWidth || 800;
+      const percent = Math.min(50, Math.max(5, (newWidth / parentWidth) * 100));
+      setWidth(percent);
+      onResize(column.id, percent);
+    };
+
+    const onUp = () => {
+      setIsResizing(false);
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+    };
+
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
   };
 
-  const handleResizeMouseMove = (e) => {
-    if (!isResizing) return;
-    e.preventDefault();
+  useEffect(() => {
+    setWidth(column.width);
+  }, [column.width]);
 
-    const diff = e.clientX - startXRef.current;
-    const newWidthPx = Math.max(40, startWidthRef.current + diff);
-    const parentWidth = thRef.current?.parentElement?.offsetWidth || 800;
-    const newWidthPercent = Math.min(50, Math.max(5, (newWidthPx / parentWidth) * 100));
-
-    setWidth(newWidthPercent);
-    onResize(column.id, newWidthPercent);
-  };
-
-  const handleResizeMouseUp = () => {
-    setIsResizing(false);
-    if (thRef.current) {
-      thRef.current.draggable = true;
-      thRef.current.style.userSelect = "";
-    }
-    document.removeEventListener("mousemove", handleResizeMouseMove);
-    document.removeEventListener("mouseup", handleResizeMouseUp);
-  };
-
-  // ===== DRAG & DROP =====
+  // ============================================================
+  // DRAG & DROP - Hanya untuk kolom non-proteksi
+  // ============================================================
   const handleDragStart = (e) => {
-    if (isAction || isResizing || isItem) {
+    if (isProtected) {
       e.preventDefault();
       return;
     }
-    setIsDragging(true);
     e.dataTransfer.effectAllowed = "move";
-    e.dataTransfer.setData(
-      "text/plain",
-      JSON.stringify({ fromIndex: index, columnId: column.id })
-    );
-    if (thRef.current) {
-      thRef.current.style.opacity = "0.4";
-      thRef.current.style.background = "var(--bg-hover)";
-    }
+    e.dataTransfer.setData("text/plain", JSON.stringify({ from: index }));
+    e.currentTarget.style.opacity = "0.4";
   };
 
   const handleDragEnd = (e) => {
-    setIsDragging(false);
-    if (thRef.current) {
-      thRef.current.style.opacity = "1";
-      thRef.current.style.background = "transparent";
-      thRef.current.style.borderLeft = "none";
-    }
+    e.currentTarget.style.opacity = "1";
+    e.currentTarget.style.borderLeft = "none";
   };
 
   const handleDragOver = (e) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-    if (thRef.current && !isAction && !isResizing && !isItem) {
-      thRef.current.style.borderLeft = "3px solid var(--btn-primary-bg)";
-      thRef.current.style.background = "var(--bg-hover)";
+    if (!isProtected) {
+      e.currentTarget.style.borderLeft = "3px solid var(--btn-primary-bg)";
+      e.currentTarget.style.background = "var(--bg-hover)";
     }
   };
 
   const handleDragLeave = (e) => {
-    if (thRef.current) {
-      thRef.current.style.borderLeft = "none";
-      thRef.current.style.background = "transparent";
-    }
+    e.currentTarget.style.borderLeft = "none";
+    e.currentTarget.style.background = "transparent";
   };
 
   const handleDrop = (e) => {
     e.preventDefault();
-    if (thRef.current) {
-      thRef.current.style.borderLeft = "none";
-      thRef.current.style.background = "transparent";
-      thRef.current.style.opacity = "1";
-    }
+    e.currentTarget.style.borderLeft = "none";
+    e.currentTarget.style.background = "transparent";
+    e.currentTarget.style.opacity = "1";
     try {
       const data = JSON.parse(e.dataTransfer.getData("text/plain"));
-      const fromIndex = data.fromIndex;
-      if (fromIndex !== undefined && fromIndex !== index) {
-        onReorder(fromIndex, index);
+      if (data.from !== undefined && data.from !== index) {
+        onReorder(data.from, index);
       }
     } catch {
-      const fromIndex = parseInt(e.dataTransfer.getData("text/plain"));
-      if (!isNaN(fromIndex) && fromIndex !== index) {
-        onReorder(fromIndex, index);
-      }
+      // fallback
     }
-    setIsDragging(false);
   };
 
-  // ===== MENU =====
-  const toggleMenu = () => setShowMenu(!showMenu);
-
+  // ============================================================
+  // RENDER
+  // ============================================================
   return (
     <th
       ref={thRef}
-      draggable={!isAction && !isResizing && !isItem}
+      draggable={!isProtected}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       style={{
-        padding: "8px 8px",
         width: `${width}%`,
-        borderRight: isLast ? "none" : "2px solid var(--border-color)",
-        position: "relative",
         minWidth: 60,
         maxWidth: `${width}%`,
+        padding: "8px 8px",
+        borderRight: isLast ? "none" : "2px solid var(--border-color)",
+        position: "relative",
         userSelect: "none",
-        cursor: isAction || isItem ? "default" : isResizing ? "col-resize" : "grab",
-        background: isDragging ? "var(--bg-hover)" : "transparent",
-        transition: "background 0.2s, opacity 0.2s",
+        cursor: isProtected ? "default" : isResizing ? "col-resize" : "grab",
+        background: "transparent",
+        transition: "background 0.15s, opacity 0.15s",
         pointerEvents: "auto",
       }}
-      title={
-        isAction
-          ? "Fixed column"
-          : isItem
-          ? "Protected column"
-          : isResizing
-          ? "Resizing..."
-          : "Drag to reorder"
-      }
     >
       <div
         style={{
@@ -177,10 +139,11 @@ export default function ResizableHeader({
         <span>{children}</span>
 
         <div style={{ display: "flex", alignItems: "center" }}>
+          {/* Tombol Menu */}
           <button
             onClick={(e) => {
               e.stopPropagation();
-              toggleMenu();
+              setShowMenu(!showMenu);
             }}
             style={{
               background: "none",
@@ -189,32 +152,31 @@ export default function ResizableHeader({
               fontSize: 14,
               color: "var(--text-muted)",
               padding: "0 4px",
-              opacity: 0.6,
+              opacity: 0.5,
               transition: "opacity 0.2s",
-              pointerEvents: "auto",
             }}
             onMouseEnter={(e) => (e.currentTarget.style.opacity = 1)}
-            onMouseLeave={(e) => (e.currentTarget.style.opacity = 0.6)}
+            onMouseLeave={(e) => (e.currentTarget.style.opacity = 0.5)}
           >
             ⋮
           </button>
 
-          {!isAction && (
+          {/* Resize Handle - Hanya untuk non-action */}
+          {!isProtected && (
             <div
-              onMouseDown={handleResizeMouseDown}
+              onMouseDown={handleResizeStart}
               style={{
                 position: "absolute",
                 right: -6,
                 top: 0,
-                width: 14,
+                width: 12,
                 height: "100%",
                 cursor: "col-resize",
                 background: isResizing ? "var(--btn-primary-bg)" : "transparent",
                 opacity: isResizing ? 0.8 : 0,
                 transition: "opacity 0.2s, background 0.2s",
                 borderRadius: 2,
-                pointerEvents: "auto",
-                zIndex: 20,
+                zIndex: 10,
                 borderLeft: isResizing ? "2px solid var(--btn-primary-bg)" : "none",
               }}
               onMouseEnter={(e) => {
