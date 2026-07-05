@@ -17,18 +17,19 @@ export default function BoardTable({
   onOpenStatusManager,
 }) {
   const {
+    columns,
     updateColumnWidth,
     renameColumn,
     toggleColumn,
     deleteColumn,
     reorderColumns,
     visibleColumns,
+    addColumn,
   } = useColumns();
 
   const [collapsed, setCollapsed] = useState({});
   const [popupGroup, setPopupGroup] = useState(null);
-  const [selectedItems, setSelectedItems] = useState([]);
-  const [showDeletePopup, setShowDeletePopup] = useState(false);
+  const [selectedItems, setSelectedItems] = useState({}); // per group
 
   const toggleCollapse = (groupName) => {
     setCollapsed((prev) => ({ ...prev, [groupName]: !prev[groupName] }));
@@ -41,6 +42,7 @@ export default function BoardTable({
     return acc;
   }, {});
 
+  // Pastikan kolom ITEM selalu ada
   const safeColumns = (() => {
     const hasItem = visibleColumns.some((col) => col.id === "item");
     if (hasItem) return visibleColumns;
@@ -50,98 +52,117 @@ export default function BoardTable({
     ];
   })();
 
-  // Hapus kolom action dari visibleColumns
-  const columnsWithoutAction = safeColumns.filter((col) => col.id !== "action");
+  // Hitung total lebar kolom (tanpa ACTION)
+  const fixedWidth = safeColumns.reduce((sum, col) => sum + col.width, 0);
+  const tableMinWidth = fixedWidth + 100; // + untuk checkbox dan kolom +
 
-  const fixedWidth = columnsWithoutAction
-    .reduce((sum, col) => sum + col.width, 0);
-  const tableMinWidth = fixedWidth + 60;
-
-  // Handle checkbox
-  const toggleSelectItem = (itemId) => {
-    setSelectedItems((prev) =>
-      prev.includes(itemId)
-        ? prev.filter((id) => id !== itemId)
-        : [...prev, itemId]
-    );
+  // Handle checkbox per group
+  const toggleSelectItem = (groupId, itemId) => {
+    setSelectedItems((prev) => {
+      const groupSelected = prev[groupId] || [];
+      return {
+        ...prev,
+        [groupId]: groupSelected.includes(itemId)
+          ? groupSelected.filter((id) => id !== itemId)
+          : [...groupSelected, itemId],
+      };
+    });
   };
 
-  const handleDeleteSelected = () => {
-    if (selectedItems.length === 0) return;
-    if (confirm(`Delete ${selectedItems.length} selected item(s)?`)) {
-      selectedItems.forEach((id) => onDeleteItem(id));
-      setSelectedItems([]);
+  const handleDeleteSelected = (groupId) => {
+    const ids = selectedItems[groupId] || [];
+    if (ids.length === 0) return;
+    if (confirm(`Delete ${ids.length} selected item(s)?`)) {
+      ids.forEach((id) => onDeleteItem(id));
+      setSelectedItems((prev) => ({ ...prev, [groupId]: [] }));
     }
-    setShowDeletePopup(false);
   };
 
-  const selectAll = () => {
-    const allIds = items.map((item) => item.id);
-    if (selectedItems.length === allIds.length) {
-      setSelectedItems([]);
+  const selectAllInGroup = (groupId, tasks) => {
+    const allIds = tasks.map((item) => item.id);
+    const currentSelected = selectedItems[groupId] || [];
+    if (currentSelected.length === allIds.length) {
+      setSelectedItems((prev) => ({ ...prev, [groupId]: [] }));
     } else {
-      setSelectedItems(allIds);
+      setSelectedItems((prev) => ({ ...prev, [groupId]: allIds }));
+    }
+  };
+
+  // Tambah kolom baru
+  const handleAddColumn = () => {
+    const name = prompt("Enter column name:");
+    if (name && name.trim()) {
+      addColumn(name.trim());
     }
   };
 
   return (
     <div className="board-table-wrapper">
-      {/* SELECTION TOOLBAR */}
-      {selectedItems.length > 0 && (
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 12,
-            padding: "8px 12px",
-            background: "var(--bg-hover)",
-            borderRadius: 6,
-            marginBottom: 12,
-            border: "1px solid var(--border-color)",
-          }}
-        >
-          <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>
-            {selectedItems.length} item(s) selected
-          </span>
-          <button
-            onClick={handleDeleteSelected}
-            style={{
-              padding: "4px 12px",
-              background: "#ef4444",
-              color: "white",
-              border: "none",
-              borderRadius: 4,
-              cursor: "pointer",
-              fontSize: 13,
-            }}
-          >
-            🗑️ Delete
-          </button>
-          <button
-            onClick={() => setSelectedItems([])}
-            style={{
-              padding: "4px 12px",
-              background: "transparent",
-              border: "1px solid var(--border-color)",
-              borderRadius: 4,
-              cursor: "pointer",
-              fontSize: 13,
-              color: "var(--text-secondary)",
-            }}
-          >
-            Cancel
-          </button>
-        </div>
-      )}
-
+      {/* WRAPPER SCROLL */}
       <div style={{ overflowX: "auto", width: "100%" }}>
         {groups.map((groupName) => {
           const tasks = grouped[groupName] || [];
           const isCollapsed = collapsed[groupName] || false;
           const groupColor = groupColors[groupName] || "#3b82f6";
+          const selectedIds = selectedItems[groupName] || [];
 
           return (
             <div key={groupName} style={{ marginBottom: 24, position: "relative" }}>
+              {/* SELECTION TOOLBAR PER GROUP - STICKY */}
+              {selectedIds.length > 0 && (
+                <div
+                  style={{
+                    position: "sticky",
+                    top: 112,
+                    zIndex: 30,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    padding: "8px 12px",
+                    background: "var(--bg-hover)",
+                    borderRadius: 6,
+                    marginBottom: 8,
+                    border: "1px solid var(--border-color)",
+                    backdropFilter: "blur(8px)",
+                  }}
+                >
+                  <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>
+                    {selectedIds.length} item(s) selected
+                  </span>
+                  <button
+                    onClick={() => handleDeleteSelected(groupName)}
+                    style={{
+                      padding: "4px 12px",
+                      background: "#ef4444",
+                      color: "white",
+                      border: "none",
+                      borderRadius: 4,
+                      cursor: "pointer",
+                      fontSize: 13,
+                    }}
+                  >
+                    🗑️ Delete
+                  </button>
+                  <button
+                    onClick={() =>
+                      setSelectedItems((prev) => ({ ...prev, [groupName]: [] }))
+                    }
+                    style={{
+                      padding: "4px 12px",
+                      background: "transparent",
+                      border: "1px solid var(--border-color)",
+                      borderRadius: 4,
+                      cursor: "pointer",
+                      fontSize: 13,
+                      color: "var(--text-secondary)",
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
+
+              {/* HEADER GROUP */}
               <div style={{ display: "flex", alignItems: "center", marginBottom: 8 }}>
                 <button
                   onClick={() => toggleCollapse(groupName)}
@@ -201,6 +222,7 @@ export default function BoardTable({
                 />
               </div>
 
+              {/* POPUP DELETE GROUP */}
               {popupGroup === groupName && (
                 <>
                   <div
@@ -251,6 +273,7 @@ export default function BoardTable({
                 </>
               )}
 
+              {/* TABEL */}
               {!isCollapsed && (
                 <>
                   {tasks.length > 0 ? (
@@ -278,7 +301,7 @@ export default function BoardTable({
                             letterSpacing: "0.3px",
                           }}
                         >
-                          {/* Kolom Checkbox (Select All) */}
+                          {/* Checkbox Select All */}
                           <th
                             style={{
                               padding: "8px 8px",
@@ -287,35 +310,39 @@ export default function BoardTable({
                               maxWidth: "36px",
                               borderRight: "2px solid var(--border-color)",
                               textAlign: "center",
+                              position: "sticky",
+                              left: 0,
+                              zIndex: 10,
+                              background: "var(--bg-secondary)",
                             }}
                           >
                             <input
                               type="checkbox"
                               checked={
                                 tasks.length > 0 &&
-                                tasks.every((t) => selectedItems.includes(t.id))
+                                tasks.every((t) => selectedIds.includes(t.id))
                               }
-                              onChange={selectAll}
+                              onChange={() => selectAllInGroup(groupName, tasks)}
                               style={{ cursor: "pointer", width: 16, height: 16 }}
                             />
                           </th>
 
-                          {columnsWithoutAction.map((col, idx) => {
+                          {safeColumns.map((col, idx) => {
                             const isStatus = col.id === "status";
                             const isItem = col.id === "item";
-                            const isLast = idx === columnsWithoutAction.length - 1;
                             return (
                               <ResizableHeader
                                 key={col.id}
                                 column={col}
                                 index={idx}
-                                totalColumns={columnsWithoutAction.length}
+                                totalColumns={safeColumns.length}
                                 onResize={updateColumnWidth}
                                 onRename={renameColumn}
                                 onToggle={toggleColumn}
                                 onDelete={deleteColumn}
                                 onReorder={reorderColumns}
                                 isSticky={isItem}
+                                stickyLeft={isItem ? 36 : 0}
                               >
                                 {isStatus ? (
                                   <div
@@ -360,6 +387,28 @@ export default function BoardTable({
                               </ResizableHeader>
                             );
                           })}
+
+                          {/* Kolom "+" untuk Add Column */}
+                          <th
+                            style={{
+                              padding: "8px 8px",
+                              width: "auto",
+                              minWidth: "50px",
+                              borderRight: "none",
+                              textAlign: "center",
+                              cursor: "pointer",
+                              color: "var(--text-muted)",
+                            }}
+                            onClick={handleAddColumn}
+                            onMouseEnter={(e) =>
+                              (e.currentTarget.style.background = "var(--bg-hover)")
+                            }
+                            onMouseLeave={(e) =>
+                              (e.currentTarget.style.background = "transparent")
+                            }
+                          >
+                            <span style={{ fontSize: 18, fontWeight: 300 }}>+</span>
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
@@ -369,9 +418,9 @@ export default function BoardTable({
                             item={item}
                             statuses={statuses}
                             groupColor={groupColor}
-                            visibleColumns={columnsWithoutAction}
-                            isSelected={selectedItems.includes(item.id)}
-                            onToggleSelect={() => toggleSelectItem(item.id)}
+                            visibleColumns={safeColumns}
+                            isSelected={selectedIds.includes(item.id)}
+                            onToggleSelect={() => toggleSelectItem(groupName, item.id)}
                             onUpdate={(field, value) => onUpdateItem(item.id, field, value)}
                             onDelete={() => onDeleteItem(item.id)}
                           />
