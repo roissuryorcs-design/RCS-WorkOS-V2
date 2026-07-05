@@ -66,7 +66,6 @@ export default function StatusManager({
           At least one status must remain. Click color picker to change color.
         </p>
 
-        {/* Daftar status */}
         <div style={{ marginBottom: 16 }}>
           {statusKeys.map((name) => (
             <div
@@ -115,7 +114,6 @@ export default function StatusManager({
           ))}
         </div>
 
-        {/* Tambah status baru */}
         <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
           <input
             placeholder="New status name"
