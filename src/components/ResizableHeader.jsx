@@ -13,6 +13,7 @@ export default function ResizableHeader({
   children,
   isSticky = false,
   stickyLeft = 0,
+  isLast = false, // ← tambahan
 }) {
   const [width, setWidth] = useState(column.width);
   const [isResizing, setIsResizing] = useState(false);
@@ -23,13 +24,12 @@ export default function ResizableHeader({
   const isResizingRef = useRef(false);
 
   // ============================================================
-  // RESIZE - Lebih stabil
+  // RESIZE
   // ============================================================
   const handleResizeStart = (e) => {
     e.preventDefault();
     e.stopPropagation();
 
-    // Nonaktifkan drag sementara
     const th = thRef.current;
     if (th) {
       th.draggable = false;
@@ -52,12 +52,11 @@ export default function ResizableHeader({
 
       const diff = ev.clientX - startX.current;
       const newWidth = Math.max(40, startWidth.current + diff);
-      
-      // Update langsung tanpa state agar responsif
+
       if (th) {
         th.style.width = newWidth + "px";
       }
-      
+
       onResize(column.id, newWidth);
       setWidth(newWidth);
     };
@@ -82,7 +81,7 @@ export default function ResizableHeader({
   };
 
   // ============================================================
-  // DRAG & DROP - Tidak aktif saat resize
+  // DRAG & DROP
   // ============================================================
   const handleDragStart = (e) => {
     if (isResizingRef.current || column.id === "item") {
@@ -144,9 +143,9 @@ export default function ResizableHeader({
     ? {
         position: "sticky",
         left: stickyLeft || 0,
-        zIndex: 10,
+        zIndex: 11,
         background: "var(--bg-secondary)",
-        borderRight: "2px solid var(--border-color)",
+        borderRight: "2px solid var(--border-color)", // ← border sticky
       }
     : {};
 
@@ -167,7 +166,7 @@ export default function ResizableHeader({
         minWidth: 40,
         maxWidth: `${width}px`,
         padding: "8px 8px",
-        borderRight: "2px solid var(--border-color)",
+        borderRight: isLast ? "none" : "2px solid var(--border-color)", // ← PERUBAHAN UTAMA
         position: "relative",
         userSelect: "none",
         cursor: isResizingRef.current ? "col-resize" : "default",
