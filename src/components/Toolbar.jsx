@@ -22,15 +22,32 @@ export default function Toolbar({
 
   const handleManageColumns = () => {
     const hiddenCols = columns.filter(c => !c.visible && c.id !== 'action');
+    const visibleCols = columns.filter(c => c.visible && c.id !== 'action');
+    
+    let message = "=== MANAGE COLUMNS ===\n\n";
+    message += "Visible columns:\n";
+    visibleCols.forEach((c, i) => {
+      message += `  ${i+1}. ${c.label}\n`;
+    });
+    message += "\nHidden columns:\n";
     if (hiddenCols.length === 0) {
-      alert("All columns are visible.");
-      return;
+      message += "  (none)\n";
+    } else {
+      hiddenCols.forEach((c, i) => {
+        message += `  ${i+1}. ${c.label}\n`;
+      });
     }
-    const choices = hiddenCols.map((c, i) => `${i+1}. ${c.label}`).join('\n');
-    const input = prompt(`Hidden columns:\n${choices}\n\nEnter number to show:`);
+    message += "\nEnter number to toggle visibility (or 'cancel' to close):";
+    
+    const input = prompt(message);
+    if (input === null) return;
     const idx = parseInt(input) - 1;
     if (!isNaN(idx) && idx >= 0 && idx < hiddenCols.length) {
       toggleColumn(hiddenCols[idx].id);
+    } else if (!isNaN(idx) && idx >= 0 && idx < visibleCols.length) {
+      toggleColumn(visibleCols[idx].id);
+    } else {
+      alert("Invalid selection.");
     }
   };
 
