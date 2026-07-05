@@ -241,14 +241,13 @@ function AppContent() {
           canUndo={history.length > 0}
         />
 
-        {/* KONTEN TABEL DENGAN SCROLL HORIZONTAL */}
+        {/* KONTEN TABEL – hanya horizontal scroll, vertikal diatur oleh .main-content */}
         <div
           style={{
             overflowX: "auto",
             overflowY: "visible",
             width: "100%",
-            height: "auto",
-            minHeight: "200px",
+            flex: 1,
           }}
         >
           <BoardTable
@@ -266,7 +265,7 @@ function AppContent() {
           />
         </div>
 
-        {/* FOOTER STICKY – tetap di bawah saat scroll vertikal */}
+        {/* FOOTER STICKY DI BAWAH – tidak ikut scroll vertikal */}
         <div
           style={{
             position: "sticky",
@@ -285,7 +284,6 @@ function AppContent() {
             gap: 16,
             backdropFilter: "blur(8px)",
             width: "100%",
-            minWidth: "100%",
             boxSizing: "border-box",
           }}
         >
