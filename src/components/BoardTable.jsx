@@ -145,21 +145,25 @@ export default function BoardTable({
         return (
           <div key={groupName} style={{ marginBottom: 24, position: "relative" }}>
             {/* ============================================================
-                JUDUL GROUP – STICKY KIRI (tanpa logo setting)
+                HEADER GROUP – STICKY KIRI (di luar tabel)
                 ============================================================ */}
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
                 marginBottom: 8,
-                padding: "4px 0",
+                padding: "6px 8px",
                 borderBottom: `2px solid ${groupColor}`,
                 position: "sticky",
                 left: 0,
                 zIndex: 20,
                 background: "var(--bg-secondary)",
-                width: "100%",
+                width: "max-content",
+                minWidth: "100%",
                 boxSizing: "border-box",
+                borderTop: `2px solid ${groupColor}`,
+                borderTopLeftRadius: 4,
+                borderTopRightRadius: 4,
               }}
             >
               {/* Tombol Collapse */}
@@ -422,53 +426,6 @@ export default function BoardTable({
                           onDelete={() => onDeleteItem(item.id)}
                         />
                       ))}
-
-                      {/* ============================================================
-                          BARIS "+ Add item" – STICKY KIRI
-                          ============================================================ */}
-                      <tr>
-                        <td
-                          colSpan={totalCols}
-                          style={{
-                            padding: 0,
-                            border: "none",
-                            position: "sticky",
-                            left: 0,
-                            zIndex: 5,
-                            background: "var(--bg-secondary)",
-                          }}
-                        >
-                          <button
-                            onClick={() => onAddItem(groupName)}
-                            style={{
-                              display: "block",
-                              width: "100%",
-                              padding: "6px 8px",
-                              border: "none",
-                              background: "transparent",
-                              color: "#3b82f6",
-                              cursor: "pointer",
-                              fontSize: 13,
-                              textAlign: "left",
-                              borderBottom: "2px solid var(--border-color)",
-                              borderLeft: `4px solid ${groupColor}`,
-                              borderRight: "2px solid var(--border-color)",
-                              borderBottomLeftRadius: 4,
-                              borderBottomRightRadius: 4,
-                              transition: "background 0.15s",
-                              boxSizing: "border-box",
-                            }}
-                            onMouseEnter={(e) =>
-                              (e.currentTarget.style.background = "var(--bg-hover)")
-                            }
-                            onMouseLeave={(e) =>
-                              (e.currentTarget.style.background = "transparent")
-                            }
-                          >
-                            + Add item
-                          </button>
-                        </td>
-                      </tr>
                     </tbody>
                   </table>
                 ) : (
@@ -498,6 +455,53 @@ export default function BoardTable({
                     </button>
                   </div>
                 )}
+
+                {/* ============================================================
+                    BARIS "+ Add item" – STICKY KIRI (di luar tabel)
+                    ============================================================ */}
+                <div
+                  style={{
+                    position: "sticky",
+                    left: 0,
+                    zIndex: 5,
+                    background: "var(--bg-secondary)",
+                    borderBottom: "2px solid var(--border-color)",
+                    borderLeft: `4px solid ${groupColor}`,
+                    borderRight: "2px solid var(--border-color)",
+                    borderBottomLeftRadius: 4,
+                    borderBottomRightRadius: 4,
+                    marginTop: 0,
+                    padding: 0,
+                    width: "max-content",
+                    minWidth: "100%",
+                    boxSizing: "border-box",
+                  }}
+                >
+                  <button
+                    onClick={() => onAddItem(groupName)}
+                    style={{
+                      display: "block",
+                      width: "100%",
+                      padding: "6px 8px",
+                      border: "none",
+                      background: "transparent",
+                      color: "#3b82f6",
+                      cursor: "pointer",
+                      fontSize: 13,
+                      textAlign: "left",
+                      transition: "background 0.15s",
+                      boxSizing: "border-box",
+                    }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.background = "var(--bg-hover)")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.background = "transparent")
+                    }
+                  >
+                    + Add item
+                  </button>
+                </div>
               </>
             )}
           </div>
