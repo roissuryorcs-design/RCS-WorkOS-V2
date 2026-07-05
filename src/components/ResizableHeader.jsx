@@ -24,24 +24,21 @@ export default function ResizableHeader({
   const isItem = column.id === "item";
   const isLast = index === totalColumns - 1;
 
-  // ============================================================
-  // RESIZE (Dengan event yang lebih robust)
-  // ============================================================
+  // ===== RESIZE =====
   const handleResizeMouseDown = (e) => {
     e.stopPropagation();
     e.preventDefault();
-    console.log("🟢 Resize MOUSE DOWN for column:", column.id);
-    
+    console.log("🔵 Resize start:", column.id);
+
     if (thRef.current) {
       thRef.current.draggable = false;
       thRef.current.style.userSelect = "none";
     }
-    
+
     setIsResizing(true);
     startXRef.current = e.clientX;
     startWidthRef.current = thRef.current?.getBoundingClientRect().width || 60;
-    console.log("📐 Start width (px):", startWidthRef.current);
-    
+
     document.addEventListener("mousemove", handleResizeMouseMove);
     document.addEventListener("mouseup", handleResizeMouseUp);
   };
@@ -49,51 +46,38 @@ export default function ResizableHeader({
   const handleResizeMouseMove = (e) => {
     if (!isResizing) return;
     e.preventDefault();
-    
+
     const diff = e.clientX - startXRef.current;
     const newWidthPx = Math.max(40, startWidthRef.current + diff);
-    
-    // Hitung persen berdasarkan parent tabel
     const parentWidth = thRef.current?.parentElement?.offsetWidth || 800;
     const newWidthPercent = Math.min(50, Math.max(5, (newWidthPx / parentWidth) * 100));
-    
-    console.log(`📐 Resize: ${newWidthPx}px → ${newWidthPercent.toFixed(1)}%`);
-    
+
     setWidth(newWidthPercent);
     onResize(column.id, newWidthPercent);
   };
 
   const handleResizeMouseUp = () => {
     setIsResizing(false);
-    console.log("🔴 Resize MOUSE UP for column:", column.id);
-    
     if (thRef.current) {
       thRef.current.draggable = true;
       thRef.current.style.userSelect = "";
     }
-    
     document.removeEventListener("mousemove", handleResizeMouseMove);
     document.removeEventListener("mouseup", handleResizeMouseUp);
   };
 
-  // ============================================================
-  // DRAG & DROP (ITEM tidak bisa di-drag)
-  // ============================================================
+  // ===== DRAG & DROP =====
   const handleDragStart = (e) => {
     if (isAction || isResizing || isItem) {
       e.preventDefault();
-      console.log(`⛔ Drag blocked for ${column.id}`);
       return;
     }
-    console.log("🟢 Drag start for column:", column.id, "index:", index);
     setIsDragging(true);
-    
     e.dataTransfer.effectAllowed = "move";
-    e.dataTransfer.setData("text/plain", JSON.stringify({
-      fromIndex: index,
-      columnId: column.id
-    }));
-    
+    e.dataTransfer.setData(
+      "text/plain",
+      JSON.stringify({ fromIndex: index, columnId: column.id })
+    );
     if (thRef.current) {
       thRef.current.style.opacity = "0.4";
       thRef.current.style.background = "var(--bg-hover)";
@@ -101,7 +85,6 @@ export default function ResizableHeader({
   };
 
   const handleDragEnd = (e) => {
-    console.log("🔴 Drag end for column:", column.id);
     setIsDragging(false);
     if (thRef.current) {
       thRef.current.style.opacity = "1";
@@ -113,7 +96,6 @@ export default function ResizableHeader({
   const handleDragOver = (e) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
-    
     if (thRef.current && !isAction && !isResizing && !isItem) {
       thRef.current.style.borderLeft = "3px solid var(--btn-primary-bg)";
       thRef.current.style.background = "var(--bg-hover)";
@@ -129,45 +111,28 @@ export default function ResizableHeader({
 
   const handleDrop = (e) => {
     e.preventDefault();
-    console.log("🟢 Drop on column:", column.id, "index:", index);
-    
     if (thRef.current) {
       thRef.current.style.borderLeft = "none";
       thRef.current.style.background = "transparent";
       thRef.current.style.opacity = "1";
     }
-    
     try {
       const data = JSON.parse(e.dataTransfer.getData("text/plain"));
       const fromIndex = data.fromIndex;
-      
       if (fromIndex !== undefined && fromIndex !== index) {
-        console.log(`🔄 Reordering from ${fromIndex} to ${index}`);
         onReorder(fromIndex, index);
       }
-    } catch (err) {
+    } catch {
       const fromIndex = parseInt(e.dataTransfer.getData("text/plain"));
       if (!isNaN(fromIndex) && fromIndex !== index) {
-        console.log(`🔄 Reordering from ${fromIndex} to ${index} (fallback)`);
         onReorder(fromIndex, index);
       }
     }
-    
     setIsDragging(false);
   };
 
-  // ============================================================
-  // MENU
-  // ============================================================
-  const toggleMenu = () => {
-    console.log("🟢 Toggle menu for column:", column.id);
-    setShowMenu(!showMenu);
-  };
-
-  // ============================================================
-  // RENDER
-  // ============================================================
-  const cursorType = isAction ? "default" : isItem ? "default" : isResizing ? "col-resize" : "grab";
+  // ===== MENU =====
+  const toggleMenu = () => setShowMenu(!showMenu);
 
   return (
     <th
@@ -186,12 +151,20 @@ export default function ResizableHeader({
         minWidth: 60,
         maxWidth: `${width}%`,
         userSelect: "none",
-        cursor: cursorType,
+        cursor: isAction || isItem ? "default" : isResizing ? "col-resize" : "grab",
         background: isDragging ? "var(--bg-hover)" : "transparent",
-        transition: "background 0.2s, opacity 0.2s, border-color 0.2s",
-        pointerEvents: isResizing ? "auto" : "auto",
+        transition: "background 0.2s, opacity 0.2s",
+        pointerEvents: "auto",
       }}
-      title={isAction ? "Fixed column" : isItem ? "Protected column (cannot delete/drag/hide)" : isResizing ? "Resizing..." : "Drag to reorder"}
+      title={
+        isAction
+          ? "Fixed column"
+          : isItem
+          ? "Protected column"
+          : isResizing
+          ? "Resizing..."
+          : "Drag to reorder"
+      }
     >
       <div
         style={{
@@ -199,13 +172,11 @@ export default function ResizableHeader({
           alignItems: "center",
           justifyContent: "space-between",
           gap: 4,
-          pointerEvents: isResizing ? "none" : "auto",
         }}
       >
-        <span style={{ pointerEvents: "none" }}>{children}</span>
+        <span>{children}</span>
 
-        <div style={{ display: "flex", alignItems: "center", pointerEvents: "none" }}>
-          {/* Tombol ⋮ */}
+        <div style={{ display: "flex", alignItems: "center" }}>
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -228,7 +199,6 @@ export default function ResizableHeader({
             ⋮
           </button>
 
-          {/* Resize handle - hanya untuk non-action */}
           {!isAction && (
             <div
               onMouseDown={handleResizeMouseDown}
