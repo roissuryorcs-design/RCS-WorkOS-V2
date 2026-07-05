@@ -23,26 +23,34 @@ export default function ResizableHeader({
   const isLast = index === totalColumns - 1;
 
   // ============================================================
-  // RESIZE - Menggunakan pointer events yang lebih andal
+  // RESIZE - Perbaikan utama
   // ============================================================
   const handleResizeStart = (e) => {
     e.preventDefault();
-    e.stopPropagation();
+    e.stopPropagation(); // ← PENTING: cegah event drag
+    console.log("🔵 Resize start:", column.id);
+
     setIsResizing(true);
     startX.current = e.clientX;
     startWidth.current = thRef.current?.offsetWidth || 60;
 
     const onMove = (ev) => {
       if (!isResizing) return;
+      ev.preventDefault();
+      
       const diff = ev.clientX - startX.current;
       const newWidth = Math.max(40, startWidth.current + diff);
       const parentWidth = thRef.current?.parentElement?.offsetWidth || 800;
       const percent = Math.min(50, Math.max(5, (newWidth / parentWidth) * 100));
+      
+      console.log(`📐 Resize: ${newWidth}px → ${percent.toFixed(1)}%`);
+      
       setWidth(percent);
       onResize(column.id, percent);
     };
 
     const onUp = () => {
+      console.log("🔴 Resize end:", column.id);
       setIsResizing(false);
       document.removeEventListener("mousemove", onMove);
       document.removeEventListener("mouseup", onUp);
@@ -57,7 +65,7 @@ export default function ResizableHeader({
   }, [column.width]);
 
   // ============================================================
-  // DRAG & DROP - Hanya untuk kolom non-proteksi
+  // DRAG & DROP (tetap)
   // ============================================================
   const handleDragStart = (e) => {
     if (isProtected) {
@@ -161,7 +169,7 @@ export default function ResizableHeader({
             ⋮
           </button>
 
-          {/* Resize Handle - Hanya untuk non-action */}
+          {/* Resize Handle - Hanya untuk non-proteksi */}
           {!isProtected && (
             <div
               onMouseDown={handleResizeStart}
@@ -169,14 +177,14 @@ export default function ResizableHeader({
                 position: "absolute",
                 right: -6,
                 top: 0,
-                width: 12,
+                width: 14,
                 height: "100%",
                 cursor: "col-resize",
                 background: isResizing ? "var(--btn-primary-bg)" : "transparent",
                 opacity: isResizing ? 0.8 : 0,
                 transition: "opacity 0.2s, background 0.2s",
                 borderRadius: 2,
-                zIndex: 10,
+                zIndex: 20,
                 borderLeft: isResizing ? "2px solid var(--btn-primary-bg)" : "none",
               }}
               onMouseEnter={(e) => {
