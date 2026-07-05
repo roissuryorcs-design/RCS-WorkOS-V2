@@ -14,7 +14,7 @@ export default function BoardTable({
   onAddGroup,
   onDeleteGroup,
   onAddItem,
-  onOpenStatusManager,
+  onOpenStatusManager, // ← ini yang akan dipanggil dari tombol ⋮ STATUS
 }) {
   const {
     updateColumnWidth,
@@ -39,11 +39,10 @@ export default function BoardTable({
     return acc;
   }, {});
 
-  // --- PASTIKAN KOLOM ITEM SELALU ADA ---
+  // Pastikan kolom ITEM selalu ada
   const safeColumns = (() => {
     const hasItem = visibleColumns.some((col) => col.id === "item");
     if (hasItem) return visibleColumns;
-    // Jika ITEM hilang, tambahkan kembali
     return [
       { id: "item", label: "ITEM", width: 22, visible: true },
       ...visibleColumns,
@@ -119,6 +118,7 @@ export default function BoardTable({
               />
             </div>
 
+            {/* POPUP DELETE GROUP */}
             {popupGroup === groupName && (
               <>
                 <div
@@ -169,6 +169,7 @@ export default function BoardTable({
               </>
             )}
 
+            {/* TABEL */}
             {!isCollapsed && (
               <>
                 {tasks.length > 0 ? (
@@ -195,21 +196,63 @@ export default function BoardTable({
                           letterSpacing: "0.3px",
                         }}
                       >
-                        {safeColumns.map((col, idx) => (
-                          <ResizableHeader
-                            key={col.id}
-                            column={col}
-                            index={idx}
-                            totalColumns={safeColumns.length}
-                            onResize={updateColumnWidth}
-                            onRename={renameColumn}
-                            onToggle={toggleColumn}
-                            onDelete={deleteColumn}
-                            onReorder={reorderColumns}
-                          >
-                            {col.label}
-                          </ResizableHeader>
-                        ))}
+                        {safeColumns.map((col, idx) => {
+                          // TOMBOL ⋮ DI HEADER STATUS
+                          const isStatus = col.id === "status";
+                          return (
+                            <ResizableHeader
+                              key={col.id}
+                              column={col}
+                              index={idx}
+                              totalColumns={safeColumns.length}
+                              onResize={updateColumnWidth}
+                              onRename={renameColumn}
+                              onToggle={toggleColumn}
+                              onDelete={deleteColumn}
+                              onReorder={reorderColumns}
+                            >
+                              {isStatus ? (
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 4,
+                                  }}
+                                >
+                                  <span>STATUS</span>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onOpenStatusManager();
+                                    }}
+                                    style={{
+                                      background: "none",
+                                      border: "none",
+                                      cursor: "pointer",
+                                      fontSize: 14,
+                                      color: "var(--text-secondary)",
+                                      padding: 0,
+                                      display: "flex",
+                                      alignItems: "center",
+                                      opacity: 0.6,
+                                      transition: "opacity 0.2s",
+                                    }}
+                                    onMouseEnter={(e) =>
+                                      (e.currentTarget.style.opacity = 1)
+                                    }
+                                    onMouseLeave={(e) =>
+                                      (e.currentTarget.style.opacity = 0.6)
+                                    }
+                                  >
+                                    ⋮
+                                  </button>
+                                </div>
+                              ) : (
+                                col.label
+                              )}
+                            </ResizableHeader>
+                          );
+                        })}
                       </tr>
                     </thead>
                     <tbody>
@@ -241,6 +284,7 @@ export default function BoardTable({
                   </div>
                 )}
 
+                {/* TOMBOL ADD TASK */}
                 <button
                   onClick={() => onAddItem(groupName)}
                   style={{
@@ -276,6 +320,7 @@ export default function BoardTable({
         );
       })}
 
+      {/* TOMBOL ADD NEW GROUP */}
       <div style={{ marginTop: 16 }}>
         <button
           onClick={onAddGroup}
