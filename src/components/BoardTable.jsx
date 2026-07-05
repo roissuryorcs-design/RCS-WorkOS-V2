@@ -264,7 +264,7 @@ export default function BoardTable({
                       borderRadius: 4,
                       borderLeft: `4px solid ${groupColor}`,
                       tableLayout: "fixed",
-                      width: "auto", // ← penting: biarkan tabel mengikuti kolom
+                      width: "auto",
                     }}
                   >
                     <thead>
@@ -365,6 +365,7 @@ export default function BoardTable({
                           );
                         })}
 
+                        {/* KOLOM "+" DENGAN BORDER KIRI */}
                         <th
                           style={{
                             padding: "8px 8px",
@@ -372,6 +373,7 @@ export default function BoardTable({
                             minWidth: "50px",
                             maxWidth: "50px",
                             borderRight: "none",
+                            borderLeft: "2px solid var(--border-color)",
                             textAlign: "center",
                             cursor: "pointer",
                             color: "var(--text-muted)",
