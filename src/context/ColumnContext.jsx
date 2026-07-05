@@ -9,7 +9,6 @@ const defaultColumns = [
   { id: "status", label: "STATUS", width: 120, visible: true },
   { id: "dueDate", label: "DUE DATE", width: 120, visible: true },
   { id: "rev", label: "REV", width: 80, visible: true },
-  { id: "action", label: "", width: 60, visible: true },
 ];
 
 export function ColumnProvider({ children }) {
@@ -18,13 +17,9 @@ export function ColumnProvider({ children }) {
     if (saved) {
       const parsed = JSON.parse(saved);
       const hasItem = parsed.some((c) => c.id === "item");
-      const hasAction = parsed.some((c) => c.id === "action");
       let result = [...parsed];
       if (!hasItem) {
         result.unshift({ id: "item", label: "ITEM", width: 150, visible: true });
-      }
-      if (!hasAction) {
-        result.push({ id: "action", label: "", width: 60, visible: true });
       }
       return result;
     }
@@ -44,21 +39,19 @@ export function ColumnProvider({ children }) {
   const addColumn = (label) => {
     if (!label || !label.trim()) return;
     const newId = `col_${Date.now()}`;
-    setColumns((prev) => {
-      const actionIndex = prev.length - 1;
-      const newCols = [...prev];
-      newCols.splice(actionIndex, 0, {
+    setColumns((prev) => [
+      ...prev,
+      {
         id: newId,
         label: label.trim(),
         width: 150,
         visible: true,
-      });
-      return newCols;
-    });
+      },
+    ]);
   };
 
   const deleteColumn = (id) => {
-    if (id === "item" || id === "action") {
+    if (id === "item") {
       console.warn(`Cannot delete protected column: ${id}`);
       return;
     }
@@ -66,7 +59,7 @@ export function ColumnProvider({ children }) {
   };
 
   const toggleColumn = (id) => {
-    if (id === "item" || id === "action") {
+    if (id === "item") {
       console.warn(`Cannot toggle protected column: ${id}`);
       return;
     }
