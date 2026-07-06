@@ -16,7 +16,6 @@ export default function StatusManager({
   const [editName, setEditName] = useState("");
   const [dragOverIndex, setDragOverIndex] = useState(null);
 
-  // Gunakan statusOrder jika ada, fallback ke Object.keys
   const orderedKeys = statusOrder && statusOrder.length > 0
     ? statusOrder.filter(s => statuses[s])
     : Object.keys(statuses);
@@ -66,12 +65,11 @@ export default function StatusManager({
   };
 
   // ============================================================
-  // DRAG & DROP – PERBAIKAN
+  // DRAG & DROP
   // ============================================================
   const handleDragStart = (e, index) => {
     e.dataTransfer.effectAllowed = "move";
     e.dataTransfer.setData("text/plain", String(index));
-    // Styling visual
     e.currentTarget.style.opacity = "0.5";
   };
 
@@ -81,7 +79,7 @@ export default function StatusManager({
   };
 
   const handleDragOver = (e) => {
-    e.preventDefault(); // Wajib untuk drop
+    e.preventDefault();
     e.dataTransfer.dropEffect = "move";
   };
 
@@ -89,14 +87,10 @@ export default function StatusManager({
     e.preventDefault();
     const fromIndex = parseInt(e.dataTransfer.getData("text/plain"));
     if (fromIndex === dropIndex) return;
-    // Panggil fungsi reorder dari App
     onReorderStatus(fromIndex, dropIndex);
     setDragOverIndex(null);
   };
 
-  // ============================================================
-  // RENDER
-  // ============================================================
   return (
     <div
       style={{
@@ -129,14 +123,11 @@ export default function StatusManager({
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 style={{ marginBottom: 4, fontSize: 18, fontWeight: 600 }}>
-          Manage Statuses
-        </h3>
+        <h3 style={{ marginBottom: 4, fontSize: 18, fontWeight: 600 }}>Manage Statuses</h3>
         <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 16 }}>
           Drag ⠿ to reorder. Click name to rename. At least one status must remain.
         </p>
 
-        {/* Daftar status */}
         <div style={{ marginBottom: 16 }}>
           {orderedKeys.map((name, index) => (
             <div
@@ -220,14 +211,7 @@ export default function StatusManager({
                 type="color"
                 value={statuses[name]}
                 onChange={(e) => onUpdateStatusColor(name, e.target.value)}
-                style={{
-                  width: 30,
-                  height: 30,
-                  border: "none",
-                  cursor: "pointer",
-                  background: "transparent",
-                  padding: 0,
-                }}
+                style={{ width: 30, height: 30, border: "none", cursor: "pointer", background: "transparent", padding: 0 }}
               />
 
               <button
@@ -249,7 +233,6 @@ export default function StatusManager({
           ))}
         </div>
 
-        {/* Tambah status baru */}
         <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
           <input
             placeholder="New status name"
@@ -269,14 +252,7 @@ export default function StatusManager({
             type="color"
             value={newColor}
             onChange={(e) => setNewColor(e.target.value)}
-            style={{
-              width: 36,
-              height: 36,
-              border: "none",
-              cursor: "pointer",
-              background: "transparent",
-              padding: 0,
-            }}
+            style={{ width: 36, height: 36, border: "none", cursor: "pointer", background: "transparent", padding: 0 }}
           />
           <button
             onClick={handleAdd}
