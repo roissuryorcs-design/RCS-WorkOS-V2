@@ -1,13 +1,11 @@
 import { useState } from "react";
 
 export default function StatusManager({
+  columnId,
   statuses,
   statusOrder,
-  onAddStatus,
-  onUpdateStatusColor,
-  onDeleteStatus,
-  onRenameStatus,
-  onReorderStatus,
+  onUpdateStatuses,
+  onUpdateStatusOrder,
   onClose,
 }) {
   const [newName, setNewName] = useState("");
@@ -16,7 +14,6 @@ export default function StatusManager({
   const [editName, setEditName] = useState("");
   const [dragOverIndex, setDragOverIndex] = useState(null);
 
-  // Pastikan orderedKeys selalu array
   const orderedKeys = statusOrder && statusOrder.length > 0
     ? statusOrder.filter(s => statuses[s])
     : Object.keys(statuses);
@@ -31,7 +28,10 @@ export default function StatusManager({
       alert(`Status "${name}" already exists!`);
       return;
     }
-    onAddStatus(name, newColor);
+    const newStatuses = { ...statuses, [name]: newColor };
+    const newOrder = [...orderedKeys, name];
+    onUpdateStatuses(newStatuses);
+    onUpdateStatusOrder(newOrder);
     setNewName("");
     setNewColor("#9ca3af");
   };
@@ -42,7 +42,11 @@ export default function StatusManager({
       return;
     }
     if (!confirm(`Delete status "${name}"?`)) return;
-    onDeleteStatus(name);
+    const newStatuses = { ...statuses };
+    delete newStatuses[name];
+    const newOrder = orderedKeys.filter(s => s !== name);
+    onUpdateStatuses(newStatuses);
+    onUpdateStatusOrder(newOrder);
   };
 
   const startRename = (name) => {
@@ -58,7 +62,13 @@ export default function StatusManager({
         setEditName("");
         return;
       }
-      onRenameStatus(editingId, editName.trim());
+      const newStatuses = { ...statuses };
+      const color = newStatuses[editingId];
+      delete newStatuses[editingId];
+      newStatuses[editName.trim()] = color;
+      const newOrder = orderedKeys.map(s => s === editingId ? editName.trim() : s);
+      onUpdateStatuses(newStatuses);
+      onUpdateStatusOrder(newOrder);
     }
     setEditingId(null);
     setEditName("");
@@ -67,6 +77,11 @@ export default function StatusManager({
   const cancelRename = () => {
     setEditingId(null);
     setEditName("");
+  };
+
+  const updateColor = (name, color) => {
+    const newStatuses = { ...statuses, [name]: color };
+    onUpdateStatuses(newStatuses);
   };
 
   // DRAG & DROP
@@ -90,7 +105,10 @@ export default function StatusManager({
     e.preventDefault();
     const fromIndex = parseInt(e.dataTransfer.getData("text/plain"));
     if (fromIndex === dropIndex) return;
-    onReorderStatus(fromIndex, dropIndex);
+    const newOrder = [...orderedKeys];
+    const [moved] = newOrder.splice(fromIndex, 1);
+    newOrder.splice(dropIndex, 0, moved);
+    onUpdateStatusOrder(newOrder);
     setDragOverIndex(null);
   };
 
@@ -126,7 +144,9 @@ export default function StatusManager({
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 style={{ marginBottom: 4, fontSize: 18, fontWeight: 600 }}>Manage Statuses</h3>
+        <h3 style={{ marginBottom: 4, fontSize: 18, fontWeight: 600 }}>
+          Manage Statuses
+        </h3>
         <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 16 }}>
           Drag ⠿ to reorder. Click name to rename. At least one status must remain.
         </p>
@@ -210,7 +230,7 @@ export default function StatusManager({
               <input
                 type="color"
                 value={statuses[name]}
-                onChange={(e) => onUpdateStatusColor(name, e.target.value)}
+                onChange={(e) => updateColor(name, e.target.value)}
                 style={{ width: 30, height: 30, border: "none", cursor: "pointer", background: "transparent", padding: 0 }}
               />
               <button
