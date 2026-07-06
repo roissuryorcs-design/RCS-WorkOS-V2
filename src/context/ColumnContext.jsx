@@ -3,12 +3,12 @@ import { createContext, useState, useContext, useEffect } from "react";
 const ColumnContext = createContext();
 
 const defaultColumns = [
-  { id: "item", label: "ITEM", width: 150, visible: true },
-  { id: "document", label: "NO. DOCUMENT", width: 200, visible: true },
-  { id: "people", label: "PEOPLE", width: 120, visible: true },
-  { id: "status", label: "STATUS", width: 120, visible: true },
-  { id: "dueDate", label: "DUE DATE", width: 120, visible: true },
-  { id: "rev", label: "REV", width: 80, visible: true },
+  { id: "item", label: "ITEM", type: "text", width: 150, visible: true },
+  { id: "document", label: "NO. DOCUMENT", type: "text", width: 200, visible: true },
+  { id: "people", label: "PEOPLE", type: "people", width: 120, visible: true },
+  { id: "status", label: "STATUS", type: "status", width: 120, visible: true },
+  { id: "dueDate", label: "DUE DATE", type: "date", width: 120, visible: true },
+  { id: "rev", label: "REV", type: "text", width: 80, visible: true },
 ];
 
 export function ColumnProvider({ children }) {
@@ -19,8 +19,10 @@ export function ColumnProvider({ children }) {
       const hasItem = parsed.some((c) => c.id === "item");
       let result = [...parsed];
       if (!hasItem) {
-        result.unshift({ id: "item", label: "ITEM", width: 150, visible: true });
+        result.unshift({ id: "item", label: "ITEM", type: "text", width: 150, visible: true });
       }
+      // Pastikan setiap kolom memiliki properti type (migrasi)
+      result = result.map(col => ({ ...col, type: col.type || "text" }));
       return result;
     }
     return defaultColumns;
@@ -36,7 +38,7 @@ export function ColumnProvider({ children }) {
     );
   };
 
-  const addColumn = (label) => {
+  const addColumn = (label, type = "text") => {
     if (!label || !label.trim()) return;
     const newId = `col_${Date.now()}`;
     setColumns((prev) => [
@@ -44,6 +46,7 @@ export function ColumnProvider({ children }) {
       {
         id: newId,
         label: label.trim(),
+        type: type,
         width: 150,
         visible: true,
       },
