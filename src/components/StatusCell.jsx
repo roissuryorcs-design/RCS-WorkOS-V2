@@ -1,21 +1,24 @@
 import { useState, useRef, useEffect } from "react";
 
 export default function StatusCell({ 
-  columnId,        // id kolom status
-  status,          // nilai saat ini (label)
-  statuses,        // object { label: color } dari kolom
-  statusOrder,     // array urutan label
-  onChange,        // fungsi update nilai
-  onOpenStatusManager, // fungsi buka modal untuk kolom ini
+  columnId,
+  status,
+  statuses,
+  statusOrder,
+  onChange,
+  onOpenStatusManager,
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef(null);
 
-  const orderedStatuses = statusOrder && statusOrder.length > 0
-    ? statusOrder.filter(s => statuses[s])
-    : Object.keys(statuses);
+  // Debug: cek props
+  console.log("🔵 StatusCell props:", { columnId, status, statuses, statusOrder, onOpenStatusManager });
 
-  const getColor = (s) => statuses[s] || "#9ca3af";
+  const orderedStatuses = statusOrder && statusOrder.length > 0
+    ? statusOrder.filter(s => statuses && statuses[s])
+    : Object.keys(statuses || {});
+
+  const getColor = (s) => (statuses && statuses[s]) || "#9ca3af";
   const currentStatus = status || orderedStatuses[0] || "Default";
   const currentColor = getColor(currentStatus);
 
@@ -31,7 +34,11 @@ export default function StatusCell({
 
   const handleSelect = (s) => {
     if (s === "__manage__") {
-      onOpenStatusManager(columnId); // kirim columnId
+      if (typeof onOpenStatusManager === "function") {
+        onOpenStatusManager(columnId);
+      } else {
+        console.error("❌ onOpenStatusManager is not a function", onOpenStatusManager);
+      }
       setIsOpen(false);
       return;
     }
