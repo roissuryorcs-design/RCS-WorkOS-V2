@@ -2,18 +2,24 @@ import { useState } from "react";
 
 export default function StatusManager({
   statuses,
+  statusOrder,
   onAddStatus,
   onUpdateStatusColor,
   onDeleteStatus,
-  onRenameStatus, // ← fungsi baru
+  onRenameStatus,
+  onReorderStatus,
   onClose,
 }) {
   const [newName, setNewName] = useState("");
   const [newColor, setNewColor] = useState("#9ca3af");
   const [editingId, setEditingId] = useState(null);
   const [editName, setEditName] = useState("");
+  const [dragIndex, setDragIndex] = useState(null);
 
-  const statusKeys = Object.keys(statuses);
+  // Gunakan statusOrder jika ada, fallback ke Object.keys
+  const orderedKeys = statusOrder && statusOrder.length > 0
+    ? statusOrder.filter(s => statuses[s])
+    : Object.keys(statuses);
 
   const handleAdd = () => {
     const name = newName.trim() || "Default";
@@ -27,7 +33,7 @@ export default function StatusManager({
   };
 
   const handleDelete = (name) => {
-    if (statusKeys.length <= 1) {
+    if (orderedKeys.length <= 1) {
       alert("Cannot delete the last status. At least one status must remain.");
       return;
     }
@@ -59,6 +65,30 @@ export default function StatusManager({
     setEditName("");
   };
 
+  // Drag & Drop handlers
+  const handleDragStart = (e, index) => {
+    setDragIndex(index);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", index.toString());
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleDrop = (e, dropIndex) => {
+    e.preventDefault();
+    const fromIndex = parseInt(e.dataTransfer.getData("text/plain"));
+    if (fromIndex === dropIndex) return;
+    onReorderStatus(fromIndex, dropIndex);
+    setDragIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDragIndex(null);
+  };
+
   return (
     <div
       style={{
@@ -80,7 +110,7 @@ export default function StatusManager({
           background: "var(--bg-modal)",
           borderRadius: 8,
           padding: 24,
-          maxWidth: 400,
+          maxWidth: 420,
           width: "100%",
           maxHeight: "80vh",
           overflowY: "auto",
@@ -90,22 +120,34 @@ export default function StatusManager({
       >
         <h3 style={{ marginBottom: 16, fontSize: 18 }}>Manage Statuses</h3>
         <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 12 }}>
-          Click on status name to rename. At least one status must remain.
+          Drag to reorder. Click name to rename. At least one status must remain.
         </p>
 
-        {/* Daftar status */}
+        {/* Daftar status dengan drag & drop */}
         <div style={{ marginBottom: 16 }}>
-          {statusKeys.map((name) => (
+          {orderedKeys.map((name, index) => (
             <div
               key={name}
+              draggable
+              onDragStart={(e) => handleDragStart(e, index)}
+              onDragOver={handleDragOver}
+              onDrop={(e) => handleDrop(e, index)}
+              onDragEnd={handleDragEnd}
               style={{
                 display: "flex",
                 alignItems: "center",
                 gap: 8,
                 padding: "6px 0",
                 borderBottom: "1px solid var(--border-light)",
+                cursor: "grab",
+                background: dragIndex === index ? "var(--bg-hover)" : "transparent",
+                opacity: dragIndex === index ? 0.5 : 1,
+                transition: "background 0.2s, opacity 0.2s",
               }}
             >
+              {/* Drag handle */}
+              <span style={{ color: "var(--text-muted)", fontSize: 16, cursor: "grab" }}>⠿</span>
+
               <span
                 style={{
                   display: "inline-block",
@@ -113,6 +155,7 @@ export default function StatusManager({
                   height: 16,
                   borderRadius: 4,
                   background: statuses[name],
+                  flexShrink: 0,
                 }}
               />
 
@@ -165,11 +208,11 @@ export default function StatusManager({
                   background: "none",
                   border: "none",
                   color: "#ef4444",
-                  cursor: statusKeys.length <= 1 ? "not-allowed" : "pointer",
+                  cursor: orderedKeys.length <= 1 ? "not-allowed" : "pointer",
                   fontSize: 16,
-                  opacity: statusKeys.length <= 1 ? 0.4 : 1,
+                  opacity: orderedKeys.length <= 1 ? 0.4 : 1,
                 }}
-                disabled={statusKeys.length <= 1}
+                disabled={orderedKeys.length <= 1}
               >
                 ✕
               </button>
