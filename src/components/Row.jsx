@@ -2,15 +2,13 @@ import StatusCell from "./StatusCell";
 
 export default function Row({
   item,
-  statuses,
-  statusOrder,
   groupColor,
   visibleColumns,
   isSelected,
   onToggleSelect,
   onUpdate,
   onDelete,
-  onOpenStatusManager,
+  onOpenStatusManager, // fungsi dengan parameter columnId
 }) {
   const inputStyle = {
     border: "none",
@@ -32,10 +30,11 @@ export default function Row({
       case "status":
         return (
           <StatusCell
-            status={item[col.id]} // ← field independen
-            statuses={statuses}
-            statusOrder={statusOrder}
-            onChange={(val) => onUpdate(col.id, val)} // ← update field independen
+            columnId={col.id}
+            status={item[col.id]}
+            statuses={col.statuses || {}}
+            statusOrder={col.statusOrder || []}
+            onChange={(val) => onUpdate(col.id, val)}
             onOpenStatusManager={onOpenStatusManager}
           />
         );
