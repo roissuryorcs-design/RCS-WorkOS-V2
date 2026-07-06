@@ -151,6 +151,18 @@ function AppContent() {
     setGroupColors(newColors);
   };
 
+  const renameGroup = (oldName, newName) => {
+  if (!newName || !newName.trim()) return;
+  if (items.some(item => item.group === newName.trim() && item.group !== oldName)) {
+    alert(`Group "${newName.trim()}" already exists!`);
+    return;
+  }
+  const newItems = items.map(item =>
+    item.group === oldName ? { ...item, group: newName.trim() } : item
+  );
+  saveHistory(newItems);
+};
+  
   const updateGroupColor = (groupName, color) => {
     setGroupColors(prev => ({ ...prev, [groupName]: color }));
   };
@@ -262,7 +274,8 @@ function AppContent() {
             onDeleteGroup={deleteGroup}
             onAddItem={addItem}
             onOpenStatusManager={() => setShowStatusManager(true)}
-          />
+            onRenameGroup={renameGroup}
+         />
         </div>
 
         {/* FOOTER STICKY DI BAWAH – tidak ikut scroll vertikal */}
