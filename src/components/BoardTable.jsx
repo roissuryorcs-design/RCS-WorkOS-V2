@@ -15,6 +15,7 @@ export default function BoardTable({
   onDeleteGroup,
   onAddItem,
   onOpenStatusManager,
+  onRenameGroup, // ← baru
 }) {
   const {
     updateColumnWidth,
@@ -35,6 +36,13 @@ export default function BoardTable({
   };
 
   const closePopup = () => setPopupGroup(null);
+
+  const handleRenameGroup = (groupName) => {
+    const newName = prompt("Enter new group name:", groupName);
+    if (newName && newName.trim() && newName.trim() !== groupName) {
+      onRenameGroup(groupName, newName.trim());
+    }
+  };
 
   const grouped = groups.reduce((acc, group) => {
     acc[group] = items.filter((item) => item.group === group);
@@ -149,9 +157,7 @@ export default function BoardTable({
 
         return (
           <div key={groupName} style={{ marginBottom: 24, position: "relative" }}>
-            {/* ============================================================
-                HEADER GROUP – STICKY KIRI
-                ============================================================ */}
+            {/* HEADER GROUP – STICKY KIRI */}
             <div
               style={{
                 position: "sticky",
@@ -222,7 +228,7 @@ export default function BoardTable({
               />
             </div>
 
-            {/* POPUP DELETE GROUP */}
+            {/* POPUP – RENAME & DELETE GROUP */}
             {popupGroup === groupName && (
               <>
                 <div
@@ -242,6 +248,25 @@ export default function BoardTable({
                   <button
                     onClick={() => {
                       closePopup();
+                      handleRenameGroup(groupName);
+                    }}
+                    style={{
+                      display: "block",
+                      width: "100%",
+                      padding: "6px 16px",
+                      background: "none",
+                      border: "none",
+                      textAlign: "left",
+                      cursor: "pointer",
+                      color: "var(--text-primary)",
+                      fontSize: 13,
+                    }}
+                  >
+                    ✏️ Rename Group
+                  </button>
+                  <button
+                    onClick={() => {
+                      closePopup();
                       onDeleteGroup(groupName);
                     }}
                     style={{
@@ -254,6 +279,7 @@ export default function BoardTable({
                       cursor: "pointer",
                       color: "#ef4444",
                       fontSize: 13,
+                      borderTop: "1px solid var(--border-color)",
                     }}
                   >
                     🗑️ Delete Group
@@ -273,9 +299,7 @@ export default function BoardTable({
               </>
             )}
 
-            {/* ============================================================
-                TABEL – SCROLL HORIZONTAL PER GROUP
-                ============================================================ */}
+            {/* TABEL */}
             {!isCollapsed && (
               <>
                 {tasks.length > 0 ? (
@@ -393,7 +417,7 @@ export default function BoardTable({
                             );
                           })}
 
-                          {/* KOLOM "+" – TIDAK STICKY */}
+                          {/* KOLOM "+" */}
                           <th
                             style={{
                               padding: "8px 8px",
