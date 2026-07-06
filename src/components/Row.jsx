@@ -9,6 +9,7 @@ export default function Row({
   onToggleSelect,
   onUpdate,
   onDelete,
+  onOpenStatusManager, // ← tambahan
 }) {
   const inputStyle = {
     border: "none",
@@ -29,6 +30,7 @@ export default function Row({
           status={item.status}
           statuses={statuses}
           onChange={(val) => onUpdate("status", val)}
+          onOpenStatusManager={onOpenStatusManager} // ← kirim
         />
       );
     }
