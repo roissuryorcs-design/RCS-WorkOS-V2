@@ -11,9 +11,6 @@ export default function StatusCell({
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef(null);
 
-  // Debug props
-  console.log("🔵 StatusCell props:", { columnId, status, statuses, statusOrder, onOpenStatusManager });
-
   const orderedStatuses = statusOrder && statusOrder.length > 0
     ? statusOrder.filter(s => statuses && statuses[s])
     : Object.keys(statuses || {});
@@ -33,20 +30,16 @@ export default function StatusCell({
   }, []);
 
   const handleSelect = (s) => {
-    console.log("🟢 handleSelect called with:", s, "columnId:", columnId);
-    
+    console.log("🟢 handleSelect called with:", s);
     if (s === "__manage__") {
-      console.log("📝 Opening Status Manager for column:", columnId);
       if (typeof onOpenStatusManager === "function") {
         onOpenStatusManager(columnId);
       } else {
-        console.error("❌ onOpenStatusManager is not a function", onOpenStatusManager);
+        console.error("❌ onOpenStatusManager is not a function");
       }
       setIsOpen(false);
       return;
     }
-    
-    console.log("🔄 Changing status to:", s);
     onChange(s);
     setIsOpen(false);
   };
@@ -55,10 +48,7 @@ export default function StatusCell({
     <div ref={containerRef} style={{ position: "relative", width: "100%" }}>
       {/* Tombol dropdown */}
       <div
-        onClick={() => {
-          console.log("🖱️ Dropdown clicked, toggling isOpen");
-          setIsOpen(!isOpen);
-        }}
+        onClick={() => setIsOpen(!isOpen)}
         style={{
           display: "flex",
           alignItems: "center",
@@ -72,17 +62,17 @@ export default function StatusCell({
           fontWeight: 500,
           fontSize: 12,
           minHeight: 28,
-          transition: "background 0.2s, border-color 0.2s, box-shadow 0.2s",
+          transition: "background 0.2s, border-color 0.2s",
           boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
         }}
       >
         <span style={{ flex: 1, textShadow: "0 1px 2px rgba(0,0,0,0.2)" }}>
           {currentStatus}
         </span>
-        <span style={{ fontSize: 10, opacity: 0.8, textShadow: "0 1px 2px rgba(0,0,0,0.2)" }}>▾</span>
+        <span style={{ fontSize: 10, opacity: 0.8 }}>▾</span>
       </div>
 
-      {/* Dropdown menu */}
+      {/* Dropdown menu – dengan z-index tinggi */}
       {isOpen && (
         <div
           style={{
@@ -93,12 +83,13 @@ export default function StatusCell({
             background: "var(--bg-secondary)",
             border: "1px solid var(--border-color)",
             borderRadius: 8,
-            boxShadow: "0 8px 30px rgba(0,0,0,0.15), 0 2px 8px rgba(0,0,0,0.06)",
-            zIndex: 50,
+            boxShadow: "0 8px 30px rgba(0,0,0,0.2), 0 2px 8px rgba(0,0,0,0.1)",
+            zIndex: 9999, // ← sangat tinggi
             maxHeight: 240,
             overflowY: "auto",
             padding: "6px 0",
             minWidth: "150px",
+            pointerEvents: "auto", // ← pastikan bisa diklik
           }}
         >
           {orderedStatuses.map((s) => (
@@ -113,6 +104,7 @@ export default function StatusCell({
                 cursor: "pointer",
                 background: status === s ? "var(--bg-hover)" : "transparent",
                 transition: "background 0.1s",
+                pointerEvents: "auto",
               }}
               onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-hover)")}
               onMouseLeave={(e) => {
@@ -150,6 +142,7 @@ export default function StatusCell({
               color: "var(--text-muted)",
               fontSize: 13,
               transition: "background 0.1s",
+              pointerEvents: "auto",
             }}
             onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-hover)")}
             onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
