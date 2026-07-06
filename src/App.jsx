@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { ThemeProvider } from "./context/ThemeContext";
-import { ColumnProvider } from "./context/ColumnContext";
+import { ColumnProvider, useColumns } from "./context/ColumnContext";
 import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
 import Toolbar from "./components/Toolbar";
 import BoardTable from "./components/BoardTable";
 import StatusManager from "./components/StatusManager";
+import ColumnManager from "./components/ColumnManager";
 import "./App.css";
 
 function AppContent() {
@@ -16,9 +17,13 @@ function AppContent() {
   const [favorites, setFavorites] = useState([]);
   const [history, setHistory] = useState([]);
   const [showStatusManager, setShowStatusManager] = useState(false);
+  const [showColumnManager, setShowColumnManager] = useState(false);
   const [groupColors, setGroupColors] = useState({});
 
-  // LOAD DATA
+  // Ambil fungsi dari context kolom
+  const { columns, addColumn, renameColumn, toggleColumn, deleteColumn, resetColumns } = useColumns();
+
+  // ----- LOAD DATA -----
   useEffect(() => {
     const savedItems = localStorage.getItem("forelItems");
     const savedStatuses = localStorage.getItem("forelStatuses");
@@ -77,7 +82,7 @@ function AppContent() {
     }
   }, []);
 
-  // AUTO SAVE
+  // ----- AUTO SAVE -----
   useEffect(() => {
     localStorage.setItem("forelItems", JSON.stringify(items));
   }, [items]);
@@ -98,7 +103,7 @@ function AppContent() {
     localStorage.setItem("forelStatusOrder", JSON.stringify(statusOrder));
   }, [statusOrder]);
 
-  // UNDO
+  // ----- UNDO -----
   const saveHistory = (newItems) => {
     setHistory((prev) => [...prev, items]);
     setItems(newItems);
@@ -111,7 +116,7 @@ function AppContent() {
     setItems(prevState);
   };
 
-  // CRUD ITEM
+  // ----- CRUD ITEM -----
   const updateItem = (id, field, value) => {
     const newItems = items.map((it) =>
       it.id === id ? { ...it, [field]: value } : it
@@ -140,7 +145,7 @@ function AppContent() {
     saveHistory([...items, newItem]);
   };
 
-  // GROUP CRUD
+  // ----- GROUP CRUD -----
   const addGroup = () => {
     const name = prompt("Enter new group name:");
     if (!name || !name.trim()) return;
@@ -188,7 +193,7 @@ function AppContent() {
     setGroupColors(prev => ({ ...prev, [groupName]: color }));
   };
 
-  // STATUS CRUD
+  // ----- STATUS CRUD -----
   const addStatus = (name, color) => {
     const finalName = name.trim() || "Default";
     if (statuses[finalName]) {
@@ -196,7 +201,6 @@ function AppContent() {
       return;
     }
     setStatuses({ ...statuses, [finalName]: color || "#9ca3af" });
-    // Tambahkan ke statusOrder, pastikan tidak duplikat
     setStatusOrder(prev => {
       if (!prev.includes(finalName)) {
         return [...prev, finalName];
@@ -256,7 +260,7 @@ function AppContent() {
     setStatusOrder(newOrder);
   };
 
-  // FAVORITES
+  // ----- FAVORITES -----
   const addFavorite = () => {
     const name = prompt("Enter favorite name:");
     if (name && name.trim()) {
@@ -269,7 +273,7 @@ function AppContent() {
     setFavorites(newFavs);
   };
 
-  // EXPORT
+  // ----- EXPORT -----
   const exportData = () => {
     const dataStr = JSON.stringify({ items, statuses, groupColors, statusOrder }, null, 2);
     const blob = new Blob([dataStr], { type: "application/json" });
@@ -281,14 +285,14 @@ function AppContent() {
     URL.revokeObjectURL(url);
   };
 
-  // FILTER
+  // ----- FILTER -----
   const filteredItems = items.filter((it) =>
     it.item.toLowerCase().includes(search.toLowerCase()) ||
     it.document.toLowerCase().includes(search.toLowerCase()) ||
     it.people.toLowerCase().includes(search.toLowerCase())
   );
 
-  // STATS
+  // ----- STATS -----
   const totalItems = filteredItems.length;
   const hasDoneStatus = Object.keys(statuses).includes("Done");
   const doneItems = hasDoneStatus
@@ -297,6 +301,7 @@ function AppContent() {
   const pendingItems = totalItems - doneItems;
   const allGroups = [...new Set(items.map((item) => item.group))];
 
+  // ----- RENDER -----
   return (
     <div className="app-container">
       <Sidebar
@@ -315,6 +320,7 @@ function AppContent() {
           onUndo={undo}
           onExport={exportData}
           canUndo={history.length > 0}
+          onOpenColumnManager={() => setShowColumnManager(true)}
         />
 
         <BoardTable
@@ -353,6 +359,18 @@ function AppContent() {
           onRenameStatus={renameStatus}
           onReorderStatus={reorderStatus}
           onClose={() => setShowStatusManager(false)}
+        />
+      )}
+
+      {showColumnManager && (
+        <ColumnManager
+          columns={columns}
+          onAddColumn={addColumn}
+          onDeleteColumn={deleteColumn}
+          onToggleColumn={toggleColumn}
+          onRenameColumn={renameColumn}
+          onResetColumns={resetColumns}
+          onClose={() => setShowColumnManager(false)}
         />
       )}
     </div>
