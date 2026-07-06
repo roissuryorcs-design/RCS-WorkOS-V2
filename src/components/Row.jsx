@@ -47,7 +47,6 @@ export default function Row({
   return (
     <tr
       style={{
-        borderBottom: "2px solid var(--border-color)",
         fontSize: 13,
         background: isSelected ? "var(--bg-hover)" : "var(--bg-secondary)",
         borderLeft: `4px solid ${groupColor}`,
@@ -67,12 +66,13 @@ export default function Row({
           minWidth: "36px",
           maxWidth: "36px",
           borderRight: "2px solid var(--border-color)",
+          borderBottom: "2px solid var(--border-color)", // ← border antar baris
           textAlign: "center",
           boxSizing: "border-box",
           position: "sticky",
           left: 0,
           zIndex: 20,
-          background: "var(--bg-secondary)",
+          background: isSelected ? "var(--bg-hover)" : "var(--bg-secondary)",
         }}
       >
         <input
@@ -92,8 +92,8 @@ export default function Row({
               position: "sticky",
               left: "36px",
               zIndex: 20,
-              background: "var(--bg-secondary)",
-              boxShadow: "inset -2px 0 0 0 var(--border-color)", // ← border kanan
+              background: isSelected ? "var(--bg-hover)" : "var(--bg-secondary)",
+              boxShadow: "inset -2px 0 0 0 var(--border-color)",
             }
           : {};
 
@@ -103,6 +103,7 @@ export default function Row({
             style={{
               padding: "6px 8px",
               borderRight: isLast ? "none" : "2px solid var(--border-color)",
+              borderBottom: "2px solid var(--border-color)", // ← border antar baris
               width: `${col.width}px`,
               minWidth: `${col.width}px`,
               maxWidth: `${col.width}px`,
@@ -127,6 +128,7 @@ export default function Row({
           maxWidth: "50px",
           borderRight: "none",
           borderLeft: "2px solid var(--border-color)",
+          borderBottom: "2px solid var(--border-color)", // ← border antar baris
           boxSizing: "border-box",
         }}
       />
