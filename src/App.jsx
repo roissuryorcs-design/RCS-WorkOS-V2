@@ -12,6 +12,7 @@ function AppContent() {
   // ----- STATE -----
   const [items, setItems] = useState([]);
   const [statuses, setStatuses] = useState({});
+  const [statusOrder, setStatusOrder] = useState([]);
   const [search, setSearch] = useState("");
   const [favorites, setFavorites] = useState([]);
   const [history, setHistory] = useState([]);
@@ -24,9 +25,11 @@ function AppContent() {
     const savedStatuses = localStorage.getItem("forelStatuses");
     const savedFavs = localStorage.getItem("forelFavorites");
     const savedGroupColors = localStorage.getItem("forelGroupColors");
+    const savedStatusOrder = localStorage.getItem("forelStatusOrder");
 
     const defaultStatuses = { Default: "#9ca3af" };
 
+    // Load statuses
     if (savedStatuses) {
       const parsed = JSON.parse(savedStatuses);
       if (Object.keys(parsed).length === 0) {
@@ -36,6 +39,16 @@ function AppContent() {
       }
     } else {
       setStatuses(defaultStatuses);
+    }
+
+    // Load status order
+    if (savedStatusOrder) {
+      const parsed = JSON.parse(savedStatusOrder);
+      // Filter hanya status yang masih ada
+      const filtered = parsed.filter(s => statuses[s] || s === "Default");
+      setStatusOrder(filtered.length > 0 ? filtered : Object.keys(defaultStatuses));
+    } else {
+      setStatusOrder(Object.keys(defaultStatuses));
     }
 
     if (savedItems) {
@@ -83,6 +96,10 @@ function AppContent() {
     localStorage.setItem("forelGroupColors", JSON.stringify(groupColors));
   }, [groupColors]);
 
+  useEffect(() => {
+    localStorage.setItem("forelStatusOrder", JSON.stringify(statusOrder));
+  }, [statusOrder]);
+
   // ----- UNDO -----
   const saveHistory = (newItems) => {
     setHistory((prev) => [...prev, items]);
@@ -111,7 +128,7 @@ function AppContent() {
   };
 
   const addItem = (groupName) => {
-    const firstStatus = Object.keys(statuses)[0] || "Default";
+    const firstStatus = statusOrder.length > 0 ? statusOrder[0] : "Default";
     const newItem = {
       id: Date.now(),
       group: groupName || "Target & PLANNING",
@@ -133,7 +150,7 @@ function AppContent() {
       alert(`Group "${name.trim()}" already exists!`);
       return;
     }
-    const firstStatus = Object.keys(statuses)[0] || "Default";
+    const firstStatus = statusOrder.length > 0 ? statusOrder[0] : "Default";
     const newItem = {
       id: Date.now(),
       group: name.trim(),
@@ -173,7 +190,7 @@ function AppContent() {
     setGroupColors(prev => ({ ...prev, [groupName]: color }));
   };
 
-  // ----- STATUS CRUD (LENGKAP) -----
+  // ----- STATUS CRUD -----
   const addStatus = (name, color) => {
     const finalName = name.trim() || "Default";
     if (statuses[finalName]) {
@@ -181,6 +198,7 @@ function AppContent() {
       return;
     }
     setStatuses({ ...statuses, [finalName]: color || "#9ca3af" });
+    setStatusOrder(prev => [...prev, finalName]);
   };
 
   const updateStatusColor = (name, color) => {
@@ -201,29 +219,39 @@ function AppContent() {
     delete newStatuses[name];
     setStatuses(newStatuses);
     setItems(newItems);
+    setStatusOrder(prev => prev.filter(s => s !== name));
   };
 
-  // ============================================================
-  // RENAME STATUS (BARU)
-  // ============================================================
   const renameStatus = (oldName, newName) => {
     if (!newName || !newName.trim()) return;
     if (statuses[newName.trim()] && newName.trim() !== oldName) {
       alert(`Status "${newName.trim()}" already exists!`);
       return;
     }
-    // Ubah nama status di statuses
     const newStatuses = { ...statuses };
     const color = newStatuses[oldName];
     delete newStatuses[oldName];
     newStatuses[newName.trim()] = color;
     setStatuses(newStatuses);
 
-    // Ubah status di semua item yang menggunakan status lama
     const newItems = items.map((item) =>
       item.status === oldName ? { ...item, status: newName.trim() } : item
     );
     setItems(newItems);
+
+    setStatusOrder(prev =>
+      prev.map(s => s === oldName ? newName.trim() : s)
+    );
+  };
+
+  // ============================================================
+  // REORDER STATUS – PASTIKAN TERHUBUNG
+  // ============================================================
+  const reorderStatus = (fromIndex, toIndex) => {
+    const newOrder = [...statusOrder];
+    const [moved] = newOrder.splice(fromIndex, 1);
+    newOrder.splice(toIndex, 0, moved);
+    setStatusOrder(newOrder);
   };
 
   // ----- FAVORITES -----
@@ -241,7 +269,7 @@ function AppContent() {
 
   // ----- EXPORT -----
   const exportData = () => {
-    const dataStr = JSON.stringify({ items, statuses, groupColors }, null, 2);
+    const dataStr = JSON.stringify({ items, statuses, groupColors, statusOrder }, null, 2);
     const blob = new Blob([dataStr], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -292,6 +320,7 @@ function AppContent() {
           items={filteredItems}
           groups={allGroups}
           statuses={statuses}
+          statusOrder={statusOrder}
           groupColors={groupColors}
           onUpdateGroupColor={updateGroupColor}
           onUpdateItem={updateItem}
@@ -304,26 +333,24 @@ function AppContent() {
         />
 
         <div className="board-footer">
-          <div>
-            Total: <strong>{totalItems}</strong> items
-          </div>
+          <div>Total: <strong>{totalItems}</strong> items</div>
           <div>
             Done: <strong style={{ color: "#22c55e" }}>{doneItems}</strong> | Pending:{" "}
             <strong style={{ color: "#f59e0b" }}>{pendingItems}</strong>
           </div>
-          <div>
-            <span style={{ color: "var(--text-light)" }}>💾</span> Saved
-          </div>
+          <div><span style={{ color: "var(--text-light)" }}>💾</span> Saved</div>
         </div>
       </div>
 
       {showStatusManager && (
         <StatusManager
           statuses={statuses}
+          statusOrder={statusOrder}
           onAddStatus={addStatus}
           onUpdateStatusColor={updateStatusColor}
           onDeleteStatus={deleteStatus}
-          onRenameStatus={renameStatus} // ← dikirim ke StatusManager
+          onRenameStatus={renameStatus}
+          onReorderStatus={reorderStatus} // ← TERHUBUNG
           onClose={() => setShowStatusManager(false)}
         />
       )}
