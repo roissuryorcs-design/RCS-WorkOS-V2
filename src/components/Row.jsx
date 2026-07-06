@@ -8,7 +8,7 @@ export default function Row({
   onToggleSelect,
   onUpdate,
   onDelete,
-  onOpenStatusManager, // fungsi dengan parameter columnId
+  onOpenStatusManager,
 }) {
   const inputStyle = {
     border: "none",
