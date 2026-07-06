@@ -14,7 +14,7 @@ export default function StatusManager({
   const [newColor, setNewColor] = useState("#9ca3af");
   const [editingId, setEditingId] = useState(null);
   const [editName, setEditName] = useState("");
-  const [dragIndex, setDragIndex] = useState(null);
+  const [dragOverIndex, setDragOverIndex] = useState(null);
 
   // Gunakan statusOrder jika ada, fallback ke Object.keys
   const orderedKeys = statusOrder && statusOrder.length > 0
@@ -69,20 +69,19 @@ export default function StatusManager({
   // DRAG & DROP – PERBAIKAN
   // ============================================================
   const handleDragStart = (e, index) => {
-    setDragIndex(index);
     e.dataTransfer.effectAllowed = "move";
-    e.dataTransfer.setData("text/plain", index.toString());
-    // Styling saat drag
+    e.dataTransfer.setData("text/plain", String(index));
+    // Styling visual
     e.currentTarget.style.opacity = "0.5";
   };
 
   const handleDragEnd = (e) => {
-    setDragIndex(null);
     e.currentTarget.style.opacity = "1";
+    setDragOverIndex(null);
   };
 
   const handleDragOver = (e) => {
-    e.preventDefault();
+    e.preventDefault(); // Wajib untuk drop
     e.dataTransfer.dropEffect = "move";
   };
 
@@ -90,9 +89,9 @@ export default function StatusManager({
     e.preventDefault();
     const fromIndex = parseInt(e.dataTransfer.getData("text/plain"));
     if (fromIndex === dropIndex) return;
-    // Panggil onReorderStatus
+    // Panggil fungsi reorder dari App
     onReorderStatus(fromIndex, dropIndex);
-    setDragIndex(null);
+    setDragOverIndex(null);
   };
 
   // ============================================================
@@ -137,7 +136,7 @@ export default function StatusManager({
           Drag ⠿ to reorder. Click name to rename. At least one status must remain.
         </p>
 
-        {/* Daftar status dengan drag & drop */}
+        {/* Daftar status */}
         <div style={{ marginBottom: 16 }}>
           {orderedKeys.map((name, index) => (
             <div
@@ -155,25 +154,15 @@ export default function StatusManager({
                 marginBottom: 4,
                 borderRadius: 6,
                 borderBottom: "1px solid var(--border-light)",
-                background: dragIndex === index ? "var(--bg-hover)" : "transparent",
-                opacity: dragIndex === index ? 0.5 : 1,
-                transition: "background 0.2s, opacity 0.2s, transform 0.2s",
+                background: dragOverIndex === index ? "var(--bg-hover)" : "transparent",
+                transition: "background 0.2s, opacity 0.2s",
                 cursor: "grab",
               }}
             >
-              {/* Drag handle */}
-              <span
-                style={{
-                  color: "var(--text-muted)",
-                  fontSize: 18,
-                  cursor: "grab",
-                  userSelect: "none",
-                }}
-              >
+              <span style={{ color: "var(--text-muted)", fontSize: 18, cursor: "grab", userSelect: "none" }}>
                 ⠿
               </span>
 
-              {/* Warna */}
               <span
                 style={{
                   display: "inline-block",
@@ -186,7 +175,6 @@ export default function StatusManager({
                 }}
               />
 
-              {/* Nama status - editable */}
               {editingId === name ? (
                 <input
                   value={editName}
@@ -228,7 +216,6 @@ export default function StatusManager({
                 </span>
               )}
 
-              {/* Color picker */}
               <input
                 type="color"
                 value={statuses[name]}
@@ -243,7 +230,6 @@ export default function StatusManager({
                 }}
               />
 
-              {/* Delete button */}
               <button
                 onClick={() => handleDelete(name)}
                 style={{
@@ -308,7 +294,6 @@ export default function StatusManager({
           </button>
         </div>
 
-        {/* Close button */}
         <button
           onClick={onClose}
           style={{
