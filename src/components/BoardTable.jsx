@@ -227,7 +227,7 @@ export default function BoardTable({
               />
             </div>
 
-            {/* POPUP */}
+            {/* POPUP RENAME & DELETE */}
             {popupGroup === groupName && (
               <>
                 <div
@@ -306,7 +306,7 @@ export default function BoardTable({
                     <table
                       cellPadding="0"
                       style={{
-                        borderCollapse: "collapse", // ← KEMBALI KE COLLAPSE
+                        borderCollapse: "collapse",
                         border: "2px solid var(--border-color)",
                         borderRadius: 4,
                         borderLeft: `4px solid ${groupColor}`,
@@ -482,12 +482,59 @@ export default function BoardTable({
                     </button>
                   </div>
                 )}
+
+                {/* ============================================================
+                    TOMBOL "+ Add item" DI BAWAH SETIAP GROUP (STICKY KIRI)
+                    ============================================================ */}
+                <div
+                  style={{
+                    position: "sticky",
+                    left: 0,
+                    zIndex: 5,
+                    background: "var(--bg-secondary)",
+                    borderBottom: "2px solid var(--border-color)",
+                    borderLeft: `4px solid ${groupColor}`,
+                    borderRight: "2px solid var(--border-color)",
+                    borderBottomLeftRadius: 4,
+                    borderBottomRightRadius: 4,
+                    padding: 0,
+                    marginTop: 0,
+                    width: "100%",
+                    boxSizing: "border-box",
+                  }}
+                >
+                  <button
+                    onClick={() => onAddItem(groupName)}
+                    style={{
+                      display: "block",
+                      width: "100%",
+                      padding: "6px 8px",
+                      border: "none",
+                      background: "transparent",
+                      color: "#3b82f6",
+                      cursor: "pointer",
+                      fontSize: 13,
+                      textAlign: "left",
+                      transition: "background 0.15s",
+                      boxSizing: "border-box",
+                    }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.background = "var(--bg-hover)")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.background = "transparent")
+                    }
+                  >
+                    + Add item
+                  </button>
+                </div>
               </>
             )}
           </div>
         );
       })}
 
+      {/* TOMBOL ADD NEW GROUP */}
       <div style={{ marginTop: 16 }}>
         <button
           onClick={onAddGroup}
