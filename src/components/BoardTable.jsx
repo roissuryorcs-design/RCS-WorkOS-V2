@@ -227,7 +227,7 @@ export default function BoardTable({
               />
             </div>
 
-            {/* POPUP RENAME & DELETE */}
+            {/* POPUP RENAME & DELETE GROUP */}
             {popupGroup === groupName && (
               <>
                 <div
@@ -371,42 +371,7 @@ export default function BoardTable({
                                 isLast={isLast}
                               >
                                 {isStatus ? (
-                                  <div
-                                    style={{
-                                      display: "flex",
-                                      alignItems: "center",
-                                      gap: 4,
-                                    }}
-                                  >
-                                    <span>STATUS</span>
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        onOpenStatusManager();
-                                      }}
-                                      style={{
-                                        background: "none",
-                                        border: "none",
-                                        cursor: "pointer",
-                                        fontSize: 16,
-                                        color: "var(--text-secondary)",
-                                        padding: 0,
-                                        display: "flex",
-                                        alignItems: "center",
-                                        opacity: 0.6,
-                                        transition: "opacity 0.2s",
-                                      }}
-                                      onMouseEnter={(e) =>
-                                        (e.currentTarget.style.opacity = 1)
-                                      }
-                                      onMouseLeave={(e) =>
-                                        (e.currentTarget.style.opacity = 0.6)
-                                      }
-                                      title="Kelola status"
-                                    >
-                                      🔽
-                                    </button>
-                                  </div>
+                                  <span>STATUS</span> // ← Hanya teks, tanpa tombol 🔽
                                 ) : (
                                   col.label
                                 )}
@@ -450,7 +415,7 @@ export default function BoardTable({
                             onToggleSelect={() => toggleSelectItem(item.id)}
                             onUpdate={(field, value) => onUpdateItem(item.id, field, value)}
                             onDelete={() => onDeleteItem(item.id)}
-                            onOpenStatusManager={onOpenStatusManager}
+                            onOpenStatusManager={onOpenStatusManager} // ← kirim ke Row
                           />
                         ))}
                       </tbody>
@@ -484,9 +449,7 @@ export default function BoardTable({
                   </div>
                 )}
 
-                {/* ============================================================
-                    TOMBOL "+ Add item" DI BAWAH SETIAP GROUP (STICKY KIRI)
-                    ============================================================ */}
+                {/* TOMBOL "+ Add item" DI BAWAH SETIAP GROUP */}
                 <div
                   style={{
                     position: "sticky",
