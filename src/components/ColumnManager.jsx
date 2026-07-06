@@ -2,35 +2,13 @@ import { useState } from "react";
 
 export default function ColumnManager({
   columns,
-  onAddColumn,
-  onDeleteColumn,
   onToggleColumn,
   onRenameColumn,
   onResetColumns,
   onClose,
 }) {
-  const [newColumnName, setNewColumnName] = useState("");
-  const [newColumnType, setNewColumnType] = useState("text");
   const [editingId, setEditingId] = useState(null);
   const [editLabel, setEditLabel] = useState("");
-
-  const columnTypes = [
-    { value: "text", label: "📝 Text" },
-    { value: "status", label: "🏷️ Status" },
-    { value: "date", label: "📅 Date" },
-    { value: "people", label: "👤 People" },
-    { value: "number", label: "🔢 Number" },
-    { value: "files", label: "📎 Files" },
-    { value: "checkbox", label: "☑️ Checkbox" },
-    { value: "progress", label: "📊 Progress" },
-  ];
-
-  const handleAdd = () => {
-    if (!newColumnName.trim()) return;
-    onAddColumn(newColumnName.trim(), newColumnType);
-    setNewColumnName("");
-    setNewColumnType("text");
-  };
 
   const startRename = (col) => {
     if (col.id === "item") return;
@@ -64,180 +42,151 @@ export default function ColumnManager({
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
+        backdropFilter: "blur(4px)",
       }}
       onClick={onClose}
     >
       <div
         style={{
           background: "var(--bg-modal)",
-          borderRadius: 8,
+          borderRadius: 12,
           padding: 24,
-          maxWidth: 450,
+          maxWidth: 420,
           width: "100%",
           maxHeight: "80vh",
           overflowY: "auto",
           color: "var(--text-primary)",
+          boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
+          border: "1px solid var(--border-color)",
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 style={{ marginBottom: 16, fontSize: 18 }}>Manage Columns</h3>
-        <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 12 }}>
-          Click on a column label to rename it.
+        <h3 style={{ marginBottom: 4, fontSize: 18, fontWeight: 600 }}>
+          Manage Columns
+        </h3>
+        <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 16 }}>
+          Toggle to collapse/expand columns. Click name to rename.
         </p>
 
         <div style={{ marginBottom: 16 }}>
-          {columns.map((col) => (
-            <div
-              key={col.id}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                padding: "4px 0",
-                borderBottom: "1px solid var(--border-light)",
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={col.visible}
-                onChange={() => onToggleColumn(col.id)}
-                disabled={col.id === "item"}
-                style={{ cursor: "pointer" }}
-              />
-              {editingId === col.id ? (
-                <input
-                  value={editLabel}
-                  onChange={(e) => setEditLabel(e.target.value)}
-                  onBlur={saveRename}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") saveRename();
-                    if (e.key === "Escape") cancelRename();
-                  }}
-                  autoFocus
-                  style={{
-                    flex: 1,
-                    padding: "2px 6px",
-                    border: "1px solid var(--btn-primary-bg)",
-                    borderRadius: 4,
-                    fontSize: 14,
-                    background: "var(--bg-input)",
-                    color: "var(--text-primary)",
-                    outline: "none",
-                  }}
-                />
-              ) : (
-                <span
-                  style={{
-                    flex: 1,
-                    fontSize: 14,
-                    cursor: col.id === "item" ? "default" : "pointer",
-                    color: col.id === "item" ? "var(--text-muted)" : "var(--text-primary)",
-                  }}
-                  onClick={() => startRename(col)}
-                  title={col.id === "item" ? "Cannot rename fixed column" : "Click to rename"}
-                >
-                  {col.label || col.id}
-                  {col.id === "item" && " (fixed)"}
-                </span>
-              )}
-              {col.id !== "item" && (
+          {columns.map((col) => {
+            const isItem = col.id === "item";
+            const isVisible = col.visible !== false;
+
+            return (
+              <div
+                key={col.id}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "6px 0",
+                  borderBottom: "1px solid var(--border-light)",
+                }}
+              >
+                {/* Toggle Collapse/Expand */}
                 <button
-                  onClick={() => onDeleteColumn(col.id)}
+                  onClick={() => {
+                    if (!isItem) onToggleColumn(col.id);
+                  }}
                   style={{
                     background: "none",
                     border: "none",
-                    color: "#ef4444",
-                    cursor: "pointer",
+                    cursor: isItem ? "default" : "pointer",
                     fontSize: 16,
+                    color: isVisible ? "var(--btn-primary-bg)" : "var(--text-muted)",
+                    opacity: isItem ? 0.4 : 1,
+                    padding: "0 4px",
                   }}
+                  title={isItem ? "Fixed column" : isVisible ? "Collapse" : "Expand"}
                 >
-                  ✕
+                  {isVisible ? "▾" : "▸"}
                 </button>
-              )}
-            </div>
-          ))}
+
+                {/* Nama kolom */}
+                {editingId === col.id ? (
+                  <input
+                    value={editLabel}
+                    onChange={(e) => setEditLabel(e.target.value)}
+                    onBlur={saveRename}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") saveRename();
+                      if (e.key === "Escape") cancelRename();
+                    }}
+                    autoFocus
+                    style={{
+                      flex: 1,
+                      padding: "2px 6px",
+                      border: "2px solid var(--btn-primary-bg)",
+                      borderRadius: 4,
+                      fontSize: 14,
+                      background: "var(--bg-input)",
+                      color: "var(--text-primary)",
+                      outline: "none",
+                    }}
+                  />
+                ) : (
+                  <span
+                    style={{
+                      flex: 1,
+                      fontSize: 14,
+                      cursor: isItem ? "default" : "pointer",
+                      color: isItem ? "var(--text-muted)" : "var(--text-primary)",
+                    }}
+                    onClick={() => startRename(col)}
+                    title={isItem ? "Cannot rename fixed column" : "Click to rename"}
+                  >
+                    {col.label || col.id}
+                    {isItem && " (fixed)"}
+                    {!isVisible && " (collapsed)"}
+                  </span>
+                )}
+
+                {/* Lebar minimal (opsional) */}
+                {!isItem && (
+                  <input
+                    type="number"
+                    value={col.minWidth || 40}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value) || 40;
+                      // update minWidth di context
+                      onToggleColumn(col.id, val);
+                    }}
+                    style={{
+                      width: 50,
+                      padding: "2px 4px",
+                      border: "1px solid var(--border-dark)",
+                      borderRadius: 4,
+                      fontSize: 12,
+                      background: "var(--bg-input)",
+                      color: "var(--text-primary)",
+                    }}
+                    title="Min width (px)"
+                  />
+                )}
+              </div>
+            );
+          })}
         </div>
 
-        <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
-          <input
-            placeholder="New column name"
-            value={newColumnName}
-            onChange={(e) => setNewColumnName(e.target.value)}
-            style={{
-              flex: 1,
-              padding: "6px 10px",
-              border: "1px solid var(--border-dark)",
-              borderRadius: 4,
-              fontSize: 13,
-              background: "var(--bg-input)",
-              color: "var(--text-primary)",
-              minWidth: 120,
-            }}
-          />
-          <select
-            value={newColumnType}
-            onChange={(e) => setNewColumnType(e.target.value)}
-            style={{
-              padding: "6px 10px",
-              border: "1px solid var(--border-dark)",
-              borderRadius: 4,
-              fontSize: 13,
-              background: "var(--bg-input)",
-              color: "var(--text-primary)",
-              cursor: "pointer",
-            }}
-          >
-            {columnTypes.map(ct => (
-              <option key={ct.value} value={ct.value}>{ct.label}</option>
-            ))}
-          </select>
-          <button
-            onClick={handleAdd}
-            style={{
-              padding: "6px 14px",
-              background: "var(--btn-primary-bg)",
-              color: "var(--btn-primary-text)",
-              border: "none",
-              borderRadius: 4,
-              cursor: "pointer",
-            }}
-          >
-            Add
-          </button>
-        </div>
-
-        <div style={{ display: "flex", gap: 8 }}>
-          <button
-            onClick={onResetColumns}
-            style={{
-              flex: 1,
-              padding: "8px",
-              background: "var(--bg-hover)",
-              border: "none",
-              borderRadius: 4,
-              cursor: "pointer",
-              fontSize: 13,
-              color: "var(--text-secondary)",
-            }}
-          >
-            Reset to Default
-          </button>
-          <button
-            onClick={onClose}
-            style={{
-              flex: 1,
-              padding: "8px",
-              background: "var(--btn-primary-bg)",
-              color: "var(--btn-primary-text)",
-              border: "none",
-              borderRadius: 4,
-              cursor: "pointer",
-              fontSize: 13,
-            }}
-          >
-            Close
-          </button>
-        </div>
+        <button
+          onClick={onClose}
+          style={{
+            width: "100%",
+            padding: "8px",
+            background: "var(--bg-hover)",
+            border: "none",
+            borderRadius: 6,
+            cursor: "pointer",
+            fontSize: 14,
+            color: "var(--text-secondary)",
+            transition: "background 0.15s",
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.background = "var(--border-color)")}
+          onMouseLeave={(e) => (e.currentTarget.style.background = "var(--bg-hover)")}
+        >
+          Close
+        </button>
       </div>
     </div>
   );
