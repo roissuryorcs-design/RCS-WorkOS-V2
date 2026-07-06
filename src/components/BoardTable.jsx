@@ -15,7 +15,7 @@ export default function BoardTable({
   onDeleteGroup,
   onAddItem,
   onOpenStatusManager,
-  onRenameGroup, // ← baru
+  onRenameGroup,
 }) {
   const {
     updateColumnWidth,
@@ -44,6 +44,7 @@ export default function BoardTable({
     }
   };
 
+  // Group items berdasarkan group
   const grouped = groups.reduce((acc, group) => {
     acc[group] = items.filter((item) => item.group === group);
     return acc;
@@ -299,7 +300,7 @@ export default function BoardTable({
               </>
             )}
 
-            {/* TABEL */}
+            {/* TABEL – TAMPILKAN DATA */}
             {!isCollapsed && (
               <>
                 {tasks.length > 0 ? (
@@ -328,7 +329,6 @@ export default function BoardTable({
                             letterSpacing: "0.3px",
                           }}
                         >
-                          {/* CHECKBOX – STICKY */}
                           <th
                             style={{
                               padding: "8px 8px",
@@ -417,7 +417,6 @@ export default function BoardTable({
                             );
                           })}
 
-                          {/* KOLOM "+" */}
                           <th
                             style={{
                               padding: "8px 8px",
