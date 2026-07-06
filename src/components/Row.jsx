@@ -66,7 +66,7 @@ export default function Row({
           minWidth: "36px",
           maxWidth: "36px",
           borderRight: "2px solid var(--border-color)",
-          borderBottom: "2px solid var(--border-color)", // ← border antar baris
+          borderBottom: "2px solid var(--border-color)",
           textAlign: "center",
           boxSizing: "border-box",
           position: "sticky",
@@ -103,7 +103,7 @@ export default function Row({
             style={{
               padding: "6px 8px",
               borderRight: isLast ? "none" : "2px solid var(--border-color)",
-              borderBottom: "2px solid var(--border-color)", // ← border antar baris
+              borderBottom: "2px solid var(--border-color)",
               width: `${col.width}px`,
               minWidth: `${col.width}px`,
               maxWidth: `${col.width}px`,
@@ -128,7 +128,7 @@ export default function Row({
           maxWidth: "50px",
           borderRight: "none",
           borderLeft: "2px solid var(--border-color)",
-          borderBottom: "2px solid var(--border-color)", // ← border antar baris
+          borderBottom: "2px solid var(--border-color)",
           boxSizing: "border-box",
         }}
       />
