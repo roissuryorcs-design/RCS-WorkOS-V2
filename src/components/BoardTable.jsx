@@ -406,19 +406,17 @@ export default function BoardTable({
                       </thead>
                       <tbody>
                         {tasks.map((item) => (
-                          <Row
-                            key={item.id}
-                            item={item}
-                            statuses={statuses}
-                            statusOrder={statusOrder}
-                            groupColor={groupColor}
-                            visibleColumns={safeColumns}
-                            isSelected={selectedItems.includes(item.id)}
-                            onToggleSelect={() => toggleSelectItem(item.id)}
-                            onUpdate={(field, value) => onUpdateItem(item.id, field, value)}
-                            onDelete={() => onDeleteItem(item.id)}
-                            onOpenStatusManager={onOpenStatusManager} // ← kirim ke Row
-                          />
+                        <Row
+  key={item.id}
+  item={item}
+  groupColor={groupColor}
+  visibleColumns={safeColumns}
+  isSelected={selectedItems.includes(item.id)}
+  onToggleSelect={() => toggleSelectItem(item.id)}
+  onUpdate={(field, value) => onUpdateItem(item.id, field, value)}
+  onDelete={() => onDeleteItem(item.id)}
+  onOpenStatusManager={onOpenStatusManager}
+/>
                         ))}
                       </tbody>
                     </table>
