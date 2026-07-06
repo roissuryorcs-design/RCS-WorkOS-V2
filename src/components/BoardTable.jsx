@@ -7,7 +7,6 @@ export default function BoardTable({
   items,
   groups,
   statuses,
-  statusOrder,
   groupColors,
   onUpdateGroupColor,
   onUpdateItem,
@@ -54,7 +53,7 @@ export default function BoardTable({
     const hasItem = visibleColumns.some((col) => col.id === "item");
     if (hasItem) return visibleColumns;
     return [
-      { id: "item", label: "ITEM", width: 150, visible: true },
+      { id: "item", label: "ITEM", type: "text", width: 150, visible: true },
       ...visibleColumns,
     ];
   })();
@@ -353,7 +352,7 @@ export default function BoardTable({
                           </th>
 
                           {safeColumns.map((col, idx) => {
-                            const isStatus = col.id === "status";
+                            const isStatus = col.type === "status";
                             const isItem = col.id === "item";
                             const isLast = idx === safeColumns.length - 1;
                             return (
@@ -372,7 +371,7 @@ export default function BoardTable({
                                 isLast={isLast}
                               >
                                 {isStatus ? (
-                                  <span>STATUS</span> // ← Hanya teks, tanpa tombol 🔽
+                                  <span>STATUS</span>
                                 ) : (
                                   col.label
                                 )}
@@ -406,17 +405,17 @@ export default function BoardTable({
                       </thead>
                       <tbody>
                         {tasks.map((item) => (
-                        <Row
-  key={item.id}
-  item={item}
-  groupColor={groupColor}
-  visibleColumns={safeColumns}
-  isSelected={selectedItems.includes(item.id)}
-  onToggleSelect={() => toggleSelectItem(item.id)}
-  onUpdate={(field, value) => onUpdateItem(item.id, field, value)}
-  onDelete={() => onDeleteItem(item.id)}
-  onOpenStatusManager={onOpenStatusManager}
-/>
+                          <Row
+                            key={item.id}
+                            item={item}
+                            groupColor={groupColor}
+                            visibleColumns={safeColumns}
+                            isSelected={selectedItems.includes(item.id)}
+                            onToggleSelect={() => toggleSelectItem(item.id)}
+                            onUpdate={(field, value) => onUpdateItem(item.id, field, value)}
+                            onDelete={() => onDeleteItem(item.id)}
+                            onOpenStatusManager={onOpenStatusManager} // ← KIRIM KE ROW
+                          />
                         ))}
                       </tbody>
                     </table>
