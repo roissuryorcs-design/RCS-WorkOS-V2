@@ -9,7 +9,6 @@ import StatusManager from "./components/StatusManager";
 import "./App.css";
 
 function AppContent() {
-  // ----- STATE -----
   const [items, setItems] = useState([]);
   const [statuses, setStatuses] = useState({});
   const [statusOrder, setStatusOrder] = useState([]);
@@ -19,7 +18,7 @@ function AppContent() {
   const [showStatusManager, setShowStatusManager] = useState(false);
   const [groupColors, setGroupColors] = useState({});
 
-  // ----- LOAD DATA -----
+  // LOAD DATA
   useEffect(() => {
     const savedItems = localStorage.getItem("forelItems");
     const savedStatuses = localStorage.getItem("forelStatuses");
@@ -44,7 +43,6 @@ function AppContent() {
     // Load status order
     if (savedStatusOrder) {
       const parsed = JSON.parse(savedStatusOrder);
-      // Filter hanya status yang masih ada
       const filtered = parsed.filter(s => statuses[s] || s === "Default");
       setStatusOrder(filtered.length > 0 ? filtered : Object.keys(defaultStatuses));
     } else {
@@ -79,7 +77,7 @@ function AppContent() {
     }
   }, []);
 
-  // ----- AUTO SAVE -----
+  // AUTO SAVE
   useEffect(() => {
     localStorage.setItem("forelItems", JSON.stringify(items));
   }, [items]);
@@ -100,7 +98,7 @@ function AppContent() {
     localStorage.setItem("forelStatusOrder", JSON.stringify(statusOrder));
   }, [statusOrder]);
 
-  // ----- UNDO -----
+  // UNDO
   const saveHistory = (newItems) => {
     setHistory((prev) => [...prev, items]);
     setItems(newItems);
@@ -113,7 +111,7 @@ function AppContent() {
     setItems(prevState);
   };
 
-  // ----- CRUD ITEM -----
+  // CRUD ITEM
   const updateItem = (id, field, value) => {
     const newItems = items.map((it) =>
       it.id === id ? { ...it, [field]: value } : it
@@ -142,7 +140,7 @@ function AppContent() {
     saveHistory([...items, newItem]);
   };
 
-  // ----- GROUP CRUD -----
+  // GROUP CRUD
   const addGroup = () => {
     const name = prompt("Enter new group name:");
     if (!name || !name.trim()) return;
@@ -190,7 +188,7 @@ function AppContent() {
     setGroupColors(prev => ({ ...prev, [groupName]: color }));
   };
 
-  // ----- STATUS CRUD -----
+  // STATUS CRUD
   const addStatus = (name, color) => {
     const finalName = name.trim() || "Default";
     if (statuses[finalName]) {
@@ -198,7 +196,13 @@ function AppContent() {
       return;
     }
     setStatuses({ ...statuses, [finalName]: color || "#9ca3af" });
-    setStatusOrder(prev => [...prev, finalName]);
+    // Tambahkan ke statusOrder, pastikan tidak duplikat
+    setStatusOrder(prev => {
+      if (!prev.includes(finalName)) {
+        return [...prev, finalName];
+      }
+      return prev;
+    });
   };
 
   const updateStatusColor = (name, color) => {
@@ -244,17 +248,15 @@ function AppContent() {
     );
   };
 
-  // ============================================================
-  // REORDER STATUS – PASTIKAN TERHUBUNG
-  // ============================================================
   const reorderStatus = (fromIndex, toIndex) => {
+    if (fromIndex === toIndex) return;
     const newOrder = [...statusOrder];
     const [moved] = newOrder.splice(fromIndex, 1);
     newOrder.splice(toIndex, 0, moved);
     setStatusOrder(newOrder);
   };
 
-  // ----- FAVORITES -----
+  // FAVORITES
   const addFavorite = () => {
     const name = prompt("Enter favorite name:");
     if (name && name.trim()) {
@@ -267,7 +269,7 @@ function AppContent() {
     setFavorites(newFavs);
   };
 
-  // ----- EXPORT -----
+  // EXPORT
   const exportData = () => {
     const dataStr = JSON.stringify({ items, statuses, groupColors, statusOrder }, null, 2);
     const blob = new Blob([dataStr], { type: "application/json" });
@@ -279,14 +281,14 @@ function AppContent() {
     URL.revokeObjectURL(url);
   };
 
-  // ----- FILTER -----
+  // FILTER
   const filteredItems = items.filter((it) =>
     it.item.toLowerCase().includes(search.toLowerCase()) ||
     it.document.toLowerCase().includes(search.toLowerCase()) ||
     it.people.toLowerCase().includes(search.toLowerCase())
   );
 
-  // ----- STATS -----
+  // STATS
   const totalItems = filteredItems.length;
   const hasDoneStatus = Object.keys(statuses).includes("Done");
   const doneItems = hasDoneStatus
@@ -295,7 +297,6 @@ function AppContent() {
   const pendingItems = totalItems - doneItems;
   const allGroups = [...new Set(items.map((item) => item.group))];
 
-  // ----- RENDER -----
   return (
     <div className="app-container">
       <Sidebar
@@ -350,7 +351,7 @@ function AppContent() {
           onUpdateStatusColor={updateStatusColor}
           onDeleteStatus={deleteStatus}
           onRenameStatus={renameStatus}
-          onReorderStatus={reorderStatus} // ← TERHUBUNG
+          onReorderStatus={reorderStatus}
           onClose={() => setShowStatusManager(false)}
         />
       )}
