@@ -9,6 +9,7 @@ import StatusManager from "./components/StatusManager";
 import "./App.css";
 
 function AppContent() {
+  // ----- STATE -----
   const [items, setItems] = useState([]);
   const [statuses, setStatuses] = useState({});
   const [search, setSearch] = useState("");
@@ -17,6 +18,7 @@ function AppContent() {
   const [showStatusManager, setShowStatusManager] = useState(false);
   const [groupColors, setGroupColors] = useState({});
 
+  // ----- LOAD DATA -----
   useEffect(() => {
     const savedItems = localStorage.getItem("forelItems");
     const savedStatuses = localStorage.getItem("forelStatuses");
@@ -64,6 +66,7 @@ function AppContent() {
     }
   }, []);
 
+  // ----- AUTO SAVE -----
   useEffect(() => {
     localStorage.setItem("forelItems", JSON.stringify(items));
   }, [items]);
@@ -80,6 +83,7 @@ function AppContent() {
     localStorage.setItem("forelGroupColors", JSON.stringify(groupColors));
   }, [groupColors]);
 
+  // ----- UNDO -----
   const saveHistory = (newItems) => {
     setHistory((prev) => [...prev, items]);
     setItems(newItems);
@@ -92,6 +96,7 @@ function AppContent() {
     setItems(prevState);
   };
 
+  // ----- CRUD ITEM -----
   const updateItem = (id, field, value) => {
     const newItems = items.map((it) =>
       it.id === id ? { ...it, [field]: value } : it
@@ -120,6 +125,7 @@ function AppContent() {
     saveHistory([...items, newItem]);
   };
 
+  // ----- GROUP CRUD -----
   const addGroup = () => {
     const name = prompt("Enter new group name:");
     if (!name || !name.trim()) return;
@@ -152,21 +158,22 @@ function AppContent() {
   };
 
   const renameGroup = (oldName, newName) => {
-  if (!newName || !newName.trim()) return;
-  if (items.some(item => item.group === newName.trim() && item.group !== oldName)) {
-    alert(`Group "${newName.trim()}" already exists!`);
-    return;
-  }
-  const newItems = items.map(item =>
-    item.group === oldName ? { ...item, group: newName.trim() } : item
-  );
-  saveHistory(newItems);
-};
-  
+    if (!newName || !newName.trim()) return;
+    if (items.some(item => item.group === newName.trim() && item.group !== oldName)) {
+      alert(`Group "${newName.trim()}" already exists!`);
+      return;
+    }
+    const newItems = items.map(item =>
+      item.group === oldName ? { ...item, group: newName.trim() } : item
+    );
+    saveHistory(newItems);
+  };
+
   const updateGroupColor = (groupName, color) => {
     setGroupColors(prev => ({ ...prev, [groupName]: color }));
   };
 
+  // ----- STATUS CRUD (LENGKAP) -----
   const addStatus = (name, color) => {
     const finalName = name.trim() || "Default";
     if (statuses[finalName]) {
@@ -196,6 +203,30 @@ function AppContent() {
     setItems(newItems);
   };
 
+  // ============================================================
+  // RENAME STATUS (BARU)
+  // ============================================================
+  const renameStatus = (oldName, newName) => {
+    if (!newName || !newName.trim()) return;
+    if (statuses[newName.trim()] && newName.trim() !== oldName) {
+      alert(`Status "${newName.trim()}" already exists!`);
+      return;
+    }
+    // Ubah nama status di statuses
+    const newStatuses = { ...statuses };
+    const color = newStatuses[oldName];
+    delete newStatuses[oldName];
+    newStatuses[newName.trim()] = color;
+    setStatuses(newStatuses);
+
+    // Ubah status di semua item yang menggunakan status lama
+    const newItems = items.map((item) =>
+      item.status === oldName ? { ...item, status: newName.trim() } : item
+    );
+    setItems(newItems);
+  };
+
+  // ----- FAVORITES -----
   const addFavorite = () => {
     const name = prompt("Enter favorite name:");
     if (name && name.trim()) {
@@ -208,6 +239,7 @@ function AppContent() {
     setFavorites(newFavs);
   };
 
+  // ----- EXPORT -----
   const exportData = () => {
     const dataStr = JSON.stringify({ items, statuses, groupColors }, null, 2);
     const blob = new Blob([dataStr], { type: "application/json" });
@@ -219,12 +251,14 @@ function AppContent() {
     URL.revokeObjectURL(url);
   };
 
+  // ----- FILTER -----
   const filteredItems = items.filter((it) =>
     it.item.toLowerCase().includes(search.toLowerCase()) ||
     it.document.toLowerCase().includes(search.toLowerCase()) ||
     it.people.toLowerCase().includes(search.toLowerCase())
   );
 
+  // ----- STATS -----
   const totalItems = filteredItems.length;
   const hasDoneStatus = Object.keys(statuses).includes("Done");
   const doneItems = hasDoneStatus
@@ -233,6 +267,7 @@ function AppContent() {
   const pendingItems = totalItems - doneItems;
   const allGroups = [...new Set(items.map((item) => item.group))];
 
+  // ----- RENDER -----
   return (
     <div className="app-container">
       <Sidebar
@@ -253,53 +288,22 @@ function AppContent() {
           canUndo={history.length > 0}
         />
 
-        {/* KONTEN TABEL – hanya horizontal scroll, vertikal diatur oleh .main-content */}
-        <div
-          style={{
-            overflowX: "auto",
-            overflowY: "visible",
-            width: "100%",
-            position: "relative",
-          }}
-        >
-          <BoardTable
-            items={filteredItems}
-            groups={allGroups}
-            statuses={statuses}
-            groupColors={groupColors}
-            onUpdateGroupColor={updateGroupColor}
-            onUpdateItem={updateItem}
-            onDeleteItem={deleteItem}
-            onAddGroup={addGroup}
-            onDeleteGroup={deleteGroup}
-            onAddItem={addItem}
-            onOpenStatusManager={() => setShowStatusManager(true)}
-            onRenameGroup={renameGroup}
-         />
-        </div>
+        <BoardTable
+          items={filteredItems}
+          groups={allGroups}
+          statuses={statuses}
+          groupColors={groupColors}
+          onUpdateGroupColor={updateGroupColor}
+          onUpdateItem={updateItem}
+          onDeleteItem={deleteItem}
+          onAddGroup={addGroup}
+          onDeleteGroup={deleteGroup}
+          onAddItem={addItem}
+          onOpenStatusManager={() => setShowStatusManager(true)}
+          onRenameGroup={renameGroup}
+        />
 
-        {/* FOOTER STICKY DI BAWAH – tidak ikut scroll vertikal */}
-        <div
-          style={{
-            position: "sticky",
-            bottom: 0,
-            left: 0,
-            right: 0,
-            background: "var(--bg-secondary)",
-            borderTop: "1px solid var(--border-color)",
-            padding: "8px 16px",
-            zIndex: 30,
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            fontSize: 13,
-            color: "var(--footer-text)",
-            gap: 16,
-            backdropFilter: "blur(8px)",
-            width: "100%",
-            boxSizing: "border-box",
-          }}
-        >
+        <div className="board-footer">
           <div>
             Total: <strong>{totalItems}</strong> items
           </div>
@@ -319,6 +323,7 @@ function AppContent() {
           onAddStatus={addStatus}
           onUpdateStatusColor={updateStatusColor}
           onDeleteStatus={deleteStatus}
+          onRenameStatus={renameStatus} // ← dikirim ke StatusManager
           onClose={() => setShowStatusManager(false)}
         />
       )}
