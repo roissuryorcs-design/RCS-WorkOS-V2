@@ -12,16 +12,16 @@ import "./App.css";
 function AppContent() {
   const [items, setItems] = useState([]);
   const [statuses, setStatuses] = useState({});
-  const [statusOrder, setStatusOrder] = useState([]);
   const [search, setSearch] = useState("");
   const [favorites, setFavorites] = useState([]);
   const [history, setHistory] = useState([]);
   const [showStatusManager, setShowStatusManager] = useState(false);
   const [showColumnManager, setShowColumnManager] = useState(false);
   const [groupColors, setGroupColors] = useState({});
+  const [activeStatusColumnId, setActiveStatusColumnId] = useState(null); // ← BARU
 
   // Ambil fungsi dari context kolom
-  const { columns, addColumn, renameColumn, toggleColumn, deleteColumn, resetColumns } = useColumns();
+  const { columns, addColumn, renameColumn, toggleColumn, deleteColumn, resetColumns, updateColumnStatuses, updateColumnStatusOrder } = useColumns();
 
   // ----- LOAD DATA -----
   useEffect(() => {
@@ -29,11 +29,9 @@ function AppContent() {
     const savedStatuses = localStorage.getItem("forelStatuses");
     const savedFavs = localStorage.getItem("forelFavorites");
     const savedGroupColors = localStorage.getItem("forelGroupColors");
-    const savedStatusOrder = localStorage.getItem("forelStatusOrder");
 
     const defaultStatuses = { Default: "#9ca3af" };
 
-    // Load statuses
     if (savedStatuses) {
       const parsed = JSON.parse(savedStatuses);
       if (Object.keys(parsed).length === 0) {
@@ -43,15 +41,6 @@ function AppContent() {
       }
     } else {
       setStatuses(defaultStatuses);
-    }
-
-    // Load status order
-    if (savedStatusOrder) {
-      const parsed = JSON.parse(savedStatusOrder);
-      const filtered = parsed.filter(s => statuses[s] || s === "Default");
-      setStatusOrder(filtered.length > 0 ? filtered : Object.keys(defaultStatuses));
-    } else {
-      setStatusOrder(Object.keys(defaultStatuses));
     }
 
     if (savedItems) {
@@ -99,10 +88,6 @@ function AppContent() {
     localStorage.setItem("forelGroupColors", JSON.stringify(groupColors));
   }, [groupColors]);
 
-  useEffect(() => {
-    localStorage.setItem("forelStatusOrder", JSON.stringify(statusOrder));
-  }, [statusOrder]);
-
   // ----- UNDO -----
   const saveHistory = (newItems) => {
     setHistory((prev) => [...prev, items]);
@@ -131,7 +116,7 @@ function AppContent() {
   };
 
   const addItem = (groupName) => {
-    const firstStatus = statusOrder.length > 0 ? statusOrder[0] : "Default";
+    const firstStatus = "Default";
     const newItem = {
       id: Date.now(),
       group: groupName || "Target & PLANNING",
@@ -153,7 +138,7 @@ function AppContent() {
       alert(`Group "${name.trim()}" already exists!`);
       return;
     }
-    const firstStatus = statusOrder.length > 0 ? statusOrder[0] : "Default";
+    const firstStatus = "Default";
     const newItem = {
       id: Date.now(),
       group: name.trim(),
@@ -193,7 +178,7 @@ function AppContent() {
     setGroupColors(prev => ({ ...prev, [groupName]: color }));
   };
 
-  // ----- STATUS CRUD -----
+  // ----- STATUS CRUD (Global, untuk kompatibilitas) -----
   const addStatus = (name, color) => {
     const finalName = name.trim() || "Default";
     if (statuses[finalName]) {
@@ -201,12 +186,6 @@ function AppContent() {
       return;
     }
     setStatuses({ ...statuses, [finalName]: color || "#9ca3af" });
-    setStatusOrder(prev => {
-      if (!prev.includes(finalName)) {
-        return [...prev, finalName];
-      }
-      return prev;
-    });
   };
 
   const updateStatusColor = (name, color) => {
@@ -227,7 +206,6 @@ function AppContent() {
     delete newStatuses[name];
     setStatuses(newStatuses);
     setItems(newItems);
-    setStatusOrder(prev => prev.filter(s => s !== name));
   };
 
   const renameStatus = (oldName, newName) => {
@@ -241,23 +219,18 @@ function AppContent() {
     delete newStatuses[oldName];
     newStatuses[newName.trim()] = color;
     setStatuses(newStatuses);
-
     const newItems = items.map((item) =>
       item.status === oldName ? { ...item, status: newName.trim() } : item
     );
     setItems(newItems);
-
-    setStatusOrder(prev =>
-      prev.map(s => s === oldName ? newName.trim() : s)
-    );
   };
 
-  const reorderStatus = (fromIndex, toIndex) => {
-    if (fromIndex === toIndex) return;
-    const newOrder = [...statusOrder];
-    const [moved] = newOrder.splice(fromIndex, 1);
-    newOrder.splice(toIndex, 0, moved);
-    setStatusOrder(newOrder);
+  // ============================================================
+  // FUNGSI UNTUK MEMBUKA STATUS MANAGER PER KOLOM (BARU)
+  // ============================================================
+  const openStatusManager = (columnId) => {
+    setActiveStatusColumnId(columnId);
+    setShowStatusManager(true);
   };
 
   // ----- FAVORITES -----
@@ -275,7 +248,7 @@ function AppContent() {
 
   // ----- EXPORT -----
   const exportData = () => {
-    const dataStr = JSON.stringify({ items, statuses, groupColors, statusOrder }, null, 2);
+    const dataStr = JSON.stringify({ items, statuses, groupColors }, null, 2);
     const blob = new Blob([dataStr], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -327,7 +300,6 @@ function AppContent() {
           items={filteredItems}
           groups={allGroups}
           statuses={statuses}
-          statusOrder={statusOrder}
           groupColors={groupColors}
           onUpdateGroupColor={updateGroupColor}
           onUpdateItem={updateItem}
@@ -335,7 +307,7 @@ function AppContent() {
           onAddGroup={addGroup}
           onDeleteGroup={deleteGroup}
           onAddItem={addItem}
-          onOpenStatusManager={() => setShowStatusManager(true)}
+          onOpenStatusManager={openStatusManager} // ← KIRIM FUNGSI INI
           onRenameGroup={renameGroup}
         />
 
@@ -351,13 +323,15 @@ function AppContent() {
 
       {showStatusManager && (
         <StatusManager
-          statuses={statuses}
-          statusOrder={statusOrder}
-          onAddStatus={addStatus}
-          onUpdateStatusColor={updateStatusColor}
-          onDeleteStatus={deleteStatus}
-          onRenameStatus={renameStatus}
-          onReorderStatus={reorderStatus}
+          columnId={activeStatusColumnId}
+          statuses={columns.find(c => c.id === activeStatusColumnId)?.statuses || {}}
+          statusOrder={columns.find(c => c.id === activeStatusColumnId)?.statusOrder || []}
+          onUpdateStatuses={(newStatuses) => {
+            updateColumnStatuses(activeStatusColumnId, newStatuses);
+          }}
+          onUpdateStatusOrder={(newOrder) => {
+            updateColumnStatusOrder(activeStatusColumnId, newOrder);
+          }}
           onClose={() => setShowStatusManager(false)}
         />
       )}
