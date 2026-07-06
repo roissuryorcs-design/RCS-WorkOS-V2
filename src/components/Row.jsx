@@ -25,27 +25,110 @@ export default function Row({
   };
 
   const renderCell = (col) => {
-    if (col.id === "status") {
-      return (
-        <StatusCell
-          status={item.status}
-          statuses={statuses}
-          statusOrder={statusOrder}
-          onChange={(val) => onUpdate("status", val)}
-          onOpenStatusManager={onOpenStatusManager}
-        />
-      );
-    }
-
     const value = item[col.id] !== undefined ? item[col.id] : "";
-    return (
-      <input
-        value={value}
-        onChange={(e) => onUpdate(col.id, e.target.value)}
-        style={inputStyle}
-        placeholder={col.label}
-      />
-    );
+    const type = col.type || "text";
+
+    switch (type) {
+      case "status":
+        return (
+          <StatusCell
+            status={item.status}
+            statuses={statuses}
+            statusOrder={statusOrder}
+            onChange={(val) => onUpdate("status", val)}
+            onOpenStatusManager={onOpenStatusManager}
+          />
+        );
+
+      case "date":
+        return (
+          <input
+            type="date"
+            value={value}
+            onChange={(e) => onUpdate(col.id, e.target.value)}
+            style={inputStyle}
+          />
+        );
+
+      case "number":
+        return (
+          <input
+            type="number"
+            value={value}
+            onChange={(e) => onUpdate(col.id, e.target.value)}
+            style={inputStyle}
+          />
+        );
+
+      case "checkbox":
+        return (
+          <input
+            type="checkbox"
+            checked={value || false}
+            onChange={(e) => onUpdate(col.id, e.target.checked)}
+            style={{ cursor: "pointer", width: 16, height: 16 }}
+          />
+        );
+
+      case "people":
+        return (
+          <input
+            type="text"
+            value={value}
+            onChange={(e) => onUpdate(col.id, e.target.value)}
+            style={inputStyle}
+            placeholder="Assign to..."
+          />
+        );
+
+      case "progress":
+        const progress = parseInt(value) || 0;
+        return (
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <div style={{
+              flex: 1,
+              height: 6,
+              background: "var(--border-color)",
+              borderRadius: 3,
+              overflow: "hidden",
+            }}>
+              <div style={{
+                width: `${Math.min(100, Math.max(0, progress))}%`,
+                height: "100%",
+                background: progress >= 100 ? "#22c55e" : "#3b82f6",
+                borderRadius: 3,
+              }} />
+            </div>
+            <span style={{ fontSize: 11, color: "var(--text-muted)", minWidth: 30 }}>
+              {progress}%
+            </span>
+          </div>
+        );
+
+      case "files":
+        return (
+          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+            <span style={{ fontSize: 14 }}>📎</span>
+            <input
+              type="text"
+              value={value}
+              onChange={(e) => onUpdate(col.id, e.target.value)}
+              style={{ ...inputStyle, fontSize: 12 }}
+              placeholder="file name..."
+            />
+          </div>
+        );
+
+      default: // text
+        return (
+          <input
+            value={value}
+            onChange={(e) => onUpdate(col.id, e.target.value)}
+            style={inputStyle}
+            placeholder={col.label}
+          />
+        );
+    }
   };
 
   return (
