@@ -1,9 +1,9 @@
-import { useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
 export default function StatusCell({ status, statuses, statusOrder, onChange, onOpenStatusManager }) {
-  const selectRef = useRef(null);
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef(null);
 
-  // Urutan status berdasarkan statusOrder, fallback ke Object.keys
   const orderedStatuses = statusOrder && statusOrder.length > 0
     ? statusOrder.filter(s => statuses[s])
     : Object.keys(statuses);
@@ -12,82 +12,132 @@ export default function StatusCell({ status, statuses, statusOrder, onChange, on
   const currentStatus = status || orderedStatuses[0] || "Default";
   const currentColor = getColor(currentStatus);
 
-  const handleChange = (e) => {
-    const value = e.target.value;
-    if (value === "__manage__") {
+  // Tutup dropdown saat klik di luar
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleSelect = (s) => {
+    if (s === "__manage__") {
       onOpenStatusManager();
-      // Reset ke nilai sebelumnya
-      e.target.value = currentStatus;
+      setIsOpen(false);
       return;
     }
-    onChange(value);
+    onChange(s);
+    setIsOpen(false);
   };
 
   return (
-    <div style={{ position: "relative", width: "100%" }}>
-      <select
-        ref={selectRef}
-        value={currentStatus}
-        onChange={handleChange}
+    <div ref={containerRef} style={{ position: "relative", width: "100%" }}>
+      {/* Tombol dropdown */}
+      <div
+        onClick={() => setIsOpen(!isOpen)}
         style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
           padding: "4px 10px",
-          paddingRight: "28px",
           borderRadius: 4,
           border: "1px solid var(--border-color)",
           background: currentColor,
           color: "white",
           cursor: "pointer",
-          width: "100%",
           fontWeight: 500,
           fontSize: 12,
           minHeight: 28,
-          outline: "none",
-          transition: "background 0.2s, border-color 0.2s",
+          transition: "background 0.2s, border-color 0.2s, box-shadow 0.2s",
           boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
-          appearance: "auto",
-          WebkitAppearance: "auto",
         }}
       >
-        {orderedStatuses.map((s) => (
-          <option
-            key={s}
-            value={s}
-            style={{
-              background: getColor(s),
-              color: "white",
-              padding: "4px 8px",
-            }}
-          >
-            {s}
-          </option>
-        ))}
-        <option
-          value="__manage__"
+        <span style={{ flex: 1, textShadow: "0 1px 2px rgba(0,0,0,0.2)" }}>
+          {currentStatus}
+        </span>
+        <span style={{ fontSize: 10, opacity: 0.8, textShadow: "0 1px 2px rgba(0,0,0,0.2)" }}>▾</span>
+      </div>
+
+      {/* Dropdown menu – dengan shadow & kontainer elegan */}
+      {isOpen && (
+        <div
           style={{
-            borderTop: "1px solid var(--border-color)",
+            position: "absolute",
+            top: "calc(100% + 4px)",
+            left: 0,
+            right: 0,
             background: "var(--bg-secondary)",
-            color: "var(--text-primary)",
-            fontWeight: 400,
+            border: "1px solid var(--border-color)",
+            borderRadius: 8,
+            boxShadow: "0 8px 30px rgba(0,0,0,0.15), 0 2px 8px rgba(0,0,0,0.06)",
+            zIndex: 50,
+            maxHeight: 240,
+            overflowY: "auto",
+            padding: "6px 0",
+            minWidth: "150px",
           }}
         >
-          📝 Manage Statuses...
-        </option>
-      </select>
-      {/* Panah custom (opsional) */}
-      <span
-        style={{
-          position: "absolute",
-          right: 8,
-          top: "50%",
-          transform: "translateY(-50%)",
-          color: "rgba(255,255,255,0.7)",
-          fontSize: 10,
-          pointerEvents: "none",
-          textShadow: "0 1px 2px rgba(0,0,0,0.2)",
-        }}
-      >
-        ▾
-      </span>
+          {orderedStatuses.map((s) => (
+            <div
+              key={s}
+              onClick={() => handleSelect(s)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                padding: "8px 14px",
+                cursor: "pointer",
+                background: status === s ? "var(--bg-hover)" : "transparent",
+                transition: "background 0.1s",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-hover)")}
+              onMouseLeave={(e) => {
+                if (status !== s) e.currentTarget.style.background = "transparent";
+              }}
+            >
+              <span
+                style={{
+                  display: "inline-block",
+                  width: 14,
+                  height: 14,
+                  borderRadius: 4,
+                  background: getColor(s),
+                  flexShrink: 0,
+                  border: "1px solid var(--border-color)",
+                }}
+              />
+              <span style={{ flex: 1, fontSize: 13, color: "var(--text-primary)" }}>{s}</span>
+              {status === s && (
+                <span style={{ color: "var(--btn-primary-bg)", fontSize: 14, fontWeight: 600 }}>✓</span>
+              )}
+            </div>
+          ))}
+
+          <div style={{ borderTop: "1px solid var(--border-color)", margin: "4px 12px" }} />
+
+          <div
+            onClick={() => handleSelect("__manage__")}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              padding: "8px 14px",
+              cursor: "pointer",
+              color: "var(--text-muted)",
+              fontSize: 13,
+              transition: "background 0.1s",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-hover)")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+          >
+            <span>📝</span>
+            <span>Manage Statuses...</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
