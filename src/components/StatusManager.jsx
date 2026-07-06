@@ -16,12 +16,17 @@ export default function StatusManager({
   const [editName, setEditName] = useState("");
   const [dragOverIndex, setDragOverIndex] = useState(null);
 
+  // Pastikan orderedKeys selalu array
   const orderedKeys = statusOrder && statusOrder.length > 0
     ? statusOrder.filter(s => statuses[s])
     : Object.keys(statuses);
 
   const handleAdd = () => {
-    const name = newName.trim() || "Default";
+    const name = newName.trim();
+    if (!name) {
+      alert("Please enter a status name.");
+      return;
+    }
     if (statuses[name]) {
       alert(`Status "${name}" already exists!`);
       return;
@@ -64,9 +69,7 @@ export default function StatusManager({
     setEditName("");
   };
 
-  // ============================================================
   // DRAG & DROP
-  // ============================================================
   const handleDragStart = (e, index) => {
     e.dataTransfer.effectAllowed = "move";
     e.dataTransfer.setData("text/plain", String(index));
@@ -153,7 +156,6 @@ export default function StatusManager({
               <span style={{ color: "var(--text-muted)", fontSize: 18, cursor: "grab", userSelect: "none" }}>
                 ⠿
               </span>
-
               <span
                 style={{
                   display: "inline-block",
@@ -165,7 +167,6 @@ export default function StatusManager({
                   border: "1px solid var(--border-color)",
                 }}
               />
-
               {editingId === name ? (
                 <input
                   value={editName}
@@ -206,14 +207,12 @@ export default function StatusManager({
                   {name}
                 </span>
               )}
-
               <input
                 type="color"
                 value={statuses[name]}
                 onChange={(e) => onUpdateStatusColor(name, e.target.value)}
                 style={{ width: 30, height: 30, border: "none", cursor: "pointer", background: "transparent", padding: 0 }}
               />
-
               <button
                 onClick={() => handleDelete(name)}
                 style={{
