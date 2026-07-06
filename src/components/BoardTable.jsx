@@ -450,6 +450,7 @@ export default function BoardTable({
                             onToggleSelect={() => toggleSelectItem(item.id)}
                             onUpdate={(field, value) => onUpdateItem(item.id, field, value)}
                             onDelete={() => onDeleteItem(item.id)}
+                            onOpenStatusManager={onOpenStatusManager}
                           />
                         ))}
                       </tbody>
