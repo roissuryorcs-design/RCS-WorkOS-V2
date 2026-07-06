@@ -44,13 +44,11 @@ export default function BoardTable({
     }
   };
 
-  // Group items berdasarkan group
   const grouped = groups.reduce((acc, group) => {
     acc[group] = items.filter((item) => item.group === group);
     return acc;
   }, {});
 
-  // Pastikan kolom ITEM selalu ada
   const safeColumns = (() => {
     const hasItem = visibleColumns.some((col) => col.id === "item");
     if (hasItem) return visibleColumns;
@@ -158,7 +156,7 @@ export default function BoardTable({
 
         return (
           <div key={groupName} style={{ marginBottom: 24, position: "relative" }}>
-            {/* HEADER GROUP – STICKY KIRI */}
+            {/* HEADER GROUP */}
             <div
               style={{
                 position: "sticky",
@@ -229,7 +227,7 @@ export default function BoardTable({
               />
             </div>
 
-            {/* POPUP – RENAME & DELETE GROUP */}
+            {/* POPUP */}
             {popupGroup === groupName && (
               <>
                 <div
@@ -300,7 +298,7 @@ export default function BoardTable({
               </>
             )}
 
-            {/* TABEL – TAMPILKAN DATA */}
+            {/* TABEL */}
             {!isCollapsed && (
               <>
                 {tasks.length > 0 ? (
@@ -308,8 +306,7 @@ export default function BoardTable({
                     <table
                       cellPadding="0"
                       style={{
-                        borderCollapse: "separate",
-                        borderSpacing: 0,
+                        borderCollapse: "collapse", // ← KEMBALI KE COLLAPSE
                         border: "2px solid var(--border-color)",
                         borderRadius: 4,
                         borderLeft: `4px solid ${groupColor}`,
@@ -491,7 +488,6 @@ export default function BoardTable({
         );
       })}
 
-      {/* TOMBOL ADD NEW GROUP */}
       <div style={{ marginTop: 16 }}>
         <button
           onClick={onAddGroup}
