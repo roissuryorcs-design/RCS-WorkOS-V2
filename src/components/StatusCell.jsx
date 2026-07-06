@@ -11,7 +11,7 @@ export default function StatusCell({
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef(null);
 
-  // Debug: cek props
+  // Debug props
   console.log("🔵 StatusCell props:", { columnId, status, statuses, statusOrder, onOpenStatusManager });
 
   const orderedStatuses = statusOrder && statusOrder.length > 0
@@ -33,7 +33,10 @@ export default function StatusCell({
   }, []);
 
   const handleSelect = (s) => {
+    console.log("🟢 handleSelect called with:", s, "columnId:", columnId);
+    
     if (s === "__manage__") {
+      console.log("📝 Opening Status Manager for column:", columnId);
       if (typeof onOpenStatusManager === "function") {
         onOpenStatusManager(columnId);
       } else {
@@ -42,14 +45,20 @@ export default function StatusCell({
       setIsOpen(false);
       return;
     }
+    
+    console.log("🔄 Changing status to:", s);
     onChange(s);
     setIsOpen(false);
   };
 
   return (
     <div ref={containerRef} style={{ position: "relative", width: "100%" }}>
+      {/* Tombol dropdown */}
       <div
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+          console.log("🖱️ Dropdown clicked, toggling isOpen");
+          setIsOpen(!isOpen);
+        }}
         style={{
           display: "flex",
           alignItems: "center",
@@ -73,6 +82,7 @@ export default function StatusCell({
         <span style={{ fontSize: 10, opacity: 0.8, textShadow: "0 1px 2px rgba(0,0,0,0.2)" }}>▾</span>
       </div>
 
+      {/* Dropdown menu */}
       {isOpen && (
         <div
           style={{
