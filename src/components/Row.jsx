@@ -32,10 +32,10 @@ export default function Row({
       case "status":
         return (
           <StatusCell
-            status={item.status}
+            status={item[col.id]} // ← field independen
             statuses={statuses}
             statusOrder={statusOrder}
-            onChange={(val) => onUpdate("status", val)}
+            onChange={(val) => onUpdate(col.id, val)} // ← update field independen
             onOpenStatusManager={onOpenStatusManager}
           />
         );
