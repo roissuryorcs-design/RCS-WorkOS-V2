@@ -7,6 +7,7 @@ export default function BoardTable({
   items,
   groups,
   statuses,
+  statusOrder,
   groupColors,
   onUpdateGroupColor,
   onUpdateItem,
@@ -409,6 +410,7 @@ export default function BoardTable({
                             key={item.id}
                             item={item}
                             statuses={statuses}
+                            statusOrder={statusOrder}
                             groupColor={groupColor}
                             visibleColumns={safeColumns}
                             isSelected={selectedItems.includes(item.id)}
