@@ -2,11 +2,28 @@ import { createContext, useState, useContext, useEffect } from "react";
 
 const ColumnContext = createContext();
 
+const defaultStatuses = {
+  "Default": "#9ca3af",
+  "Working on it": "#f59e0b",
+  "Stuck": "#ef4444",
+  "Done": "#22c55e",
+};
+
+const defaultStatusOrder = ["Default", "Working on it", "Stuck", "Done"];
+
 const defaultColumns = [
   { id: "item", label: "ITEM", type: "text", width: 150, visible: true },
   { id: "document", label: "NO. DOCUMENT", type: "text", width: 200, visible: true },
   { id: "people", label: "PEOPLE", type: "people", width: 120, visible: true },
-  { id: "status", label: "STATUS", type: "status", width: 120, visible: true },
+  { 
+    id: "status", 
+    label: "STATUS", 
+    type: "status", 
+    width: 120, 
+    visible: true,
+    statuses: { ...defaultStatuses },
+    statusOrder: [...defaultStatusOrder],
+  },
   { id: "dueDate", label: "DUE DATE", type: "date", width: 120, visible: true },
   { id: "rev", label: "REV", type: "text", width: 80, visible: true },
 ];
@@ -16,13 +33,22 @@ export function ColumnProvider({ children }) {
     const saved = localStorage.getItem("forelColumns");
     if (saved) {
       const parsed = JSON.parse(saved);
-      const hasItem = parsed.some((c) => c.id === "item");
-      let result = [...parsed];
+      // Pastikan setiap kolom status memiliki statuses & statusOrder
+      const result = parsed.map(col => {
+        if (col.type === "status" && !col.statuses) {
+          return {
+            ...col,
+            statuses: { ...defaultStatuses },
+            statusOrder: [...defaultStatusOrder],
+          };
+        }
+        return col;
+      });
+      // Pastikan ada kolom item
+      const hasItem = result.some(c => c.id === "item");
       if (!hasItem) {
         result.unshift({ id: "item", label: "ITEM", type: "text", width: 150, visible: true });
       }
-      // Pastikan setiap kolom memiliki properti type (migrasi)
-      result = result.map(col => ({ ...col, type: col.type || "text" }));
       return result;
     }
     return defaultColumns;
@@ -41,16 +67,18 @@ export function ColumnProvider({ children }) {
   const addColumn = (label, type = "text") => {
     if (!label || !label.trim()) return;
     const newId = `col_${Date.now()}`;
-    setColumns((prev) => [
-      ...prev,
-      {
-        id: newId,
-        label: label.trim(),
-        type: type,
-        width: 150,
-        visible: true,
-      },
-    ]);
+    const newCol = {
+      id: newId,
+      label: label.trim(),
+      type: type,
+      width: 150,
+      visible: true,
+    };
+    if (type === "status") {
+      newCol.statuses = { ...defaultStatuses };
+      newCol.statusOrder = [...defaultStatusOrder];
+    }
+    setColumns((prev) => [...prev, newCol]);
   };
 
   const deleteColumn = (id) => {
@@ -94,6 +122,25 @@ export function ColumnProvider({ children }) {
 
   const resetColumns = () => setColumns(defaultColumns);
 
+  // ============================================================
+  // FUNGSI UPDATE STATUS PER KOLOM
+  // ============================================================
+  const updateColumnStatuses = (columnId, newStatuses) => {
+    setColumns((prev) =>
+      prev.map((col) =>
+        col.id === columnId ? { ...col, statuses: newStatuses } : col
+      )
+    );
+  };
+
+  const updateColumnStatusOrder = (columnId, newOrder) => {
+    setColumns((prev) =>
+      prev.map((col) =>
+        col.id === columnId ? { ...col, statusOrder: newOrder } : col
+      )
+    );
+  };
+
   const visibleColumns = columns.filter((col) => col.visible);
 
   return (
@@ -108,6 +155,8 @@ export function ColumnProvider({ children }) {
         renameColumn,
         reorderColumns,
         resetColumns,
+        updateColumnStatuses,
+        updateColumnStatusOrder,
       }}
     >
       {children}
