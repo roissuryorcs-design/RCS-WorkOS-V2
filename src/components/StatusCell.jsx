@@ -11,13 +11,29 @@ export default function StatusCell({
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef(null);
 
-  const orderedStatuses = statusOrder && statusOrder.length > 0
-    ? statusOrder.filter(s => statuses && statuses[s])
-    : Object.keys(statuses || {});
+  // Pastikan statuses dan statusOrder valid
+  const safeStatuses = statuses || {};
+  const safeStatusOrder = statusOrder && statusOrder.length > 0
+    ? statusOrder.filter(s => safeStatuses[s])
+    : Object.keys(safeStatuses);
 
-  const getColor = (s) => (statuses && statuses[s]) || "#9ca3af";
-  const currentStatus = status || orderedStatuses[0] || "Default";
+  // Jika masih kosong, beri default
+  const finalStatuses = safeStatusOrder.length > 0 ? safeStatusOrder : ["Default"];
+  const defaultStatuses = { Default: "#9ca3af" };
+  const usedStatuses = Object.keys(safeStatuses).length > 0 ? safeStatuses : defaultStatuses;
+
+  const getColor = (s) => usedStatuses[s] || "#9ca3af";
+  const currentStatus = status || finalStatuses[0] || "Default";
   const currentColor = getColor(currentStatus);
+
+  // Debug
+  console.log("🔵 StatusCell render:", { 
+    isOpen, 
+    finalStatuses, 
+    usedStatuses, 
+    currentStatus,
+    columnId 
+  });
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -34,8 +50,6 @@ export default function StatusCell({
     if (s === "__manage__") {
       if (typeof onOpenStatusManager === "function") {
         onOpenStatusManager(columnId);
-      } else {
-        console.error("❌ onOpenStatusManager is not a function");
       }
       setIsOpen(false);
       return;
@@ -48,7 +62,10 @@ export default function StatusCell({
     <div ref={containerRef} style={{ position: "relative", width: "100%" }}>
       {/* Tombol dropdown */}
       <div
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+          console.log("🖱️ Dropdown clicked, current isOpen:", isOpen);
+          setIsOpen(!isOpen);
+        }}
         style={{
           display: "flex",
           alignItems: "center",
@@ -62,17 +79,13 @@ export default function StatusCell({
           fontWeight: 500,
           fontSize: 12,
           minHeight: 28,
-          transition: "background 0.2s, border-color 0.2s",
-          boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
         }}
       >
-        <span style={{ flex: 1, textShadow: "0 1px 2px rgba(0,0,0,0.2)" }}>
-          {currentStatus}
-        </span>
+        <span style={{ flex: 1 }}>{currentStatus}</span>
         <span style={{ fontSize: 10, opacity: 0.8 }}>▾</span>
       </div>
 
-      {/* Dropdown menu – dengan z-index tinggi */}
+      {/* Dropdown menu */}
       {isOpen && (
         <div
           style={{
@@ -80,19 +93,18 @@ export default function StatusCell({
             top: "calc(100% + 4px)",
             left: 0,
             right: 0,
-            background: "var(--bg-secondary)",
-            border: "1px solid var(--border-color)",
+            background: "white",
+            border: "1px solid #d1d5db",
             borderRadius: 8,
-            boxShadow: "0 8px 30px rgba(0,0,0,0.2), 0 2px 8px rgba(0,0,0,0.1)",
-            zIndex: 9999, // ← sangat tinggi
+            boxShadow: "0 8px 30px rgba(0,0,0,0.2)",
+            zIndex: 9999,
             maxHeight: 240,
             overflowY: "auto",
             padding: "6px 0",
             minWidth: "150px",
-            pointerEvents: "auto", // ← pastikan bisa diklik
           }}
         >
-          {orderedStatuses.map((s) => (
+          {finalStatuses.map((s) => (
             <div
               key={s}
               onClick={() => handleSelect(s)}
@@ -102,11 +114,9 @@ export default function StatusCell({
                 gap: 10,
                 padding: "8px 14px",
                 cursor: "pointer",
-                background: status === s ? "var(--bg-hover)" : "transparent",
-                transition: "background 0.1s",
-                pointerEvents: "auto",
+                background: status === s ? "#f3f4f6" : "transparent",
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-hover)")}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "#f3f4f6")}
               onMouseLeave={(e) => {
                 if (status !== s) e.currentTarget.style.background = "transparent";
               }}
@@ -119,17 +129,17 @@ export default function StatusCell({
                   borderRadius: 4,
                   background: getColor(s),
                   flexShrink: 0,
-                  border: "1px solid var(--border-color)",
+                  border: "1px solid #e5e7eb",
                 }}
               />
-              <span style={{ flex: 1, fontSize: 13, color: "var(--text-primary)" }}>{s}</span>
+              <span style={{ flex: 1, fontSize: 13, color: "#1a1a2e" }}>{s}</span>
               {status === s && (
-                <span style={{ color: "var(--btn-primary-bg)", fontSize: 14, fontWeight: 600 }}>✓</span>
+                <span style={{ color: "#3b82f6", fontSize: 14 }}>✓</span>
               )}
             </div>
           ))}
 
-          <div style={{ borderTop: "1px solid var(--border-color)", margin: "4px 12px" }} />
+          <div style={{ borderTop: "1px solid #e5e7eb", margin: "4px 12px" }} />
 
           <div
             onClick={() => handleSelect("__manage__")}
@@ -139,12 +149,10 @@ export default function StatusCell({
               gap: 10,
               padding: "8px 14px",
               cursor: "pointer",
-              color: "var(--text-muted)",
+              color: "#6b7280",
               fontSize: 13,
-              transition: "background 0.1s",
-              pointerEvents: "auto",
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-hover)")}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "#f3f4f6")}
             onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
           >
             <span>📝</span>
