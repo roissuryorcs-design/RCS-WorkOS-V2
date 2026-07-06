@@ -5,10 +5,13 @@ export default function StatusManager({
   onAddStatus,
   onUpdateStatusColor,
   onDeleteStatus,
+  onRenameStatus, // ← fungsi baru
   onClose,
 }) {
   const [newName, setNewName] = useState("");
   const [newColor, setNewColor] = useState("#9ca3af");
+  const [editingId, setEditingId] = useState(null);
+  const [editName, setEditName] = useState("");
 
   const statusKeys = Object.keys(statuses);
 
@@ -30,6 +33,30 @@ export default function StatusManager({
     }
     if (!confirm(`Delete status "${name}"?`)) return;
     onDeleteStatus(name);
+  };
+
+  const startRename = (name) => {
+    setEditingId(name);
+    setEditName(name);
+  };
+
+  const saveRename = () => {
+    if (editName.trim() && editName.trim() !== editingId) {
+      if (statuses[editName.trim()]) {
+        alert(`Status "${editName.trim()}" already exists!`);
+        setEditingId(null);
+        setEditName("");
+        return;
+      }
+      onRenameStatus(editingId, editName.trim());
+    }
+    setEditingId(null);
+    setEditName("");
+  };
+
+  const cancelRename = () => {
+    setEditingId(null);
+    setEditName("");
   };
 
   return (
@@ -63,9 +90,10 @@ export default function StatusManager({
       >
         <h3 style={{ marginBottom: 16, fontSize: 18 }}>Manage Statuses</h3>
         <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 12 }}>
-          At least one status must remain. Click color picker to change color.
+          Click on status name to rename. At least one status must remain.
         </p>
 
+        {/* Daftar status */}
         <div style={{ marginBottom: 16 }}>
           {statusKeys.map((name) => (
             <div
@@ -87,15 +115,50 @@ export default function StatusManager({
                   background: statuses[name],
                 }}
               />
-              <span style={{ flex: 1, fontSize: 14, color: "var(--text-primary)" }}>
-                {name}
-              </span>
+
+              {editingId === name ? (
+                <input
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  onBlur={saveRename}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") saveRename();
+                    if (e.key === "Escape") cancelRename();
+                  }}
+                  autoFocus
+                  style={{
+                    flex: 1,
+                    padding: "2px 6px",
+                    border: "1px solid var(--btn-primary-bg)",
+                    borderRadius: 4,
+                    fontSize: 14,
+                    background: "var(--bg-input)",
+                    color: "var(--text-primary)",
+                    outline: "none",
+                  }}
+                />
+              ) : (
+                <span
+                  style={{
+                    flex: 1,
+                    fontSize: 14,
+                    color: "var(--text-primary)",
+                    cursor: "pointer",
+                  }}
+                  onClick={() => startRename(name)}
+                  title="Klik untuk rename"
+                >
+                  {name}
+                </span>
+              )}
+
               <input
                 type="color"
                 value={statuses[name]}
                 onChange={(e) => onUpdateStatusColor(name, e.target.value)}
                 style={{ width: 30, height: 30, border: "none", cursor: "pointer" }}
               />
+
               <button
                 onClick={() => handleDelete(name)}
                 style={{
@@ -114,6 +177,7 @@ export default function StatusManager({
           ))}
         </div>
 
+        {/* Tambah status baru */}
         <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
           <input
             placeholder="New status name"
