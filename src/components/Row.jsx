@@ -3,13 +3,14 @@ import StatusCell from "./StatusCell";
 export default function Row({
   item,
   statuses,
+  statusOrder,
   groupColor,
   visibleColumns,
   isSelected,
   onToggleSelect,
   onUpdate,
   onDelete,
-  onOpenStatusManager, // ← tambahan
+  onOpenStatusManager,
 }) {
   const inputStyle = {
     border: "none",
@@ -29,8 +30,9 @@ export default function Row({
         <StatusCell
           status={item.status}
           statuses={statuses}
+          statusOrder={statusOrder}
           onChange={(val) => onUpdate("status", val)}
-          onOpenStatusManager={onOpenStatusManager} // ← kirim
+          onOpenStatusManager={onOpenStatusManager}
         />
       );
     }
