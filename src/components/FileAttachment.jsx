@@ -123,7 +123,10 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
             <div
               key={index}
               style={{ position: "relative" }}
-              onMouseEnter={() => setHoveredFile(index)}
+              onMouseEnter={() => {
+                console.log("🟢 Hover on file:", file.name);
+                setHoveredFile(index);
+              }}
               onMouseLeave={() => setHoveredFile(null)}
             >
               <div
@@ -175,6 +178,8 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
                   </div>
                 )}
               </div>
+
+              {/* Hover popup – dengan warna kontras */}
               {hoveredFile === index && (
                 <div
                   style={{
@@ -182,25 +187,26 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
                     bottom: "calc(100% + 8px)",
                     left: "50%",
                     transform: "translateX(-50%)",
-                    background: "var(--bg-modal)",
-                    border: "1px solid var(--border-color)",
+                    background: "#ffffff",
+                    border: "1px solid #d1d5db",
                     borderRadius: 8,
                     boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
                     padding: 12,
                     minWidth: 200,
                     zIndex: 100,
                     pointerEvents: "auto",
+                    color: "#1a1a2e",
                   }}
                 >
-                  <div style={{ fontSize: 13, fontWeight: 500, color: "var(--text-primary)" }}>
-                    {file.name}
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "#1a1a2e" }}>
+                    {file.name || "Untitled"}
                   </div>
                   {file.size && (
-                    <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
+                    <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>
                       {formatSize(file.size)}
                     </div>
                   )}
-                  <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
+                  <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>
                     {file.isLink ? "🔗 Link" : "📎 File"}
                   </div>
                   <button
@@ -263,7 +269,6 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
               Add File or Link
             </h3>
 
-            {/* Upload file */}
             <div
               onClick={() => fileInputRef.current?.click()}
               style={{
@@ -291,14 +296,12 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
               />
             </div>
 
-            {/* Separator */}
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
               <div style={{ flex: 1, height: 1, background: "var(--border-color)" }} />
               <span style={{ fontSize: 12, color: "var(--text-muted)" }}>or</span>
               <div style={{ flex: 1, height: 1, background: "var(--border-color)" }} />
             </div>
 
-            {/* Paste link */}
             <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
               <input
                 value={linkInput}
