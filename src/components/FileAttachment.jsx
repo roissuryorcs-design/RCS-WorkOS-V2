@@ -9,10 +9,12 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
     }
   });
   const [showPopup, setShowPopup] = useState(false);
+  const [showFileManager, setShowFileManager] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [linkInput, setLinkInput] = useState("");
   const [hoveredFile, setHoveredFile] = useState(null);
   const fileInputRef = useRef(null);
+  const fileManagerInputRef = useRef(null);
 
   const saveFiles = (newFiles) => {
     setFiles(newFiles);
@@ -47,6 +49,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
         };
         saveFiles([...files, newFile]);
         setShowPopup(false);
+        setShowFileManager(false);
       }
     } catch (error) {
       console.error("Upload failed:", error);
@@ -74,12 +77,22 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
     saveFiles([...files, newFile]);
     setLinkInput("");
     setShowPopup(false);
+    setShowFileManager(false);
   };
 
   const removeFile = (index) => {
     const newFiles = files.filter((_, i) => i !== index);
     saveFiles(newFiles);
     setHoveredFile(null);
+  };
+
+  const downloadFile = (url, name) => {
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = name || "file";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   };
 
   const formatSize = (bytes) => {
@@ -92,11 +105,19 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
     return url && url.match(/\.(jpeg|jpg|gif|png|webp)$/i);
   };
 
+  const openFileManager = () => {
+    if (files.length > 0) {
+      setShowFileManager(true);
+    } else {
+      setShowPopup(true);
+    }
+  };
+
   return (
     <div style={{ position: "relative", width: "100%" }}>
       {/* Area utama */}
       <div
-        onClick={() => setShowPopup(true)}
+        onClick={openFileManager}
         style={{
           display: "flex",
           flexWrap: "wrap",
@@ -123,10 +144,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
             <div
               key={index}
               style={{ position: "relative" }}
-              onMouseEnter={() => {
-                console.log("🟢 Hover on file:", file.name);
-                setHoveredFile(index);
-              }}
+              onMouseEnter={() => setHoveredFile(index)}
               onMouseLeave={() => setHoveredFile(null)}
             >
               <div
@@ -179,26 +197,28 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
                 )}
               </div>
 
-              {/* Hover popup – dengan warna kontras */}
+              {/* Hover popup – dengan z-index tinggi */}
               {hoveredFile === index && (
                 <div
                   style={{
-                    position: "absolute",
-                    bottom: "calc(100% + 8px)",
+                    position: "fixed",
+                    bottom: "auto",
+                    top: "50%",
                     left: "50%",
-                    transform: "translateX(-50%)",
+                    transform: "translate(-50%, -50%)",
                     background: "#ffffff",
                     border: "1px solid #d1d5db",
                     borderRadius: 8,
-                    boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
-                    padding: 12,
-                    minWidth: 200,
-                    zIndex: 100,
+                    boxShadow: "0 8px 24px rgba(0,0,0,0.3)",
+                    padding: 16,
+                    minWidth: 220,
+                    zIndex: 99999,
                     pointerEvents: "auto",
                     color: "#1a1a2e",
                   }}
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  <div style={{ fontSize: 13, fontWeight: 600, color: "#1a1a2e" }}>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: "#1a1a2e" }}>
                     {file.name || "Untitled"}
                   </div>
                   {file.size && (
@@ -209,24 +229,41 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
                   <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>
                     {file.isLink ? "🔗 Link" : "📎 File"}
                   </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      removeFile(index);
-                    }}
-                    style={{
-                      marginTop: 8,
-                      padding: "2px 10px",
-                      background: "#ef4444",
-                      color: "white",
-                      border: "none",
-                      borderRadius: 4,
-                      cursor: "pointer",
-                      fontSize: 11,
-                    }}
-                  >
-                    Remove
-                  </button>
+                  <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                    <button
+                      onClick={() => {
+                        downloadFile(file.url, file.name);
+                        setHoveredFile(null);
+                      }}
+                      style={{
+                        padding: "4px 12px",
+                        background: "var(--btn-primary-bg)",
+                        color: "white",
+                        border: "none",
+                        borderRadius: 4,
+                        cursor: "pointer",
+                        fontSize: 12,
+                      }}
+                    >
+                      Download
+                    </button>
+                    <button
+                      onClick={() => {
+                        removeFile(index);
+                      }}
+                      style={{
+                        padding: "4px 12px",
+                        background: "#ef4444",
+                        color: "white",
+                        border: "none",
+                        borderRadius: 4,
+                        cursor: "pointer",
+                        fontSize: 12,
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -234,7 +271,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
         )}
       </div>
 
-      {/* Modal popup – sentral */}
+      {/* Popup Add File (modal kecil) */}
       {showPopup && (
         <div
           style={{
@@ -244,7 +281,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
             right: 0,
             bottom: 0,
             background: "rgba(0,0,0,0.4)",
-            zIndex: 1000,
+            zIndex: 10000,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -358,6 +395,181 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
             >
               Cancel
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* File Manager Modal (daftar file lengkap) */}
+      {showFileManager && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0,0,0,0.5)",
+            zIndex: 10001,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            backdropFilter: "blur(4px)",
+          }}
+          onClick={() => setShowFileManager(false)}
+        >
+          <div
+            style={{
+              background: "var(--bg-modal)",
+              borderRadius: 12,
+              padding: 24,
+              maxWidth: 500,
+              width: "100%",
+              maxHeight: "80vh",
+              overflowY: "auto",
+              color: "var(--text-primary)",
+              boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
+              border: "1px solid var(--border-color)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ marginBottom: 16, fontSize: 18, fontWeight: 600 }}>
+              Files ({files.length})
+            </h3>
+
+            {files.length === 0 ? (
+              <div style={{ textAlign: "center", color: "var(--text-muted)", padding: 20 }}>
+                No files added yet.
+              </div>
+            ) : (
+              <div style={{ marginBottom: 16 }}>
+                {files.map((file, index) => (
+                  <div
+                    key={index}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                      padding: "8px 12px",
+                      borderBottom: "1px solid var(--border-light)",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: 4,
+                        overflow: "hidden",
+                        background: "var(--bg-secondary)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                        border: "1px solid var(--border-color)",
+                      }}
+                    >
+                      {isImage(file.url) ? (
+                        <img
+                          src={file.url}
+                          alt={file.name}
+                          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                        />
+                      ) : (
+                        <span style={{ fontSize: 20 }}>📎</span>
+                      )}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div
+                        style={{
+                          fontSize: 14,
+                          fontWeight: 500,
+                          color: "var(--text-primary)",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                          cursor: "pointer",
+                        }}
+                        onClick={() => window.open(file.url, "_blank")}
+                      >
+                        {file.name || "Untitled"}
+                      </div>
+                      <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
+                        {file.size ? formatSize(file.size) : ""} {file.isLink ? "🔗 Link" : ""}
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <button
+                        onClick={() => downloadFile(file.url, file.name)}
+                        style={{
+                          padding: "4px 8px",
+                          background: "var(--btn-primary-bg)",
+                          color: "white",
+                          border: "none",
+                          borderRadius: 4,
+                          cursor: "pointer",
+                          fontSize: 11,
+                        }}
+                        title="Download"
+                      >
+                        ⬇️
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (confirm(`Delete "${file.name}"?`)) {
+                            removeFile(index);
+                          }
+                        }}
+                        style={{
+                          padding: "4px 8px",
+                          background: "#ef4444",
+                          color: "white",
+                          border: "none",
+                          borderRadius: 4,
+                          cursor: "pointer",
+                          fontSize: 11,
+                        }}
+                        title="Delete"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                onClick={() => {
+                  setShowFileManager(false);
+                  setShowPopup(true);
+                }}
+                style={{
+                  flex: 1,
+                  padding: "8px",
+                  background: "var(--btn-primary-bg)",
+                  color: "var(--btn-primary-text)",
+                  border: "none",
+                  borderRadius: 6,
+                  cursor: "pointer",
+                  fontWeight: 500,
+                }}
+              >
+                + Add File
+              </button>
+              <button
+                onClick={() => setShowFileManager(false)}
+                style={{
+                  padding: "8px 16px",
+                  background: "var(--bg-hover)",
+                  border: "none",
+                  borderRadius: 6,
+                  cursor: "pointer",
+                  color: "var(--text-secondary)",
+                }}
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}
