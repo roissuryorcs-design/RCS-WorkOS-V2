@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import FileIcon from "./FileIcon";
 
 export default function FileAttachment({ value, onUpdate, columnId }) {
   const [files, setFiles] = useState(() => {
@@ -113,8 +114,78 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
     return url && url.match(/\.(jpeg|jpg|gif|png|webp|svg)$/i);
   };
 
+  const isVideo = (url) => url && url.match(/\.(mp4|webm|mov|avi|mkv)$/i);
   const isPdf = (url) => url && url.toLowerCase().includes(".pdf");
-  const isVideo = (url) => url && url.match(/\.(mp4|webm|mov|avi)$/i);
+
+  // ============================================================
+  // PREVIEW COMPONENT
+  // ============================================================
+  const PreviewContent = ({ file, onDownload, onDelete }) => {
+    const isImg = isImage(file.url);
+    const isVid = isVideo(file.url);
+    const isPdfFile = isPdf(file.url);
+
+    return (
+      <div style={{ padding: 8, minWidth: 160, maxWidth: 220 }}>
+        {/* Preview area */}
+        <div style={{ marginBottom: 6, borderRadius: 4, overflow: "hidden", background: "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center", minHeight: 80 }}>
+          {isImg ? (
+            <img
+              src={file.url}
+              alt={file.name}
+              style={{ width: "100%", maxHeight: 120, objectFit: "contain" }}
+            />
+          ) : isVid ? (
+            <video src={file.url} controls style={{ width: "100%", maxHeight: 120 }} />
+          ) : (
+            <FileIcon fileName={file.name} size={56} />
+          )}
+        </div>
+
+        {/* Nama file */}
+        <div style={{ fontSize: 13, fontWeight: 500, color: "#1a1a2e", wordBreak: "break-all", marginBottom: 2 }}>
+          {file.name || "Untitled"}
+        </div>
+
+        {/* Ukuran & tipe */}
+        <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 6 }}>
+          {file.size ? formatSize(file.size) : ""} {file.isLink ? "🔗 Link" : isPdfFile ? "PDF" : ""}
+        </div>
+
+        {/* Tombol aksi */}
+        <div style={{ display: "flex", gap: 6 }}>
+          <button
+            onClick={onDownload}
+            style={{
+              padding: "2px 10px",
+              background: "var(--btn-primary-bg)",
+              color: "white",
+              border: "none",
+              borderRadius: 4,
+              cursor: "pointer",
+              fontSize: 11,
+            }}
+          >
+            Download
+          </button>
+          <button
+            onClick={onDelete}
+            style={{
+              padding: "2px 10px",
+              background: "#ef4444",
+              color: "white",
+              border: "none",
+              borderRadius: 4,
+              cursor: "pointer",
+              fontSize: 11,
+            }}
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    );
+  };
 
   // ============================================================
   // HITUNG JUMLAH THUMBNAIL YANG MUAT
@@ -187,8 +258,8 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
     if (left + popupWidth > window.innerWidth) {
       left = rect.left - popupWidth - 8;
     }
-    if (top + 200 > window.innerHeight) {
-      top = window.innerHeight - 200 - 10;
+    if (top + 250 > window.innerHeight) {
+      top = window.innerHeight - 250 - 10;
     }
     
     setPopupPosition({ top, left });
@@ -212,7 +283,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
   };
 
   // ============================================================
-  // PREVIEW DI DALAM DAFTAR FILE – DELAY 1 DETIK (konsisten)
+  // PREVIEW DI DALAM DAFTAR FILE – DELAY 1 DETIK
   // ============================================================
   const handleListHover = (index) => {
     if (previewTimeoutRef.current) clearTimeout(previewTimeoutRef.current);
@@ -268,7 +339,6 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
                 onMouseEnter={(e) => handleThumbnailHover(e, index)}
                 onMouseLeave={handleThumbnailLeave}
               >
-                {/* Thumbnail */}
                 <div
                   style={{
                     width: 28,
@@ -294,18 +364,16 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
                       alt={file.name}
                       style={{ width: "100%", height: "100%", objectFit: "cover" }}
                     />
-                  ) : isPdf(file.url) ? (
-                    <span style={{ fontSize: 14 }}>📄</span>
-                  ) : isVideo(file.url) ? (
-                    <span style={{ fontSize: 14 }}>🎬</span>
                   ) : file.isLink ? (
                     <span style={{ fontSize: 14 }}>🔗</span>
+                  ) : isVideo(file.url) ? (
+                    <span style={{ fontSize: 14 }}>🎬</span>
                   ) : (
-                    <span style={{ fontSize: 14 }}>📎</span>
+                    <FileIcon fileName={file.name} size={28} />
                   )}
                 </div>
 
-                {/* Preview thumbnail */}
+                {/* Preview dari thumbnail */}
                 {hoveredFileIndex === index && (
                   <div
                     onMouseEnter={handlePreviewMouseEnter}
@@ -318,74 +386,21 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
                       border: "1px solid #d1d5db",
                       borderRadius: 8,
                       boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
-                      padding: 8,
-                      minWidth: 160,
-                      maxWidth: 220,
                       zIndex: 99999,
                       pointerEvents: "auto",
                     }}
                   >
-                    {isImage(file.url) && (
-                      <div style={{ marginBottom: 4, borderRadius: 4, overflow: "hidden" }}>
-                        <img
-                          src={file.url}
-                          alt={file.name}
-                          style={{ width: "100%", maxHeight: 100, objectFit: "contain" }}
-                        />
-                      </div>
-                    )}
-                    {isVideo(file.url) && (
-                      <div style={{ marginBottom: 4, borderRadius: 4, overflow: "hidden", background: "#000" }}>
-                        <video src={file.url} controls style={{ width: "100%", maxHeight: 100 }} />
-                      </div>
-                    )}
-                    <div style={{ fontSize: 13, fontWeight: 500, color: "#1a1a2e", wordBreak: "break-all" }}>
-                      {file.name || "Untitled"}
-                    </div>
-                    {file.size && (
-                      <div style={{ fontSize: 11, color: "#6b7280", marginTop: 2 }}>
-                        {formatSize(file.size)}
-                      </div>
-                    )}
-                    <div style={{ fontSize: 11, color: "#6b7280", marginTop: 2 }}>
-                      {file.isLink ? "🔗 Link" : "📎 File"}
-                    </div>
-                    <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
-                      <button
-                        onClick={() => {
-                          downloadFile(file.url, file.name);
-                          setHoveredFileIndex(null);
-                        }}
-                        style={{
-                          padding: "2px 10px",
-                          background: "var(--btn-primary-bg)",
-                          color: "white",
-                          border: "none",
-                          borderRadius: 4,
-                          cursor: "pointer",
-                          fontSize: 11,
-                        }}
-                      >
-                        Download
-                      </button>
-                      <button
-                        onClick={() => {
-                          removeFile(index);
-                          setHoveredFileIndex(null);
-                        }}
-                        style={{
-                          padding: "2px 10px",
-                          background: "#ef4444",
-                          color: "white",
-                          border: "none",
-                          borderRadius: 4,
-                          cursor: "pointer",
-                          fontSize: 11,
-                        }}
-                      >
-                        Delete
-                      </button>
-                    </div>
+                    <PreviewContent
+                      file={file}
+                      onDownload={() => {
+                        downloadFile(file.url, file.name);
+                        setHoveredFileIndex(null);
+                      }}
+                      onDelete={() => {
+                        removeFile(index);
+                        setHoveredFileIndex(null);
+                      }}
+                    />
                   </div>
                 )}
               </div>
@@ -487,8 +502,10 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
                     alt={file.name}
                     style={{ width: "100%", height: "100%", objectFit: "cover" }}
                   />
+                ) : file.isLink ? (
+                  <span style={{ fontSize: 14 }}>🔗</span>
                 ) : (
-                  <span style={{ fontSize: 14 }}>📎</span>
+                  <FileIcon fileName={file.name} size={28} />
                 )}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -564,7 +581,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
                 </div>
               )}
 
-              {/* PREVIEW DI DALAM LIST +N – DENGAN POINTER-EVENTS AUTO */}
+              {/* PREVIEW DI DALAM LIST +N – SAMA DENGAN PREVIEW THUMBNAIL */}
               {hoveredFileIndex === index && (
                 <div
                   onMouseEnter={handlePreviewMouseEnter}
@@ -572,42 +589,26 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
                   style={{
                     position: "fixed",
                     left: (fileListRef.current?.getBoundingClientRect().right || 0) + 8,
-                    top: (fileListRef.current?.getBoundingClientRect().top || 0) + 40,
+                    top: (fileListRef.current?.getBoundingClientRect().top || 0) + 20,
                     background: "#ffffff",
                     border: "1px solid #d1d5db",
                     borderRadius: 8,
                     boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
-                    padding: 4,
                     zIndex: 100000,
-                    maxWidth: 180,
-                    maxHeight: 180,
-                    overflow: "hidden",
-                    pointerEvents: "auto", // ← PERUBAHAN: bisa di-hover
+                    pointerEvents: "auto",
                   }}
                 >
-                  {isImage(file.url) ? (
-                    <img
-                      src={file.url}
-                      alt={file.name}
-                      style={{ width: "100%", height: "100%", objectFit: "contain", maxHeight: 180 }}
-                    />
-                  ) : isVideo(file.url) ? (
-                    <video src={file.url} controls style={{ width: "100%", maxHeight: 140 }} />
-                  ) : (
-                    <div style={{ padding: 12, textAlign: "center" }}>
-                      <div style={{ fontSize: 40 }}>
-                        {file.isLink ? "🔗" : isPdf(file.url) ? "📄" : "📎"}
-                      </div>
-                      <div style={{ fontSize: 13, fontWeight: 500, color: "#1a1a2e", wordBreak: "break-all" }}>
-                        {file.name || "Untitled"}
-                      </div>
-                      {file.size && (
-                        <div style={{ fontSize: 11, color: "#6b7280" }}>
-                          {formatSize(file.size)}
-                        </div>
-                      )}
-                    </div>
-                  )}
+                  <PreviewContent
+                    file={file}
+                    onDownload={() => {
+                      downloadFile(file.url, file.name);
+                      setHoveredFileIndex(null);
+                    }}
+                    onDelete={() => {
+                      removeFile(index);
+                      setHoveredFileIndex(null);
+                    }}
+                  />
                 </div>
               )}
             </div>
@@ -774,11 +775,41 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
               <div style={{ marginBottom: 16 }}>
                 {files.map((file, index) => (
                   <div key={index} style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 12px", borderBottom: "1px solid var(--border-light)" }}>
-                    <div style={{ width: 40, height: 40, borderRadius: 4, overflow: "hidden", background: "var(--bg-secondary)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, border: "1px solid var(--border-color)" }}>
-                      {isImage(file.url) ? <img src={file.url} alt={file.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span style={{ fontSize: 20 }}>📎</span>}
+                    <div
+                      style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: 4,
+                        overflow: "hidden",
+                        background: "var(--bg-secondary)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                        border: "1px solid var(--border-color)",
+                      }}
+                    >
+                      {isImage(file.url) ? (
+                        <img src={file.url} alt={file.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      ) : file.isLink ? (
+                        <span style={{ fontSize: 20 }}>🔗</span>
+                      ) : (
+                        <FileIcon fileName={file.name} size={40} />
+                      )}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 14, fontWeight: 500, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", cursor: "pointer" }} onClick={() => window.open(file.url, "_blank")}>
+                      <div
+                        style={{
+                          fontSize: 14,
+                          fontWeight: 500,
+                          color: "var(--text-primary)",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                          cursor: "pointer",
+                        }}
+                        onClick={() => window.open(file.url, "_blank")}
+                      >
                         {file.name || "Untitled"}
                       </div>
                       <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
@@ -786,8 +817,40 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
                       </div>
                     </div>
                     <div style={{ display: "flex", gap: 6 }}>
-                      <button onClick={() => downloadFile(file.url, file.name)} style={{ padding: "4px 8px", background: "var(--btn-primary-bg)", color: "white", border: "none", borderRadius: 4, cursor: "pointer", fontSize: 11 }} title="Download">⬇️</button>
-                      <button onClick={() => { if (confirm(`Delete "${file.name}"?`)) { removeFile(index); } }} style={{ padding: "4px 8px", background: "#ef4444", color: "white", border: "none", borderRadius: 4, cursor: "pointer", fontSize: 11 }} title="Delete">✕</button>
+                      <button
+                        onClick={() => downloadFile(file.url, file.name)}
+                        style={{
+                          padding: "4px 8px",
+                          background: "var(--btn-primary-bg)",
+                          color: "white",
+                          border: "none",
+                          borderRadius: 4,
+                          cursor: "pointer",
+                          fontSize: 11,
+                        }}
+                        title="Download"
+                      >
+                        ⬇️
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (confirm(`Delete "${file.name}"?`)) {
+                            removeFile(index);
+                          }
+                        }}
+                        style={{
+                          padding: "4px 8px",
+                          background: "#ef4444",
+                          color: "white",
+                          border: "none",
+                          borderRadius: 4,
+                          cursor: "pointer",
+                          fontSize: 11,
+                        }}
+                        title="Delete"
+                      >
+                        ✕
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -795,8 +858,37 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
             )}
 
             <div style={{ display: "flex", gap: 8 }}>
-              <button onClick={() => { setShowFileManager(false); setShowPopup(true); }} style={{ flex: 1, padding: "8px", background: "var(--btn-primary-bg)", color: "var(--btn-primary-text)", border: "none", borderRadius: 6, cursor: "pointer", fontWeight: 500 }}>+ Add File</button>
-              <button onClick={() => setShowFileManager(false)} style={{ padding: "8px 16px", background: "var(--bg-hover)", border: "none", borderRadius: 6, cursor: "pointer", color: "var(--text-secondary)" }}>Close</button>
+              <button
+                onClick={() => {
+                  setShowFileManager(false);
+                  setShowPopup(true);
+                }}
+                style={{
+                  flex: 1,
+                  padding: "8px",
+                  background: "var(--btn-primary-bg)",
+                  color: "var(--btn-primary-text)",
+                  border: "none",
+                  borderRadius: 6,
+                  cursor: "pointer",
+                  fontWeight: 500,
+                }}
+              >
+                + Add File
+              </button>
+              <button
+                onClick={() => setShowFileManager(false)}
+                style={{
+                  padding: "8px 16px",
+                  background: "var(--bg-hover)",
+                  border: "none",
+                  borderRadius: 6,
+                  cursor: "pointer",
+                  color: "var(--text-secondary)",
+                }}
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>
