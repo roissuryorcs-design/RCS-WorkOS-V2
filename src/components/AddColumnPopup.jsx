@@ -17,6 +17,7 @@ export default function AddColumnPopup({ onAdd, onClose }) {
 
   const handleAdd = () => {
     if (!name.trim()) return;
+    console.log("✅ Adding column:", name.trim(), "type:", type); // debug
     onAdd(name.trim(), type);
     setName("");
     setType("text");
