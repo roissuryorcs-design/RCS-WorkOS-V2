@@ -7,6 +7,7 @@ import Toolbar from "./components/Toolbar";
 import BoardTable from "./components/BoardTable";
 import StatusManager from "./components/StatusManager";
 import ColumnManager from "./components/ColumnManager";
+import AddColumnPopup from "./components/AddColumnPopup"; // ← import file baru
 import "./App.css";
 
 function AppContent() {
@@ -18,7 +19,8 @@ function AppContent() {
   const [showStatusManager, setShowStatusManager] = useState(false);
   const [showColumnManager, setShowColumnManager] = useState(false);
   const [groupColors, setGroupColors] = useState({});
-  const [activeStatusColumnId, setActiveStatusColumnId] = useState(null); // ← BARU
+  const [activeStatusColumnId, setActiveStatusColumnId] = useState(null);
+  const [showAddColumnPopup, setShowAddColumnPopup] = useState(false); // ← BARU
 
   // Ambil fungsi dari context kolom
   const { columns, addColumn, renameColumn, toggleColumn, deleteColumn, resetColumns, updateColumnStatuses, updateColumnStatusOrder } = useColumns();
@@ -226,11 +228,18 @@ function AppContent() {
   };
 
   // ============================================================
-  // FUNGSI UNTUK MEMBUKA STATUS MANAGER PER KOLOM (BARU)
+  // FUNGSI UNTUK MEMBUKA STATUS MANAGER PER KOLOM
   // ============================================================
   const openStatusManager = (columnId) => {
     setActiveStatusColumnId(columnId);
     setShowStatusManager(true);
+  };
+
+  // ============================================================
+  // FUNGSI UNTUK MENAMBAH KOLOM (dari popup)
+  // ============================================================
+  const handleAddColumn = (name, type) => {
+    addColumn(name, type);
   };
 
   // ----- FAVORITES -----
@@ -307,8 +316,9 @@ function AppContent() {
           onAddGroup={addGroup}
           onDeleteGroup={deleteGroup}
           onAddItem={addItem}
-          onOpenStatusManager={openStatusManager} // ← KIRIM FUNGSI INI
+          onOpenStatusManager={openStatusManager}
           onRenameGroup={renameGroup}
+          onOpenAddColumn={() => setShowAddColumnPopup(true)} // ← KIRIM
         />
 
         <div className="board-footer">
@@ -345,6 +355,13 @@ function AppContent() {
           onRenameColumn={renameColumn}
           onResetColumns={resetColumns}
           onClose={() => setShowColumnManager(false)}
+        />
+      )}
+
+      {showAddColumnPopup && (
+        <AddColumnPopup
+          onAdd={handleAddColumn}
+          onClose={() => setShowAddColumnPopup(false)}
         />
       )}
     </div>
