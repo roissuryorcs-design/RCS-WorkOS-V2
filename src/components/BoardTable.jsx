@@ -16,6 +16,7 @@ export default function BoardTable({
   onAddItem,
   onOpenStatusManager,
   onRenameGroup,
+  onOpenAddColumn,
 }) {
   const {
     updateColumnWidth,
@@ -326,30 +327,28 @@ export default function BoardTable({
                             letterSpacing: "0.3px",
                           }}
                         >
-                          <th
-                            style={{
-                              padding: "8px 8px",
-                              width: "36px",
-                              minWidth: "36px",
-                              maxWidth: "36px",
-                              borderRight: "2px solid var(--border-color)",
-                              textAlign: "center",
-                              position: "sticky",
-                              left: 0,
-                              zIndex: 20,
-                              background: "var(--bg-secondary)",
-                            }}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={
-                                tasks.length > 0 &&
-                                tasks.every((t) => selectedItems.includes(t.id))
-                              }
-                              onChange={() => selectAllInGroup(groupName, tasks)}
-                              style={{ cursor: "pointer", width: 16, height: 16 }}
-                            />
-                          </th>
+                           <th
+    style={{
+      padding: "8px 8px",
+      width: "50px",
+      minWidth: "50px",
+      maxWidth: "50px",
+      borderRight: "none",
+      borderLeft: "2px solid var(--border-color)",
+      textAlign: "center",
+      cursor: "pointer",
+      color: "var(--text-muted)",
+    }}
+    onClick={onOpenAddColumn} // ← buka AddColumnPopup
+    onMouseEnter={(e) =>
+      (e.currentTarget.style.background = "var(--bg-hover)")
+    }
+    onMouseLeave={(e) =>
+      (e.currentTarget.style.background = "transparent")
+    }
+  >
+    <span style={{ fontSize: 18, fontWeight: 300 }}>+</span>
+  </th>
 
                           {safeColumns.map((col, idx) => {
                             const isStatus = col.type === "status";
