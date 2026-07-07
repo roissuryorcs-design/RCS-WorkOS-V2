@@ -22,6 +22,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
   const hoverTimeoutRef = useRef(null);
   const fileListRef = useRef(null);
   const previewTimeoutRef = useRef(null);
+  const listPreviewTimeoutRef = useRef(null);
 
   const saveFiles = (newFiles) => {
     setFiles(newFiles);
@@ -175,10 +176,10 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
   };
 
   // ============================================================
-  // HOVER THUMBNAIL INDIVIDUAL – DENGAN DELAY 1 DETIK
+  // HOVER THUMBNAIL INDIVIDUAL – DELAY 3 DETIK
   // ============================================================
   const handleThumbnailHover = (e, index) => {
-    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    if (previewTimeoutRef.current) clearTimeout(previewTimeoutRef.current);
     const rect = e.currentTarget.getBoundingClientRect();
     let left = rect.right + 8;
     let top = rect.top;
@@ -196,33 +197,33 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
   };
 
   const handleThumbnailLeave = () => {
-    hoverTimeoutRef.current = setTimeout(() => {
+    previewTimeoutRef.current = setTimeout(() => {
       setHoveredFileIndex(null);
-    }, 1000); // ← DELAY 1 DETIK
+    }, 3000); // ← 3 DETIK
   };
 
   const handlePreviewMouseEnter = () => {
-    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    if (previewTimeoutRef.current) clearTimeout(previewTimeoutRef.current);
   };
 
   const handlePreviewMouseLeave = () => {
-    setTimeout(() => {
+    previewTimeoutRef.current = setTimeout(() => {
       setHoveredFileIndex(null);
-    }, 200);
+    }, 3000); // ← 3 DETIK
   };
 
   // ============================================================
-  // PREVIEW DI DALAM DAFTAR FILE (saat hover di list) – DELAY 1 DETIK
+  // PREVIEW DI DALAM DAFTAR FILE – DELAY 3 DETIK
   // ============================================================
   const handleListHover = (index) => {
-    if (previewTimeoutRef.current) clearTimeout(previewTimeoutRef.current);
+    if (listPreviewTimeoutRef.current) clearTimeout(listPreviewTimeoutRef.current);
     setHoveredFileIndex(index);
   };
 
   const handleListLeave = () => {
-    previewTimeoutRef.current = setTimeout(() => {
+    listPreviewTimeoutRef.current = setTimeout(() => {
       setHoveredFileIndex(null);
-    }, 1000); // ← DELAY 1 DETIK
+    }, 3000); // ← 3 DETIK
   };
 
   const openFileManager = () => {
@@ -303,7 +304,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
                   )}
                 </div>
 
-                {/* Hover preview per thumbnail – dengan delay 1 detik */}
+                {/* Hover preview per thumbnail */}
                 {hoveredFileIndex === index && (
                   <div
                     onMouseEnter={handlePreviewMouseEnter}
@@ -424,7 +425,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
         )}
       </div>
 
-      {/* Popup daftar file (hover pada +N) – dengan preview delay 1 detik */}
+      {/* Popup daftar file (hover pada +N) – dengan preview 3 detik */}
       {showFileList && files.length > visibleThumbnails && (
         <div
           ref={fileListRef}
@@ -562,7 +563,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
                 </div>
               )}
 
-              {/* PREVIEW SAAT HOVER DI LIST – delay 1 detik */}
+              {/* PREVIEW SAAT HOVER DI LIST – delay 3 detik */}
               {hoveredFileIndex === index && isImage(file.url) && (
                 <div
                   style={{
