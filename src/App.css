@@ -230,6 +230,45 @@ body.dark ::-webkit-scrollbar-thumb:hover {
 }
 
 /* ============================================================
+   DATE INPUT – IKON KALENDER TERLIHAT DI DARK & LIGHT MODE
+   ============================================================ */
+
+/* Warna ikon kalender di light mode (default) */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0);
+  opacity: 0.6;
+  cursor: pointer;
+}
+
+/* Dark mode – balik warna ikon menjadi putih */
+body.dark input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  opacity: 0.8;
+}
+
+/* Fallback untuk Firefox */
+input[type="date"] {
+  color-scheme: light dark;
+}
+
+/* Atur background input date agar kontras dengan teks */
+input[type="date"] {
+  background: var(--bg-input);
+  color: var(--text-primary);
+  border: 1px solid var(--border-dark);
+  border-radius: 4px;
+  padding: 4px 8px;
+}
+
+/* Untuk memastikan ikon kalender di Firefox */
+input[type="date"]::-moz-calendar-picker-indicator {
+  filter: invert(0);
+}
+body.dark input[type="date"]::-moz-calendar-picker-indicator {
+  filter: invert(1);
+}
+
+/* ============================================================
    RESPONSIVE
    ============================================================ */
 @media (max-width: 768px) {
