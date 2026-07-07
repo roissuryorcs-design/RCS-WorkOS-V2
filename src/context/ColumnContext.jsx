@@ -89,17 +89,17 @@ export function ColumnProvider({ children }) {
     setColumns((prev) => prev.filter((col) => col.id !== id));
   };
 
-  const toggleColumn = (id) => {
-    if (id === "item") {
-      console.warn("Cannot hide ITEM column");
-      return;
-    }
-    setColumns((prev) =>
-      prev.map((col) =>
-        col.id === id ? { ...col, visible: !col.visible } : col
-      )
-    );
-  };
+const toggleColumn = (id) => {
+  if (id === "item") {
+    console.warn("Cannot toggle ITEM column");
+    return;
+  }
+  setColumns((prev) =>
+    prev.map((col) =>
+      col.id === id ? { ...col, visible: !col.visible } : col
+    )
+  );
+};
 
   const renameColumn = (id, newLabel) => {
     if (!newLabel || !newLabel.trim()) return;
