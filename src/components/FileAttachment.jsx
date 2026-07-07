@@ -127,7 +127,6 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
 
     return (
       <div style={{ padding: 8, minWidth: 160, maxWidth: 220 }}>
-        {/* Preview area */}
         <div style={{ marginBottom: 6, borderRadius: 4, overflow: "hidden", background: "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center", minHeight: 80 }}>
           {isImg ? (
             <img
@@ -203,7 +202,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
       const containerWidth = containerRef.current.offsetWidth;
       const thumbnailSize = 32;
       const gap = 4;
-      const badgeSize = 32;
+      const badgeSize = 16; // sesuaikan dengan ukuran badge baru
       const maxFit = Math.floor((containerWidth - badgeSize - gap) / (thumbnailSize + gap));
       let count = Math.max(1, Math.min(maxFit, files.length > 1 ? files.length - 1 : files.length));
       if (files.length <= 1) count = 1;
@@ -319,7 +318,6 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
 
   return (
     <div ref={containerRef} style={{ position: "relative", width: "100%", overflow: "hidden" }}>
-      {/* Area utama */}
       <div
         onClick={openFileManager}
         style={{
@@ -381,7 +379,6 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
                   )}
                 </div>
 
-                {/* Preview dari thumbnail – HANYA jika popup daftar TIDAK terbuka */}
                 {hoveredFileIndex === index && !showFileList && (
                   <div
                     onMouseEnter={handlePreviewMouseEnter}
@@ -414,7 +411,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
               </div>
             ))}
 
-            {/* Badge +N */}
+            {/* Badge +N – LEBIH KECIL */}
             {showBadge && (
               <div
                 style={{
@@ -427,18 +424,19 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
               >
                 <div
                   style={{
-                    width: 28,
-                    height: 28,
-                    borderRadius: 4,
+                    width: 14,
+                    height: 14,
+                    borderRadius: 3,
                     background: "var(--btn-primary-bg)",
                     border: "1px solid var(--btn-primary-bg)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    fontSize: 11,
-                    fontWeight: 600,
+                    fontSize: 8,
+                    fontWeight: 700,
                     color: "white",
                     cursor: "pointer",
+                    lineHeight: "14px",
                   }}
                 >
                   +{files.length - visibleThumbnails}
@@ -589,7 +587,6 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
                 </div>
               )}
 
-              {/* PREVIEW DI DALAM LIST +N */}
               {hoveredFileIndex === index && (
                 <div
                   onMouseEnter={handlePreviewMouseEnter}
@@ -626,7 +623,6 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
 
       {/* Popup Add File (modal) */}
       {showPopup && (
-        // ... (sama seperti sebelumnya)
         <div
           style={{
             position: "fixed",
