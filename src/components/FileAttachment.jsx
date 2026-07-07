@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
 export default function FileAttachment({ value, onUpdate, columnId }) {
   const [files, setFiles] = useState(() => {
@@ -13,8 +13,9 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
   const [uploading, setUploading] = useState(false);
   const [linkInput, setLinkInput] = useState("");
   const [hoveredFile, setHoveredFile] = useState(null);
+  const [hoverTimeout, setHoverTimeout] = useState(null);
   const fileInputRef = useRef(null);
-  const fileManagerInputRef = useRef(null);
+  const popupRef = useRef(null);
 
   const saveFiles = (newFiles) => {
     setFiles(newFiles);
@@ -105,6 +106,30 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
     return url && url.match(/\.(jpeg|jpg|gif|png|webp)$/i);
   };
 
+  // Handler hover dengan delay
+  const handleMouseEnter = (index) => {
+    if (hoverTimeout) clearTimeout(hoverTimeout);
+    setHoveredFile(index);
+  };
+
+  const handleMouseLeave = () => {
+    const timeout = setTimeout(() => {
+      setHoveredFile(null);
+    }, 300); // delay 300ms agar popup tidak langsung hilang
+    setHoverTimeout(timeout);
+  };
+
+  const handlePopupMouseEnter = () => {
+    if (hoverTimeout) clearTimeout(hoverTimeout);
+  };
+
+  const handlePopupMouseLeave = () => {
+    const timeout = setTimeout(() => {
+      setHoveredFile(null);
+    }, 200);
+    setHoverTimeout(timeout);
+  };
+
   const openFileManager = () => {
     if (files.length > 0) {
       setShowFileManager(true);
@@ -112,6 +137,9 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
       setShowPopup(true);
     }
   };
+
+  const isPdf = (url) => url && url.toLowerCase().includes(".pdf");
+  const isVideo = (url) => url && url.match(/\.(mp4|webm|mov|avi)$/i);
 
   return (
     <div style={{ position: "relative", width: "100%" }}>
@@ -143,9 +171,9 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
           files.map((file, index) => (
             <div
               key={index}
-              style={{ position: "relative" }}
-              onMouseEnter={() => setHoveredFile(index)}
-              onMouseLeave={() => setHoveredFile(null)}
+              style={{ position: "relative", display: "inline-block" }}
+              onMouseEnter={() => handleMouseEnter(index)}
+              onMouseLeave={handleMouseLeave}
             >
               <div
                 style={{
@@ -172,6 +200,10 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
                     alt={file.name}
                     style={{ width: "100%", height: "100%", objectFit: "cover" }}
                   />
+                ) : isPdf(file.url) ? (
+                  <span style={{ fontSize: 18 }}>📄</span>
+                ) : isVideo(file.url) ? (
+                  <span style={{ fontSize: 18 }}>🎬</span>
                 ) : (
                   <span style={{ fontSize: 18 }}>📎</span>
                 )}
@@ -197,28 +229,62 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
                 )}
               </div>
 
-              {/* Hover popup – dengan z-index tinggi */}
+              {/* Hover popup – di dekat thumbnail */}
               {hoveredFile === index && (
                 <div
+                  ref={popupRef}
+                  onMouseEnter={handlePopupMouseEnter}
+                  onMouseLeave={handlePopupMouseLeave}
                   style={{
-                    position: "fixed",
-                    bottom: "auto",
-                    top: "50%",
+                    position: "absolute",
+                    top: "calc(100% + 8px)",
                     left: "50%",
-                    transform: "translate(-50%, -50%)",
+                    transform: "translateX(-50%)",
                     background: "#ffffff",
                     border: "1px solid #d1d5db",
                     borderRadius: 8,
-                    boxShadow: "0 8px 24px rgba(0,0,0,0.3)",
-                    padding: 16,
+                    boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
+                    padding: 12,
                     minWidth: 220,
+                    maxWidth: 320,
                     zIndex: 99999,
                     pointerEvents: "auto",
                     color: "#1a1a2e",
                   }}
-                  onClick={(e) => e.stopPropagation()}
                 >
-                  <div style={{ fontSize: 14, fontWeight: 600, color: "#1a1a2e" }}>
+                  {/* Preview file (lebih besar) */}
+                  {isImage(file.url) && (
+                    <div style={{ marginBottom: 8, borderRadius: 4, overflow: "hidden" }}>
+                      <img
+                        src={file.url}
+                        alt={file.name}
+                        style={{ width: "100%", maxHeight: 150, objectFit: "cover" }}
+                      />
+                    </div>
+                  )}
+                  {isVideo(file.url) && (
+                    <div style={{ marginBottom: 8, borderRadius: 4, overflow: "hidden", background: "#000" }}>
+                      <video
+                        src={file.url}
+                        controls
+                        style={{ width: "100%", maxHeight: 150 }}
+                      />
+                    </div>
+                  )}
+                  {isPdf(file.url) && (
+                    <div style={{ marginBottom: 8, padding: 8, background: "#f3f4f6", borderRadius: 4, textAlign: "center" }}>
+                      <span style={{ fontSize: 32 }}>📄</span>
+                      <div style={{ fontSize: 12, color: "#6b7280" }}>PDF Document</div>
+                    </div>
+                  )}
+                  {!isImage(file.url) && !isVideo(file.url) && !isPdf(file.url) && file.isLink && (
+                    <div style={{ marginBottom: 8, padding: 8, background: "#f3f4f6", borderRadius: 4, textAlign: "center" }}>
+                      <span style={{ fontSize: 32 }}>🔗</span>
+                      <div style={{ fontSize: 12, color: "#6b7280" }}>Link</div>
+                    </div>
+                  )}
+
+                  <div style={{ fontSize: 14, fontWeight: 600, color: "#1a1a2e", wordBreak: "break-all" }}>
                     {file.name || "Untitled"}
                   </div>
                   {file.size && (
@@ -271,7 +337,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
         )}
       </div>
 
-      {/* Popup Add File (modal kecil) */}
+      {/* Popup Add File */}
       {showPopup && (
         <div
           style={{
@@ -399,7 +465,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
         </div>
       )}
 
-      {/* File Manager Modal (daftar file lengkap) */}
+      {/* File Manager Modal */}
       {showFileManager && (
         <div
           style={{
