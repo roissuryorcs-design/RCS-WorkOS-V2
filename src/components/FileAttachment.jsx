@@ -118,7 +118,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
   const isPdf = (url) => url && url.toLowerCase().includes(".pdf");
 
   // ============================================================
-  // PREVIEW COMPONENT – dengan wrap nama file
+  // PREVIEW COMPONENT
   // ============================================================
   const PreviewContent = ({ file, onDownload, onDelete }) => {
     const isImg = isImage(file.url);
@@ -142,7 +142,6 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
           )}
         </div>
 
-        {/* Nama file – WRAP */}
         <div style={{ 
           fontSize: 13, 
           fontWeight: 500, 
@@ -158,12 +157,10 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
           {file.name || "Untitled"}
         </div>
 
-        {/* Ukuran & tipe */}
         <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 6 }}>
           {file.size ? formatSize(file.size) : ""} {file.isLink ? "🔗 Link" : isPdfFile ? "PDF" : ""}
         </div>
 
-        {/* Tombol aksi */}
         <div style={{ display: "flex", gap: 6 }}>
           <button
             onClick={onDownload}
@@ -384,8 +381,8 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
                   )}
                 </div>
 
-                {/* Preview dari thumbnail */}
-                {hoveredFileIndex === index && (
+                {/* Preview dari thumbnail – HANYA jika popup daftar TIDAK terbuka */}
+                {hoveredFileIndex === index && !showFileList && (
                   <div
                     onMouseEnter={handlePreviewMouseEnter}
                     onMouseLeave={handlePreviewMouseLeave}
@@ -629,6 +626,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
 
       {/* Popup Add File (modal) */}
       {showPopup && (
+        // ... (sama seperti sebelumnya)
         <div
           style={{
             position: "fixed",
