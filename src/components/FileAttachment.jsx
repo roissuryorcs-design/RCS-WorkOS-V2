@@ -17,7 +17,6 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
   const saveFiles = (newFiles) => {
     setFiles(newFiles);
     onUpdate(columnId, JSON.stringify(newFiles));
-    console.log("✅ Files saved:", newFiles);
   };
 
   const uploadFile = async (file) => {
@@ -47,7 +46,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
           uploadedAt: new Date().toISOString(),
         };
         saveFiles([...files, newFile]);
-        setShowPopup(false); // tutup popup setelah upload
+        setShowPopup(false);
       }
     } catch (error) {
       console.error("Upload failed:", error);
@@ -93,17 +92,11 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
     return url && url.match(/\.(jpeg|jpg|gif|png|webp)$/i);
   };
 
-  // Handler untuk toggle popup
-  const handleContainerClick = () => {
-    console.log("🔵 Container clicked, toggling popup");
-    setShowPopup(true);
-  };
-
   return (
     <div style={{ position: "relative", width: "100%" }}>
-      {/* Area utama – bisa diklik */}
+      {/* Area utama */}
       <div
-        onClick={handleContainerClick}
+        onClick={() => setShowPopup(true)}
         style={{
           display: "flex",
           flexWrap: "wrap",
@@ -133,7 +126,6 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
               onMouseEnter={() => setHoveredFile(index)}
               onMouseLeave={() => setHoveredFile(null)}
             >
-              {/* Thumbnail */}
               <div
                 style={{
                   width: 36,
@@ -183,8 +175,6 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
                   </div>
                 )}
               </div>
-
-              {/* Hover popup */}
               {hoveredFile === index && (
                 <div
                   style={{
@@ -238,62 +228,58 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
         )}
       </div>
 
-      {/* Popup untuk upload/link */}
+      {/* Modal popup – sentral */}
       {showPopup && (
-        <>
-          {/* Overlay untuk menutup popup saat klik di luar */}
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0,0,0,0.4)",
+            zIndex: 1000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            backdropFilter: "blur(2px)",
+          }}
+          onClick={() => setShowPopup(false)}
+        >
           <div
             style={{
-              position: "fixed",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              zIndex: 999,
-            }}
-            onClick={() => {
-              console.log("🔴 Overlay clicked, closing popup");
-              setShowPopup(false);
-            }}
-          />
-          <div
-            style={{
-              position: "absolute",
-              top: "calc(100% + 4px)",
-              left: 0,
-              marginTop: 4,
               background: "var(--bg-modal)",
+              borderRadius: 12,
+              padding: 24,
+              maxWidth: 400,
+              width: "100%",
+              color: "var(--text-primary)",
+              boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
               border: "1px solid var(--border-color)",
-              borderRadius: 8,
-              boxShadow: "0 8px 30px rgba(0,0,0,0.2)",
-              zIndex: 1000,
-              padding: 16,
-              minWidth: 280,
-              maxWidth: 300,
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 12, color: "var(--text-primary)" }}>
+            <h3 style={{ marginBottom: 16, fontSize: 18, fontWeight: 600 }}>
               Add File or Link
-            </h4>
+            </h3>
 
             {/* Upload file */}
             <div
               onClick={() => fileInputRef.current?.click()}
               style={{
-                padding: "12px",
+                padding: "16px",
                 border: "1px dashed var(--border-color)",
-                borderRadius: 6,
+                borderRadius: 8,
                 textAlign: "center",
                 cursor: "pointer",
-                marginBottom: 12,
+                marginBottom: 16,
                 transition: "background 0.15s",
               }}
               onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-hover)")}
               onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
             >
-              <div style={{ fontSize: 24 }}>📁</div>
-              <div style={{ fontSize: 13, color: "var(--text-secondary)" }}>
+              <div style={{ fontSize: 32 }}>📁</div>
+              <div style={{ fontSize: 14, color: "var(--text-secondary)", marginTop: 4 }}>
                 {uploading ? "Uploading..." : "Click to upload file"}
               </div>
               <input
@@ -305,25 +291,25 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
               />
             </div>
 
-            {/* Or separator */}
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+            {/* Separator */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
               <div style={{ flex: 1, height: 1, background: "var(--border-color)" }} />
-              <span style={{ fontSize: 11, color: "var(--text-muted)" }}>or</span>
+              <span style={{ fontSize: 12, color: "var(--text-muted)" }}>or</span>
               <div style={{ flex: 1, height: 1, background: "var(--border-color)" }} />
             </div>
 
             {/* Paste link */}
-            <div style={{ display: "flex", gap: 8 }}>
+            <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
               <input
                 value={linkInput}
                 onChange={(e) => setLinkInput(e.target.value)}
                 placeholder="Paste image or file link..."
                 style={{
                   flex: 1,
-                  padding: "6px 10px",
+                  padding: "8px 12px",
                   border: "1px solid var(--border-dark)",
-                  borderRadius: 4,
-                  fontSize: 13,
+                  borderRadius: 6,
+                  fontSize: 14,
                   background: "var(--bg-input)",
                   color: "var(--text-primary)",
                   outline: "none",
@@ -336,14 +322,15 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
                 onClick={handleLinkAdd}
                 disabled={!linkInput.trim()}
                 style={{
-                  padding: "6px 12px",
+                  padding: "8px 16px",
                   background: "var(--btn-primary-bg)",
                   color: "var(--btn-primary-text)",
                   border: "none",
-                  borderRadius: 4,
+                  borderRadius: 6,
                   cursor: linkInput.trim() ? "pointer" : "not-allowed",
                   opacity: linkInput.trim() ? 1 : 0.5,
-                  fontSize: 13,
+                  fontSize: 14,
+                  fontWeight: 500,
                 }}
               >
                 Add
@@ -353,21 +340,23 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
             <button
               onClick={() => setShowPopup(false)}
               style={{
-                marginTop: 12,
                 width: "100%",
-                padding: "6px",
+                padding: "8px",
                 background: "var(--bg-hover)",
                 border: "none",
-                borderRadius: 4,
+                borderRadius: 6,
                 cursor: "pointer",
-                fontSize: 13,
+                fontSize: 14,
                 color: "var(--text-secondary)",
+                transition: "background 0.15s",
               }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "var(--border-color)")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "var(--bg-hover)")}
             >
               Cancel
             </button>
           </div>
-        </>
+        </div>
       )}
     </div>
   );
