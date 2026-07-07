@@ -16,8 +16,8 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
   const [hoveredFileIndex, setHoveredFileIndex] = useState(null);
   const [showActionsIndex, setShowActionsIndex] = useState(null);
   const [popupPosition, setPopupPosition] = useState({ top: 0, left: 0 });
+  const containerRef = useRef(null);
   const fileInputRef = useRef(null);
-  const badgeRef = useRef(null);
   const hoverTimeoutRef = useRef(null);
   const fileListRef = useRef(null);
 
@@ -114,24 +114,21 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
   const isPdf = (url) => url && url.toLowerCase().includes(".pdf");
   const isVideo = (url) => url && url.match(/\.(mp4|webm|mov|avi)$/i);
 
-  // Handler untuk hover pada badge/thumbnail
+  // ============================================================
+  // HOVER BADGE +N
+  // ============================================================
   const handleBadgeMouseEnter = (e) => {
     if (files.length <= 1) return;
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
     
-    const rect = badgeRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    
-    // Posisi popup di sebelah kanan thumbnail
+    const rect = e.currentTarget.getBoundingClientRect();
     let left = rect.right + 8;
     let top = rect.top;
     
-    // Jika popup keluar dari viewport kanan, tampilkan di kiri
     const popupWidth = 280;
     if (left + popupWidth > window.innerWidth) {
       left = rect.left - popupWidth - 8;
     }
-    // Jika popup keluar dari viewport bawah
     if (top + 300 > window.innerHeight) {
       top = window.innerHeight - 300 - 10;
     }
@@ -159,6 +156,43 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
     }, 300);
   };
 
+  // ============================================================
+  // HOVER THUMBNAIL INDIVIDUAL
+  // ============================================================
+  const handleThumbnailHover = (e, index) => {
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    const rect = e.currentTarget.getBoundingClientRect();
+    let left = rect.right + 8;
+    let top = rect.top;
+    
+    const popupWidth = 220;
+    if (left + popupWidth > window.innerWidth) {
+      left = rect.left - popupWidth - 8;
+    }
+    if (top + 200 > window.innerHeight) {
+      top = window.innerHeight - 200 - 10;
+    }
+    
+    setPopupPosition({ top, left });
+    setHoveredFileIndex(index);
+  };
+
+  const handleThumbnailLeave = () => {
+    hoverTimeoutRef.current = setTimeout(() => {
+      setHoveredFileIndex(null);
+    }, 300);
+  };
+
+  const handlePreviewMouseEnter = () => {
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+  };
+
+  const handlePreviewMouseLeave = () => {
+    hoverTimeoutRef.current = setTimeout(() => {
+      setHoveredFileIndex(null);
+    }, 200);
+  };
+
   const openFileManager = () => {
     if (files.length > 0) {
       setShowFileManager(true);
@@ -167,25 +201,24 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
     }
   };
 
-  const truncateName = (name, maxLength = 25) => {
-    if (name.length <= maxLength) return name;
-    return name.substring(0, maxLength) + "...";
-  };
+  // ============================================================
+  // RENDER
+  // ============================================================
+  const maxThumbnails = 4; // jumlah thumbnail maksimal sebelum muncul +N
 
   return (
-    <div style={{ position: "relative", width: "100%" }}>
-      {/* Area utama */}
+    <div ref={containerRef} style={{ position: "relative", width: "100%" }}>
       <div
         onClick={openFileManager}
         style={{
           display: "flex",
           flexWrap: "wrap",
-          gap: 6,
+          gap: 4,
           minHeight: 32,
           alignItems: "center",
           border: files.length === 0 ? "1px dashed var(--border-color)" : "none",
           borderRadius: 4,
-          padding: files.length === 0 ? "8px" : "0",
+          padding: files.length === 0 ? "6px 8px" : "2px 0",
           cursor: "pointer",
           transition: "background 0.15s",
         }}
@@ -194,79 +227,18 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
           <span style={{ color: "var(--text-muted)", fontSize: 12 }}>+ Add file or link</span>
         ) : (
           <>
-            {/* Thumbnail pertama dengan badge */}
-            <div
-              ref={badgeRef}
-              style={{ position: "relative", display: "inline-block" }}
-              onMouseEnter={handleBadgeMouseEnter}
-              onMouseLeave={handleBadgeMouseLeave}
-            >
+            {/* Tampilkan maksimal maxThumbnails thumbnail */}
+            {files.slice(0, maxThumbnails).map((file, index) => (
               <div
-                style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 4,
-                  border: "1px solid var(--border-color)",
-                  overflow: "hidden",
-                  background: "var(--bg-secondary)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  cursor: "pointer",
-                }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  window.open(files[0].url, "_blank");
-                }}
-              >
-                {isImage(files[0].url) ? (
-                  <img
-                    src={files[0].url}
-                    alt={files[0].name}
-                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                  />
-                ) : isPdf(files[0].url) ? (
-                  <span style={{ fontSize: 18 }}>📄</span>
-                ) : isVideo(files[0].url) ? (
-                  <span style={{ fontSize: 18 }}>🎬</span>
-                ) : (
-                  <span style={{ fontSize: 18 }}>📎</span>
-                )}
-              </div>
-              {files.length > 1 && (
-                <div
-                  style={{
-                    position: "absolute",
-                    bottom: -4,
-                    right: -4,
-                    background: "var(--btn-primary-bg)",
-                    color: "white",
-                    borderRadius: 10,
-                    padding: "0 6px",
-                    fontSize: 10,
-                    fontWeight: 600,
-                    lineHeight: "18px",
-                    minWidth: 18,
-                    textAlign: "center",
-                    boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
-                    pointerEvents: "none",
-                  }}
-                >
-                  +{files.length - 1}
-                </div>
-              )}
-            </div>
-
-            {/* Thumbnail lainnya (tanpa badge) */}
-            {files.slice(1, 4).map((file, idx) => (
-              <div
-                key={idx}
-                style={{ display: "inline-block" }}
+                key={index}
+                style={{ position: "relative", display: "inline-block", flexShrink: 0 }}
+                onMouseEnter={(e) => handleThumbnailHover(e, index)}
+                onMouseLeave={handleThumbnailLeave}
               >
                 <div
                   style={{
-                    width: 36,
-                    height: 36,
+                    width: 28,
+                    height: 28,
                     borderRadius: 4,
                     border: "1px solid var(--border-color)",
                     overflow: "hidden",
@@ -275,6 +247,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
                     alignItems: "center",
                     justifyContent: "center",
                     cursor: "pointer",
+                    flexShrink: 0,
                   }}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -288,21 +261,139 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
                       style={{ width: "100%", height: "100%", objectFit: "cover" }}
                     />
                   ) : isPdf(file.url) ? (
-                    <span style={{ fontSize: 18 }}>📄</span>
+                    <span style={{ fontSize: 14 }}>📄</span>
                   ) : isVideo(file.url) ? (
-                    <span style={{ fontSize: 18 }}>🎬</span>
+                    <span style={{ fontSize: 14 }}>🎬</span>
+                  ) : file.isLink ? (
+                    <span style={{ fontSize: 14 }}>🔗</span>
                   ) : (
-                    <span style={{ fontSize: 18 }}>📎</span>
+                    <span style={{ fontSize: 14 }}>📎</span>
                   )}
                 </div>
+
+                {/* Hover preview per file */}
+                {hoveredFileIndex === index && (
+                  <div
+                    onMouseEnter={handlePreviewMouseEnter}
+                    onMouseLeave={handlePreviewMouseLeave}
+                    style={{
+                      position: "fixed",
+                      top: popupPosition.top,
+                      left: popupPosition.left,
+                      background: "#ffffff",
+                      border: "1px solid #d1d5db",
+                      borderRadius: 8,
+                      boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
+                      padding: 8,
+                      minWidth: 160,
+                      maxWidth: 220,
+                      zIndex: 99999,
+                      pointerEvents: "auto",
+                    }}
+                  >
+                    {isImage(file.url) && (
+                      <div style={{ marginBottom: 4, borderRadius: 4, overflow: "hidden" }}>
+                        <img
+                          src={file.url}
+                          alt={file.name}
+                          style={{ width: "100%", maxHeight: 100, objectFit: "contain" }}
+                        />
+                      </div>
+                    )}
+                    {isVideo(file.url) && (
+                      <div style={{ marginBottom: 4, borderRadius: 4, overflow: "hidden", background: "#000" }}>
+                        <video src={file.url} controls style={{ width: "100%", maxHeight: 100 }} />
+                      </div>
+                    )}
+                    <div style={{ fontSize: 13, fontWeight: 500, color: "#1a1a2e", wordBreak: "break-all" }}>
+                      {file.name || "Untitled"}
+                    </div>
+                    {file.size && (
+                      <div style={{ fontSize: 11, color: "#6b7280", marginTop: 2 }}>
+                        {formatSize(file.size)}
+                      </div>
+                    )}
+                    <div style={{ fontSize: 11, color: "#6b7280", marginTop: 2 }}>
+                      {file.isLink ? "🔗 Link" : "📎 File"}
+                    </div>
+                    <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
+                      <button
+                        onClick={() => {
+                          downloadFile(file.url, file.name);
+                          setHoveredFileIndex(null);
+                        }}
+                        style={{
+                          padding: "2px 10px",
+                          background: "var(--btn-primary-bg)",
+                          color: "white",
+                          border: "none",
+                          borderRadius: 4,
+                          cursor: "pointer",
+                          fontSize: 11,
+                        }}
+                      >
+                        Download
+                      </button>
+                      <button
+                        onClick={() => {
+                          removeFile(index);
+                          setHoveredFileIndex(null);
+                        }}
+                        style={{
+                          padding: "2px 10px",
+                          background: "#ef4444",
+                          color: "white",
+                          border: "none",
+                          borderRadius: 4,
+                          cursor: "pointer",
+                          fontSize: 11,
+                        }}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
+
+            {/* Badge +N di paling akhir */}
+            {files.length > maxThumbnails && (
+              <div
+                style={{
+                  display: "inline-block",
+                  flexShrink: 0,
+                  marginLeft: 2,
+                }}
+                onMouseEnter={handleBadgeMouseEnter}
+                onMouseLeave={handleBadgeMouseLeave}
+              >
+                <div
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: 4,
+                    background: "var(--bg-hover)",
+                    border: "1px solid var(--border-color)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: "var(--text-secondary)",
+                    cursor: "pointer",
+                  }}
+                >
+                  +{files.length - maxThumbnails}
+                </div>
+              </div>
+            )}
           </>
         )}
       </div>
 
-      {/* Popup daftar file (sebelah kanan) */}
-      {showFileList && files.length > 1 && (
+      {/* Popup daftar file (hover pada +N) */}
+      {showFileList && files.length > maxThumbnails && (
         <div
           ref={fileListRef}
           onMouseEnter={handleFileListMouseEnter}
@@ -316,10 +407,10 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
             borderRadius: 8,
             boxShadow: "0 8px 30px rgba(0,0,0,0.2)",
             padding: "0",
-            minWidth: 250,
-            maxWidth: 300,
+            minWidth: 220,
+            maxWidth: 280,
             zIndex: 99999,
-            maxHeight: 350,
+            maxHeight: 320,
             overflowY: "auto",
             pointerEvents: "auto",
           }}
@@ -334,7 +425,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
                 display: "flex",
                 alignItems: "center",
                 gap: 8,
-                padding: "6px 12px",
+                padding: "6px 10px",
                 borderBottom: index === files.length - 1 ? "none" : "1px solid #f3f4f6",
                 position: "relative",
                 background: hoveredFileIndex === index ? "#f3f4f6" : "transparent",
@@ -342,11 +433,10 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
               onMouseEnter={() => setHoveredFileIndex(index)}
               onMouseLeave={() => setHoveredFileIndex(null)}
             >
-              {/* Thumbnail mini */}
               <div
                 style={{
-                  width: 32,
-                  height: 32,
+                  width: 28,
+                  height: 28,
                   borderRadius: 4,
                   overflow: "hidden",
                   background: "#f3f4f6",
@@ -363,10 +453,9 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
                     style={{ width: "100%", height: "100%", objectFit: "cover" }}
                   />
                 ) : (
-                  <span style={{ fontSize: 16 }}>📎</span>
+                  <span style={{ fontSize: 14 }}>📎</span>
                 )}
               </div>
-              {/* Nama file */}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div
                   style={{
@@ -385,7 +474,6 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
                   {file.size ? formatSize(file.size) : ""}
                 </div>
               </div>
-              {/* Tombol ⋮ */}
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -403,7 +491,6 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
                 ⋮
               </button>
 
-              {/* Popup aksi */}
               {showActionsIndex === index && (
                 <div
                   style={{
@@ -416,97 +503,29 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
                     borderRadius: 6,
                     boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
                     zIndex: 100000,
-                    minWidth: 150,
+                    minWidth: 140,
                     padding: "4px 0",
                   }}
                   onClick={(e) => e.stopPropagation()}
                 >
                   <button
-                    onClick={() => {
-                      window.open(file.url, "_blank");
-                      setShowActionsIndex(null);
-                    }}
-                    style={{
-                      display: "block",
-                      width: "100%",
-                      padding: "6px 14px",
-                      background: "none",
-                      border: "none",
-                      textAlign: "left",
-                      cursor: "pointer",
-                      fontSize: 13,
-                      color: "#1a1a2e",
-                    }}
+                    onClick={() => { window.open(file.url, "_blank"); setShowActionsIndex(null); }}
+                    style={{ display: "block", width: "100%", padding: "6px 14px", background: "none", border: "none", textAlign: "left", cursor: "pointer", fontSize: 13, color: "#1a1a2e" }}
                   >
                     Open File
                   </button>
                   <button
-                    onClick={() => {
-                      downloadFile(file.url, file.name);
-                      setShowActionsIndex(null);
-                    }}
-                    style={{
-                      display: "block",
-                      width: "100%",
-                      padding: "6px 14px",
-                      background: "none",
-                      border: "none",
-                      textAlign: "left",
-                      cursor: "pointer",
-                      fontSize: 13,
-                      color: "#1a1a2e",
-                    }}
+                    onClick={() => { downloadFile(file.url, file.name); setShowActionsIndex(null); }}
+                    style={{ display: "block", width: "100%", padding: "6px 14px", background: "none", border: "none", textAlign: "left", cursor: "pointer", fontSize: 13, color: "#1a1a2e" }}
                   >
                     Download
                   </button>
                   <button
-                    onClick={() => {
-                      if (confirm(`Delete "${file.name}"?`)) {
-                        removeFile(index);
-                      }
-                      setShowActionsIndex(null);
-                    }}
-                    style={{
-                      display: "block",
-                      width: "100%",
-                      padding: "6px 14px",
-                      background: "none",
-                      border: "none",
-                      textAlign: "left",
-                      cursor: "pointer",
-                      fontSize: 13,
-                      color: "#ef4444",
-                      borderTop: "1px solid #f3f4f6",
-                    }}
+                    onClick={() => { if (confirm(`Delete "${file.name}"?`)) { removeFile(index); } setShowActionsIndex(null); }}
+                    style={{ display: "block", width: "100%", padding: "6px 14px", background: "none", border: "none", textAlign: "left", cursor: "pointer", fontSize: 13, color: "#ef4444", borderTop: "1px solid #f3f4f6" }}
                   >
                     Delete
                   </button>
-                </div>
-              )}
-
-              {/* Tooltip preview (saat hover pada baris file) */}
-              {hoveredFileIndex === index && isImage(file.url) && (
-                <div
-                  style={{
-                    position: "fixed",
-                    left: popupPosition.left + 280,
-                    top: popupPosition.top + 40,
-                    background: "#ffffff",
-                    border: "1px solid #d1d5db",
-                    borderRadius: 8,
-                    boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
-                    padding: 4,
-                    zIndex: 100000,
-                    maxWidth: 150,
-                    maxHeight: 150,
-                    overflow: "hidden",
-                  }}
-                >
-                  <img
-                    src={file.url}
-                    alt={file.name}
-                    style={{ width: "100%", height: "100%", objectFit: "contain" }}
-                  />
                 </div>
               )}
             </div>
@@ -545,9 +564,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 style={{ marginBottom: 16, fontSize: 18, fontWeight: 600 }}>
-              Add File or Link
-            </h3>
+            <h3 style={{ marginBottom: 16, fontSize: 18, fontWeight: 600 }}>Add File or Link</h3>
 
             <div
               onClick={() => fileInputRef.current?.click()}
@@ -567,13 +584,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
               <div style={{ fontSize: 14, color: "var(--text-secondary)", marginTop: 4 }}>
                 {uploading ? "Uploading..." : "Click to upload file"}
               </div>
-              <input
-                ref={fileInputRef}
-                type="file"
-                onChange={handleFileSelect}
-                disabled={uploading}
-                style={{ display: "none" }}
-              />
+              <input ref={fileInputRef} type="file" onChange={handleFileSelect} disabled={uploading} style={{ display: "none" }} />
             </div>
 
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
@@ -597,9 +608,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
                   color: "var(--text-primary)",
                   outline: "none",
                 }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleLinkAdd();
-                }}
+                onKeyDown={(e) => { if (e.key === "Enter") handleLinkAdd(); }}
               />
               <button
                 onClick={handleLinkAdd}
@@ -675,64 +684,19 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 style={{ marginBottom: 16, fontSize: 18, fontWeight: 600 }}>
-              Files ({files.length})
-            </h3>
+            <h3 style={{ marginBottom: 16, fontSize: 18, fontWeight: 600 }}>Files ({files.length})</h3>
 
             {files.length === 0 ? (
-              <div style={{ textAlign: "center", color: "var(--text-muted)", padding: 20 }}>
-                No files added yet.
-              </div>
+              <div style={{ textAlign: "center", color: "var(--text-muted)", padding: 20 }}>No files added yet.</div>
             ) : (
               <div style={{ marginBottom: 16 }}>
                 {files.map((file, index) => (
-                  <div
-                    key={index}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 12,
-                      padding: "8px 12px",
-                      borderBottom: "1px solid var(--border-light)",
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: 4,
-                        overflow: "hidden",
-                        background: "var(--bg-secondary)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        flexShrink: 0,
-                        border: "1px solid var(--border-color)",
-                      }}
-                    >
-                      {isImage(file.url) ? (
-                        <img
-                          src={file.url}
-                          alt={file.name}
-                          style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                        />
-                      ) : (
-                        <span style={{ fontSize: 20 }}>📎</span>
-                      )}
+                  <div key={index} style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 12px", borderBottom: "1px solid var(--border-light)" }}>
+                    <div style={{ width: 40, height: 40, borderRadius: 4, overflow: "hidden", background: "var(--bg-secondary)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, border: "1px solid var(--border-color)" }}>
+                      {isImage(file.url) ? <img src={file.url} alt={file.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span style={{ fontSize: 20 }}>📎</span>}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div
-                        style={{
-                          fontSize: 14,
-                          fontWeight: 500,
-                          color: "var(--text-primary)",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                          cursor: "pointer",
-                        }}
-                        onClick={() => window.open(file.url, "_blank")}
-                      >
+                      <div style={{ fontSize: 14, fontWeight: 500, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", cursor: "pointer" }} onClick={() => window.open(file.url, "_blank")}>
                         {file.name || "Untitled"}
                       </div>
                       <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
@@ -740,40 +704,8 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
                       </div>
                     </div>
                     <div style={{ display: "flex", gap: 6 }}>
-                      <button
-                        onClick={() => downloadFile(file.url, file.name)}
-                        style={{
-                          padding: "4px 8px",
-                          background: "var(--btn-primary-bg)",
-                          color: "white",
-                          border: "none",
-                          borderRadius: 4,
-                          cursor: "pointer",
-                          fontSize: 11,
-                        }}
-                        title="Download"
-                      >
-                        ⬇️
-                      </button>
-                      <button
-                        onClick={() => {
-                          if (confirm(`Delete "${file.name}"?`)) {
-                            removeFile(index);
-                          }
-                        }}
-                        style={{
-                          padding: "4px 8px",
-                          background: "#ef4444",
-                          color: "white",
-                          border: "none",
-                          borderRadius: 4,
-                          cursor: "pointer",
-                          fontSize: 11,
-                        }}
-                        title="Delete"
-                      >
-                        ✕
-                      </button>
+                      <button onClick={() => downloadFile(file.url, file.name)} style={{ padding: "4px 8px", background: "var(--btn-primary-bg)", color: "white", border: "none", borderRadius: 4, cursor: "pointer", fontSize: 11 }} title="Download">⬇️</button>
+                      <button onClick={() => { if (confirm(`Delete "${file.name}"?`)) { removeFile(index); } }} style={{ padding: "4px 8px", background: "#ef4444", color: "white", border: "none", borderRadius: 4, cursor: "pointer", fontSize: 11 }} title="Delete">✕</button>
                     </div>
                   </div>
                 ))}
@@ -781,37 +713,8 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
             )}
 
             <div style={{ display: "flex", gap: 8 }}>
-              <button
-                onClick={() => {
-                  setShowFileManager(false);
-                  setShowPopup(true);
-                }}
-                style={{
-                  flex: 1,
-                  padding: "8px",
-                  background: "var(--btn-primary-bg)",
-                  color: "var(--btn-primary-text)",
-                  border: "none",
-                  borderRadius: 6,
-                  cursor: "pointer",
-                  fontWeight: 500,
-                }}
-              >
-                + Add File
-              </button>
-              <button
-                onClick={() => setShowFileManager(false)}
-                style={{
-                  padding: "8px 16px",
-                  background: "var(--bg-hover)",
-                  border: "none",
-                  borderRadius: 6,
-                  cursor: "pointer",
-                  color: "var(--text-secondary)",
-                }}
-              >
-                Close
-              </button>
+              <button onClick={() => { setShowFileManager(false); setShowPopup(true); }} style={{ flex: 1, padding: "8px", background: "var(--btn-primary-bg)", color: "var(--btn-primary-text)", border: "none", borderRadius: 6, cursor: "pointer", fontWeight: 500 }}>+ Add File</button>
+              <button onClick={() => setShowFileManager(false)} style={{ padding: "8px 16px", background: "var(--bg-hover)", border: "none", borderRadius: 6, cursor: "pointer", color: "var(--text-secondary)" }}>Close</button>
             </div>
           </div>
         </div>
