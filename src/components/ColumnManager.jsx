@@ -4,7 +4,6 @@ export default function ColumnManager({
   columns,
   onToggleColumn,
   onRenameColumn,
-  onResetColumns,
   onClose,
 }) {
   const [editingId, setEditingId] = useState(null);
@@ -27,6 +26,13 @@ export default function ColumnManager({
   const cancelRename = () => {
     setEditingId(null);
     setEditLabel("");
+  };
+
+  // Fungsi toggle collapse/expand
+  const handleToggle = (col) => {
+    if (col.id === "item") return;
+    // Toggle visible status
+    onToggleColumn(col.id);
   };
 
   return (
@@ -65,7 +71,7 @@ export default function ColumnManager({
           Manage Columns
         </h3>
         <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 16 }}>
-          Toggle to collapse/expand columns. Click name to rename.
+          Click ▾ to collapse, ▸ to expand. Click name to rename.
         </p>
 
         <div style={{ marginBottom: 16 }}>
@@ -84,11 +90,9 @@ export default function ColumnManager({
                   borderBottom: "1px solid var(--border-light)",
                 }}
               >
-                {/* Toggle Collapse/Expand */}
+                {/* Tombol Collapse/Expand */}
                 <button
-                  onClick={() => {
-                    if (!isItem) onToggleColumn(col.id);
-                  }}
+                  onClick={() => handleToggle(col)}
                   style={{
                     background: "none",
                     border: "none",
@@ -97,8 +101,10 @@ export default function ColumnManager({
                     color: isVisible ? "var(--btn-primary-bg)" : "var(--text-muted)",
                     opacity: isItem ? 0.4 : 1,
                     padding: "0 4px",
+                    width: 24,
+                    textAlign: "center",
                   }}
-                  title={isItem ? "Fixed column" : isVisible ? "Collapse" : "Expand"}
+                  title={isItem ? "Fixed column" : isVisible ? "Click to collapse" : "Click to expand"}
                 >
                   {isVisible ? "▾" : "▸"}
                 </button>
@@ -140,29 +146,6 @@ export default function ColumnManager({
                     {isItem && " (fixed)"}
                     {!isVisible && " (collapsed)"}
                   </span>
-                )}
-
-                {/* Lebar minimal (opsional) */}
-                {!isItem && (
-                  <input
-                    type="number"
-                    value={col.minWidth || 40}
-                    onChange={(e) => {
-                      const val = parseInt(e.target.value) || 40;
-                      // update minWidth di context
-                      onToggleColumn(col.id, val);
-                    }}
-                    style={{
-                      width: 50,
-                      padding: "2px 4px",
-                      border: "1px solid var(--border-dark)",
-                      borderRadius: 4,
-                      fontSize: 12,
-                      background: "var(--bg-input)",
-                      color: "var(--text-primary)",
-                    }}
-                    title="Min width (px)"
-                  />
                 )}
               </div>
             );
