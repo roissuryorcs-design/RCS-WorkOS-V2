@@ -202,7 +202,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
       const containerWidth = containerRef.current.offsetWidth;
       const thumbnailSize = 32;
       const gap = 4;
-      const badgeSize = 16; // sesuaikan dengan ukuran badge baru
+      const badgeSize = 24; // 20px + gap
       const maxFit = Math.floor((containerWidth - badgeSize - gap) / (thumbnailSize + gap));
       let count = Math.max(1, Math.min(maxFit, files.length > 1 ? files.length - 1 : files.length));
       if (files.length <= 1) count = 1;
@@ -411,7 +411,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
               </div>
             ))}
 
-            {/* Badge +N – LEBIH KECIL */}
+            {/* Badge +N – ukuran sedang (20px) */}
             {showBadge && (
               <div
                 style={{
@@ -424,19 +424,19 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
               >
                 <div
                   style={{
-                    width: 14,
-                    height: 14,
-                    borderRadius: 3,
+                    width: 20,
+                    height: 20,
+                    borderRadius: 4,
                     background: "var(--btn-primary-bg)",
                     border: "1px solid var(--btn-primary-bg)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    fontSize: 8,
+                    fontSize: 10,
                     fontWeight: 700,
                     color: "white",
                     cursor: "pointer",
-                    lineHeight: "14px",
+                    lineHeight: "20px",
                   }}
                 >
                   +{files.length - visibleThumbnails}
