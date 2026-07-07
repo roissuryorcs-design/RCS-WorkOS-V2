@@ -21,6 +21,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
   const fileInputRef = useRef(null);
   const hoverTimeoutRef = useRef(null);
   const fileListRef = useRef(null);
+  const previewTimeoutRef = useRef(null);
 
   const saveFiles = (newFiles) => {
     setFiles(newFiles);
@@ -121,17 +122,11 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
   useEffect(() => {
     if (containerRef.current) {
       const containerWidth = containerRef.current.offsetWidth;
-      // Masing-masing thumbnail + gap = 32px (28px + 4px gap)
       const thumbnailSize = 32;
       const gap = 4;
-      // Tambahan untuk +N badge (28px + gap)
       const badgeSize = 32;
-      
-      // Hitung max thumbnail yang muat (sisakan ruang untuk +N jika >1)
       const maxFit = Math.floor((containerWidth - badgeSize - gap) / (thumbnailSize + gap));
-      // Minimal 1, maksimal files.length - 1 (karena +N butuh setidaknya 1 slot)
       let count = Math.max(1, Math.min(maxFit, files.length > 1 ? files.length - 1 : files.length));
-      // Jika files.length <= 1, tampilkan 1
       if (files.length <= 1) count = 1;
       setVisibleThumbnails(count);
     }
@@ -152,8 +147,8 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
     if (left + popupWidth > window.innerWidth) {
       left = rect.left - popupWidth - 8;
     }
-    if (top + 300 > window.innerHeight) {
-      top = window.innerHeight - 300 - 10;
+    if (top + 350 > window.innerHeight) {
+      top = window.innerHeight - 350 - 10;
     }
     
     setPopupPosition({ top, left });
@@ -216,6 +211,20 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
     }, 200);
   };
 
+  // ============================================================
+  // PREVIEW DI DALAM DAFTAR FILE (saat hover di list)
+  // ============================================================
+  const handleListHover = (index) => {
+    if (previewTimeoutRef.current) clearTimeout(previewTimeoutRef.current);
+    setHoveredFileIndex(index);
+  };
+
+  const handleListLeave = () => {
+    previewTimeoutRef.current = setTimeout(() => {
+      setHoveredFileIndex(null);
+    }, 300);
+  };
+
   const openFileManager = () => {
     if (files.length > 0) {
       setShowFileManager(true);
@@ -235,7 +244,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
         onClick={openFileManager}
         style={{
           display: "flex",
-          flexWrap: "nowrap", // ← JANGAN WRAP
+          flexWrap: "nowrap",
           gap: 4,
           minHeight: 32,
           alignItems: "center",
@@ -251,7 +260,6 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
           <span style={{ color: "var(--text-muted)", fontSize: 12, whiteSpace: "nowrap" }}>+ Add file or link</span>
         ) : (
           <>
-            {/* Tampilkan thumbnail sesuai jumlah yang muat */}
             {files.slice(0, visibleThumbnails).map((file, index) => (
               <div
                 key={index}
@@ -295,7 +303,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
                   )}
                 </div>
 
-                {/* Hover preview per file */}
+                {/* Hover preview per thumbnail */}
                 {hoveredFileIndex === index && (
                   <div
                     onMouseEnter={handlePreviewMouseEnter}
@@ -381,7 +389,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
               </div>
             ))}
 
-            {/* Badge +N di paling akhir – background biru */}
+            {/* Badge +N – background biru */}
             {showBadge && (
               <div
                 style={{
@@ -416,7 +424,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
         )}
       </div>
 
-      {/* Popup daftar file (hover pada +N) */}
+      {/* Popup daftar file (hover pada +N) – dengan preview */}
       {showFileList && files.length > visibleThumbnails && (
         <div
           ref={fileListRef}
@@ -432,9 +440,9 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
             boxShadow: "0 8px 30px rgba(0,0,0,0.2)",
             padding: "0",
             minWidth: 220,
-            maxWidth: 280,
+            maxWidth: 300,
             zIndex: 99999,
-            maxHeight: 320,
+            maxHeight: 350,
             overflowY: "auto",
             pointerEvents: "auto",
           }}
@@ -453,9 +461,10 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
                 borderBottom: index === files.length - 1 ? "none" : "1px solid #f3f4f6",
                 position: "relative",
                 background: hoveredFileIndex === index ? "#f3f4f6" : "transparent",
+                cursor: "pointer",
               }}
-              onMouseEnter={() => setHoveredFileIndex(index)}
-              onMouseLeave={() => setHoveredFileIndex(null)}
+              onMouseEnter={() => handleListHover(index)}
+              onMouseLeave={handleListLeave}
             >
               <div
                 style={{
@@ -550,6 +559,84 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
                   >
                     Delete
                   </button>
+                </div>
+              )}
+
+              {/* PREVIEW SAAT HOVER DI LIST – muncul di sebelah kanan */}
+              {hoveredFileIndex === index && isImage(file.url) && (
+                <div
+                  style={{
+                    position: "fixed",
+                    left: (fileListRef.current?.getBoundingClientRect().right || 0) + 8,
+                    top: (fileListRef.current?.getBoundingClientRect().top || 0) + 40,
+                    background: "#ffffff",
+                    border: "1px solid #d1d5db",
+                    borderRadius: 8,
+                    boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
+                    padding: 4,
+                    zIndex: 100000,
+                    maxWidth: 180,
+                    maxHeight: 180,
+                    overflow: "hidden",
+                    pointerEvents: "none",
+                  }}
+                >
+                  <img
+                    src={file.url}
+                    alt={file.name}
+                    style={{ width: "100%", height: "100%", objectFit: "contain", maxHeight: 180 }}
+                  />
+                </div>
+              )}
+              {hoveredFileIndex === index && isVideo(file.url) && (
+                <div
+                  style={{
+                    position: "fixed",
+                    left: (fileListRef.current?.getBoundingClientRect().right || 0) + 8,
+                    top: (fileListRef.current?.getBoundingClientRect().top || 0) + 40,
+                    background: "#000",
+                    border: "1px solid #d1d5db",
+                    borderRadius: 8,
+                    boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
+                    padding: 4,
+                    zIndex: 100000,
+                    maxWidth: 200,
+                    maxHeight: 140,
+                    overflow: "hidden",
+                    pointerEvents: "none",
+                  }}
+                >
+                  <video src={file.url} controls style={{ width: "100%", maxHeight: 140 }} />
+                </div>
+              )}
+              {hoveredFileIndex === index && !isImage(file.url) && !isVideo(file.url) && (
+                <div
+                  style={{
+                    position: "fixed",
+                    left: (fileListRef.current?.getBoundingClientRect().right || 0) + 8,
+                    top: (fileListRef.current?.getBoundingClientRect().top || 0) + 40,
+                    background: "#ffffff",
+                    border: "1px solid #d1d5db",
+                    borderRadius: 8,
+                    boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
+                    padding: 12,
+                    zIndex: 100000,
+                    minWidth: 120,
+                    maxWidth: 180,
+                    pointerEvents: "none",
+                  }}
+                >
+                  <div style={{ fontSize: 40, textAlign: "center" }}>
+                    {file.isLink ? "🔗" : isPdf(file.url) ? "📄" : "📎"}
+                  </div>
+                  <div style={{ fontSize: 13, fontWeight: 500, color: "#1a1a2e", textAlign: "center", wordBreak: "break-all" }}>
+                    {file.name || "Untitled"}
+                  </div>
+                  {file.size && (
+                    <div style={{ fontSize: 11, color: "#6b7280", textAlign: "center" }}>
+                      {formatSize(file.size)}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
