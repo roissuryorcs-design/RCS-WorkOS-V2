@@ -1,5 +1,6 @@
 import { useState } from "react";
 import StatusCell from "./StatusCell";
+import FileAttachment from "./FileAttachment";
 
 export default function Row({
   item,
@@ -105,111 +106,14 @@ export default function Row({
           </div>
         );
 
-      case "files": {
-        const [uploading, setUploading] = useState(false);
-        const [fileUrl, setFileUrl] = useState(value || "");
-
-        const uploadFile = async (file) => {
-          if (!file) return;
-          if (file.size > 10 * 1024 * 1024) {
-            alert("File size must be less than 10MB");
-            return;
-          }
-
-          setUploading(true);
-          const formData = new FormData();
-          formData.append("file", file);
-          formData.append("upload_preset", "rcs_upload");
-
-          try {
-            const res = await fetch(
-              `https://api.cloudinary.com/v1_1/lawjar8t/upload`,
-              { method: "POST", body: formData }
-            );
-            const data = await res.json();
-            if (data.secure_url) {
-              const url = data.secure_url;
-              setFileUrl(url);
-              onUpdate(col.id, url);
-              console.log("✅ Upload success:", url);
-            }
-          } catch (error) {
-            console.error("❌ Upload failed:", error);
-            alert("Upload failed. Please try again.");
-          } finally {
-            setUploading(false);
-          }
-        };
-
-        const handleFileChange = (e) => {
-          const file = e.target.files[0];
-          if (file) uploadFile(file);
-        };
-
-        const handleRemove = () => {
-          setFileUrl("");
-          onUpdate(col.id, "");
-        };
-
-        const isImage = fileUrl && fileUrl.match(/\.(jpeg|jpg|gif|png|webp)$/i);
-
+      case "files":
         return (
-          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-            <input
-              type="file"
-              onChange={handleFileChange}
-              disabled={uploading}
-              style={{
-                fontSize: 11,
-                maxWidth: 120,
-                cursor: uploading ? "not-allowed" : "pointer",
-              }}
-            />
-            {uploading && <span style={{ fontSize: 11, color: "var(--text-muted)" }}>⏳ Uploading...</span>}
-            {fileUrl && (
-              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                {isImage ? (
-                  <img
-                    src={fileUrl}
-                    alt="upload"
-                    style={{ width: 28, height: 28, borderRadius: 4, objectFit: "cover" }}
-                  />
-                ) : (
-                  <span style={{ fontSize: 14 }}>📎</span>
-                )}
-                <a
-                  href={fileUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    fontSize: 11,
-                    color: "var(--btn-primary-bg)",
-                    textDecoration: "underline",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                    maxWidth: 80,
-                  }}
-                >
-                  {fileUrl.split("/").pop() || "file"}
-                </a>
-                <button
-                  onClick={handleRemove}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    color: "var(--text-muted)",
-                    fontSize: 12,
-                  }}
-                >
-                  ✕
-                </button>
-              </div>
-            )}
-          </div>
+          <FileAttachment
+            value={value}
+            onUpdate={onUpdate}
+            columnId={col.id}
+          />
         );
-      }
 
       default: // text
         return (
