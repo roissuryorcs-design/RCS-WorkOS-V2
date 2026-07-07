@@ -17,6 +17,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
   const saveFiles = (newFiles) => {
     setFiles(newFiles);
     onUpdate(columnId, JSON.stringify(newFiles));
+    console.log("✅ Files saved:", newFiles);
   };
 
   const uploadFile = async (file) => {
@@ -46,13 +47,13 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
           uploadedAt: new Date().toISOString(),
         };
         saveFiles([...files, newFile]);
+        setShowPopup(false); // tutup popup setelah upload
       }
     } catch (error) {
       console.error("Upload failed:", error);
       alert("Upload failed. Please try again.");
     } finally {
       setUploading(false);
-      setShowPopup(false);
     }
   };
 
@@ -79,6 +80,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
   const removeFile = (index) => {
     const newFiles = files.filter((_, i) => i !== index);
     saveFiles(newFiles);
+    setHoveredFile(null);
   };
 
   const formatSize = (bytes) => {
@@ -91,10 +93,17 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
     return url && url.match(/\.(jpeg|jpg|gif|png|webp)$/i);
   };
 
+  // Handler untuk toggle popup
+  const handleContainerClick = () => {
+    console.log("🔵 Container clicked, toggling popup");
+    setShowPopup(true);
+  };
+
   return (
-    <div style={{ position: "relative" }}>
-      {/* Thumbnail area */}
+    <div style={{ position: "relative", width: "100%" }}>
+      {/* Area utama – bisa diklik */}
       <div
+        onClick={handleContainerClick}
         style={{
           display: "flex",
           flexWrap: "wrap",
@@ -107,7 +116,6 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
           cursor: "pointer",
           transition: "background 0.15s",
         }}
-        onClick={() => setShowPopup(true)}
         onMouseEnter={(e) => {
           if (files.length === 0) e.currentTarget.style.background = "var(--bg-hover)";
         }}
@@ -154,7 +162,6 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
                 ) : (
                   <span style={{ fontSize: 18 }}>📎</span>
                 )}
-                {/* Badge jumlah file */}
                 {index === 0 && files.length > 1 && (
                   <div
                     style={{
@@ -177,7 +184,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
                 )}
               </div>
 
-              {/* Hover popup detail */}
+              {/* Hover popup */}
               {hoveredFile === index && (
                 <div
                   style={{
@@ -192,7 +199,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
                     padding: 12,
                     minWidth: 200,
                     zIndex: 100,
-                    pointerEvents: "none",
+                    pointerEvents: "auto",
                   }}
                 >
                   <div style={{ fontSize: 13, fontWeight: 500, color: "var(--text-primary)" }}>
@@ -210,7 +217,6 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
                     onClick={(e) => {
                       e.stopPropagation();
                       removeFile(index);
-                      setHoveredFile(null);
                     }}
                     style={{
                       marginTop: 8,
@@ -221,7 +227,6 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
                       borderRadius: 4,
                       cursor: "pointer",
                       fontSize: 11,
-                      pointerEvents: "auto",
                     }}
                   >
                     Remove
@@ -236,6 +241,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
       {/* Popup untuk upload/link */}
       {showPopup && (
         <>
+          {/* Overlay untuk menutup popup saat klik di luar */}
           <div
             style={{
               position: "fixed",
@@ -245,12 +251,15 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
               bottom: 0,
               zIndex: 999,
             }}
-            onClick={() => setShowPopup(false)}
+            onClick={() => {
+              console.log("🔴 Overlay clicked, closing popup");
+              setShowPopup(false);
+            }}
           />
           <div
             style={{
               position: "absolute",
-              top: "100%",
+              top: "calc(100% + 4px)",
               left: 0,
               marginTop: 4,
               background: "var(--bg-modal)",
