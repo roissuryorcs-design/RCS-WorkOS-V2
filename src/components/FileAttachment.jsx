@@ -277,7 +277,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
   const handleThumbnailLeave = () => {
     previewTimeoutRef.current = setTimeout(() => {
       setHoveredFileIndex(null);
-    }, 1000);
+    }, 200);
   };
 
   const handlePreviewMouseEnter = () => {
@@ -287,7 +287,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
   const handlePreviewMouseLeave = () => {
     previewTimeoutRef.current = setTimeout(() => {
       setHoveredFileIndex(null);
-    }, 1000);
+    }, 200);
   };
 
   // ============================================================
@@ -301,7 +301,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
   const handleListLeave = () => {
     previewTimeoutRef.current = setTimeout(() => {
       setHoveredFileIndex(null);
-    }, 1000);
+    }, 200);
   };
 
   const openFileManager = () => {
