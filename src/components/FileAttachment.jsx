@@ -118,7 +118,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
   const isPdf = (url) => url && url.toLowerCase().includes(".pdf");
 
   // ============================================================
-  // PREVIEW COMPONENT
+  // PREVIEW COMPONENT – dengan wrap nama file
   // ============================================================
   const PreviewContent = ({ file, onDownload, onDelete }) => {
     const isImg = isImage(file.url);
@@ -142,8 +142,19 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
           )}
         </div>
 
-        {/* Nama file */}
-        <div style={{ fontSize: 13, fontWeight: 500, color: "#1a1a2e", wordBreak: "break-all", marginBottom: 2 }}>
+        {/* Nama file – WRAP */}
+        <div style={{ 
+          fontSize: 13, 
+          fontWeight: 500, 
+          color: "#1a1a2e", 
+          wordBreak: "break-word",
+          whiteSpace: "normal",
+          overflowWrap: "break-word",
+          maxHeight: 40,
+          overflow: "hidden",
+          lineHeight: 1.3,
+          marginBottom: 2,
+        }}>
           {file.name || "Untitled"}
         </div>
 
@@ -581,7 +592,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
                 </div>
               )}
 
-              {/* PREVIEW DI DALAM LIST +N – SAMA DENGAN PREVIEW THUMBNAIL */}
+              {/* PREVIEW DI DALAM LIST +N */}
               {hoveredFileIndex === index && (
                 <div
                   onMouseEnter={handlePreviewMouseEnter}
