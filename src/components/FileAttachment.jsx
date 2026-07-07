@@ -16,6 +16,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
   const [hoveredFileIndex, setHoveredFileIndex] = useState(null);
   const [showActionsIndex, setShowActionsIndex] = useState(null);
   const [popupPosition, setPopupPosition] = useState({ top: 0, left: 0 });
+  const [visibleThumbnails, setVisibleThumbnails] = useState(3);
   const containerRef = useRef(null);
   const fileInputRef = useRef(null);
   const hoverTimeoutRef = useRef(null);
@@ -115,6 +116,28 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
   const isVideo = (url) => url && url.match(/\.(mp4|webm|mov|avi)$/i);
 
   // ============================================================
+  // HITUNG JUMLAH THUMBNAIL YANG MUAT
+  // ============================================================
+  useEffect(() => {
+    if (containerRef.current) {
+      const containerWidth = containerRef.current.offsetWidth;
+      // Masing-masing thumbnail + gap = 32px (28px + 4px gap)
+      const thumbnailSize = 32;
+      const gap = 4;
+      // Tambahan untuk +N badge (28px + gap)
+      const badgeSize = 32;
+      
+      // Hitung max thumbnail yang muat (sisakan ruang untuk +N jika >1)
+      const maxFit = Math.floor((containerWidth - badgeSize - gap) / (thumbnailSize + gap));
+      // Minimal 1, maksimal files.length - 1 (karena +N butuh setidaknya 1 slot)
+      let count = Math.max(1, Math.min(maxFit, files.length > 1 ? files.length - 1 : files.length));
+      // Jika files.length <= 1, tampilkan 1
+      if (files.length <= 1) count = 1;
+      setVisibleThumbnails(count);
+    }
+  }, [files, containerRef.current?.offsetWidth]);
+
+  // ============================================================
   // HOVER BADGE +N
   // ============================================================
   const handleBadgeMouseEnter = (e) => {
@@ -204,15 +227,15 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
   // ============================================================
   // RENDER
   // ============================================================
-  const maxThumbnails = 4; // jumlah thumbnail maksimal sebelum muncul +N
+  const showBadge = files.length > visibleThumbnails;
 
   return (
-    <div ref={containerRef} style={{ position: "relative", width: "100%" }}>
+    <div ref={containerRef} style={{ position: "relative", width: "100%", overflow: "hidden" }}>
       <div
         onClick={openFileManager}
         style={{
           display: "flex",
-          flexWrap: "wrap",
+          flexWrap: "nowrap", // ← JANGAN WRAP
           gap: 4,
           minHeight: 32,
           alignItems: "center",
@@ -221,14 +244,15 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
           padding: files.length === 0 ? "6px 8px" : "2px 0",
           cursor: "pointer",
           transition: "background 0.15s",
+          overflow: "hidden",
         }}
       >
         {files.length === 0 ? (
-          <span style={{ color: "var(--text-muted)", fontSize: 12 }}>+ Add file or link</span>
+          <span style={{ color: "var(--text-muted)", fontSize: 12, whiteSpace: "nowrap" }}>+ Add file or link</span>
         ) : (
           <>
-            {/* Tampilkan maksimal maxThumbnails thumbnail */}
-            {files.slice(0, maxThumbnails).map((file, index) => (
+            {/* Tampilkan thumbnail sesuai jumlah yang muat */}
+            {files.slice(0, visibleThumbnails).map((file, index) => (
               <div
                 key={index}
                 style={{ position: "relative", display: "inline-block", flexShrink: 0 }}
@@ -357,8 +381,8 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
               </div>
             ))}
 
-            {/* Badge +N di paling akhir */}
-            {files.length > maxThumbnails && (
+            {/* Badge +N di paling akhir – background biru */}
+            {showBadge && (
               <div
                 style={{
                   display: "inline-block",
@@ -373,18 +397,18 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
                     width: 28,
                     height: 28,
                     borderRadius: 4,
-                    background: "var(--bg-hover)",
-                    border: "1px solid var(--border-color)",
+                    background: "var(--btn-primary-bg)",
+                    border: "1px solid var(--btn-primary-bg)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     fontSize: 11,
                     fontWeight: 600,
-                    color: "var(--text-secondary)",
+                    color: "white",
                     cursor: "pointer",
                   }}
                 >
-                  +{files.length - maxThumbnails}
+                  +{files.length - visibleThumbnails}
                 </div>
               </div>
             )}
@@ -393,7 +417,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
       </div>
 
       {/* Popup daftar file (hover pada +N) */}
-      {showFileList && files.length > maxThumbnails && (
+      {showFileList && files.length > visibleThumbnails && (
         <div
           ref={fileListRef}
           onMouseEnter={handleFileListMouseEnter}
