@@ -74,6 +74,11 @@ body.light {
 
   --footer-text: #6b7280;
   --footer-border: #e5e7eb;
+  
+  /* Scrollbar colors light */
+  --scrollbar-track: #e5e7eb;
+  --scrollbar-thumb: #9ca3af;
+  --scrollbar-thumb-hover: #6b7280;
 }
 
 /* ============================================================
@@ -117,24 +122,96 @@ body.dark {
 
   --footer-text: #8a94a6;
   --footer-border: #2a2d3a;
+  
+  /* Scrollbar colors dark */
+  --scrollbar-track: #1a1d27;
+  --scrollbar-thumb: #3a3d4a;
+  --scrollbar-thumb-hover: #5a5d6a;
 }
 
 /* ============================================================
-   SCROLLBAR DARK MODE
+   GLOBAL SCROLLBAR – LEBIH TEBAL & KONTRAST
    ============================================================ */
-body.dark ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+
+/* Untuk semua elemen yang bisa di-scroll */
+* {
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
-body.dark ::-webkit-scrollbar-track {
-  background: var(--bg-primary);
+
+/* Webkit (Chrome, Edge, Safari) */
+::-webkit-scrollbar {
+  width: 14px;  /* Lebih tebal untuk vertikal */
+  height: 14px; /* Lebih tebal untuk horizontal */
 }
-body.dark ::-webkit-scrollbar-thumb {
-  background: var(--bg-hover);
-  border-radius: 4px;
+
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+  border-radius: 8px;
 }
-body.dark ::-webkit-scrollbar-thumb:hover {
-  background: var(--text-muted);
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 8px;
+  border: 2px solid var(--scrollbar-track); /* Memberi jarak visual */
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+/* Khusus untuk main-content (vertikal) */
+.main-content::-webkit-scrollbar {
+  width: 14px;
+  height: 14px;
+}
+
+.main-content::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+  border-radius: 8px;
+}
+
+.main-content::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 8px;
+  border: 2px solid var(--scrollbar-track);
+}
+
+.main-content::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+/* Khusus untuk container scroll horizontal di tabel */
+.board-table-wrapper div[style*="overflow-x: auto"]::-webkit-scrollbar,
+.board-table-wrapper > div::-webkit-scrollbar {
+  width: 14px;
+  height: 14px;
+}
+
+.board-table-wrapper div[style*="overflow-x: auto"]::-webkit-scrollbar-track,
+.board-table-wrapper > div::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+  border-radius: 8px;
+}
+
+.board-table-wrapper div[style*="overflow-x: auto"]::-webkit-scrollbar-thumb,
+.board-table-wrapper > div::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 8px;
+  border: 2px solid var(--scrollbar-track);
+}
+
+.board-table-wrapper div[style*="overflow-x: auto"]::-webkit-scrollbar-thumb:hover,
+.board-table-wrapper > div::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+/* Fallback untuk Firefox */
+.main-content,
+.board-table-wrapper div[style*="overflow-x: auto"],
+.board-table-wrapper > div {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
 
 /* ============================================================
@@ -160,23 +237,11 @@ body.dark ::-webkit-scrollbar-thumb:hover {
   background: var(--bg-secondary);
   transition: background 0.3s ease;
   height: 100vh;
-  overflow-y: auto; /* ← SCROLL VERTIKAL */
+  overflow-y: auto;
   overflow-x: hidden;
   display: flex;
   flex-direction: column;
   position: relative;
-}
-
-/* Scrollbar styling untuk main-content */
-.main-content::-webkit-scrollbar {
-  width: 8px;
-}
-.main-content::-webkit-scrollbar-track {
-  background: var(--bg-primary);
-}
-.main-content::-webkit-scrollbar-thumb {
-  background: var(--border-color);
-  border-radius: 4px;
 }
 
 /* ============================================================
@@ -232,35 +297,29 @@ body.dark ::-webkit-scrollbar-thumb:hover {
 /* ============================================================
    DATE INPUT – IKON KALENDER TERLIHAT DI DARK & LIGHT MODE
    ============================================================ */
-
-/* Warna ikon kalender di light mode (default) */
 input[type="date"]::-webkit-calendar-picker-indicator {
   filter: invert(0);
   opacity: 0.6;
   cursor: pointer;
 }
 
-/* Dark mode – balik warna ikon menjadi putih */
 body.dark input[type="date"]::-webkit-calendar-picker-indicator {
   filter: invert(1);
   opacity: 0.8;
 }
 
-/* Fallback untuk Firefox */
 input[type="date"] {
   color-scheme: light dark;
 }
 
-/* Atur background input date agar kontras dengan teks */
 input[type="date"] {
   background: var(--bg-input);
   color: var(--text-primary);
   border: 1px solid var(--border-dark);
-  border-radius: 4px;
+  borderRadius: 4px;
   padding: 4px 8px;
 }
 
-/* Untuk memastikan ikon kalender di Firefox */
 input[type="date"]::-moz-calendar-picker-indicator {
   filter: invert(0);
 }
