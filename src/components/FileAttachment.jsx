@@ -175,7 +175,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
   };
 
   // ============================================================
-  // HOVER THUMBNAIL INDIVIDUAL
+  // HOVER THUMBNAIL INDIVIDUAL – DENGAN DELAY 1 DETIK
   // ============================================================
   const handleThumbnailHover = (e, index) => {
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
@@ -198,7 +198,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
   const handleThumbnailLeave = () => {
     hoverTimeoutRef.current = setTimeout(() => {
       setHoveredFileIndex(null);
-    }, 300);
+    }, 1000); // ← DELAY 1 DETIK
   };
 
   const handlePreviewMouseEnter = () => {
@@ -206,13 +206,13 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
   };
 
   const handlePreviewMouseLeave = () => {
-    hoverTimeoutRef.current = setTimeout(() => {
+    setTimeout(() => {
       setHoveredFileIndex(null);
     }, 200);
   };
 
   // ============================================================
-  // PREVIEW DI DALAM DAFTAR FILE (saat hover di list)
+  // PREVIEW DI DALAM DAFTAR FILE (saat hover di list) – DELAY 1 DETIK
   // ============================================================
   const handleListHover = (index) => {
     if (previewTimeoutRef.current) clearTimeout(previewTimeoutRef.current);
@@ -222,7 +222,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
   const handleListLeave = () => {
     previewTimeoutRef.current = setTimeout(() => {
       setHoveredFileIndex(null);
-    }, 300);
+    }, 1000); // ← DELAY 1 DETIK
   };
 
   const openFileManager = () => {
@@ -303,7 +303,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
                   )}
                 </div>
 
-                {/* Hover preview per thumbnail */}
+                {/* Hover preview per thumbnail – dengan delay 1 detik */}
                 {hoveredFileIndex === index && (
                   <div
                     onMouseEnter={handlePreviewMouseEnter}
@@ -424,7 +424,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
         )}
       </div>
 
-      {/* Popup daftar file (hover pada +N) – dengan preview */}
+      {/* Popup daftar file (hover pada +N) – dengan preview delay 1 detik */}
       {showFileList && files.length > visibleThumbnails && (
         <div
           ref={fileListRef}
@@ -562,7 +562,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
                 </div>
               )}
 
-              {/* PREVIEW SAAT HOVER DI LIST – muncul di sebelah kanan */}
+              {/* PREVIEW SAAT HOVER DI LIST – delay 1 detik */}
               {hoveredFileIndex === index && isImage(file.url) && (
                 <div
                   style={{
