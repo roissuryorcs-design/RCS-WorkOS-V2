@@ -274,7 +274,7 @@ body.dark {
    ============================================================ */
 .board-table thead {
   position: sticky !important;
-  top: 58px !important;
+  top: 0px !important;
   z-index: 25 !important;
 }
 
