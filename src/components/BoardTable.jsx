@@ -157,63 +157,31 @@ export default function BoardTable({
           return (
             <div key={groupName} style={{ marginBottom: 24, position: "relative" }}>
 
-              {/* HEADER GROUP - STICKY VERTIKAL */}
+              {/* =============================================
+                  GROUP HEADER - STICKY VERTIKAL
+                  ============================================= */}
               <div
+                className="group-header"
                 style={{
-                  position: "sticky",
-                  top: 0,
-                  zIndex: 40,
-                  background: "var(--bg-secondary)",
-                  borderBottom: `3px solid ${groupColor}`,
-                  borderLeft: `4px solid ${groupColor}`,
-                  padding: "8px 12px",
-                  marginBottom: 0,
-                  display: "flex",
-                  alignItems: "center",
-                  width: "100%",
-                  boxSizing: "border-box",
-                  boxShadow: "inset -2px 0 0 0 var(--border-color)",
+                  borderBottomColor: groupColor,
+                  borderLeftColor: groupColor,
                 }}
               >
                 <button
                   onClick={() => toggleCollapse(groupName)}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    fontSize: 16,
-                    color: "var(--text-secondary)",
-                    padding: "0 4px 0 0",
-                    marginRight: 8,
-                  }}
+                  className="group-toggle-btn"
                 >
                   {isCollapsed ? "▶" : "▼"}
                 </button>
 
                 <button
                   onClick={() => setPopupGroup(groupName)}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    fontSize: 18,
-                    color: "var(--text-secondary)",
-                    padding: "0 8px 0 0",
-                    marginRight: 8,
-                  }}
+                  className="group-menu-btn"
                 >
                   ⋮
                 </button>
 
-                <h3
-                  style={{
-                    fontSize: 14,
-                    fontWeight: 600,
-                    color: groupColor,
-                    flex: 1,
-                    margin: 0,
-                  }}
-                >
+                <h3 className="group-title" style={{ color: groupColor }}>
                   {groupName}
                 </h3>
 
@@ -221,84 +189,22 @@ export default function BoardTable({
                   type="color"
                   value={groupColor}
                   onChange={(e) => onUpdateGroupColor(groupName, e.target.value)}
-                  style={{
-                    width: 24,
-                    height: 24,
-                    border: "none",
-                    cursor: "pointer",
-                    background: "transparent",
-                  }}
+                  className="group-color-picker"
                 />
               </div>
 
               {/* POPUP GROUP */}
               {popupGroup === groupName && (
                 <>
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: 40,
-                      left: 4,
-                      background: "var(--bg-modal)",
-                      border: "1px solid var(--border-color)",
-                      borderRadius: 6,
-                      boxShadow: "var(--shadow-md)",
-                      padding: "4px 0",
-                      zIndex: 100,
-                      minWidth: "160px",
-                    }}
-                  >
-                    <button
-                      onClick={() => {
-                        closePopup();
-                        handleRenameGroup(groupName);
-                      }}
-                      style={{
-                        display: "block",
-                        width: "100%",
-                        padding: "6px 16px",
-                        background: "none",
-                        border: "none",
-                        textAlign: "left",
-                        cursor: "pointer",
-                        color: "var(--text-primary)",
-                        fontSize: 13,
-                      }}
-                    >
+                  <div className="group-popup">
+                    <button onClick={() => { closePopup(); handleRenameGroup(groupName); }}>
                       ✏️ Rename Group
                     </button>
-                    <button
-                      onClick={() => {
-                        closePopup();
-                        onDeleteGroup(groupName);
-                      }}
-                      style={{
-                        display: "block",
-                        width: "100%",
-                        padding: "6px 16px",
-                        background: "none",
-                        border: "none",
-                        textAlign: "left",
-                        cursor: "pointer",
-                        color: "#ef4444",
-                        fontSize: 13,
-                        borderTop: "1px solid var(--border-color)",
-                      }}
-                    >
+                    <button onClick={() => { closePopup(); onDeleteGroup(groupName); }}>
                       🗑️ Delete Group
                     </button>
                   </div>
-                  <div
-                    style={{
-                      position: "fixed",
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      zIndex: 99,
-                    }}
-                    onClick={closePopup}
-                  />
+                  <div className="group-popup-overlay" onClick={closePopup} />
                 </>
               )}
 
@@ -306,44 +212,13 @@ export default function BoardTable({
               {!isCollapsed && (
                 <>
                   {tasks.length > 0 ? (
-                    <table
-                      cellPadding="0"
-                      style={{
-                        borderCollapse: "collapse",
-                        border: "2px solid var(--border-color)",
-                        borderRadius: 4,
-                        borderLeft: "none",
-                        tableLayout: "fixed",
-                        width: "auto",
-                      }}
-                    >
+                    <table className="board-table">
                       <thead>
-                        <tr
-                          style={{
-                            textAlign: "left",
-                            fontSize: 12,
-                            color: "var(--text-muted)",
-                            fontWeight: 600,
-                            borderBottom: "2px solid var(--border-color)",
-                            textTransform: "uppercase",
-                            letterSpacing: "0.3px",
-                          }}
-                        >
+                        <tr className="table-header-row">
                           {/* CHECKBOX - STICKY HORIZONTAL */}
                           <th
-                            style={{
-                              padding: "8px 8px",
-                              width: "36px",
-                              minWidth: "36px",
-                              maxWidth: "36px",
-                              borderRight: "2px solid var(--border-color)",
-                              borderLeft: `4px solid ${groupColor}`,
-                              textAlign: "center",
-                              position: "sticky",
-                              left: 0,
-                              zIndex: 20,
-                              background: "var(--bg-secondary)",
-                            }}
+                            className="checkbox-header"
+                            style={{ borderLeftColor: groupColor }}
                           >
                             <input
                               type="checkbox"
@@ -352,7 +227,6 @@ export default function BoardTable({
                                 tasks.every((t) => selectedItems.includes(t.id))
                               }
                               onChange={() => selectAllInGroup(groupName, tasks)}
-                              style={{ cursor: "pointer", width: 16, height: 16 }}
                             />
                           </th>
 
@@ -380,28 +254,8 @@ export default function BoardTable({
                             );
                           })}
 
-                          <th
-                            style={{
-                              padding: "8px 8px",
-                              width: "50px",
-                              minWidth: "50px",
-                              maxWidth: "50px",
-                              borderRight: "none",
-                              borderLeft: "2px solid var(--border-color)",
-                              textAlign: "center",
-                              cursor: "pointer",
-                              color: "var(--text-muted)",
-                              transition: "background 0.15s",
-                            }}
-                            onClick={onOpenAddColumn}
-                            onMouseEnter={(e) =>
-                              (e.currentTarget.style.background = "var(--bg-hover)")
-                            }
-                            onMouseLeave={(e) =>
-                              (e.currentTarget.style.background = "transparent")
-                            }
-                          >
-                            <span style={{ fontSize: 18, fontWeight: 300 }}>+</span>
+                          <th className="add-column-header" onClick={onOpenAddColumn}>
+                            <span>+</span>
                           </th>
                         </tr>
                       </thead>
@@ -421,10 +275,10 @@ export default function BoardTable({
                         ))}
 
                         {/* =============================================
-                            BARIS ADD ITEM - STICKY
+                            BARIS ADD ITEM - STICKY HORIZONTAL
                             ============================================= */}
-                        <tr>
-                          {/* Kolom CHECKBOX - STICKY (kosong) */}
+                        <tr className="add-item-row">
+                          {/* CHECKBOX CELL - STICKY (kosong) */}
                           <td
                             style={{
                               padding: "6px 8px",
@@ -442,16 +296,15 @@ export default function BoardTable({
                               background: "var(--bg-secondary)",
                             }}
                           >
-                            {/* Kosong - tidak ada checkbox */}
+                            {/* Kosong */}
                           </td>
 
-                          {/* Kolom ITEM - STICKY (dengan tombol Add item) */}
+                          {/* ITEM CELL - STICKY (dengan tombol Add item) */}
                           <td
                             colSpan={safeColumns.length + 1}
                             style={{
                               padding: 0,
                               border: "none",
-                              background: "var(--bg-secondary)",
                               position: "sticky",
                               left: "36px",
                               zIndex: 20,
@@ -504,29 +357,11 @@ export default function BoardTable({
                     </table>
                   ) : (
                     <div
-                      style={{
-                        padding: "12px",
-                        color: "var(--text-light)",
-                        textAlign: "center",
-                        border: "2px solid var(--border-color)",
-                        borderRadius: 4,
-                        borderLeft: `4px solid ${groupColor}`,
-                      }}
+                      className="empty-group-message"
+                      style={{ borderLeftColor: groupColor }}
                     >
                       No items in this group.
-                      <button
-                        onClick={() => onAddItem(groupName)}
-                        style={{
-                          color: "#3b82f6",
-                          background: "none",
-                          border: "none",
-                          cursor: "pointer",
-                          marginLeft: 4,
-                          textDecoration: "underline",
-                        }}
-                      >
-                        Add item
-                      </button>
+                      <button onClick={() => onAddItem(groupName)}>Add item</button>
                     </div>
                   )}
                 </>
@@ -537,24 +372,8 @@ export default function BoardTable({
       </div>
 
       {/* TOMBOL ADD NEW GROUP */}
-      <div style={{ marginTop: 16 }}>
-        <button
-          onClick={onAddGroup}
-          style={{
-            display: "block",
-            width: "100%",
-            padding: "10px",
-            border: "2px dashed var(--border-color)",
-            borderRadius: 6,
-            background: "transparent",
-            color: "#3b82f6",
-            cursor: "pointer",
-            fontSize: 14,
-            textAlign: "center",
-          }}
-        >
-          + Add new group
-        </button>
+      <div className="add-group-container">
+        <button onClick={onAddGroup}>+ Add new group</button>
       </div>
     </div>
   );
