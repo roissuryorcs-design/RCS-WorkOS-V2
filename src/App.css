@@ -33,7 +33,7 @@ select:focus {
 }
 
 /* ============================================================
-   LIGHT THEME (default)
+   LIGHT THEME
    ============================================================ */
 :root,
 body.light {
@@ -75,7 +75,6 @@ body.light {
   --footer-text: #6b7280;
   --footer-border: #e5e7eb;
   
-  /* Scrollbar colors light */
   --scrollbar-track: #e5e7eb;
   --scrollbar-thumb: #9ca3af;
   --scrollbar-thumb-hover: #6b7280;
@@ -123,26 +122,22 @@ body.dark {
   --footer-text: #8a94a6;
   --footer-border: #2a2d3a;
   
-  /* Scrollbar colors dark */
   --scrollbar-track: #1a1d27;
   --scrollbar-thumb: #3a3d4a;
   --scrollbar-thumb-hover: #5a5d6a;
 }
 
 /* ============================================================
-   GLOBAL SCROLLBAR – LEBIH TEBAL & KONTRAST
+   GLOBAL SCROLLBAR
    ============================================================ */
-
-/* Untuk semua elemen yang bisa di-scroll */
 * {
-  scrollbar-width: thin; /* Firefox */
+  scrollbar-width: thin;
   scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
 
-/* Webkit (Chrome, Edge, Safari) */
 ::-webkit-scrollbar {
-  width: 14px;  /* Lebih tebal untuk vertikal */
-  height: 14px; /* Lebih tebal untuk horizontal */
+  width: 14px;
+  height: 14px;
 }
 
 ::-webkit-scrollbar-track {
@@ -153,65 +148,31 @@ body.dark {
 ::-webkit-scrollbar-thumb {
   background: var(--scrollbar-thumb);
   border-radius: 8px;
-  border: 2px solid var(--scrollbar-track); /* Memberi jarak visual */
+  border: 2px solid var(--scrollbar-track);
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--scrollbar-thumb-hover);
 }
 
-/* Khusus untuk main-content (vertikal) */
-.main-content::-webkit-scrollbar {
+.board-scroll-container::-webkit-scrollbar {
   width: 14px;
   height: 14px;
 }
 
-.main-content::-webkit-scrollbar-track {
+.board-scroll-container::-webkit-scrollbar-track {
   background: var(--scrollbar-track);
   border-radius: 8px;
 }
 
-.main-content::-webkit-scrollbar-thumb {
+.board-scroll-container::-webkit-scrollbar-thumb {
   background: var(--scrollbar-thumb);
   border-radius: 8px;
   border: 2px solid var(--scrollbar-track);
 }
 
-.main-content::-webkit-scrollbar-thumb:hover {
+.board-scroll-container::-webkit-scrollbar-thumb:hover {
   background: var(--scrollbar-thumb-hover);
-}
-
-/* Khusus untuk container scroll horizontal di tabel */
-.board-table-wrapper div[style*="overflow-x: auto"]::-webkit-scrollbar,
-.board-table-wrapper > div::-webkit-scrollbar {
-  width: 14px;
-  height: 14px;
-}
-
-.board-table-wrapper div[style*="overflow-x: auto"]::-webkit-scrollbar-track,
-.board-table-wrapper > div::-webkit-scrollbar-track {
-  background: var(--scrollbar-track);
-  border-radius: 8px;
-}
-
-.board-table-wrapper div[style*="overflow-x: auto"]::-webkit-scrollbar-thumb,
-.board-table-wrapper > div::-webkit-scrollbar-thumb {
-  background: var(--scrollbar-thumb);
-  border-radius: 8px;
-  border: 2px solid var(--scrollbar-track);
-}
-
-.board-table-wrapper div[style*="overflow-x: auto"]::-webkit-scrollbar-thumb:hover,
-.board-table-wrapper > div::-webkit-scrollbar-thumb:hover {
-  background: var(--scrollbar-thumb-hover);
-}
-
-/* Fallback untuk Firefox */
-.main-content,
-.board-table-wrapper div[style*="overflow-x: auto"],
-.board-table-wrapper > div {
-  scrollbar-width: thin;
-  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
 
 /* ============================================================
@@ -228,7 +189,7 @@ body.dark {
 }
 
 /* ============================================================
-   MAIN CONTENT – SCROLL VERTIKAL DI SINI
+   MAIN CONTENT
    ============================================================ */
 .main-content {
   flex: 1;
@@ -237,23 +198,269 @@ body.dark {
   background: var(--bg-secondary);
   transition: background 0.3s ease;
   height: 100vh;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   position: relative;
 }
 
 /* ============================================================
-   BOARD TABLE WRAPPER (untuk horizontal scroll)
+   BOARD TABLE WRAPPER
    ============================================================ */
 .board-table-wrapper {
   flex: 1;
-  min-width: 100%;
+  min-height: 0;
+  overflow: hidden;
 }
 
 /* ============================================================
-   BOARD FOOTER (sticky di bawah)
+   BOARD SCROLL CONTAINER - SATU SCROLL HORIZONTAL UNTUK SEMUA GROUP
+   ============================================================ */
+.board-scroll-container {
+  overflow-x: auto !important;
+  overflow-y: visible !important;
+  width: 100%;
+  position: relative;
+  height: 100%;
+}
+
+/* ============================================================
+   PASTIKAN GROUP TIDAK PUNYA OVERFLOW
+   ============================================================ */
+.group-wrapper {
+  overflow: visible !important;
+}
+
+/* ============================================================
+   HEADER GROUP STICKY KIRI
+   ============================================================ */
+.group-header-sticky {
+  position: sticky !important;
+  left: 0 !important;
+  z-index: 25 !important;
+  background: var(--bg-secondary) !important;
+  border-bottom: 3px solid var(--group-color, #3b82f6);
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  box-sizing: border-box;
+  box-shadow: inset -2px 0 0 0 var(--border-color);
+}
+
+.group-toggle-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--text-secondary);
+  padding: 0 4px 0 0;
+  margin-right: 8px;
+}
+
+.group-menu-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  color: var(--text-secondary);
+  padding: 0 8px 0 0;
+  margin-right: 8px;
+}
+
+.group-title {
+  font-size: 14px;
+  font-weight: 600;
+  flex: 1;
+  margin: 0;
+}
+
+.group-color-picker {
+  width: 24px;
+  height: 24px;
+  border: none;
+  cursor: pointer;
+  background: transparent;
+}
+
+/* ============================================================
+   ADD ITEM STICKY KIRI
+   ============================================================ */
+.add-item-sticky {
+  position: sticky !important;
+  left: 0 !important;
+  z-index: 15 !important;
+  background: var(--bg-secondary) !important;
+  border-bottom: 2px solid var(--border-color);
+  border-left: 4px solid var(--group-color, #3b82f6);
+  border-right: 2px solid var(--border-color);
+  border-bottom-left-radius: 4px;
+  border-bottom-right-radius: 4px;
+  padding: 0;
+  margin-top: 0;
+  width: 100%;
+  box-sizing: border-box;
+  box-shadow: inset -2px 0 0 0 var(--border-color);
+}
+
+.add-item-sticky button {
+  display: block;
+  width: 100%;
+  padding: 6px 8px;
+  border: none;
+  background: transparent;
+  color: #3b82f6;
+  cursor: pointer;
+  font-size: 13px;
+  text-align: left;
+  transition: background 0.15s;
+  box-sizing: border-box;
+}
+
+.add-item-sticky button:hover {
+  background: var(--bg-hover);
+}
+
+/* ============================================================
+   TABLE STYLING
+   ============================================================ */
+.board-table {
+  border-collapse: collapse;
+  border: 2px solid var(--border-color);
+  border-radius: 4px;
+  border-left: 4px solid var(--group-color, #3b82f6);
+  table-layout: fixed;
+  width: auto;
+}
+
+.table-header-row {
+  text-align: left;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 600;
+  border-bottom: 2px solid var(--border-color);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.checkbox-header {
+  padding: 8px 8px;
+  width: 36px;
+  min-width: 36px;
+  max-width: 36px;
+  border-right: 2px solid var(--border-color);
+  text-align: center;
+  position: sticky;
+  left: 0;
+  z-index: 20;
+  background: var(--bg-secondary);
+}
+
+.add-column-header {
+  padding: 8px 8px;
+  width: 50px;
+  min-width: 50px;
+  max-width: 50px;
+  border-right: none;
+  border-left: 2px solid var(--border-color);
+  text-align: center;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: background 0.15s;
+}
+
+.add-column-header:hover {
+  background: var(--bg-hover);
+}
+
+.add-column-header span {
+  font-size: 18px;
+  font-weight: 300;
+}
+
+.empty-group-message {
+  padding: 12px;
+  color: var(--text-light);
+  text-align: center;
+  border: 2px solid var(--border-color);
+  border-radius: 4px;
+  border-left: 4px solid var(--group-color, #3b82f6);
+}
+
+.empty-group-message button {
+  color: #3b82f6;
+  background: none;
+  border: none;
+  cursor: pointer;
+  margin-left: 4px;
+  text-decoration: underline;
+}
+
+/* ============================================================
+   GROUP POPUP
+   ============================================================ */
+.group-popup {
+  position: absolute;
+  top: 30px;
+  left: 0;
+  background: var(--bg-modal);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  box-shadow: var(--shadow-md);
+  padding: 4px 0;
+  z-index: 100;
+  min-width: 160px;
+}
+
+.group-popup button {
+  display: block;
+  width: 100%;
+  padding: 6px 16px;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  color: var(--text-primary);
+  font-size: 13px;
+}
+
+.group-popup button:last-child {
+  border-top: 1px solid var(--border-color);
+  color: #ef4444;
+}
+
+.group-popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 99;
+}
+
+/* ============================================================
+   ADD NEW GROUP
+   ============================================================ */
+.add-group-container {
+  margin-top: 16px;
+}
+
+.add-group-container button {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  border: 2px dashed var(--border-color);
+  border-radius: 6px;
+  background: transparent;
+  color: #3b82f6;
+  cursor: pointer;
+  font-size: 14px;
+  text-align: center;
+}
+
+/* ============================================================
+   BOARD FOOTER
    ============================================================ */
 .board-footer {
   display: flex;
@@ -295,7 +502,7 @@ body.dark {
 }
 
 /* ============================================================
-   DATE INPUT – IKON KALENDER TERLIHAT DI DARK & LIGHT MODE
+   DATE INPUT
    ============================================================ */
 input[type="date"]::-webkit-calendar-picker-indicator {
   filter: invert(0);
@@ -310,13 +517,10 @@ body.dark input[type="date"]::-webkit-calendar-picker-indicator {
 
 input[type="date"] {
   color-scheme: light dark;
-}
-
-input[type="date"] {
   background: var(--bg-input);
   color: var(--text-primary);
   border: 1px solid var(--border-dark);
-  borderRadius: 4px;
+  border-radius: 4px;
   padding: 4px 8px;
 }
 
