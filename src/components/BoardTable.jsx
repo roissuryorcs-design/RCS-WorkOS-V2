@@ -421,25 +421,48 @@ export default function BoardTable({
                         ))}
 
                         {/* =============================================
-                            BARIS ADD ITEM - DI DALAM TABEL (STICKY)
+                            BARIS ADD ITEM - STICKY
                             ============================================= */}
                         <tr>
+                          {/* Kolom CHECKBOX - STICKY (kosong) */}
                           <td
-                            colSpan={safeColumns.length + 2}
+                            style={{
+                              padding: "6px 8px",
+                              width: "36px",
+                              minWidth: "36px",
+                              maxWidth: "36px",
+                              borderRight: "2px solid var(--border-color)",
+                              borderBottom: "2px solid var(--border-color)",
+                              borderLeft: `4px solid ${groupColor}`,
+                              textAlign: "center",
+                              boxSizing: "border-box",
+                              position: "sticky",
+                              left: 0,
+                              zIndex: 20,
+                              background: "var(--bg-secondary)",
+                            }}
+                          >
+                            {/* Kosong - tidak ada checkbox */}
+                          </td>
+
+                          {/* Kolom ITEM - STICKY (dengan tombol Add item) */}
+                          <td
+                            colSpan={safeColumns.length + 1}
                             style={{
                               padding: 0,
                               border: "none",
                               background: "var(--bg-secondary)",
+                              position: "sticky",
+                              left: "36px",
+                              zIndex: 20,
+                              background: "var(--bg-secondary)",
+                              boxShadow: "inset -2px 0 0 0 var(--border-color)",
                             }}
                           >
                             <div
                               style={{
-                                position: "sticky",
-                                left: 0,
-                                zIndex: 15,
                                 background: "var(--bg-secondary)",
                                 borderBottom: "2px solid var(--border-color)",
-                                borderLeft: `4px solid ${groupColor}`,
                                 borderRight: "2px solid var(--border-color)",
                                 borderBottomLeftRadius: 4,
                                 borderBottomRightRadius: 4,
