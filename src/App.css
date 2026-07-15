@@ -208,7 +208,7 @@ body.dark {
 }
 
 /* ============================================================
-   GROUP BLOCK - LEBAR MENGIKUTI TABEL
+   GROUP BLOCK
    ============================================================ */
 .group-block {
   width: max-content !important;
@@ -218,14 +218,9 @@ body.dark {
 }
 
 /* ============================================================
-   GROUP HEADER - STICKY VERTIKAL + HORIZONTAL
+   GROUP HEADER LABEL - TANPA STICKY
    ============================================================ */
-.group-header-sticky {
-  position: sticky !important;
-  top: 58px !important;   /* STICKY VERTIKAL - tetap di atas saat scroll ke bawah */
-  left: 0 !important;     /* STICKY HORIZONTAL - tetap di kiri saat scroll ke kanan */
-  z-index: 40 !important;
-  background: var(--bg-secondary) !important;
+.group-header-label {
   border-bottom: 3px solid var(--group-color, #3b82f6);
   border-left: 4px solid var(--group-color, #3b82f6);
   padding: 8px 12px;
@@ -235,7 +230,7 @@ body.dark {
   min-width: max-content !important;
   width: 100% !important;
   box-sizing: border-box;
-  box-shadow: inset -2px 0 0 0 var(--border-color), 0 2px 4px rgba(0,0,0,0.05);
+  background: var(--bg-secondary);
 }
 
 .group-toggle-btn {
@@ -275,6 +270,20 @@ body.dark {
 }
 
 /* ============================================================
+   TABLE HEADER - STICKY VERTIKAL + HORIZONTAL
+   ============================================================ */
+.board-table thead {
+  position: sticky !important;
+  top: 58px !important;
+  z-index: 25 !important;
+}
+
+.board-table thead th {
+  background: var(--bg-secondary) !important;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* ============================================================
    TABLE STYLING
    ============================================================ */
 .board-table {
@@ -310,7 +319,7 @@ body.dark {
   text-align: center;
   position: sticky !important;
   left: 0 !important;
-  z-index: 20 !important;
+  z-index: 26 !important;
   background: var(--bg-secondary) !important;
 }
 
@@ -475,7 +484,7 @@ body.dark {
    ============================================================ */
 .group-popup {
   position: absolute;
-  top: 58px;
+  top: 30px;
   left: 4px;
   background: var(--bg-modal);
   border: 1px solid var(--border-color);
