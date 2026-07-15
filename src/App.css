@@ -218,9 +218,13 @@ body.dark {
 }
 
 /* ============================================================
-   GROUP HEADER LABEL - TANPA STICKY
+   GROUP HEADER - STICKY VERTIKAL
    ============================================================ */
-.group-header-label {
+.group-header {
+  position: sticky !important;
+  top: 64px !important;
+  z-index: 60 !important;
+  background: var(--bg-secondary) !important;
   border-bottom: 3px solid var(--group-color, #3b82f6);
   border-left: 4px solid var(--group-color, #3b82f6);
   padding: 8px 12px;
@@ -230,7 +234,7 @@ body.dark {
   min-width: max-content !important;
   width: 100% !important;
   box-sizing: border-box;
-  background: var(--bg-secondary);
+  box-shadow: inset -2px 0 0 0 var(--border-color), 0 2px 4px rgba(0,0,0,0.05);
 }
 
 .group-toggle-btn {
@@ -270,23 +274,19 @@ body.dark {
 }
 
 /* ============================================================
-   GROUP HEADER - STICKY VERTIKAL + HORIZONTAL
+   TABLE HEADER - STICKY VERTIKAL
    ============================================================ */
-.group-header-label {
-  position: sticky !important;  /* ← INI YANG DITAMBAHKAN */
-  top: 0px !important;          /* ← INI YANG DITAMBAHKAN */
-  left: 0 !important;           /* ← INI YANG DITAMBAHKAN */
-  z-index: 40 !important;       /* ← INI YANG DITAMBAHKAN */
-  border-bottom: 3px solid var(--group-color, #3b82f6);
-  border-left: 4px solid var(--group-color, #3b82f6);
-  padding: 8px 12px;
-  margin-bottom: 0;
-  display: flex !important;
-  align-items: center;
-  min-width: max-content !important;
-  width: 100% !important;
-  box-sizing: border-box;
-  background: var(--bg-secondary);
+.board-table thead {
+  position: sticky !important;
+  top: 96px !important;
+  z-index: 50 !important;
+}
+
+.board-table thead th {
+  background: var(--bg-secondary) !important;
+  position: sticky !important;
+  top: 96px !important;
+  z-index: 50 !important;
 }
 
 /* ============================================================
@@ -372,43 +372,14 @@ body.dark {
 }
 
 /* ============================================================
-   ADD ITEM - STICKY HORIZONTAL
+   ADD ITEM - STICKY HORIZONTAL (di dalam tabel)
    ============================================================ */
-.add-item-sticky {
+.add-item-row td {
   position: sticky !important;
-  left: 0 !important;
-  z-index: 15 !important;
+  left: 36px !important;
+  z-index: 20 !important;
   background: var(--bg-secondary) !important;
-  border-bottom: 2px solid var(--border-color);
-  border-left: 4px solid var(--group-color, #3b82f6);
-  border-right: 2px solid var(--border-color);
-  border-bottom-left-radius: 4px;
-  border-bottom-right-radius: 4px;
-  padding: 0;
-  margin-top: 0;
-  min-width: max-content !important;
-  width: auto !important;
-  box-sizing: border-box;
-  box-shadow: inset -2px 0 0 0 var(--border-color);
-}
-
-.add-item-sticky button {
-  display: block;
-  width: 100%;
-  padding: 6px 8px;
-  border: none;
-  background: transparent;
-  color: #3b82f6;
-  cursor: pointer;
-  font-size: 13px;
-  text-align: left;
-  transition: background 0.15s;
-  box-sizing: border-box;
-  white-space: nowrap;
-}
-
-.add-item-sticky button:hover {
-  background: var(--bg-hover);
+  box-shadow: inset -2px 0 0 0 var(--border-color) !important;
 }
 
 /* ============================================================
@@ -490,7 +461,7 @@ body.dark {
    ============================================================ */
 .group-popup {
   position: absolute;
-  top: 30px;
+  top: 64px;
   left: 4px;
   background: var(--bg-modal);
   border: 1px solid var(--border-color);
