@@ -280,7 +280,9 @@ body.dark {
 
 .board-table thead th {
   background: var(--bg-secondary) !important;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  position: sticky !important;
+  top:0px !important;
+  z-index: 35 !important;
 }
 
 /* ============================================================
