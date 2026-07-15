@@ -270,19 +270,23 @@ body.dark {
 }
 
 /* ============================================================
-   TABLE HEADER - STICKY VERTIKAL + HORIZONTAL
+   GROUP HEADER - STICKY VERTIKAL + HORIZONTAL
    ============================================================ */
-.board-table thead {
-  position: sticky !important;
-  top: 0px !important;
-  z-index: 25 !important;
-}
-
-.board-table thead th {
-  background: var(--bg-secondary) !important;
-  position: sticky !important;
-  top:0px !important;
-  z-index: 35 !important;
+.group-header-label {
+  position: sticky !important;  /* ← INI YANG DITAMBAHKAN */
+  top: 0px !important;          /* ← INI YANG DITAMBAHKAN */
+  left: 0 !important;           /* ← INI YANG DITAMBAHKAN */
+  z-index: 40 !important;       /* ← INI YANG DITAMBAHKAN */
+  border-bottom: 3px solid var(--group-color, #3b82f6);
+  border-left: 4px solid var(--group-color, #3b82f6);
+  padding: 8px 12px;
+  margin-bottom: 0;
+  display: flex !important;
+  align-items: center;
+  min-width: max-content !important;
+  width: 100% !important;
+  box-sizing: border-box;
+  background: var(--bg-secondary);
 }
 
 /* ============================================================
