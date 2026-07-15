@@ -157,9 +157,7 @@ export default function BoardTable({
           return (
             <div key={groupName} style={{ marginBottom: 24, position: "relative" }}>
 
-              {/* =============================================
-                  HEADER GROUP - STICKY VERTIKAL
-                  ============================================= */}
+              {/* HEADER GROUP - STICKY VERTIKAL */}
               <div
                 style={{
                   position: "sticky",
@@ -304,174 +302,183 @@ export default function BoardTable({
                 </>
               )}
 
-              {/* TABEL + ADD ITEM */}
+              {/* TABEL */}
               {!isCollapsed && (
                 <>
                   {tasks.length > 0 ? (
-                    <>
-                      <table
-                        cellPadding="0"
-                        style={{
-                          borderCollapse: "collapse",
-                          border: "2px solid var(--border-color)",
-                          borderRadius: 4,
-                          borderLeft: "none",
-                          tableLayout: "fixed",
-                          width: "auto",
-                        }}
-                      >
-                        <thead>
-                          <tr
+                    <table
+                      cellPadding="0"
+                      style={{
+                        borderCollapse: "collapse",
+                        border: "2px solid var(--border-color)",
+                        borderRadius: 4,
+                        borderLeft: "none",
+                        tableLayout: "fixed",
+                        width: "auto",
+                      }}
+                    >
+                      <thead>
+                        <tr
+                          style={{
+                            textAlign: "left",
+                            fontSize: 12,
+                            color: "var(--text-muted)",
+                            fontWeight: 600,
+                            borderBottom: "2px solid var(--border-color)",
+                            textTransform: "uppercase",
+                            letterSpacing: "0.3px",
+                          }}
+                        >
+                          {/* CHECKBOX - STICKY HORIZONTAL */}
+                          <th
                             style={{
-                              textAlign: "left",
-                              fontSize: 12,
-                              color: "var(--text-muted)",
-                              fontWeight: 600,
-                              borderBottom: "2px solid var(--border-color)",
-                              textTransform: "uppercase",
-                              letterSpacing: "0.3px",
+                              padding: "8px 8px",
+                              width: "36px",
+                              minWidth: "36px",
+                              maxWidth: "36px",
+                              borderRight: "2px solid var(--border-color)",
+                              borderLeft: `4px solid ${groupColor}`,
+                              textAlign: "center",
+                              position: "sticky",
+                              left: 0,
+                              zIndex: 20,
+                              background: "var(--bg-secondary)",
                             }}
                           >
-                            {/* CHECKBOX - STICKY HORIZONTAL */}
-                            <th
+                            <input
+                              type="checkbox"
+                              checked={
+                                tasks.length > 0 &&
+                                tasks.every((t) => selectedItems.includes(t.id))
+                              }
+                              onChange={() => selectAllInGroup(groupName, tasks)}
+                              style={{ cursor: "pointer", width: 16, height: 16 }}
+                            />
+                          </th>
+
+                          {/* KOLOM */}
+                          {safeColumns.map((col, idx) => {
+                            const isItem = col.id === "item";
+                            const isLast = idx === safeColumns.length - 1;
+                            return (
+                              <ResizableHeader
+                                key={col.id}
+                                column={col}
+                                index={idx}
+                                totalColumns={safeColumns.length}
+                                onResize={updateColumnWidth}
+                                onRename={renameColumn}
+                                onToggle={toggleColumn}
+                                onDelete={deleteColumn}
+                                onReorder={reorderColumns}
+                                isSticky={isItem}
+                                stickyLeft={isItem ? 36 : 0}
+                                isLast={isLast}
+                              >
+                                {col.label}
+                              </ResizableHeader>
+                            );
+                          })}
+
+                          <th
+                            style={{
+                              padding: "8px 8px",
+                              width: "50px",
+                              minWidth: "50px",
+                              maxWidth: "50px",
+                              borderRight: "none",
+                              borderLeft: "2px solid var(--border-color)",
+                              textAlign: "center",
+                              cursor: "pointer",
+                              color: "var(--text-muted)",
+                              transition: "background 0.15s",
+                            }}
+                            onClick={onOpenAddColumn}
+                            onMouseEnter={(e) =>
+                              (e.currentTarget.style.background = "var(--bg-hover)")
+                            }
+                            onMouseLeave={(e) =>
+                              (e.currentTarget.style.background = "transparent")
+                            }
+                          >
+                            <span style={{ fontSize: 18, fontWeight: 300 }}>+</span>
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {tasks.map((item) => (
+                          <Row
+                            key={item.id}
+                            item={item}
+                            groupColor={groupColor}
+                            visibleColumns={safeColumns}
+                            isSelected={selectedItems.includes(item.id)}
+                            onToggleSelect={() => toggleSelectItem(item.id)}
+                            onUpdate={(field, value) => onUpdateItem(item.id, field, value)}
+                            onDelete={() => onDeleteItem(item.id)}
+                            onOpenStatusManager={onOpenStatusManager}
+                          />
+                        ))}
+
+                        {/* =============================================
+                            BARIS ADD ITEM - DI DALAM TABEL (STICKY)
+                            ============================================= */}
+                        <tr>
+                          <td
+                            colSpan={safeColumns.length + 2}
+                            style={{
+                              padding: 0,
+                              border: "none",
+                              background: "var(--bg-secondary)",
+                            }}
+                          >
+                            <div
                               style={{
-                                padding: "8px 8px",
-                                width: "36px",
-                                minWidth: "36px",
-                                maxWidth: "36px",
-                                borderRight: "2px solid var(--border-color)",
-                                borderLeft: `4px solid ${groupColor}`,
-                                textAlign: "center",
                                 position: "sticky",
                                 left: 0,
-                                zIndex: 20,
+                                zIndex: 15,
                                 background: "var(--bg-secondary)",
+                                borderBottom: "2px solid var(--border-color)",
+                                borderLeft: `4px solid ${groupColor}`,
+                                borderRight: "2px solid var(--border-color)",
+                                borderBottomLeftRadius: 4,
+                                borderBottomRightRadius: 4,
+                                padding: 0,
+                                marginTop: 0,
+                                width: "100%",
+                                boxSizing: "border-box",
+                                boxShadow: "inset -2px 0 0 0 var(--border-color)",
                               }}
                             >
-                              <input
-                                type="checkbox"
-                                checked={
-                                  tasks.length > 0 &&
-                                  tasks.every((t) => selectedItems.includes(t.id))
+                              <button
+                                onClick={() => onAddItem(groupName)}
+                                style={{
+                                  display: "block",
+                                  width: "100%",
+                                  padding: "6px 8px",
+                                  border: "none",
+                                  background: "transparent",
+                                  color: "#3b82f6",
+                                  cursor: "pointer",
+                                  fontSize: 13,
+                                  textAlign: "left",
+                                  transition: "background 0.15s",
+                                  boxSizing: "border-box",
+                                }}
+                                onMouseEnter={(e) =>
+                                  (e.currentTarget.style.background = "var(--bg-hover)")
                                 }
-                                onChange={() => selectAllInGroup(groupName, tasks)}
-                                style={{ cursor: "pointer", width: 16, height: 16 }}
-                              />
-                            </th>
-
-                            {/* KOLOM */}
-                            {safeColumns.map((col, idx) => {
-                              const isItem = col.id === "item";
-                              const isLast = idx === safeColumns.length - 1;
-                              return (
-                                <ResizableHeader
-                                  key={col.id}
-                                  column={col}
-                                  index={idx}
-                                  totalColumns={safeColumns.length}
-                                  onResize={updateColumnWidth}
-                                  onRename={renameColumn}
-                                  onToggle={toggleColumn}
-                                  onDelete={deleteColumn}
-                                  onReorder={reorderColumns}
-                                  isSticky={isItem}
-                                  stickyLeft={isItem ? 36 : 0}
-                                  isLast={isLast}
-                                >
-                                  {col.label}
-                                </ResizableHeader>
-                              );
-                            })}
-
-                            <th
-                              style={{
-                                padding: "8px 8px",
-                                width: "50px",
-                                minWidth: "50px",
-                                maxWidth: "50px",
-                                borderRight: "none",
-                                borderLeft: "2px solid var(--border-color)",
-                                textAlign: "center",
-                                cursor: "pointer",
-                                color: "var(--text-muted)",
-                                transition: "background 0.15s",
-                              }}
-                              onClick={onOpenAddColumn}
-                              onMouseEnter={(e) =>
-                                (e.currentTarget.style.background = "var(--bg-hover)")
-                              }
-                              onMouseLeave={(e) =>
-                                (e.currentTarget.style.background = "transparent")
-                              }
-                            >
-                              <span style={{ fontSize: 18, fontWeight: 300 }}>+</span>
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {tasks.map((item) => (
-                            <Row
-                              key={item.id}
-                              item={item}
-                              groupColor={groupColor}
-                              visibleColumns={safeColumns}
-                              isSelected={selectedItems.includes(item.id)}
-                              onToggleSelect={() => toggleSelectItem(item.id)}
-                              onUpdate={(field, value) => onUpdateItem(item.id, field, value)}
-                              onDelete={() => onDeleteItem(item.id)}
-                              onOpenStatusManager={onOpenStatusManager}
-                            />
-                          ))}
-                        </tbody>
-                      </table>
-
-                      {/* =============================================
-                          ADD ITEM - STICKY HORIZONTAL (di luar tabel, tapi sticky)
-                          ============================================= */}
-                      <div
-                        style={{
-                          position: "sticky",
-                          left: 0,
-                          zIndex: 15,
-                          background: "var(--bg-secondary)",
-                          borderBottom: "2px solid var(--border-color)",
-                          borderLeft: `4px solid ${groupColor}`,
-                          borderRight: "2px solid var(--border-color)",
-                          borderBottomLeftRadius: 4,
-                          borderBottomRightRadius: 4,
-                          padding: 0,
-                          marginTop: 0,
-                          width: "100%",
-                          boxSizing: "border-box",
-                          boxShadow: "inset -2px 0 0 0 var(--border-color)",
-                        }}
-                      >
-                        <button
-                          onClick={() => onAddItem(groupName)}
-                          style={{
-                            display: "block",
-                            width: "100%",
-                            padding: "6px 8px",
-                            border: "none",
-                            background: "transparent",
-                            color: "#3b82f6",
-                            cursor: "pointer",
-                            fontSize: 13,
-                            textAlign: "left",
-                            transition: "background 0.15s",
-                            boxSizing: "border-box",
-                          }}
-                          onMouseEnter={(e) =>
-                            (e.currentTarget.style.background = "var(--bg-hover)")
-                          }
-                          onMouseLeave={(e) =>
-                            (e.currentTarget.style.background = "transparent")
-                          }
-                        >
-                          + Add item
-                        </button>
-                      </div>
-                    </>
+                                onMouseLeave={(e) =>
+                                  (e.currentTarget.style.background = "transparent")
+                                }
+                              >
+                                + Add item
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
                   ) : (
                     <div
                       style={{
