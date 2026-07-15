@@ -141,45 +141,55 @@ export default function BoardTable({
       )}
 
       {/* ===== SATU CONTAINER UNTUK SCROLL HORIZONTAL ===== */}
-      <div className="board-scroll-container">
+      <div
+        style={{
+          overflowX: "auto",
+          overflowY: "visible",
+          width: "100%",
+          height: "100%",
+        }}
+      >
         {groups.map((groupName) => {
           const tasks = grouped[groupName] || [];
           const isCollapsed = collapsed[groupName] || false;
           const groupColor = groupColors[groupName] || "#3b82f6";
 
           return (
-            <div key={groupName} className="group-block" style={{ marginBottom: 24 }}>
+            <div key={groupName} style={{ marginBottom: 24, position: "relative" }}>
 
               {/* =============================================
-                  GROUP HEADER - TANPA STICKY (hanya sebagai label)
+                  GROUP HEADER - STICKY VERTIKAL
                   ============================================= */}
-              <div 
-                className="group-header-label" 
-                style={{ 
-                  borderBottomColor: groupColor, 
-                  borderLeftColor: groupColor 
+              <div
+                className="group-header"
+                style={{
+                  borderBottomColor: groupColor,
+                  borderLeftColor: groupColor,
                 }}
               >
-                <button 
-                  onClick={() => toggleCollapse(groupName)} 
+                <button
+                  onClick={() => toggleCollapse(groupName)}
                   className="group-toggle-btn"
                 >
                   {isCollapsed ? "▶" : "▼"}
                 </button>
-                <button 
-                  onClick={() => setPopupGroup(groupName)} 
+
+                <button
+                  onClick={() => setPopupGroup(groupName)}
                   className="group-menu-btn"
                 >
                   ⋮
                 </button>
+
                 <h3 className="group-title" style={{ color: groupColor }}>
                   {groupName}
                 </h3>
-                <input 
-                  type="color" 
-                  value={groupColor} 
-                  onChange={(e) => onUpdateGroupColor(groupName, e.target.value)} 
-                  className="group-color-picker" 
+
+                <input
+                  type="color"
+                  value={groupColor}
+                  onChange={(e) => onUpdateGroupColor(groupName, e.target.value)}
+                  className="group-color-picker"
                 />
               </div>
 
@@ -206,8 +216,8 @@ export default function BoardTable({
                       <thead>
                         <tr className="table-header-row">
                           {/* CHECKBOX - STICKY HORIZONTAL */}
-                          <th 
-                            className="checkbox-header" 
+                          <th
+                            className="checkbox-header"
                             style={{ borderLeftColor: groupColor }}
                           >
                             <input
@@ -263,29 +273,97 @@ export default function BoardTable({
                             onOpenStatusManager={onOpenStatusManager}
                           />
                         ))}
+
+                        {/* =============================================
+                            BARIS ADD ITEM - STICKY HORIZONTAL
+                            ============================================= */}
+                        <tr className="add-item-row">
+                          {/* CHECKBOX CELL - STICKY (kosong) */}
+                          <td
+                            style={{
+                              padding: "6px 8px",
+                              width: "36px",
+                              minWidth: "36px",
+                              maxWidth: "36px",
+                              borderRight: "2px solid var(--border-color)",
+                              borderBottom: "2px solid var(--border-color)",
+                              borderLeft: `4px solid ${groupColor}`,
+                              textAlign: "center",
+                              boxSizing: "border-box",
+                              position: "sticky",
+                              left: 0,
+                              zIndex: 20,
+                              background: "var(--bg-secondary)",
+                            }}
+                          >
+                            {/* Kosong */}
+                          </td>
+
+                          {/* ITEM CELL - STICKY (dengan tombol Add item) */}
+                          <td
+                            colSpan={safeColumns.length + 1}
+                            style={{
+                              padding: 0,
+                              border: "none",
+                              position: "sticky",
+                              left: "36px",
+                              zIndex: 20,
+                              background: "var(--bg-secondary)",
+                              boxShadow: "inset -2px 0 0 0 var(--border-color)",
+                            }}
+                          >
+                            <div
+                              style={{
+                                background: "var(--bg-secondary)",
+                                borderBottom: "2px solid var(--border-color)",
+                                borderRight: "2px solid var(--border-color)",
+                                borderBottomLeftRadius: 4,
+                                borderBottomRightRadius: 4,
+                                padding: 0,
+                                marginTop: 0,
+                                width: "100%",
+                                boxSizing: "border-box",
+                                boxShadow: "inset -2px 0 0 0 var(--border-color)",
+                              }}
+                            >
+                              <button
+                                onClick={() => onAddItem(groupName)}
+                                style={{
+                                  display: "block",
+                                  width: "100%",
+                                  padding: "6px 8px",
+                                  border: "none",
+                                  background: "transparent",
+                                  color: "#3b82f6",
+                                  cursor: "pointer",
+                                  fontSize: 13,
+                                  textAlign: "left",
+                                  transition: "background 0.15s",
+                                  boxSizing: "border-box",
+                                }}
+                                onMouseEnter={(e) =>
+                                  (e.currentTarget.style.background = "var(--bg-hover)")
+                                }
+                                onMouseLeave={(e) =>
+                                  (e.currentTarget.style.background = "transparent")
+                                }
+                              >
+                                + Add item
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
                       </tbody>
                     </table>
                   ) : (
-                    <div 
-                      className="empty-group-message" 
+                    <div
+                      className="empty-group-message"
                       style={{ borderLeftColor: groupColor }}
                     >
                       No items in this group.
                       <button onClick={() => onAddItem(groupName)}>Add item</button>
                     </div>
                   )}
-
-                  {/* =============================================
-                      ADD ITEM - STICKY HORIZONTAL
-                      ============================================= */}
-                  <div 
-                    className="add-item-sticky" 
-                    style={{ borderLeftColor: groupColor }}
-                  >
-                    <button onClick={() => onAddItem(groupName)}>
-                      + Add item
-                    </button>
-                  </div>
                 </>
               )}
             </div>
