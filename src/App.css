@@ -156,7 +156,7 @@ body.dark {
 }
 
 /* ============================================================
-   APP CONTAINER
+   APP CONTAINER - FLEX LAYOUT
    ============================================================ */
 .app-container {
   display: flex;
@@ -169,7 +169,23 @@ body.dark {
 }
 
 /* ============================================================
-   MAIN CONTENT
+   SIDEBAR - FIXED WIDTH
+   ============================================================ */
+.sidebar {
+  width: 280px;
+  min-width: 280px;
+  height: 100vh;
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border-color);
+  overflow-y: auto;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+/* ============================================================
+   MAIN CONTENT - FLEX SISANYA
    ============================================================ */
 .main-content {
   flex: 1;
@@ -182,6 +198,7 @@ body.dark {
   display: flex;
   flex-direction: column;
   position: relative;
+  min-width: 0;
 }
 
 /* ============================================================
@@ -196,124 +213,134 @@ body.dark {
 }
 
 /* ============================================================
-   BOARD SCROLL CONTAINER - SCROLL HORIZONTAL GLOBAL
+   BOARD SCROLL CONTAINER - SATU SCROLL UNTUK SEMUA
    ============================================================ */
 .board-scroll-container {
   flex: 1;
-  overflow-x: auto !important;
-  overflow-y: visible !important;
+  overflow: auto !important;
   width: 100%;
+  height: 100%;
   position: relative;
-  isolation: isolate;
+  overflow-x: auto !important;
+}
+
+.board-scroll-content {
+  padding: 0 4px 8px 0;
+  min-height: 100%;
 }
 
 /* ============================================================
-   GROUP BLOCK
+   GROUP WRAPPER - PASTIKAN SEMUA GRUP MENDUKUNG STICKY
    ============================================================ */
-.group-block {
-  width: max-content !important;
-  min-width: 100% !important;
+.group-wrapper {
   margin-bottom: 24px;
   position: relative;
+  width: max-content !important;
+  min-width: 100% !important;
+  overflow: visible !important;
 }
 
 /* ============================================================
-   GROUP HEADER - STICKY VERTIKAL
+   ═══════════════════════════════════════════════════════════════
+   GROUP HEADER - STICKY VERTIKAL & HORIZONTAL (FIX)
+   ═══════════════════════════════════════════════════════════════
    ============================================================ */
+
+/* Parent - STICKY VERTIKAL saja (tidak membatasi child) */
 .group-header {
   position: sticky !important;
-  top: 64px !important;
-  z-index: 60 !important;
+  top: 0 !important;
+  z-index: 999 !important;
   background: var(--bg-secondary) !important;
-  border-bottom: 3px solid var(--group-color, #3b82f6);
-  border-left: 4px solid var(--group-color, #3b82f6);
-  padding: 8px 12px;
-  margin-bottom: 0;
-  display: flex !important;
-  align-items: center;
-  min-width: max-content !important;
-  width: 100% !important;
-  box-sizing: border-box;
-  box-shadow: inset -2px 0 0 0 var(--border-color), 0 2px 4px rgba(0,0,0,0.05);
+  width: fit-content !important;
+  min-width: 100% !important;
+  overflow: visible !important;
+  padding: 0 !important;
+  margin-bottom: 0 !important;
+  min-height: 48px;
 }
 
+/* Child - STICKY HORIZONTAL (KUNCI UTAMA) */
+.group-header-inner {
+  position: sticky !important;
+  left: 0 !important;
+  top: 0 !important;
+  z-index: 1001 !important;
+  background-color: var(--bg-secondary) !important;
+  display: flex !important;
+  align-items: center !important;
+  width: fit-content !important;
+  min-width: 100% !important;
+  overflow: visible !important;
+  border-bottom: 2px solid var(--group-color, #3b82f6) !important;
+  min-height: 48px;
+  padding: 8px 12px !important;
+  box-sizing: border-box !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* ============================================================
+   ELEMEN DI DALAM GROUP HEADER - STICKY HORIZONTAL
+   ============================================================ */
 .group-toggle-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 16px;
-  color: var(--text-secondary);
-  padding: 0 4px 0 0;
-  margin-right: 8px;
+  position: sticky !important;
+  left: 0 !important;
+  z-index: 1002 !important;
+  background: transparent !important;
+  border: none !important;
+  cursor: pointer !important;
+  font-size: 16px !important;
+  color: var(--text-secondary) !important;
+  padding: 4px 4px 4px 0 !important;
+  margin-right: 8px !important;
+  flex-shrink: 0 !important;
 }
 
 .group-menu-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 18px;
-  color: var(--text-secondary);
-  padding: 0 8px 0 0;
-  margin-right: 8px;
+  position: sticky !important;
+  left: 24px !important;
+  z-index: 1002 !important;
+  background: transparent !important;
+  border: none !important;
+  cursor: pointer !important;
+  font-size: 18px !important;
+  color: var(--text-secondary) !important;
+  padding: 4px !important;
+  margin-right: 8px !important;
+  flex-shrink: 0 !important;
 }
 
 .group-title {
-  font-size: 14px;
-  font-weight: 600;
-  flex: 1;
-  margin: 0;
-  white-space: nowrap;
+  position: sticky !important;
+  left: 48px !important;
+  z-index: 1002 !important;
+  background: transparent !important;
+  margin: 0 !important;
+  padding: 0 8px !important;
+  white-space: nowrap !important;
+  flex: 0 1 auto !important;
+  width: auto !important;
+  overflow: visible !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  color: var(--group-color, #3b82f6) !important;
 }
 
 .group-color-picker {
-  width: 24px;
-  height: 24px;
-  border: none;
-  cursor: pointer;
-  background: transparent;
-}
-
-/* ============================================================
-   TABLE HEADER - STICKY VERTIKAL
-   ============================================================ */
-.board-table thead {
   position: sticky !important;
-  top: 96px !important;
-  z-index: 50 !important;
-}
-
-.board-table thead th {
-  background: var(--bg-secondary) !important;
-  position: sticky !important;
-  top: 96px !important;
-  z-index: 50 !important;
-}
-
-/* ============================================================
-   TABLE STYLING
-   ============================================================ */
-.board-table {
-  border-collapse: collapse;
-  border: 2px solid var(--border-color);
-  border-radius: 4px;
-  border-left: none;
-  table-layout: fixed;
-  width: auto;
-  min-width: 100%;
-}
-
-.table-header-row {
-  text-align: left;
-  font-size: 12px;
-  color: var(--text-muted);
-  font-weight: 600;
-  border-bottom: 2px solid var(--border-color);
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
+  right: 0 !important;
+  z-index: 1002 !important;
+  background: transparent !important;
+  width: 24px !important;
+  height: 24px !important;
+  border: none !important;
+  cursor: pointer !important;
+  flex-shrink: 0 !important;
+  margin-left: auto !important;
 }
 
 /* ============================================================
-   CHECKBOX HEADER - STICKY HORIZONTAL
+   CHECKBOX HEADER - STICKY + WARNA SESUAI GRUP
    ============================================================ */
 .checkbox-header {
   padding: 8px 8px;
@@ -321,12 +348,13 @@ body.dark {
   min-width: 36px !important;
   max-width: 36px !important;
   border-right: 2px solid var(--border-color);
-  border-left: 4px solid var(--group-color, #3b82f6);
   text-align: center;
   position: sticky !important;
-  left: 0 !important;
-  z-index: 26 !important;
-  background: var(--bg-secondary) !important;
+  left: 0px !important;
+  z-index: 101 !important;
+  background-color: var(--bg-secondary) !important;
+  border-left: 4px solid var(--group-color, #3b82f6) !important;
+  box-shadow: none !important;
 }
 
 .checkbox-header input[type="checkbox"] {
@@ -336,7 +364,7 @@ body.dark {
 }
 
 /* ============================================================
-   ROW CHECKBOX CELL - STICKY HORIZONTAL
+   ROW CHECKBOX - STICKY + WARNA SESUAI GRUP
    ============================================================ */
 .row-checkbox-cell {
   padding: 6px 8px;
@@ -345,13 +373,13 @@ body.dark {
   max-width: 36px !important;
   border-right: 2px solid var(--border-color);
   border-bottom: 2px solid var(--border-color);
-  border-left: 4px solid var(--group-color, #3b82f6);
   text-align: center;
-  box-sizing: border-box;
   position: sticky !important;
-  left: 0 !important;
-  z-index: 20 !important;
-  background: var(--bg-secondary) !important;
+  left: 0px !important;
+  z-index: 100 !important;
+  background-color: var(--bg-secondary) !important;
+  border-left: 4px solid var(--group-color, #3b82f6) !important;
+  box-shadow: none !important;
 }
 
 .row-checkbox-cell input[type="checkbox"] {
@@ -361,24 +389,28 @@ body.dark {
 }
 
 /* ============================================================
-   ITEM CELL - STICKY HORIZONTAL
+   ITEM CELL - STICKY
    ============================================================ */
 .row-item-cell {
   position: sticky !important;
   left: 36px !important;
-  z-index: 20 !important;
-  background: var(--bg-secondary) !important;
+  z-index: 100 !important;
+  background-color: var(--bg-secondary) !important;
   box-shadow: inset -2px 0 0 0 var(--border-color) !important;
 }
 
 /* ============================================================
-   ADD ITEM - STICKY HORIZONTAL (di dalam tabel)
+   RESIZABLE HEADER - STICKY
    ============================================================ */
-.add-item-row td {
+.resizable-header {
+  position: relative;
+}
+
+.resizable-header.sticky-header {
   position: sticky !important;
   left: 36px !important;
-  z-index: 20 !important;
-  background: var(--bg-secondary) !important;
+  z-index: 100 !important;
+  background-color: var(--bg-secondary) !important;
   box-shadow: inset -2px 0 0 0 var(--border-color) !important;
 }
 
@@ -396,6 +428,7 @@ body.dark {
   cursor: pointer;
   color: var(--text-muted);
   transition: background 0.15s;
+  background-color: var(--bg-secondary);
 }
 
 .add-column-header:hover {
@@ -408,17 +441,17 @@ body.dark {
 }
 
 /* ============================================================
-   ROW CELL
+   ROW CELLS
    ============================================================ */
 .row-cell {
   padding: 6px 8px;
-  border-bottom: 2px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
   border-right: 2px solid var(--border-color);
   box-sizing: border-box;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  background: var(--bg-secondary);
+  background-color: var(--bg-secondary);
   color: var(--text-primary);
   font-size: 13px;
 }
@@ -432,10 +465,117 @@ body.dark {
   border-left: 2px solid var(--border-color);
   border-bottom: 2px solid var(--border-color);
   box-sizing: border-box;
+  background-color: var(--bg-secondary);
+}
+
+/* Row selected */
+.row-selected {
+  background: var(--bg-hover) !important;
+}
+
+.row-selected td {
+  background: var(--bg-hover) !important;
 }
 
 /* ============================================================
-   EMPTY GROUP MESSAGE
+   ADD ITEM - STICKY + WARNA SESUAI GRUP
+   ============================================================ */
+.add-item-container {
+  border: 2px solid var(--border-color) !important;
+  border-top: 2px solid var(--border-color) !important;
+  border-left: none !important;
+  border-right: 2px solid var(--border-color) !important;
+  border-bottom-left-radius: 4px;
+  border-bottom-right-radius: 4px;
+  background: var(--bg-secondary);
+  position: relative;
+  min-height: 40px;
+  display: flex !important;
+  align-items: center !important;
+  margin-top: 0px !important;
+}
+
+.add-item-checkbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px !important;
+  min-width: 36px !important;
+  max-width: 36px !important;
+  padding: 6px 8px;
+  border-right: 2px solid var(--border-color);
+  background-color: var(--bg-secondary);
+  position: sticky !important;
+  left: 0px !important;
+  z-index: 15 !important;
+  box-sizing: border-box;
+  border-left: 4px solid var(--group-color, #3b82f6) !important;
+  border-top: none !important;
+  border-bottom: none !important;
+  box-shadow: none !important;
+}
+
+.add-item-checkbox input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  opacity: 0.5;
+  cursor: default;
+  pointer-events: none;
+}
+
+.add-item-sticky {
+  position: sticky !important;
+  left: 36px !important;
+  z-index: 15 !important;
+  padding: 0;
+  flex: 1;
+  background-color: var(--bg-secondary);
+  border-left: none !important;
+  border-right: none !important;
+}
+
+.add-item-sticky button {
+  display: block;
+  width: 100%;
+  padding: 6px 8px;
+  border: none;
+  background: transparent;
+  color: #3b82f6;
+  cursor: pointer;
+  font-size: 13px;
+  text-align: left;
+  transition: background 0.15s;
+}
+
+.add-item-sticky button:hover {
+  background: var(--bg-hover);
+}
+
+.add-item-spacer {
+  flex: 1;
+  min-width: 50px;
+}
+
+/* ============================================================
+   GARIS VERTIKAL STICKY - WARNA SESUAI GRUP
+   ============================================================ */
+.ai-sticky-line {
+  position: sticky !important;
+  left: 0px !important;
+  top: 0px !important;
+  width: 3.33px !important;
+  height: 100% !important;
+  z-index: 10000 !important;
+  float: left !important;
+  margin-right: -3.33px !important;
+  flex-shrink: 0 !important;
+  pointer-events: none !important;
+  min-height: 48px !important;
+  background-color: var(--group-color, #3b82f6) !important;
+}
+
+/* ============================================================
+   EMPTY GROUP MESSAGE - WARNA SESUAI GRUP
    ============================================================ */
 .empty-group-message {
   padding: 12px;
@@ -443,8 +583,9 @@ body.dark {
   text-align: center;
   border: 2px solid var(--border-color);
   border-radius: 4px;
-  border-left: 4px solid var(--group-color, #3b82f6);
+  border-left: 4px solid var(--group-color, #3b82f6) !important;
   min-width: max-content !important;
+  background-color: var(--bg-secondary);
 }
 
 .empty-group-message button {
@@ -457,11 +598,211 @@ body.dark {
 }
 
 /* ============================================================
+   GROUP CONTENT
+   ============================================================ */
+.group-content {
+  overflow: visible !important;
+  max-height: none !important;
+  position: relative !important;
+}
+
+/* ============================================================
+   TABLE WRAPPER
+   ============================================================ */
+.table-wrapper {
+  overflow: visible;
+  position: relative;
+}
+
+/* ============================================================
+   TABLE HEADER ROW
+   ============================================================ */
+.table-header-row {
+  text-align: left;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 600;
+  border-bottom: 2px solid var(--border-color);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+/* ============================================================
+   TABLE
+   ============================================================ */
+.board-table {
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  border: 2px solid var(--border-color);
+  border-radius: 4px;
+  border-left: none;
+  table-layout: fixed;
+  min-width: 100%;
+}
+
+.board-table td, 
+.board-table th {
+  background-clip: padding-box !important;
+}
+
+.board-table tr td {
+  border-bottom: 2px solid var(--border-color) !important;
+}
+
+/* ============================================================
+   PERBAIKAN TAMPILAN TABEL
+   ============================================================ */
+
+/* 1. Memberikan garis bawah pada header tabel agar lebih tegas */
+.board-table thead th, 
+.board-table thead td {
+  border-bottom: 2px solid var(--border-color) !important;
+  padding-top: 14px !important;
+  padding-bottom: 14px !important;
+}
+
+/* 2. Menampilkan garis tabel paling kanan (kolom terakhir) */
+.board-table tr td:last-child, 
+.board-table tr th:last-child {
+  border-right: 2px solid var(--border-color) !important;
+}
+
+/* 3. Menampilkan garis pemisah antara baris data terakhir dan baris "Add Item" */
+.add-item-container {
+  border-top: 2px solid var(--border-color) !important;
+  margin-top: 0px !important;
+}
+
+/* 4. Menampilkan garis bawah pada baris terakhir di dalam tabel */
+.board-table tbody tr:last-child td {
+  border-bottom: 2px solid var(--border-color) !important;
+}
+
+/* 5. Memastikan warna border antar sel konsisten */
+.board-table td {
+  border-bottom: 1px solid var(--border-color);
+}
+
+/* ============================================================
+   CHECKBOX RAPI - PASTIKAN SEJAJAR
+   ============================================================ */
+
+/* Checkbox header */
+.checkbox-header {
+  width: 36px !important;
+  min-width: 36px !important;
+  max-width: 36px !important;
+  padding: 8px 8px !important;
+  text-align: center !important;
+  vertical-align: middle !important;
+}
+
+.checkbox-header input[type="checkbox"] {
+  width: 16px !important;
+  height: 16px !important;
+  margin: 0 auto !important;
+  padding: 0 !important;
+  display: block !important;
+  cursor: pointer !important;
+  accent-color: var(--group-color, #3b82f6) !important;
+}
+
+/* Row checkbox cell */
+.row-checkbox-cell {
+  width: 36px !important;
+  min-width: 36px !important;
+  max-width: 36px !important;
+  padding: 6px 8px !important;
+  text-align: center !important;
+  vertical-align: middle !important;
+}
+
+.row-checkbox-cell input[type="checkbox"] {
+  width: 16px !important;
+  height: 16px !important;
+  margin: 0 auto !important;
+  padding: 0 !important;
+  display: block !important;
+  cursor: pointer !important;
+  accent-color: var(--group-color, #3b82f6) !important;
+}
+
+/* Add item checkbox */
+.add-item-checkbox {
+  width: 36px !important;
+  min-width: 36px !important;
+  max-width: 36px !important;
+  padding: 6px 8px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.add-item-checkbox input[type="checkbox"] {
+  width: 16px !important;
+  height: 16px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: block !important;
+  opacity: 0.5 !important;
+  cursor: default !important;
+  pointer-events: none !important;
+}
+
+/* ============================================================
+   RESIZE HANDLE
+   ============================================================ */
+.resize-handle {
+  opacity: 0 !important;
+  transition: opacity 0.2s;
+}
+
+th:hover .resize-handle {
+  opacity: 0.6 !important;
+}
+
+/* ============================================================
+   SELECTED ITEMS BAR
+   ============================================================ */
+.selected-items-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: var(--bg-hover);
+  border-radius: 6px;
+  margin-bottom: 12px;
+  border: 1px solid var(--border-color);
+  backdrop-filter: blur(8px);
+  flex-shrink: 0;
+}
+
+.delete-selected-btn {
+  padding: 4px 12px;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.cancel-selected-btn {
+  padding: 4px 12px;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* ============================================================
    GROUP POPUP
    ============================================================ */
 .group-popup {
   position: absolute;
-  top: 64px;
+  top: 40px;
   left: 4px;
   background: var(--bg-modal);
   border: 1px solid var(--border-color);
@@ -503,6 +844,7 @@ body.dark {
    ============================================================ */
 .add-group-container {
   margin-top: 16px;
+  flex-shrink: 0;
 }
 
 .add-group-container button {
@@ -516,55 +858,40 @@ body.dark {
   cursor: pointer;
   font-size: 14px;
   text-align: center;
+  transition: all 0.2s;
+}
+
+.add-group-container button:hover {
+  background: var(--bg-hover);
+  border-color: var(--btn-primary-bg);
 }
 
 /* ============================================================
-   EMPTY STATE
+   BOARD SCROLLBAR
    ============================================================ */
-.empty-state {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  padding: 40px;
-  color: var(--text-muted);
+.board-scroll-container::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
 }
 
-.empty-state h3 {
-  font-size: 20px;
-  margin-bottom: 8px;
-  color: var(--text-primary);
+.board-scroll-container::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+  border-radius: 6px;
 }
 
-/* ============================================================
-   DATE INPUT
-   ============================================================ */
-input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: invert(0);
-  opacity: 0.6;
-  cursor: pointer;
+.board-scroll-container::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 6px;
+  border: 2px solid var(--scrollbar-track);
 }
 
-body.dark input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: invert(1);
-  opacity: 0.8;
+.board-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
 }
 
-input[type="date"] {
-  color-scheme: light dark;
-  background: var(--bg-input);
-  color: var(--text-primary);
-  border: 1px solid var(--border-dark);
-  border-radius: 4px;
-  padding: 4px 8px;
-}
-
-input[type="date"]::-moz-calendar-picker-indicator {
-  filter: invert(0);
-}
-body.dark input[type="date"]::-moz-calendar-picker-indicator {
-  filter: invert(1);
+.board-scroll-container {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
 
 /* ============================================================
@@ -574,37 +901,42 @@ body.dark input[type="date"]::-moz-calendar-picker-indicator {
   .main-content {
     padding: 16px;
   }
-}
-/* ============================================================
-   GROUP HEADER - STICKY VERTIKAL & HORIZONTAL
-   ============================================================ */
-
-/* Parent - STICKY VERTIKAL */
-.group-header {
-  position: sticky !important;
-  top: 0 !important;
-  z-index: 999 !important;
-  background: var(--bg-secondary) !important;
-  width: 100% !important;
-  overflow: visible !important;
-  padding: 0 !important;
-  margin-bottom: 0 !important;
-  min-height: 48px;
-}
-
-/* Child - STICKY HORIZONTAL (KUNCI) */
-.group-header-inner {
-  position: sticky !important;
-  left: 0 !important;        /* ← INI KUNCI STICKY HORIZONTAL */
-  top: 0 !important;
-  z-index: 1001 !important;
-  background-color: var(--bg-secondary) !important;
-  display: flex !important;
-  align-items: center !important;
-  width: 100% !important;
-  max-width: 1244px !important;
-  overflow: hidden !important;
-  border-bottom: 2px solid var(--group-color, #3b82f6) !important;
-  min-height: 48px;
-  padding: 8px 12px !important;
+  
+  .sidebar {
+    width: 60px;
+    min-width: 60px;
+  }
+  
+  .group-header-inner {
+    padding: 6px 8px;
+    min-height: 40px;
+  }
+  
+  .group-title {
+    font-size: 13px;
+    left: 40px !important;
+  }
+  
+  .group-menu-btn {
+    left: 20px !important;
+  }
+  
+  .checkbox-header,
+  .row-checkbox-cell,
+  .add-item-checkbox {
+    width: 30px !important;
+    min-width: 30px !important;
+    max-width: 30px !important;
+  }
+  
+  .row-item-cell,
+  .resizable-header.sticky-header,
+  .add-item-sticky {
+    left: 30px !important;
+  }
+  
+  .ai-sticky-line {
+    width: 3px !important;
+    margin-right: -3px !important;
+  }
 }
