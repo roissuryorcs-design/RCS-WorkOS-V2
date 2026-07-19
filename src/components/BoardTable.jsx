@@ -146,9 +146,7 @@ export default function BoardTable({
                   }}
                 />
 
-                {/* ============================================================
-                    GROUP HEADER - STRUKTUR BARU (GARIS PANJANG)
-                    ============================================================ */}
+                {/* GROUP HEADER - STRUKTUR BARU (GARIS PANJANG) */}
                 <div 
                   className="group-header"
                   style={{
@@ -159,16 +157,14 @@ export default function BoardTable({
                     background: 'var(--bg-secondary)',
                     width: 'fit-content',
                     minWidth: '100%',
-                    borderBottom: `2px solid ${groupColor}`, // ← GARIS PANJANG DI SINI
+                    borderBottom: `2px solid ${groupColor}`,
                     padding: 0,
                     marginBottom: 0,
                     minHeight: 48,
                     overflow: 'visible',
                   }}
                 >
-                  {/* ============================================================
-                      INNER - STICKY HORIZONTAL (terbatas lebarnya)
-                      ============================================================ */}
+                  {/* INNER - STICKY HORIZONTAL */}
                   <div 
                     className="group-header-inner"
                     style={{
@@ -186,7 +182,6 @@ export default function BoardTable({
                       boxSizing: 'border-box',
                       overflow: 'hidden',
                       borderLeft: `4px solid ${groupColor}`,
-                      /* HAPUS border-bottom dari sini! */
                     }}
                   >
                     {/* TOMBOL PANAH - LEBAR TETAP 35px */}
@@ -231,6 +226,7 @@ export default function BoardTable({
                         overflow: 'hidden',
                       }}
                     >
+                      {/* MENU BUTTON */}
                       <button 
                         className="group-menu-btn"
                         onClick={() => setPopupGroup(groupName)}
@@ -248,6 +244,27 @@ export default function BoardTable({
                         ⋮
                       </button>
 
+                      {/* ============================================================
+                          COLOR PICKER - DI ANTARA MENU DAN JUDUL
+                          ============================================================ */}
+                      <input
+                        type="color"
+                        value={groupColor}
+                        onChange={(e) => onUpdateGroupColor(groupName, e.target.value)}
+                        className="group-color-picker"
+                        style={{
+                          flexShrink: 0,
+                          width: '24px',
+                          height: '24px',
+                          marginRight: '6px',
+                          border: 'none',
+                          background: 'transparent',
+                          cursor: 'pointer',
+                          padding: 0,
+                        }}
+                      />
+
+                      {/* JUDUL GRUP */}
                       <h3 
                         className="group-title"
                         style={{
@@ -268,23 +285,6 @@ export default function BoardTable({
                       >
                         {groupName}
                       </h3>
-
-                      {/* COLOR PICKER - DI DALAM INNER (TETAP) */}
-                      <input
-                        type="color"
-                        value={groupColor}
-                        onChange={(e) => onUpdateGroupColor(groupName, e.target.value)}
-                        className="group-color-picker"
-                        style={{
-                          flexShrink: 0,
-                          width: '24px',
-                          height: '24px',
-                          marginLeft: 'auto',
-                          border: 'none',
-                          background: 'transparent',
-                          cursor: 'pointer',
-                        }}
-                      />
                     </div>
                   </div>
                 </div>
