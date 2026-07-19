@@ -268,7 +268,7 @@ export default function Row({
                         border: 'none',
                         cursor: 'pointer',
                         padding: '0',
-                        fontSize: '10px',
+                        fontSize: '18px',
                         color: 'var(--text-secondary)',
                         flexShrink: 0,
                         width: '18px',
@@ -287,7 +287,7 @@ export default function Row({
                       style={{ 
                         width: '18px', 
                         flexShrink: 0,
-                        fontSize: '16px',
+                        fontSize: '12px',
                         color: 'var(--text-secondary)',
                         opacity: 0.15,
                         textAlign: 'center',
