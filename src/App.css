@@ -241,7 +241,7 @@ body.dark {
 
 /* ============================================================
    ═══════════════════════════════════════════════════════════════
-   GROUP HEADER - STICKY HORIZONTAL (FINAL - SATU KALI DEFINISI)
+   GROUP HEADER - STRUKTUR BARU (GARIS PANJANG + STICKY)
    ═══════════════════════════════════════════════════════════════
    ============================================================ */
 
@@ -257,6 +257,8 @@ body.dark {
   padding: 0 !important;
   margin-bottom: 0 !important;
   min-height: 48px;
+  /* GARIS BAWAH PANJANG - DI SINI! */
+  border-bottom: 2px solid var(--group-color, #3b82f6) !important;
 }
 
 .group-header-inner {
@@ -277,7 +279,7 @@ body.dark {
   z-index: 1001 !important;
   background-color: var(--bg-secondary) !important;
   border-left: 4px solid var(--group-color, #3b82f6) !important;
-  border-bottom: 2px solid var(--group-color, #3b82f6) !important;
+  /* HAPUS border-bottom dari sini! */
   min-height: 48px;
 }
 
@@ -292,7 +294,7 @@ body.dark {
   justify-content: center !important;
   align-items: center !important;
   border-right: 2px solid var(--border-color) !important;
-  border-left: 4px solid var(--group-color, #3b82f6) !important;
+  border-left: none !important;
   position: relative !important;
   left: 0px !important;
   background: transparent !important;
@@ -327,6 +329,9 @@ body.dark {
   font-size: 14px !important;
   font-weight: 600 !important;
   color: var(--group-color, #3b82f6) !important;
+  position: sticky !important;
+  left: 35px !important;
+  z-index: 1002 !important;
 }
 
 .group-header-inner > .group-color-picker {
