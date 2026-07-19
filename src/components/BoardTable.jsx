@@ -163,103 +163,124 @@ export default function BoardTable({
                     overflow: 'visible',
                   }}
                 >
-                  {/* GROUP HEADER INNER */}
+                  {/* GROUP HEADER INNER - FLEX STICKY 2 KOLOM */}
                   <div 
-                    className="group-header-inner"
-                    style={{
+                    className="group-header-inner" 
+                    style={{ 
+                      '--group-color': groupColor,
                       display: 'flex',
-                      alignItems: 'center',
-                      padding: '8px 12px',
-                      borderLeft: `4px solid ${groupColor}`,
-                      borderBottom: `2px solid ${groupColor}`,
-                      background: 'var(--bg-secondary)',
+                      flexDirection: 'row',
+                      alignItems: 'stretch',
+                      flexWrap: 'nowrap',
+                      padding: 0,
+                      margin: 0,
+                      boxSizing: 'border-box',
+                      width: '100%',
+                      maxWidth: '1244px',
+                      overflow: 'hidden',
                       position: 'sticky',
                       left: 0,
+                      top: 0,
                       zIndex: 1001,
-                      width: 'fit-content',
-                      minWidth: '100%',
-                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                      backgroundColor: 'var(--bg-secondary)',
+                      borderLeft: `4px solid ${groupColor}`,
+                      borderBottom: `2px solid ${groupColor}`,
+                      minHeight: '48px',
                     }}
                   >
+                    {/* TOMBOL PANAH - LEBAR TETAP 35px */}
                     <button 
-                      onClick={() => toggleCollapse(groupName)} 
                       className="group-toggle-btn"
+                      onClick={() => toggleCollapse(groupName)}
                       style={{
-                        position: 'sticky',
-                        left: 0,
-                        zIndex: 1001,
-                        background: 'transparent',
-                        padding: '4px 4px 4px 0',
-                        marginRight: '8px',
-                        flexShrink: 0,
-                        border: 'none',
-                        cursor: 'pointer',
-                        fontSize: '16px',
-                        color: 'var(--text-secondary)',
-                      }}
-                    >
-                      {isCollapsed ? "▶" : "▼"}
-                    </button>
-
-                    <button 
-                      onClick={() => setPopupGroup(groupName)} 
-                      className="group-menu-btn"
-                      style={{
-                        position: 'sticky',
-                        left: '24px',
-                        zIndex: 1001,
-                        background: 'transparent',
-                        padding: '4px',
-                        marginRight: '8px',
-                        flexShrink: 0,
-                        border: 'none',
-                        cursor: 'pointer',
-                        fontSize: '18px',
-                        color: 'var(--text-secondary)',
-                      }}
-                    >
-                      ⋮
-                    </button>
-
-                    <h3 
-                      className="group-title" 
-                      style={{ 
-                        color: groupColor,
-                        position: 'sticky',
-                        left: '48px',
-                        zIndex: 1001,
-                        background: 'transparent',
-                        padding: '0 8px',
+                        flex: '0 0 35px',
+                        width: '35px',
+                        minWidth: '35px',
+                        height: '100%',
                         margin: 0,
-                        fontSize: '14px',
-                        fontWeight: 600,
-                        whiteSpace: 'nowrap',
-                        flex: '0 1 auto',
-                        width: 'auto',
-                        overflow: 'visible',
+                        padding: 0,
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        borderRight: '2px solid var(--border-color)',
+                        borderLeft: `4px solid ${groupColor}`,
+                        position: 'relative',
+                        left: 0,
+                        background: 'transparent',
+                        borderTop: 'none',
+                        borderBottom: 'none',
+                        cursor: 'pointer',
+                        color: 'var(--text-secondary)',
+                        zIndex: 1002,
+                        fontSize: '16px',
+                        flexShrink: 0,
                       }}
                     >
-                      {groupName}
-                    </h3>
+                      {isCollapsed ? '▶' : '▼'}
+                    </button>
 
-                    <input
-                      type="color"
-                      value={groupColor}
-                      onChange={(e) => onUpdateGroupColor(groupName, e.target.value)}
-                      className="group-color-picker"
+                    {/* AREA KONTEN */}
+                    <div
                       style={{
-                        position: 'sticky',
-                        right: 0,
-                        zIndex: 1001,
-                        background: 'transparent',
-                        width: '24px',
-                        height: '24px',
-                        border: 'none',
-                        cursor: 'pointer',
-                        flexShrink: 0,
-                        marginLeft: 'auto',
+                        flex: 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        padding: '0 8px',
+                        minWidth: 0,
+                        overflow: 'hidden',
                       }}
-                    />
+                    >
+                      <button 
+                        className="group-menu-btn"
+                        onClick={() => setPopupGroup(groupName)}
+                        style={{
+                          flexShrink: 0,
+                          padding: '4px',
+                          marginRight: '4px',
+                          color: 'var(--text-secondary)',
+                          background: 'transparent',
+                          border: 'none',
+                          cursor: 'pointer',
+                          fontSize: '18px',
+                        }}
+                      >
+                        ⋮
+                      </button>
+
+                      <h3 
+                        className="group-title"
+                        style={{
+                          flex: '1 1 auto',
+                          minWidth: 0,
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          padding: '0 10px',
+                          margin: 0,
+                          fontSize: '14px',
+                          fontWeight: 600,
+                          color: groupColor,
+                        }}
+                      >
+                        {groupName}
+                      </h3>
+
+                      <input
+                        type="color"
+                        value={groupColor}
+                        onChange={(e) => onUpdateGroupColor(groupName, e.target.value)}
+                        className="group-color-picker"
+                        style={{
+                          flexShrink: 0,
+                          width: '24px',
+                          height: '24px',
+                          marginLeft: 'auto',
+                          border: 'none',
+                          background: 'transparent',
+                          cursor: 'pointer',
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
 
@@ -368,107 +389,107 @@ export default function BoardTable({
                           </table>
                         </div>
 
-{/* ADD ITEM */}
-<div 
-  className="add-item-container"
-  style={{ 
-    width: totalWidth,
-    display: 'flex',
-    alignItems: 'center',
-    background: 'var(--bg-secondary)',
-    border: '2px solid var(--border-color)',
-    borderTop: 'none',
-    borderBottomLeftRadius: 4,
-    borderBottomRightRadius: 4,
-    minHeight: 40,
-    borderLeft: 'none',
-    borderRight: '2px solid var(--border-color)',
-    marginTop: '-2px', // TARIK KE ATAS AGAR NYAMBUNG
-  }}
->
-  <div
-    className="add-item-checkbox"
-    style={{
-      width: '36px',
-      minWidth: '36px',
-      maxWidth: '36px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '6px 8px',
-      borderRight: '2px solid var(--border-color)',
-      background: 'var(--bg-secondary)',
-      position: 'sticky',
-      left: 0,
-      zIndex: 15,
-      boxSizing: 'border-box',
-      borderLeft: `4px solid ${groupColor}`,
-      borderTop: 'none',
-      borderBottom: 'none',
-      height: '100%', // PASTIKAN TINGGI PENUH
-      minHeight: '40px',
-    }}
-  >
-    <input
-      type="checkbox"
-      disabled
-      style={{
-        width: '16px',
-        height: '16px',
-        margin: 0,
-        padding: 0,
-        display: 'block',
-        opacity: 0.5,
-        cursor: 'default',
-        pointerEvents: 'none',
-        flexShrink: 0,
-      }}
-    />
-  </div>
+                        {/* ADD ITEM */}
+                        <div 
+                          className="add-item-container"
+                          style={{ 
+                            width: totalWidth,
+                            display: 'flex',
+                            alignItems: 'center',
+                            background: 'var(--bg-secondary)',
+                            border: '2px solid var(--border-color)',
+                            borderTop: 'none',
+                            borderBottomLeftRadius: 4,
+                            borderBottomRightRadius: 4,
+                            minHeight: 40,
+                            borderLeft: 'none',
+                            borderRight: '2px solid var(--border-color)',
+                            marginTop: '-2px',
+                          }}
+                        >
+                          <div
+                            className="add-item-checkbox"
+                            style={{
+                              width: '36px',
+                              minWidth: '36px',
+                              maxWidth: '36px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              padding: '6px 8px',
+                              borderRight: '2px solid var(--border-color)',
+                              background: 'var(--bg-secondary)',
+                              position: 'sticky',
+                              left: 0,
+                              zIndex: 15,
+                              boxSizing: 'border-box',
+                              borderLeft: `4px solid ${groupColor}`,
+                              borderTop: 'none',
+                              borderBottom: 'none',
+                              height: '100%',
+                              minHeight: '40px',
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              disabled
+                              style={{
+                                width: '16px',
+                                height: '16px',
+                                margin: 0,
+                                padding: 0,
+                                display: 'block',
+                                opacity: 0.5,
+                                cursor: 'default',
+                                pointerEvents: 'none',
+                                flexShrink: 0,
+                              }}
+                            />
+                          </div>
 
-  <div
-    className="add-item-sticky"
-    style={{
-      position: 'sticky',
-      left: '36px',
-      zIndex: 15,
-      background: 'var(--bg-secondary)',
-      padding: '6px 8px',
-      flex: 1,
-      borderLeft: 'none',
-      borderRight: 'none',
-      minHeight: '40px',
-    }}
-  >
-    <button
-      onClick={() => onAddItem(groupName)}
-      style={{
-        border: 'none',
-        background: 'transparent',
-        color: '#3b82f6',
-        cursor: 'pointer',
-        fontSize: 13,
-        padding: '4px 0',
-        textAlign: 'left',
-        width: '100%',
-        transition: 'background 0.15s',
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.background = 'var(--bg-hover)';
-        e.currentTarget.style.paddingLeft = '8px';
-        e.currentTarget.style.borderRadius = '4px';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.background = 'transparent';
-        e.currentTarget.style.paddingLeft = '0';
-      }}
-    >
-      + Add item
-    </button>
-  </div>
+                          <div
+                            className="add-item-sticky"
+                            style={{
+                              position: 'sticky',
+                              left: '36px',
+                              zIndex: 15,
+                              background: 'var(--bg-secondary)',
+                              padding: '6px 8px',
+                              flex: 1,
+                              borderLeft: 'none',
+                              borderRight: 'none',
+                              minHeight: '40px',
+                            }}
+                          >
+                            <button
+                              onClick={() => onAddItem(groupName)}
+                              style={{
+                                border: 'none',
+                                background: 'transparent',
+                                color: '#3b82f6',
+                                cursor: 'pointer',
+                                fontSize: 13,
+                                padding: '4px 0',
+                                textAlign: 'left',
+                                width: '100%',
+                                transition: 'background 0.15s',
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.background = 'var(--bg-hover)';
+                                e.currentTarget.style.paddingLeft = '8px';
+                                e.currentTarget.style.borderRadius = '4px';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.background = 'transparent';
+                                e.currentTarget.style.paddingLeft = '0';
+                              }}
+                            >
+                              + Add item
+                            </button>
+                          </div>
 
-  <div style={{ flex: 1, minWidth: '50px' }} />
-</div>
+                          <div style={{ flex: 1, minWidth: '50px' }} />
+                        </div>
                       </>
                     ) : (
                       <div 
