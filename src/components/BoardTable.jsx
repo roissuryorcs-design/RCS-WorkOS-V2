@@ -146,7 +146,9 @@ export default function BoardTable({
                   }}
                 />
 
-                {/* GROUP HEADER - STICKY VERTIKAL */}
+                {/* ============================================================
+                    GROUP HEADER - STRUKTUR BARU (GARIS PANJANG)
+                    ============================================================ */}
                 <div 
                   className="group-header"
                   style={{
@@ -155,37 +157,36 @@ export default function BoardTable({
                     left: 0,
                     zIndex: 999,
                     background: 'var(--bg-secondary)',
+                    width: 'fit-content',
+                    minWidth: '100%',
+                    borderBottom: `2px solid ${groupColor}`, // ← GARIS PANJANG DI SINI
                     padding: 0,
                     marginBottom: 0,
                     minHeight: 48,
-                    width: 'fit-content',
-                    minWidth: '100%',
                     overflow: 'visible',
                   }}
                 >
-                  {/* GROUP HEADER INNER - FLEX STICKY 2 KOLOM */}
+                  {/* ============================================================
+                      INNER - STICKY HORIZONTAL (terbatas lebarnya)
+                      ============================================================ */}
                   <div 
-                    className="group-header-inner" 
-                    style={{ 
-                      '--group-color': groupColor,
+                    className="group-header-inner"
+                    style={{
                       display: 'flex',
-                      flexDirection: 'row',
-                      alignItems: 'stretch',
-                      flexWrap: 'nowrap',
+                      alignItems: 'center',
+                      maxWidth: '1244px',
+                      width: '100%',
+                      height: '48px',
+                      position: 'sticky',
+                      left: 0,
+                      zIndex: 1000,
+                      backgroundColor: 'var(--bg-secondary)',
                       padding: 0,
                       margin: 0,
                       boxSizing: 'border-box',
-                      width: '100%',
-                      maxWidth: '1244px',
                       overflow: 'hidden',
-                      position: 'sticky',
-                      left: 0,
-                      top: 0,
-                      zIndex: 1001,
-                      backgroundColor: 'var(--bg-secondary)',
                       borderLeft: `4px solid ${groupColor}`,
-                      borderBottom: `2px solid ${groupColor}`,
-                      minHeight: '48px',
+                      /* HAPUS border-bottom dari sini! */
                     }}
                   >
                     {/* TOMBOL PANAH - LEBAR TETAP 35px */}
@@ -203,7 +204,7 @@ export default function BoardTable({
                         justifyContent: 'center',
                         alignItems: 'center',
                         borderRight: '2px solid var(--border-color)',
-                        borderLeft: `4px solid ${groupColor}`,
+                        borderLeft: 'none',
                         position: 'relative',
                         left: 0,
                         background: 'transparent',
@@ -260,11 +261,15 @@ export default function BoardTable({
                           fontSize: '14px',
                           fontWeight: 600,
                           color: groupColor,
+                          position: 'sticky',
+                          left: '35px',
+                          zIndex: 1002,
                         }}
                       >
                         {groupName}
                       </h3>
 
+                      {/* COLOR PICKER - DI DALAM INNER (TETAP) */}
                       <input
                         type="color"
                         value={groupColor}
