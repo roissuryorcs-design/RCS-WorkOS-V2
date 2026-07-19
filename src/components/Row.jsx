@@ -280,7 +280,7 @@ export default function Row({
                         transition: 'opacity 0.2s',
                       }}
                     >
-                      {expanded ? '∨' : '>'}
+                      {expanded ? '˅' : '˃'}
                     </button>
                   ) : (
                     <span 
