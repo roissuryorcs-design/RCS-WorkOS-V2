@@ -268,7 +268,7 @@ export default function Row({
                         border: 'none',
                         cursor: 'pointer',
                         padding: '0',
-                        fontSize: '12px',
+                        fontSize: '10px',
                         color: 'var(--text-secondary)',
                         flexShrink: 0,
                         width: '18px',
