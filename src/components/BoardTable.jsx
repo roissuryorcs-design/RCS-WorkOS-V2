@@ -13,6 +13,7 @@ export default function BoardTable({
   onAddGroup,
   onDeleteGroup,
   onAddItem,
+  onAddSubItem,
   onOpenStatusManager,
   onRenameGroup,
   onOpenAddColumn,
@@ -52,7 +53,7 @@ export default function BoardTable({
     const hasItem = visibleColumns.some((col) => col.id === "item");
     if (hasItem) return visibleColumns;
     return [
-      { id: "item", label: "ITEM", type: "text", width: 200, visible: true },
+      { id: "item", label: "ITEM", type: "text", width: 250, visible: true },
       ...visibleColumns,
     ];
   })();
@@ -80,6 +81,50 @@ export default function BoardTable({
       const newIds = allIds.filter((id) => !selectedItems.includes(id));
       setSelectedItems((prev) => [...prev, ...newIds]);
     }
+  };
+
+  // ============================================================
+  // FUNGSI ADD SUB ITEM - DENGAN CEK LEVEL (MAX 4)
+  // ============================================================
+  const handleAddSubItem = (parentId) => {
+    if (!onAddSubItem) return;
+    
+    const findParent = (items, id) => {
+      for (const item of items) {
+        if (item.id === id) return item;
+        if (item.children) {
+          const found = findParent(item.children, id);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+
+    const parent = findParent(items, parentId);
+    if (!parent) return;
+
+    const getDepth = (items, id, currentDepth = 0) => {
+      for (const item of items) {
+        if (item.id === id) return currentDepth;
+        if (item.children) {
+          const found = getDepth(item.children, id, currentDepth + 1);
+          if (found !== -1) return found;
+        }
+      }
+      return -1;
+    };
+
+    const currentDepth = getDepth(items, parentId, 0);
+    if (currentDepth >= 3) {
+      alert('Maximum 4 levels reached!');
+      return;
+    }
+
+    // Placeholder berdasarkan level
+    const placeholders = ["", "New Task", "Sub Item", "Sub Sub Item", "Sub Sub Sub Item"];
+    const newTitle = placeholders[currentDepth + 1] || "New Task";
+
+    onAddSubItem(parentId, newTitle);
   };
 
   const CHECKBOX_WIDTH = 36;
@@ -146,7 +191,7 @@ export default function BoardTable({
                   }}
                 />
 
-                {/* GROUP HEADER - STRUKTUR BARU (GARIS PANJANG) */}
+                {/* GROUP HEADER */}
                 <div 
                   className="group-header"
                   style={{
@@ -164,7 +209,6 @@ export default function BoardTable({
                     overflow: 'visible',
                   }}
                 >
-                  {/* INNER - STICKY HORIZONTAL */}
                   <div 
                     className="group-header-inner"
                     style={{
@@ -184,7 +228,6 @@ export default function BoardTable({
                       borderLeft: `4px solid ${groupColor}`,
                     }}
                   >
-                    {/* TOMBOL PANAH - LEBAR TETAP 35px */}
                     <button 
                       className="group-toggle-btn"
                       onClick={() => toggleCollapse(groupName)}
@@ -200,8 +243,6 @@ export default function BoardTable({
                         alignItems: 'center',
                         borderRight: '2px solid var(--border-color)',
                         borderLeft: 'none',
-                        position: 'relative',
-                        left: 0,
                         background: 'transparent',
                         borderTop: 'none',
                         borderBottom: 'none',
@@ -215,7 +256,6 @@ export default function BoardTable({
                       {isCollapsed ? '▶' : '▼'}
                     </button>
 
-                    {/* AREA KONTEN */}
                     <div
                       style={{
                         flex: 1,
@@ -226,7 +266,6 @@ export default function BoardTable({
                         overflow: 'hidden',
                       }}
                     >
-                      {/* MENU BUTTON */}
                       <button 
                         className="group-menu-btn"
                         onClick={() => setPopupGroup(groupName)}
@@ -244,9 +283,6 @@ export default function BoardTable({
                         ⋮
                       </button>
 
-                      {/* ============================================================
-                          COLOR PICKER - DI ANTARA MENU DAN JUDUL
-                          ============================================================ */}
                       <input
                         type="color"
                         value={groupColor}
@@ -264,7 +300,6 @@ export default function BoardTable({
                         }}
                       />
 
-                      {/* JUDUL GRUP */}
                       <h3 
                         className="group-title"
                         style={{
@@ -377,19 +412,31 @@ export default function BoardTable({
                               </tr>
                             </thead>
                             <tbody>
-                              {tasks.map((item) => (
-                                <Row
-                                  key={item.id}
-                                  item={item}
-                                  groupColor={groupColor}
-                                  visibleColumns={safeColumns}
-                                  isSelected={selectedItems.includes(item.id)}
-                                  onToggleSelect={() => toggleSelectItem(item.id)}
-                                  onUpdate={(field, value) => onUpdateItem(item.id, field, value)}
-                                  onDelete={() => onDeleteItem(item.id)}
-                                  onOpenStatusManager={onOpenStatusManager}
-                                />
-                              ))}
+                              {tasks.map((item) => {
+                                const handleUpdateItem = (field, value) => {
+                                  onUpdateItem(item.id, field, value);
+                                };
+
+                                const handleDeleteItem = () => {
+                                  onDeleteItem(item.id);
+                                };
+
+                                return (
+                                  <Row
+                                    key={item.id}
+                                    item={item}
+                                    groupColor={groupColor}
+                                    visibleColumns={safeColumns}
+                                    isSelected={selectedItems.includes(item.id)}
+                                    onToggleSelect={toggleSelectItem}
+                                    onUpdate={handleUpdateItem}
+                                    onDelete={handleDeleteItem}
+                                    onOpenStatusManager={onOpenStatusManager}
+                                    onAddSubItem={handleAddSubItem}
+                                    selectedItems={selectedItems}
+                                  />
+                                );
+                              })}
                             </tbody>
                           </table>
                         </div>
