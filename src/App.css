@@ -372,6 +372,33 @@ body.dark {
 }
 
 /* ============================================================
+   PERBAIKAN TABLE-CELL UNTUK KOLOM ITEM
+   ============================================================ */
+
+/* Pastikan td berfungsi sebagai table-cell */
+.row-item-cell {
+  display: table-cell !important;
+  vertical-align: middle !important;
+  height: auto !important;
+  box-sizing: border-box !important;
+}
+
+/* Wrapper flex di dalam td */
+.row-item-cell > div {
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  min-height: 38px !important;
+  width: 100% !important;
+}
+
+/* Pastikan checkbox cell juga table-cell */
+.row-checkbox-cell {
+  display: table-cell !important;
+  vertical-align: middle !important;
+}
+
+/* ============================================================
    ADD ITEM
    ============================================================ */
 .add-item-container {
@@ -552,6 +579,8 @@ body.dark {
    ROW CELLS
    ============================================================ */
 .row-cell {
+  display: table-cell !important;
+  vertical-align: middle !important;
   padding: 6px 8px;
   border-bottom: 1px solid var(--border-color);
   border-right: 2px solid var(--border-color);
@@ -566,6 +595,8 @@ body.dark {
 }
 
 .row-add-cell {
+  display: table-cell !important;
+  vertical-align: middle !important;
   padding: 6px 8px;
   width: 50px !important;
   min-width: 50px !important;
