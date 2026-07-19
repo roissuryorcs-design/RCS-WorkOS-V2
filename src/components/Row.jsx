@@ -128,41 +128,15 @@ export default function Row({
   };
 
   return (
-    <tr
-      style={{
-        fontSize: 13,
-        background: isSelected ? "var(--bg-hover)" : "var(--bg-secondary)",
-        borderLeft: `4px solid ${groupColor}`,
-      }}
-      onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-hover)")}
-      onMouseLeave={(e) => {
-        if (!isSelected) {
-          e.currentTarget.style.background = "var(--bg-secondary)";
-        }
-      }}
-    >
-      {/* Checkbox – STICKY */}
-      <td
-        style={{
-          padding: "6px 8px",
-          width: "36px",
-          minWidth: "36px",
-          maxWidth: "36px",
-          borderRight: "2px solid var(--border-color)",
-          borderBottom: "2px solid var(--border-color)",
-          textAlign: "center",
-          boxSizing: "border-box",
-          position: "sticky",
-          left: 0,
-          zIndex: 20,
-          background: isSelected ? "var(--bg-hover)" : "var(--bg-secondary)",
-        }}
+    <tr className={isSelected ? "row-selected" : ""}>
+      <td 
+        className="row-checkbox-cell" 
+        style={{ borderLeft: `4px solid ${groupColor}` }}
       >
         <input
           type="checkbox"
           checked={isSelected}
           onChange={onToggleSelect}
-          style={{ cursor: "pointer", width: 16, height: 16 }}
         />
       </td>
 
@@ -170,31 +144,15 @@ export default function Row({
         const isLast = idx === visibleColumns.length - 1;
         const isItem = col.id === "item";
 
-        const stickyStyle = isItem
-          ? {
-              position: "sticky",
-              left: "36px",
-              zIndex: 20,
-              background: isSelected ? "var(--bg-hover)" : "var(--bg-secondary)",
-              boxShadow: "inset -2px 0 0 0 var(--border-color)",
-            }
-          : {};
-
         return (
           <td
             key={col.id}
+            className={`row-cell ${isItem ? "row-item-cell" : ""}`}
             style={{
-              padding: "6px 8px",
-              borderRight: isLast ? "none" : "2px solid var(--border-color)",
-              borderBottom: "2px solid var(--border-color)",
               width: `${col.width}px`,
               minWidth: `${col.width}px`,
               maxWidth: `${col.width}px`,
-              boxSizing: "border-box",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-              ...stickyStyle,
+              borderRight: isLast ? "none" : "2px solid var(--border-color)",
             }}
           >
             {renderCell(col)}
@@ -202,19 +160,7 @@ export default function Row({
         );
       })}
 
-      {/* Kolom "+" (padding) */}
-      <td
-        style={{
-          padding: "6px 8px",
-          width: "50px",
-          minWidth: "50px",
-          maxWidth: "50px",
-          borderRight: "none",
-          borderLeft: "2px solid var(--border-color)",
-          borderBottom: "2px solid var(--border-color)",
-          boxSizing: "border-box",
-        }}
-      />
+      <td className="row-add-cell" />
     </tr>
   );
 }
