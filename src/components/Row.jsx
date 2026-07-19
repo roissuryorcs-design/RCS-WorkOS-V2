@@ -179,12 +179,41 @@ export default function Row({
     }
   };
 
+  // ============================================================
+  // PERBAIKAN: Menggunakan table-cell + flex wrapper
+  // ============================================================
   const paddingLeft = depth * indentSize + 8;
+
+  // Style untuk td item cell - table-cell agar tinggi sinkron
+  const itemCellStyle = {
+    display: 'table-cell',
+    verticalAlign: 'middle',
+    padding: '0 8px',
+    paddingLeft: `${paddingLeft}px`,
+    borderBottom: '2px solid var(--border-color)',
+    position: 'sticky',
+    left: '36px',
+    zIndex: 100,
+    backgroundColor: isSelected ? 'var(--bg-hover)' : 'var(--bg-secondary)',
+    boxShadow: 'inset -2px 0 0 0 var(--border-color)',
+    height: 'auto',
+    minWidth: '200px',
+    width: '100%',
+  };
+
+  // Wrapper flex untuk isi di dalam td
+  const contentWrapperStyle = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    minHeight: '38px',
+    width: '100%',
+  };
 
   return (
     <>
       <tr className={isSelected ? "row-selected" : ""}>
-        {/* CHECKBOX */}
+        {/* CHECKBOX - tetap table-cell */}
         <td 
           className="row-checkbox-cell" 
           style={{ 
@@ -199,6 +228,9 @@ export default function Row({
             padding: '6px 8px',
             textAlign: 'center',
             verticalAlign: 'middle',
+            borderBottom: '2px solid var(--border-color)',
+            borderRight: '2px solid var(--border-color)',
+            boxShadow: 'none',
           }}
         >
           <input
@@ -209,7 +241,7 @@ export default function Row({
           />
         </td>
 
-        {/* ITEM CELL */}
+        {/* ITEM CELL - table-cell + flex wrapper */}
         {visibleColumns.map((col, idx) => {
           const isLast = idx === visibleColumns.length - 1;
           const isItem = col.id === "item";
@@ -220,154 +252,140 @@ export default function Row({
                 key={col.id}
                 className="row-cell row-item-cell"
                 style={{
-                  paddingLeft: `${paddingLeft}px`,
-                  paddingRight: '8px',
-                  paddingTop: '4px',
-                  paddingBottom: '4px',
-                  position: 'sticky',
-                  left: '36px',
-                  zIndex: 100,
-                  background: isSelected ? 'var(--bg-hover)' : 'var(--bg-secondary)',
-                  boxShadow: 'inset -2px 0 0 0 var(--border-color)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  minHeight: '38px',
-                  width: `${col.width}px`,
-                  minWidth: `${Math.max(col.width, 200)}px`,
-                  maxWidth: `${col.width}px`,
+                  ...itemCellStyle,
                   borderRight: isLast ? "none" : "2px solid var(--border-color)",
-                  boxSizing: 'border-box',
-                  overflow: 'hidden',
                 }}
               >
-                {/* TOMBOL EXPAND / COLLAPSE */}
-                {hasChildren ? (
-                  <button
-                    onClick={() => setExpanded(!expanded)}
-                    className="btn-arrow-hover"
-                    style={{
-                      background: 'transparent',
-                      border: 'none',
-                      cursor: 'pointer',
-                      padding: '0',
-                      fontSize: '12px',
-                      color: 'var(--text-secondary)',
-                      flexShrink: 0,
-                      width: '18px',
-                      height: '18px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      opacity: 1,
-                      transition: 'opacity 0.2s',
-                    }}
-                  >
-                    {expanded ? '▾' : '>'}
-                  </button>
-                ) : (
-                  <span 
-                    style={{ 
-                      width: '18px', 
-                      flexShrink: 0,
-                      fontSize: '12px',
-                      color: 'var(--text-secondary)',
-                      opacity: 0.15,
-                      textAlign: 'center',
-                    }}
-                  >
-                    &gt;
-                  </span>
-                )}
+                {/* WRAPPER FLEX untuk isi dalam td */}
+                <div style={contentWrapperStyle}>
+                  {/* TOMBOL EXPAND / COLLAPSE */}
+                  {hasChildren ? (
+                    <button
+                      onClick={() => setExpanded(!expanded)}
+                      className="btn-arrow-hover"
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: '0',
+                        fontSize: '12px',
+                        color: 'var(--text-secondary)',
+                        flexShrink: 0,
+                        width: '18px',
+                        height: '18px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        opacity: 1,
+                        transition: 'opacity 0.2s',
+                      }}
+                    >
+                      {expanded ? '▾' : '>'}
+                    </button>
+                  ) : (
+                    <span 
+                      style={{ 
+                        width: '18px', 
+                        flexShrink: 0,
+                        fontSize: '12px',
+                        color: 'var(--text-secondary)',
+                        opacity: 0.15,
+                        textAlign: 'center',
+                      }}
+                    >
+                      &gt;
+                    </span>
+                  )}
 
-                {/* NAMA ITEM - BISA DI-EDIT */}
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={tempName}
-                    onChange={handleEditChange}
-                    onBlur={handleEditSave}
-                    onKeyDown={handleKeyDown}
-                    autoFocus
-                    placeholder={placeholder}
-                    style={{
-                      flex: 1,
-                      background: 'rgba(255,255,255,0.05)',
-                      border: 'none',
-                      borderBottom: '2px solid #2196F3',
-                      color: 'var(--text-primary)',
-                      outline: 'none',
-                      fontFamily: 'inherit',
-                      fontSize: '13px',
-                      padding: '2px 4px',
-                      borderRadius: '2px',
-                      minWidth: '50px',
-                      height: '26px',
-                    }}
-                  />
-                ) : (
-                  <span 
-                    style={{ 
-                      flex: 1,
-                      cursor: 'text',
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      padding: '0 4px',
-                      fontWeight: depth === 0 ? 600 : 400,
-                      color: depth === 0 ? 'var(--text-primary)' : 'var(--text-secondary)',
-                      fontSize: '13px',
-                    }}
-                    onClick={handleStartEdit}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = 'var(--bg-hover)';
-                      e.currentTarget.style.borderRadius = '2px';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'transparent';
-                    }}
-                    title="Click to edit"
-                  >
-                    {item.item || placeholder}
-                  </span>
-                )}
+                  {/* NAMA ITEM - BISA DI-EDIT */}
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={tempName}
+                      onChange={handleEditChange}
+                      onBlur={handleEditSave}
+                      onKeyDown={handleKeyDown}
+                      autoFocus
+                      placeholder={placeholder}
+                      style={{
+                        flex: 1,
+                        background: 'rgba(255,255,255,0.05)',
+                        border: 'none',
+                        borderBottom: '2px solid #2196F3',
+                        color: 'var(--text-primary)',
+                        outline: 'none',
+                        fontFamily: 'inherit',
+                        fontSize: '13px',
+                        padding: '2px 4px',
+                        borderRadius: '2px',
+                        minWidth: '50px',
+                        height: '26px',
+                      }}
+                    />
+                  ) : (
+                    <span 
+                      style={{ 
+                        flex: 1,
+                        cursor: 'text',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        padding: '0 4px',
+                        fontWeight: depth === 0 ? 600 : 400,
+                        color: depth === 0 ? 'var(--text-primary)' : 'var(--text-secondary)',
+                        fontSize: '13px',
+                      }}
+                      onClick={handleStartEdit}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'var(--bg-hover)';
+                        e.currentTarget.style.borderRadius = '2px';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'transparent';
+                      }}
+                      title="Click to edit"
+                    >
+                      {item.item || placeholder}
+                    </span>
+                  )}
 
-                {/* TOMBOL ADD SUB ITEM (+) - MUNCUL SAAT HOVER */}
-                {canHaveChildren && onAddSubItem && (
-                  <button
-                    onClick={handleAddSubItemClick}
-                    className="btn-plus-reveal"
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      color: 'var(--text-muted)',
-                      fontSize: '16px',
-                      fontWeight: 'bold',
-                      padding: '0 2px',
-                      opacity: 0,
-                      transition: 'opacity 0.2s',
-                      flexShrink: 0,
-                      width: '22px',
-                      height: '22px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      borderRadius: '50%',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.opacity = 1;
-                      e.currentTarget.style.background = 'var(--bg-hover)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.opacity = 0;
-                      e.currentTarget.style.background = 'transparent';
-                    }}
-                    title="Add sub item"
-                  >
-                    +
-                  </button>
-                )}
+                  {/* TOMBOL ADD SUB ITEM (+) - MUNCUL SAAT HOVER */}
+                  {canHaveChildren && onAddSubItem && (
+                    <button
+                      onClick={handleAddSubItemClick}
+                      className="btn-plus-reveal"
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        color: 'var(--text-muted)',
+                        fontSize: '16px',
+                        fontWeight: 'bold',
+                        padding: '0 2px',
+                        opacity: 0,
+                        transition: 'opacity 0.2s',
+                        flexShrink: 0,
+                        width: '22px',
+                        height: '22px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        borderRadius: '50%',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.opacity = 1;
+                        e.currentTarget.style.background = 'var(--bg-hover)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.opacity = 0;
+                        e.currentTarget.style.background = 'transparent';
+                      }}
+                      title="Add sub item"
+                    >
+                      +
+                    </button>
+                  )}
+                </div>
               </td>
             );
           }
@@ -377,13 +395,15 @@ export default function Row({
               key={col.id}
               className="row-cell"
               style={{
+                display: 'table-cell',
+                verticalAlign: 'middle',
                 width: `${col.width}px`,
                 minWidth: `${col.width}px`,
                 maxWidth: `${col.width}px`,
                 borderRight: isLast ? "none" : "2px solid var(--border-color)",
+                borderBottom: '2px solid var(--border-color)',
                 background: isSelected ? 'var(--bg-hover)' : 'var(--bg-secondary)',
                 padding: '6px 8px',
-                verticalAlign: 'middle',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
@@ -398,11 +418,16 @@ export default function Row({
         <td
           className="row-add-cell"
           style={{
+            display: 'table-cell',
+            verticalAlign: 'middle',
             background: isSelected ? 'var(--bg-hover)' : 'var(--bg-secondary)',
             width: '50px',
             minWidth: '50px',
             maxWidth: '50px',
             padding: '6px 8px',
+            borderBottom: '2px solid var(--border-color)',
+            borderRight: 'none',
+            borderLeft: '2px solid var(--border-color)',
           }}
         />
       </tr>
