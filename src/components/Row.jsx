@@ -21,9 +21,8 @@ export default function Row({
   const [tempName, setTempName] = useState(item.item);
   const hasChildren = item.children && item.children.length > 0;
   const canHaveChildren = depth < maxDepth;
-  const indentSize = 14; // 14px per level sesuai permintaan
+  const indentSize = 14;
 
-  // Placeholder berdasarkan level
   const placeholders = ["", "New Task", "Sub Item", "Sub Sub Item", "Sub Sub Sub Item"];
   const placeholder = placeholders[depth] || "New Task";
 
@@ -147,9 +146,6 @@ export default function Row({
     onToggleSelect(item.id);
   };
 
-  // ============================================================
-  // RENAME - SINGLE KLIK
-  // ============================================================
   const handleStartEdit = (e) => {
     e.stopPropagation();
     setIsEditing(true);
@@ -176,10 +172,7 @@ export default function Row({
     }
   };
 
-  // ============================================================
-  // HANDLE ADD SUB ITEM
-  // ============================================================
-  const handleAddSubItem = (e) => {
+  const handleAddSubItemClick = (e) => {
     e.stopPropagation();
     if (onAddSubItem) {
       onAddSubItem(item.id);
@@ -238,7 +231,7 @@ export default function Row({
                   boxShadow: 'inset -2px 0 0 0 var(--border-color)',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '4px', // Gap 4px sesuai permintaan
+                  gap: '4px',
                   minHeight: '38px',
                   width: `${col.width}px`,
                   minWidth: `${Math.max(col.width, 200)}px`,
@@ -248,14 +241,11 @@ export default function Row({
                   overflow: 'hidden',
                 }}
               >
-                {/* ============================================================
-                    TOMBOL EXPAND / COLLAPSE
-                    - Opacity 15% jika tidak ada anak
-                    - Opacity 100% jika ada anak atau hover
-                    ============================================================ */}
+                {/* TOMBOL EXPAND / COLLAPSE */}
                 {hasChildren ? (
                   <button
                     onClick={() => setExpanded(!expanded)}
+                    className="btn-arrow-hover"
                     style={{
                       background: 'transparent',
                       border: 'none',
@@ -272,12 +262,10 @@ export default function Row({
                       opacity: 1,
                       transition: 'opacity 0.2s',
                     }}
-                    className="btn-arrow-hover"
                   >
                     {expanded ? '▾' : '>'}
                   </button>
                 ) : (
-                  /* SPACER jika tidak ada children - opacity 15% */
                   <span 
                     style={{ 
                       width: '18px', 
@@ -288,13 +276,11 @@ export default function Row({
                       textAlign: 'center',
                     }}
                   >
-                    >
+                    &gt;
                   </span>
                 )}
 
-                {/* ============================================================
-                    NAMA ITEM - BISA DI-EDIT
-                    ============================================================ */}
+                {/* NAMA ITEM - BISA DI-EDIT */}
                 {isEditing ? (
                   <input
                     type="text"
@@ -303,6 +289,7 @@ export default function Row({
                     onBlur={handleEditSave}
                     onKeyDown={handleKeyDown}
                     autoFocus
+                    placeholder={placeholder}
                     style={{
                       flex: 1,
                       background: 'rgba(255,255,255,0.05)',
@@ -316,7 +303,6 @@ export default function Row({
                       borderRadius: '2px',
                       minWidth: '50px',
                       height: '26px',
-                      placeholder: placeholder,
                     }}
                   />
                 ) : (
@@ -346,13 +332,11 @@ export default function Row({
                   </span>
                 )}
 
-                {/* ============================================================
-                    TOMBOL ADD SUB ITEM (+) - MUNCUL SAAT HOVER
-                    HANYA SAMPAI LEVEL 3 (TIDAK DI LEVEL 4)
-                    ============================================================ */}
+                {/* TOMBOL ADD SUB ITEM (+) - MUNCUL SAAT HOVER */}
                 {canHaveChildren && onAddSubItem && (
                   <button
-                    onClick={handleAddSubItem}
+                    onClick={handleAddSubItemClick}
+                    className="btn-plus-reveal"
                     style={{
                       background: 'none',
                       border: 'none',
@@ -371,7 +355,6 @@ export default function Row({
                       justifyContent: 'center',
                       borderRadius: '50%',
                     }}
-                    className="btn-plus-reveal"
                     onMouseEnter={(e) => {
                       e.currentTarget.style.opacity = 1;
                       e.currentTarget.style.background = 'var(--bg-hover)';
