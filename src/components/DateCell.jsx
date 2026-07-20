@@ -20,7 +20,6 @@ export default function DateCell({ date, onChange, placeholder = "dd/mm/ttt" }) 
 
   const formatDisplayDate = (val) => {
     if (!val) return "";
-    // Jika format YYYY-MM-DD, tampilkan sebagai dd/mm/yyyy
     if (val.includes("-")) {
       const parts = val.split("-");
       if (parts.length === 3) {
@@ -30,7 +29,6 @@ export default function DateCell({ date, onChange, placeholder = "dd/mm/ttt" }) 
     return val;
   };
 
-  // Konversi dd/mm/yyyy ke yyyy-mm-dd untuk input date
   const convertToDateInputValue = (val) => {
     if (!val) return "";
     if (val.includes("/")) {
@@ -67,6 +65,7 @@ export default function DateCell({ date, onChange, placeholder = "dd/mm/ttt" }) 
           value={dateInputValue || ""}
           onChange={handleDateChange}
           placeholder={placeholder}
+          className="date-cell-input"
           style={{
             width: "100%",
             padding: "4px 2px",
