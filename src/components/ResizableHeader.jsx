@@ -14,6 +14,8 @@ export default function ResizableHeader({
   isSticky = false,
   stickyLeft = 0,
   isLast = false,
+  align = "center",
+  showMenuButton = true,
 }) {
   const [width, setWidth] = useState(column.width);
   const [isResizing, setIsResizing] = useState(false);
@@ -155,7 +157,7 @@ export default function ResizableHeader({
         background: "transparent",
         transition: "background 0.15s",
         pointerEvents: "auto",
-        textAlign: "center",
+        textAlign: align || "center",
         ...stickyStyle,
       }}
     >
@@ -172,7 +174,7 @@ export default function ResizableHeader({
         {/* ============================================================
             TOMBOL ⋮ DI SEBELAH KIRI TEKS (UNTUK COLUMN MENU)
             ============================================================ */}
-        {column.id !== "item" && (
+        {showMenuButton && (
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -204,16 +206,16 @@ export default function ResizableHeader({
         <span
           style={{
             flex: 1,
-            textAlign: "center",
+            textAlign: align || "center",
           }}
         >
           {children}
         </span>
 
         {/* ============================================================
-            SPACER KOSONG UNTUK ITEM COLUMN (karena tidak ada ⋮)
+            SPACER KOSONG UNTUK KOLOM TANPA ⋮
             ============================================================ */}
-        {column.id === "item" && <span style={{ width: 20, flexShrink: 0 }} />}
+        {!showMenuButton && <span style={{ width: 22, flexShrink: 0 }} />}
 
         {/* ============================================================
             RESIZE HANDLE - TETAP DI KANAN
