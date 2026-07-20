@@ -293,6 +293,8 @@ export default function BoardTable({
             const isDefault = groupName === defaultGroupName;
             const groupColor = groupColors[groupName] || (isDefault ? DEFAULT_GROUP.color || '#4CAF50' : "#3b82f6");
 
+            const displayTitle = isDefault ? "Group Title" : groupName;
+
             return (
               <div 
                 key={groupName} 
@@ -360,6 +362,9 @@ export default function BoardTable({
                       borderLeft: `4px solid ${groupColor}`,
                     }}
                   >
+                    {/* ============================================================
+                        TOMBOL TOGGLE (▼/▶) - DI KIRI
+                        ============================================================ */}
                     <button 
                       className="group-toggle-btn"
                       onClick={() => toggleCollapse(groupName)}
@@ -388,6 +393,9 @@ export default function BoardTable({
                       {isCollapsed ? '▶' : '▼'}
                     </button>
 
+                    {/* ============================================================
+                        TOMBOL ⋮ (GROUP MENU) + JUDUL GROUP + COLOR PICKER
+                        ============================================================ */}
                     <div
                       style={{
                         flex: 1,
@@ -450,7 +458,7 @@ export default function BoardTable({
                           zIndex: 1002,
                         }}
                       >
-                        {groupName}
+                        {displayTitle}
                         {isDefault && (
                           <span className="badge-default" style={{ marginLeft: '8px', fontSize: '11px' }}>
                             ⭐ Default
@@ -498,6 +506,9 @@ export default function BoardTable({
                           <table className="board-table" style={{ width: totalWidth }}>
                             <thead>
                               <tr className="table-header-row">
+                                {/* ============================================================
+                                    CHECKBOX HEADER - TANPA TOMBOL ⋮
+                                    ============================================================ */}
                                 <th 
                                   className="checkbox-header" 
                                   style={{ 
@@ -534,6 +545,9 @@ export default function BoardTable({
                                   />
                                 </th>
 
+                                {/* ============================================================
+                                    TABEL HEADER - DENGAN ⋮ DI SEBELAH KIRI (CENTER)
+                                    ============================================================ */}
                                 {safeColumns.map((col, idx) => {
                                   const isItem = col.id === "item";
                                   const isLast = idx === safeColumns.length - 1;
@@ -550,6 +564,8 @@ export default function BoardTable({
                                       onReorder={reorderColumns}
                                       isSticky={isItem}
                                       isLast={isLast}
+                                      align="center"
+                                      showMenuButton={!isItem}
                                     >
                                       {col.label}
                                     </ResizableHeader>
