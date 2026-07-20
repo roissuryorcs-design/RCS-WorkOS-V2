@@ -3,12 +3,13 @@ import Row from "./Row";
 import ResizableHeader from "./ResizableHeader";
 import { useColumns } from "../context/ColumnContext";
 import { 
+  DEFAULT_GROUP,
   loadGroups, 
   saveGroups, 
   deleteGroupSafe, 
   addGroupSafe,
-  ensureDefaultGroups,
-  DEFAULT_GROUPS 
+  ensureDefaultGroup,
+  getDefaultItems
 } from "../data/treeData";
 
 export default function BoardTable({
@@ -25,6 +26,7 @@ export default function BoardTable({
   onOpenStatusManager,
   onRenameGroup: externalOnRenameGroup,
   onOpenAddColumn,
+  defaultGroupName = DEFAULT_GROUP.title, // Tambahkan prop ini
 }) {
   const {
     updateColumnWidth,
@@ -36,15 +38,13 @@ export default function BoardTable({
   } = useColumns();
 
   // ============================================================
-  // STATE UNTUK DEFAULT GROUPS
+  // STATE UNTUK GROUPS
   // ============================================================
   const [groups, setGroups] = useState(() => {
-    // Jika externalGroups ada dan tidak kosong, gunakan itu
     if (externalGroups && externalGroups.length > 0) {
       return externalGroups;
     }
-    // Jika tidak, load dari localStorage atau default
-    return loadGroups().map(g => g.title);
+    return loadGroups();
   });
 
   const [groupColors, setGroupColors] = useState(() => {
@@ -54,43 +54,25 @@ export default function BoardTable({
     const defaultColors = {};
     const loaded = loadGroups();
     loaded.forEach(g => {
-      defaultColors[g.title] = g.color || '#3b82f6';
+      if (g === DEFAULT_GROUP.title) {
+        defaultColors[g] = DEFAULT_GROUP.color || '#4CAF50';
+      } else {
+        defaultColors[g] = '#3b82f6';
+      }
     });
     return defaultColors;
   });
 
-  const [groupMeta, setGroupMeta] = useState(() => {
-    // Simpan metadata group (isDefault, isDeletable, id)
-    const meta = {};
-    const loaded = loadGroups();
-    loaded.forEach(g => {
-      meta[g.title] = {
-        id: g.id,
-        isDefault: g.isDefault || false,
-        isDeletable: g.isDeletable !== undefined ? g.isDeletable : true,
-        color: g.color || '#3b82f6',
-      };
-    });
-    return meta;
-  });
-
-  // Simpan ke localStorage setiap kali berubah
+  // ============================================================
+  // SIMPAN KE LOCALSTORAGE
+  // ============================================================
   useEffect(() => {
-    const groupsData = groups.map(title => {
-      const meta = groupMeta[title] || {};
-      return {
-        id: meta.id || `group-${Date.now()}`,
-        title: title,
-        isDefault: meta.isDefault || false,
-        isDeletable: meta.isDeletable !== undefined ? meta.isDeletable : true,
-        color: meta.color || '#3b82f6',
-        items: items.filter(item => item.group === title),
-      };
-    });
-    saveGroups(groupsData);
-  }, [groups, groupMeta, items]);
+    saveGroups(groups);
+  }, [groups]);
 
-  // Sinkronkan dengan props external jika berubah
+  // ============================================================
+  // SINKRONKAN DENGAN PROPS EXTERNAL
+  // ============================================================
   useEffect(() => {
     if (externalGroups && externalGroups.length > 0) {
       setGroups(externalGroups);
@@ -117,8 +99,7 @@ export default function BoardTable({
   // HANDLE RENAME GROUP (dengan proteksi default)
   // ============================================================
   const handleRenameGroup = (oldName, newName) => {
-    const meta = groupMeta[oldName];
-    if (meta && meta.isDefault) {
+    if (oldName === defaultGroupName) {
       alert('⚠️ Group default tidak bisa diubah namanya!');
       return;
     }
@@ -127,7 +108,6 @@ export default function BoardTable({
       externalOnRenameGroup(oldName, newName);
     }
     
-    // Update local state
     setGroups(prev => prev.map(g => g === oldName ? newName : g));
     setGroupColors(prev => {
       const newColors = { ...prev };
@@ -135,22 +115,13 @@ export default function BoardTable({
       delete newColors[oldName];
       return newColors;
     });
-    setGroupMeta(prev => {
-      const newMeta = { ...prev };
-      newMeta[newName] = { ...prev[oldName] };
-      delete newMeta[oldName];
-      return newMeta;
-    });
   };
 
   // ============================================================
   // HANDLE DELETE GROUP (dengan proteksi)
   // ============================================================
   const handleDeleteGroup = (groupName) => {
-    const meta = groupMeta[groupName];
-    
-    // Cek apakah group adalah default
-    if (meta && meta.isDefault) {
+    if (groupName === defaultGroupName) {
       alert('⚠️ Group default tidak bisa dihapus!');
       return;
     }
@@ -159,45 +130,21 @@ export default function BoardTable({
       externalOnDeleteGroup(groupName);
     }
 
-    // Hapus dari state lokal
     setGroups(prev => {
       const newGroups = prev.filter(g => g !== groupName);
       
       // Jika tidak ada group tersisa, restore default
       if (newGroups.length === 0) {
-        const defaultTitles = DEFAULT_GROUPS.map(g => g.title);
-        // Tambahkan default groups ke groupMeta
-        const newMeta = { ...groupMeta };
-        DEFAULT_GROUPS.forEach(g => {
-          newMeta[g.title] = {
-            id: g.id,
-            isDefault: true,
-            isDeletable: false,
-            color: g.color,
-          };
-        });
-        setGroupMeta(newMeta);
-        return defaultTitles;
-      }
-      
-      // Cek apakah masih ada default group
-      const hasDefault = newGroups.some(g => groupMeta[g]?.isDefault);
-      if (!hasDefault) {
-        const defaultTitles = DEFAULT_GROUPS.map(g => g.title);
-        const newMeta = { ...groupMeta };
-        DEFAULT_GROUPS.forEach(g => {
-          newMeta[g.title] = {
-            id: g.id,
-            isDefault: true,
-            isDeletable: false,
-            color: g.color,
-          };
-        });
-        setGroupMeta(newMeta);
-        return [...defaultTitles, ...newGroups];
+        return [defaultGroupName];
       }
       
       return newGroups;
+    });
+    
+    setGroupColors(prev => {
+      const newColors = { ...prev };
+      delete newColors[groupName];
+      return newColors;
     });
   };
 
@@ -205,12 +152,15 @@ export default function BoardTable({
   // HANDLE ADD GROUP (dengan proteksi duplikat)
   // ============================================================
   const handleAddGroup = () => {
-    const defaultTitles = DEFAULT_GROUPS.map(g => g.title);
     const newTitle = prompt("Masukkan nama group baru:");
     if (!newTitle || !newTitle.trim()) return;
     
-    // Cek apakah nama sudah ada
-    if (groups.includes(newTitle.trim()) || defaultTitles.includes(newTitle.trim())) {
+    if (newTitle.trim() === defaultGroupName) {
+      alert(`"${defaultGroupName}" adalah nama group default!`);
+      return;
+    }
+    
+    if (groups.includes(newTitle.trim())) {
       alert(`Group "${newTitle.trim()}" sudah ada!`);
       return;
     }
@@ -221,15 +171,6 @@ export default function BoardTable({
 
     setGroups(prev => [...prev, newTitle.trim()]);
     setGroupColors(prev => ({ ...prev, [newTitle.trim()]: '#757575' }));
-    setGroupMeta(prev => ({
-      ...prev,
-      [newTitle.trim()]: {
-        id: `group-${Date.now()}`,
-        isDefault: false,
-        isDeletable: true,
-        color: '#757575',
-      }
-    }));
   };
 
   // ============================================================
@@ -240,16 +181,16 @@ export default function BoardTable({
       externalOnUpdateGroupColor(groupName, color);
     }
     setGroupColors(prev => ({ ...prev, [groupName]: color }));
-    setGroupMeta(prev => ({
-      ...prev,
-      [groupName]: { ...prev[groupName], color: color }
-    }));
   };
 
   // ============================================================
   // HANDLE ADD ITEM (dengan validasi group)
   // ============================================================
   const handleAddItem = (groupName) => {
+    if (groupName === defaultGroupName) {
+      alert('⚠️ Tidak bisa menambah item ke group default!');
+      return;
+    }
     if (onAddItem) {
       onAddItem(groupName);
     }
@@ -345,23 +286,11 @@ export default function BoardTable({
   
   const totalWidth = safeColumns.reduce((sum, col) => sum + col.width, 0) + CHECKBOX_WIDTH + ADD_COLUMN_WIDTH;
 
-  // Cek apakah semua group adalah default
-  const allGroupsDefault = groups.every(g => groupMeta[g]?.isDefault);
+  // Cek apakah hanya ada default group
+  const onlyDefaultGroup = groups.length === 1 && groups[0] === defaultGroupName;
 
   if (groups.length === 0) {
-    // Restore default jika tidak ada group
-    const defaultTitles = DEFAULT_GROUPS.map(g => g.title);
-    const newMeta = { ...groupMeta };
-    DEFAULT_GROUPS.forEach(g => {
-      newMeta[g.title] = {
-        id: g.id,
-        isDefault: true,
-        isDeletable: false,
-        color: g.color,
-      };
-    });
-    setGroupMeta(newMeta);
-    setGroups(defaultTitles);
+    setGroups([defaultGroupName]);
     return null;
   }
 
@@ -381,12 +310,12 @@ export default function BoardTable({
         </div>
       )}
 
-      {/* Info Default Groups */}
-      {allGroupsDefault && (
+      {/* Info Default Group */}
+      {onlyDefaultGroup && (
         <div className="info-default-groups">
           <p>
-            💡 Semua group adalah <span className="badge-default">Default</span>. 
-            Group default tidak bisa dihapus atau diubah namanya.
+            💡 <span className="badge-default">⭐ Default</span> group active. 
+            Group default tidak bisa dihapus atau diubah namanya, tetapi item di dalamnya bisa diedit.
           </p>
         </div>
       )}
@@ -396,10 +325,8 @@ export default function BoardTable({
           {groups.map((groupName) => {
             const tasks = grouped[groupName] || [];
             const isCollapsed = collapsed[groupName] || false;
-            const meta = groupMeta[groupName] || {};
-            const groupColor = meta.color || groupColors[groupName] || "#3b82f6";
-            const isDefault = meta.isDefault || false;
-            const isDeletable = meta.isDeletable !== undefined ? meta.isDeletable : true;
+            const isDefault = groupName === defaultGroupName;
+            const groupColor = groupColors[groupName] || (isDefault ? DEFAULT_GROUP.color || '#4CAF50' : "#3b82f6");
 
             return (
               <div 
@@ -564,7 +491,7 @@ export default function BoardTable({
                             ⭐ Default
                           </span>
                         )}
-                        {!isDeletable && isDefault && (
+                        {isDefault && (
                           <span className="badge-protected" style={{ marginLeft: '4px', fontSize: '11px' }}>
                             🔒
                           </span>
@@ -583,7 +510,10 @@ export default function BoardTable({
                           if (isDefault) {
                             alert('⚠️ Group default tidak bisa diubah namanya!');
                           } else {
-                            handleRenameGroup(groupName, prompt("Masukkan nama baru:", groupName));
+                            const newName = prompt("Masukkan nama baru:", groupName);
+                            if (newName) {
+                              handleRenameGroup(groupName, newName.trim());
+                            }
                           }
                         }}
                         style={{ opacity: isDefault ? 0.5 : 1 }}
@@ -791,25 +721,32 @@ export default function BoardTable({
                               style={{
                                 border: 'none',
                                 background: 'transparent',
-                                color: '#3b82f6',
-                                cursor: 'pointer',
+                                color: isDefault ? '#9e9e9e' : '#3b82f6',
+                                cursor: isDefault ? 'not-allowed' : 'pointer',
                                 fontSize: 13,
                                 padding: '4px 0',
                                 textAlign: 'left',
                                 width: '100%',
                                 transition: 'background 0.15s',
+                                opacity: isDefault ? 0.5 : 1,
                               }}
                               onMouseEnter={(e) => {
-                                e.currentTarget.style.background = 'var(--bg-hover)';
-                                e.currentTarget.style.paddingLeft = '8px';
-                                e.currentTarget.style.borderRadius = '4px';
+                                if (!isDefault) {
+                                  e.currentTarget.style.background = 'var(--bg-hover)';
+                                  e.currentTarget.style.paddingLeft = '8px';
+                                  e.currentTarget.style.borderRadius = '4px';
+                                }
                               }}
                               onMouseLeave={(e) => {
-                                e.currentTarget.style.background = 'transparent';
-                                e.currentTarget.style.paddingLeft = '0';
+                                if (!isDefault) {
+                                  e.currentTarget.style.background = 'transparent';
+                                  e.currentTarget.style.paddingLeft = '0';
+                                }
                               }}
+                              title={isDefault ? 'Tidak bisa menambah item ke group default' : 'Add new item'}
+                              disabled={isDefault}
                             >
-                              + Add item
+                              + Add item {isDefault && '(disabled)'}
                             </button>
                           </div>
 
@@ -822,7 +759,13 @@ export default function BoardTable({
                         style={{ borderLeft: `4px solid ${groupColor}` }}
                       >
                         No items in this group.
-                        <button onClick={() => handleAddItem(groupName)}>Add item</button>
+                        <button 
+                          onClick={() => handleAddItem(groupName)}
+                          disabled={isDefault}
+                          style={{ opacity: isDefault ? 0.5 : 1 }}
+                        >
+                          Add item
+                        </button>
                       </div>
                     )}
                   </div>
@@ -838,34 +781,10 @@ export default function BoardTable({
         <button 
           onClick={() => {
             if (confirm('Reset semua group ke default? Group custom akan dihapus.')) {
-              const defaultTitles = DEFAULT_GROUPS.map(g => g.title);
-              const newMeta = { ...groupMeta };
-              DEFAULT_GROUPS.forEach(g => {
-                newMeta[g.title] = {
-                  id: g.id,
-                  isDefault: true,
-                  isDeletable: false,
-                  color: g.color,
-                };
+              setGroups([defaultGroupName]);
+              setGroupColors({
+                [defaultGroupName]: DEFAULT_GROUP.color || '#4CAF50'
               });
-              setGroupMeta(newMeta);
-              setGroups(defaultTitles);
-              // Hapus items yang tidak termasuk default
-              const defaultItemIds = [];
-              DEFAULT_GROUPS.forEach(g => {
-                g.items.forEach(item => defaultItemIds.push(item.id));
-              });
-              // Filter items
-              const newItems = items.filter(item => defaultItemIds.includes(item.id));
-              // Update items melalui callback
-              if (onUpdateItem) {
-                // Hapus semua items
-                items.forEach(item => {
-                  if (!defaultItemIds.includes(item.id)) {
-                    onDeleteItem(item.id);
-                  }
-                });
-              }
             }
           }}
           style={{ marginLeft: '12px' }}
