@@ -3,36 +3,24 @@
 import { useState, useRef, useEffect } from "react";
 
 export default function DateCell({ date, onChange, placeholder = "dd/mm/ttt" }) {
-  const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState(date || "");
   const inputRef = useRef(null);
-  const wrapperRef = useRef(null);
 
   useEffect(() => {
     setInputValue(date || "");
   }, [date]);
 
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const handleDateSelect = (e) => {
+  const handleDateChange = (e) => {
     const value = e.target.value;
     setInputValue(value);
     if (onChange) {
       onChange(value);
     }
-    setIsOpen(false);
   };
 
   const formatDisplayDate = (val) => {
     if (!val) return "";
+    // Jika format YYYY-MM-DD, tampilkan sebagai dd/mm/yyyy
     if (val.includes("-")) {
       const parts = val.split("-");
       if (parts.length === 3) {
@@ -42,17 +30,28 @@ export default function DateCell({ date, onChange, placeholder = "dd/mm/ttt" }) 
     return val;
   };
 
-  // Cek apakah dark mode aktif
-  const isDarkMode = document.documentElement.classList.contains("dark");
+  // Konversi dd/mm/yyyy ke yyyy-mm-dd untuk input date
+  const convertToDateInputValue = (val) => {
+    if (!val) return "";
+    if (val.includes("/")) {
+      const parts = val.split("/");
+      if (parts.length === 3) {
+        return `${parts[2]}-${parts[1]}-${parts[0]}`;
+      }
+    }
+    if (val.includes("-")) return val;
+    return "";
+  };
+
+  const dateInputValue = convertToDateInputValue(inputValue) || inputValue;
 
   return (
-    <div ref={wrapperRef} style={{ position: "relative", width: "100%" }}>
+    <div style={{ position: "relative", width: "100%" }}>
       <div
         style={{
           display: "flex",
           alignItems: "center",
-          gap: "8px",
-          cursor: "pointer",
+          gap: "6px",
           padding: "4px 6px",
           borderRadius: "4px",
           transition: "background 0.15s",
@@ -61,66 +60,27 @@ export default function DateCell({ date, onChange, placeholder = "dd/mm/ttt" }) 
         }}
         onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-hover)")}
         onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-        onClick={() => {
-          setIsOpen(true);
-          setTimeout(() => inputRef.current?.showPicker?.(), 100);
-        }}
       >
-        {/* ICON CALENDAR - WARNA PUTIH UNTUK DARK MODE */}
-        <svg
-          width="18"
-          height="18"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="#ffffff"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          style={{
-            flexShrink: 0,
-            opacity: 0.8,
-            filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.3))",
-          }}
-        >
-          <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-          <line x1="16" y1="2" x2="16" y2="6" />
-          <line x1="8" y1="2" x2="8" y2="6" />
-          <line x1="3" y1="10" x2="21" y2="10" />
-        </svg>
-
-        <span
-          style={{
-            flex: 1,
-            fontSize: 13,
-            color: date ? "var(--text-primary)" : "var(--text-muted)",
-          }}
-        >
-          {date ? formatDisplayDate(date) : placeholder}
-        </span>
-      </div>
-
-      {isOpen && (
         <input
           ref={inputRef}
           type="date"
-          value={inputValue || ""}
-          onChange={handleDateSelect}
+          value={dateInputValue || ""}
+          onChange={handleDateChange}
+          placeholder={placeholder}
           style={{
-            position: "absolute",
-            top: "100%",
-            left: 0,
-            zIndex: 100,
-            padding: "6px",
-            border: "1px solid var(--border-color)",
-            borderRadius: "6px",
-            background: "var(--bg-modal)",
+            width: "100%",
+            padding: "4px 2px",
+            fontSize: "13px",
             color: "var(--text-primary)",
-            marginTop: "4px",
-            width: "200px",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+            background: "transparent",
+            border: "none",
+            outline: "none",
+            fontFamily: "inherit",
+            cursor: "pointer",
+            minHeight: "28px",
           }}
         />
-      )}
+      </div>
     </div>
   );
 }
