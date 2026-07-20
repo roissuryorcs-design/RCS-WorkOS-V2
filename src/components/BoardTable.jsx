@@ -13,6 +13,7 @@ export default function BoardTable({
   onAddGroup,
   onDeleteGroup,
   onAddItem,
+  onAddSubItem,
   onOpenStatusManager,
   onRenameGroup,
   onOpenAddColumn,
@@ -134,7 +135,7 @@ export default function BoardTable({
 
     const newTitle = getLevelName(newDepth);
 
-    // Panggil onAddSubItem dari App.jsx
+    // Panggil onAddSubItem dari App.jsx dengan 2 parameter
     onAddSubItem(parentId, newTitle);
   };
 
