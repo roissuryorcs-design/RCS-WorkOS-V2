@@ -1,51 +1,66 @@
 // src/data/treeData.jsx
 
-export const INITIAL_DATA = [
-  {
-    id: "group-default-1",
-    title: "Default Board Group",
-    color: "#3b82f6",
-    isDefault: true,
-    isDeletable: false,  // Tambahkan ini
-    items: [
-      {
-        id: "lvl1-item-1",
-        name: "Level 1: Project Phase",
-        no_document: "DOC-001",
-        status: "Working on it",
-        rev: "A",
-        subItems: [
-          {
-            id: "lvl2-item-1",
-            name: "Level 2: Task Group",
-            no_document: "DOC-001-A",
-            status: "Stuck",
-            rev: "0",
-            subItems: [
-              {
-                id: "lvl3-item-1",
-                name: "Level 3: Specific Task",
-                no_document: "DOC-001-A-1",
-                status: "Done",
-                rev: "1",
-                subItems: [
-                  {
-                    id: "lvl4-item-1",
-                    name: "Level 4: Detail Action",
-                    no_document: "DOC-001-A-1-a",
-                    status: "Working on it",
-                    rev: "0",
-                    subItems: []
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      }
-    ]
-  }
-];
+// Data default group dengan 4 level item di dalamnya
+export const DEFAULT_GROUP = {
+  id: 'group-default',
+  title: 'Default',
+  isDefault: true,
+  isDeletable: false,
+  color: '#4CAF50',
+  items: [
+    {
+      id: 'default-item-1',
+      item: 'Level 1: Project Phase',
+      document: 'DOC-001',
+      people: '',
+      status: 'Default',
+      dueDate: '',
+      rev: 'R0',
+      isDefault: true,
+      children: [
+        {
+          id: 'default-item-2',
+          item: 'Level 2: Task Group',
+          document: 'DOC-001-A',
+          people: '',
+          status: 'Default',
+          dueDate: '',
+          rev: 'R0',
+          isDefault: true,
+          children: [
+            {
+              id: 'default-item-3',
+              item: 'Level 3: Specific Task',
+              document: 'DOC-001-A-1',
+              people: '',
+              status: 'Default',
+              dueDate: '',
+              rev: 'R0',
+              isDefault: true,
+              children: [
+                {
+                  id: 'default-item-4',
+                  item: 'Level 4: Detail Action',
+                  document: 'DOC-001-A-1-a',
+                  people: '',
+                  status: 'Default',
+                  dueDate: '',
+                  rev: 'R0',
+                  isDefault: true,
+                  children: [],
+                  isExpanded: false,
+                }
+              ],
+              isExpanded: false,
+            }
+          ],
+          isExpanded: false,
+        }
+      ],
+      isExpanded: false,
+    }
+  ]
+};
 
 export const DEFAULT_COLUMNS = [
   { id: "item", title: "ITEM", width: 400 },
@@ -57,114 +72,55 @@ export const DEFAULT_COLUMNS = [
   { id: "rev", title: "REV", width: 80 }
 ];
 
-// ========== TAMBAHKAN INI DI BAWAH ==========
+// Fungsi untuk mendapatkan default items dari DEFAULT_GROUP
+export const getDefaultItems = () => {
+  return DEFAULT_GROUP.items.map(item => ({
+    ...item,
+    group: DEFAULT_GROUP.title,
+  }));
+};
 
-// Data default untuk 4 level (standalone)
-export const DEFAULT_GROUPS = [
-  {
-    id: 'group-level-1',
-    title: 'Level 1',
-    isDefault: true,
-    isDeletable: false,
-    color: '#4CAF50',
-    items: [
-      { id: 'item-1-1', name: 'Contoh Item Level 1', no_document: 'DOC-001', people: ['John Doe'], status: 'On Track', due_date: '2026-07-25', rev: 'A', subItems: [] },
-      { id: 'item-1-2', name: 'Contoh Item Level 1 - 2', no_document: 'DOC-002', people: ['Jane Smith'], status: 'At Risk', due_date: '2026-07-28', rev: 'B', subItems: [] },
-    ]
-  },
-  {
-    id: 'group-level-2',
-    title: 'Level 2',
-    isDefault: true,
-    isDeletable: false,
-    color: '#2196F3',
-    items: [
-      { id: 'item-2-1', name: 'Contoh Item Level 2', no_document: 'DOC-003', people: ['Mike Johnson'], status: 'Pending', due_date: '2026-08-01', rev: 'C', subItems: [] },
-    ]
-  },
-  {
-    id: 'group-level-3',
-    title: 'Level 3',
-    isDefault: true,
-    isDeletable: false,
-    color: '#FF9800',
-    items: [
-      { id: 'item-3-1', name: 'Contoh Item Level 3', no_document: 'DOC-004', people: ['Sarah Wilson'], status: 'Blocked', due_date: '2026-08-05', rev: 'D', subItems: [] },
-    ]
-  },
-  {
-    id: 'group-level-4',
-    title: 'Level 4',
-    isDefault: true,
-    isDeletable: false,
-    color: '#9C27B0',
-    items: [
-      { id: 'item-4-1', name: 'Contoh Item Level 4', no_document: 'DOC-005', people: ['Robert Brown'], status: 'Completed', due_date: '2026-08-10', rev: 'E', subItems: [] },
-    ]
-  }
-];
-
-// Fungsi untuk memastikan default groups selalu ada
-export const ensureDefaultGroups = (groups) => {
+// Fungsi untuk memastikan default group selalu ada
+export const ensureDefaultGroup = (groups) => {
   if (!groups || groups.length === 0) {
-    return DEFAULT_GROUPS.map(g => ({ ...g, items: g.items.map(item => ({ ...item, subItems: [] })) }));
+    return [DEFAULT_GROUP.title];
   }
 
-  const defaultGroupIds = DEFAULT_GROUPS.map(g => g.id);
-  const existingDefaultIds = groups
-    .filter(g => g.isDefault)
-    .map(g => g.id);
-
-  const missingDefaultIds = defaultGroupIds.filter(
-    id => !existingDefaultIds.includes(id)
-  );
-
-  if (missingDefaultIds.length === 0) {
-    return groups;
+  // Cek apakah default group ada
+  const hasDefault = groups.some(g => g === DEFAULT_GROUP.title);
+  if (!hasDefault) {
+    return [DEFAULT_GROUP.title, ...groups];
   }
 
-  const missingGroups = DEFAULT_GROUPS.filter(g => 
-    missingDefaultIds.includes(g.id)
-  ).map(g => ({ ...g, items: g.items.map(item => ({ ...item, subItems: [] })) }));
-
-  return [...groups, ...missingGroups];
+  return groups;
 };
 
 // Fungsi untuk hapus group dengan proteksi
-export const deleteGroupSafe = (groups, groupId) => {
-  const groupToDelete = groups.find(g => g.id === groupId);
-
-  if (!groupToDelete || !groupToDelete.isDeletable) {
+export const deleteGroupSafe = (groups, groupName) => {
+  if (groupName === DEFAULT_GROUP.title) {
     console.warn('⚠️ Group default tidak bisa dihapus!');
     return groups;
   }
 
-  const newGroups = groups.filter(g => g.id !== groupId);
+  const newGroups = groups.filter(g => g !== groupName);
 
+  // Jika tidak ada group tersisa, restore default
   if (newGroups.length === 0) {
-    return DEFAULT_GROUPS.map(g => ({ ...g, items: g.items.map(item => ({ ...item, subItems: [] })) }));
-  }
-
-  const hasDefault = newGroups.some(g => g.isDefault);
-  if (!hasDefault) {
-    return [...DEFAULT_GROUPS.map(g => ({ ...g, items: g.items.map(item => ({ ...item, subItems: [] })) })), ...newGroups];
+    return [DEFAULT_GROUP.title];
   }
 
   return newGroups;
 };
 
 // Fungsi untuk tambah group baru
-export const addGroupSafe = (groups, title, color = '#757575') => {
-  const newGroup = {
-    id: `group-${Date.now()}`,
-    title: title,
-    isDefault: false,
-    isDeletable: true,
-    color: color,
-    items: []
-  };
-
-  return [...groups, newGroup];
+export const addGroupSafe = (groups, title) => {
+  if (title === DEFAULT_GROUP.title) {
+    return groups;
+  }
+  if (groups.includes(title)) {
+    return groups;
+  }
+  return [...groups, title];
 };
 
 // Simpan ke localStorage
@@ -178,10 +134,35 @@ export const loadGroups = () => {
   if (saved) {
     try {
       const parsed = JSON.parse(saved);
-      return ensureDefaultGroups(parsed);
+      return ensureDefaultGroup(parsed);
     } catch {
-      return DEFAULT_GROUPS.map(g => ({ ...g, items: g.items.map(item => ({ ...item, subItems: [] })) }));
+      return [DEFAULT_GROUP.title];
     }
   }
-  return DEFAULT_GROUPS.map(g => ({ ...g, items: g.items.map(item => ({ ...item, subItems: [] })) }));
+  return [DEFAULT_GROUP.title];
+};
+
+// Simpan items ke localStorage
+export const saveItems = (items) => {
+  localStorage.setItem('forelItems', JSON.stringify(items));
+};
+
+// Load items dari localStorage
+export const loadItems = () => {
+  const saved = localStorage.getItem('forelItems');
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      // Pastikan default items ada
+      const defaultItems = getDefaultItems();
+      const hasDefaultItems = parsed.some(item => item.id === defaultItems[0]?.id);
+      if (!hasDefaultItems) {
+        return [...defaultItems, ...parsed];
+      }
+      return parsed;
+    } catch {
+      return getDefaultItems();
+    }
+  }
+  return getDefaultItems();
 };
