@@ -171,30 +171,17 @@ function AppContent() {
   };
 
   const updateItem = (id, field, value) => {
-    const item = findItemById(items, id);
-    if (item && item.isDefault) {
-      if (field === 'item' || field === 'status' || field === 'dueDate' || field === 'people' || field === 'document' || field === 'rev') {
-        const newItems = updateItemRecursive(items, id, field, value);
-        saveHistory(newItems);
-      }
-      return;
-    }
+    // HAPUS proteksi update item default
     const newItems = updateItemRecursive(items, id, field, value);
     saveHistory(newItems);
   };
 
   // ============================================================
-  // DELETE ITEM - RECURSIVE
+  // DELETE ITEM - RECURSIVE (TANPA PROTEKSI)
   // ============================================================
   const deleteItemRecursive = (items, id) => {
     return items
-      .filter((it) => {
-        if (it.id === id && it.isDefault) {
-          alert('⚠️ Item default tidak bisa dihapus!');
-          return true;
-        }
-        return it.id !== id;
-      })
+      .filter((it) => it.id !== id)
       .map((it) => {
         if (it.children && it.children.length > 0) {
           return { ...it, children: deleteItemRecursive(it.children, id) };
@@ -204,21 +191,13 @@ function AppContent() {
   };
 
   const deleteItem = (id) => {
-    const item = findItemById(items, id);
-    if (item && item.isDefault) {
-      alert('⚠️ Item default tidak bisa dihapus!');
-      return;
-    }
     if (!confirm("Delete this item?")) return;
-    if (item && item.children && item.children.length > 0) {
-      if (!confirm(`Item "${item.item}" has ${item.children.length} sub item(s). Delete all?`)) return;
-    }
     const newItems = deleteItemRecursive(items, id);
     saveHistory(newItems);
   };
 
   // ============================================================
-  // ADD SUB ITEM
+  // ADD SUB ITEM - TANPA PROTEKSI DEFAULT
   // ============================================================
   const addSubItem = (parentId, newTitle = null) => {
     const parent = findItemById(items, parentId);
@@ -227,10 +206,13 @@ function AppContent() {
       return;
     }
 
-    if (parent.isDefault) {
-      alert('⚠️ Tidak bisa menambah sub item ke item default!');
-      return;
-    }
+    // ============================================================
+    // HAPUS PROTEKSI INI!
+    // ============================================================
+    // if (parent.isDefault) {
+    //   alert('⚠️ Tidak bisa menambah sub item ke item default!');
+    //   return;
+    // }
 
     const getDepthForParent = (items, id, currentDepth = 0) => {
       for (const item of items) {
