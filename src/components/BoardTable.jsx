@@ -84,7 +84,7 @@ export default function BoardTable({
   };
 
   // ============================================================
-  // FUNGSI TAMBAH SUB ITEM - CEK KEDALAMAN PER PARENT
+  // FUNGSI TAMBAH SUB ITEM
   // ============================================================
   const handleAddSubItem = (parentId) => {
     if (!onAddSubItem) {
@@ -94,7 +94,6 @@ export default function BoardTable({
 
     console.log('🔵 handleAddSubItem called with parentId:', parentId);
 
-    // Cari parent item di semua level
     const findParent = (items, id) => {
       for (const item of items) {
         if (item.id === id) {
@@ -114,7 +113,6 @@ export default function BoardTable({
       return;
     }
 
-    // Hitung kedalaman untuk PARENT ini (bukan seluruh board)
     const findDepthInTree = (items, id, currentDepth = 0) => {
       for (const item of items) {
         if (item.id === id) {
@@ -131,7 +129,6 @@ export default function BoardTable({
     const currentDepth = findDepthInTree(items, parentId, 0);
     console.log('🔵 Current depth for parent:', currentDepth);
 
-    // Maksimal 4 level (0,1,2,3)
     if (currentDepth >= 3) {
       alert('Maximum 4 levels reached for this item!');
       return;
@@ -139,7 +136,6 @@ export default function BoardTable({
 
     const newDepth = currentDepth + 1;
 
-    // Fungsi menentukan nama berdasarkan level
     const getLevelName = (depth) => {
       if (depth <= 0) return "New Task";
       if (depth === 1) return "Sub Item";
@@ -151,7 +147,6 @@ export default function BoardTable({
     const newTitle = getLevelName(newDepth);
     console.log('🔵 New title:', newTitle);
 
-    // Panggil onAddSubItem dari App.jsx
     onAddSubItem(parentId, newTitle);
   };
 
@@ -437,14 +432,9 @@ export default function BoardTable({
                             </thead>
                             <tbody>
                               {tasks.map((item) => {
-                                const handleUpdateItem = (field, value) => {
-                                  onUpdateItem(item.id, field, value);
-                                };
-
-                                const handleDeleteItem = () => {
-                                  onDeleteItem(item.id);
-                                };
-
+                                // ============================================================
+                                // PERBAIKAN: Props Row yang BENAR
+                                // ============================================================
                                 return (
                                   <Row
                                     key={item.id}
@@ -454,9 +444,13 @@ export default function BoardTable({
                                     isSelected={selectedItems.includes(item.id)}
                                     onToggleSelect={toggleSelectItem}
                                     onUpdate={(field, value) => {
-    console.log('🟢 BoardTable onUpdate - item.id:', item.id, 'field:', field, 'value:', value);
-    onUpdateItem(item.id, field, value);
-                                    onDelete={handleDeleteItem}
+                                      console.log('🟢 BoardTable onUpdate - item.id:', item.id, 'field:', field, 'value:', value);
+                                      onUpdateItem(item.id, field, value);
+                                    }}
+                                    onDelete={() => {
+                                      console.log('🟢 BoardTable onDelete - item.id:', item.id);
+                                      onDeleteItem(item.id);
+                                    }}
                                     onOpenStatusManager={onOpenStatusManager}
                                     onAddSubItem={handleAddSubItem}
                                     selectedItems={selectedItems}
