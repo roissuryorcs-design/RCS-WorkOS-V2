@@ -9,80 +9,95 @@ import StatusManager from "./components/StatusManager";
 import ColumnManager from "./components/ColumnManager";
 import AddColumnPopup from "./components/AddColumnPopup";
 import { 
-  DEFAULT_GROUPS, 
-  loadGroups, 
-  saveGroups, 
-  ensureDefaultGroups,
+  DEFAULT_GROUP,
+  getDefaultItems,
+  loadGroups,
+  saveGroups,
+  loadItems,
+  saveItems,
+  ensureDefaultGroup,
   deleteGroupSafe,
   addGroupSafe 
 } from "./data/treeData";
 import "./App.css";
 
 function AppContent() {
-  const [items, setItems] = useState([]);
+  const [items, setItems] = useState(() => loadItems());
   const [statuses, setStatuses] = useState({});
   const [search, setSearch] = useState("");
   const [favorites, setFavorites] = useState([]);
   const [history, setHistory] = useState([]);
   const [showStatusManager, setShowStatusManager] = useState(false);
   const [showColumnManager, setShowColumnManager] = useState(false);
-  const [groupColors, setGroupColors] = useState({});
+  const [groupColors, setGroupColors] = useState(() => {
+    const colors = {};
+    const groups = loadGroups();
+    groups.forEach(g => {
+      if (g === DEFAULT_GROUP.title) {
+        colors[g] = DEFAULT_GROUP.color || '#4CAF50';
+      } else {
+        colors[g] = '#3b82f6';
+      }
+    });
+    return colors;
+  });
   const [activeStatusColumnId, setActiveStatusColumnId] = useState(null);
   const [showAddColumnPopup, setShowAddColumnPopup] = useState(false);
   
   // ============================================================
-  // STATE UNTUK DEFAULT GROUPS META DATA
+  // STATE UNTUK GROUPS
   // ============================================================
-  const [groupMeta, setGroupMeta] = useState(() => {
-    const meta = {};
-    const loaded = loadGroups();
-    loaded.forEach(g => {
-      meta[g.title] = {
-        id: g.id,
-        isDefault: g.isDefault || false,
-        isDeletable: g.isDeletable !== undefined ? g.isDeletable : true,
-        color: g.color || '#3b82f6',
-      };
-    });
-    return meta;
-  });
+  const [groups, setGroups] = useState(() => loadGroups());
 
   const { columns, addColumn, renameColumn, toggleColumn, deleteColumn, resetColumns, updateColumnStatuses, updateColumnStatusOrder } = useColumns();
 
   // ============================================================
-  // FUNGSI UNTUK MENDAPATKAN DEFAULT ITEMS DARI DEFAULT_GROUPS
+  // AUTO SAVE GROUPS & ITEMS
   // ============================================================
-  const getDefaultItems = () => {
-    const defaultItems = [];
-    DEFAULT_GROUPS.forEach(group => {
-      group.items.forEach(item => {
-        defaultItems.push({
-          id: item.id,
-          group: group.title,
-          item: item.name,
-          document: item.no_document || "NO. DO",
-          people: item.people ? item.people.join(", ") : "",
-          status: item.status || "Default",
-          dueDate: item.due_date || "dd/mm/ttt",
-          rev: item.rev || "R0",
-          children: [],
-          isExpanded: false,
-          isDefault: true, // Tanda bahwa ini item default
-        });
-      });
-    });
-    return defaultItems;
+  useEffect(() => {
+    saveGroups(groups);
+  }, [groups]);
+
+  useEffect(() => {
+    saveItems(items);
+  }, [items]);
+
+  // ============================================================
+  // RESTORE DEFAULT GROUP
+  // ============================================================
+  const restoreDefaultGroup = () => {
+    const defaultItems = getDefaultItems();
+    const defaultGroupName = DEFAULT_GROUP.title;
+    
+    // Pastikan default items ada
+    const defaultItemIds = defaultItems.map(item => item.id);
+    const existingDefaultItems = items.filter(item => 
+      defaultItemIds.includes(item.id)
+    );
+    
+    if (existingDefaultItems.length === 0) {
+      setItems(prev => [...defaultItems, ...prev]);
+    }
+    
+    // Pastikan group default ada
+    if (!groups.includes(defaultGroupName)) {
+      setGroups(prev => [defaultGroupName, ...prev]);
+    }
+    
+    // Pastikan warna default group
+    setGroupColors(prev => ({
+      ...prev,
+      [defaultGroupName]: DEFAULT_GROUP.color || '#4CAF50'
+    }));
   };
 
   // ============================================================
   // LOAD DATA
   // ============================================================
   useEffect(() => {
-    const savedItems = localStorage.getItem("forelItems");
     const savedStatuses = localStorage.getItem("forelStatuses");
     const savedFavs = localStorage.getItem("forelFavorites");
     const savedGroupColors = localStorage.getItem("forelGroupColors");
-    const savedGroupMeta = localStorage.getItem("forelGroupMeta");
 
     const defaultStatuses = { Default: "#9ca3af" };
 
@@ -98,47 +113,6 @@ function AppContent() {
       setStatuses(defaultStatuses);
     }
 
-    // Load group meta
-    if (savedGroupMeta) {
-      try {
-        const parsed = JSON.parse(savedGroupMeta);
-        setGroupMeta(parsed);
-      } catch {
-        // use default
-      }
-    }
-
-    // Load items
-    if (savedItems) {
-      const parsedItems = JSON.parse(savedItems);
-      const ensureChildren = (items) => {
-        return items.map(item => ({
-          ...item,
-          children: item.children || [],
-          isExpanded: item.isExpanded !== undefined ? item.isExpanded : false,
-          ...(item.children ? { children: ensureChildren(item.children) } : {})
-        }));
-      };
-      
-      // Pastikan default items ada
-      const defaultItems = getDefaultItems();
-      const defaultItemIds = defaultItems.map(item => item.id);
-      const existingDefaultIds = parsedItems
-        .filter(item => item.isDefault)
-        .map(item => item.id);
-      
-      // Tambahkan default items yang hilang
-      const missingDefaultItems = defaultItems.filter(
-        item => !existingDefaultIds.includes(item.id)
-      );
-      
-      const mergedItems = [...parsedItems, ...missingDefaultItems];
-      setItems(ensureChildren(mergedItems));
-    } else {
-      // Load default items
-      setItems(getDefaultItems());
-    }
-
     if (savedFavs) {
       setFavorites(JSON.parse(savedFavs));
     } else {
@@ -147,21 +121,12 @@ function AppContent() {
 
     if (savedGroupColors) {
       setGroupColors(JSON.parse(savedGroupColors));
-    } else {
-      const defaultColors = {};
-      const groups = [...new Set(JSON.parse(savedItems || "[]").map(item => item.group))];
-      groups.forEach(g => { defaultColors[g] = "#3b82f6"; });
-      setGroupColors(defaultColors);
     }
   }, []);
 
   // ============================================================
-  // AUTO SAVE
+  // AUTO SAVE LAINNYA
   // ============================================================
-  useEffect(() => {
-    localStorage.setItem("forelItems", JSON.stringify(items));
-  }, [items]);
-
   useEffect(() => {
     localStorage.setItem("forelStatuses", JSON.stringify(statuses));
   }, [statuses]);
@@ -174,9 +139,28 @@ function AppContent() {
     localStorage.setItem("forelGroupColors", JSON.stringify(groupColors));
   }, [groupColors]);
 
+  // ============================================================
+  // PASTIKAN DEFAULT GROUP & ITEMS SELALU ADA
+  // ============================================================
   useEffect(() => {
-    localStorage.setItem("forelGroupMeta", JSON.stringify(groupMeta));
-  }, [groupMeta]);
+    // Pastikan default group ada di groups
+    if (!groups.includes(DEFAULT_GROUP.title)) {
+      setGroups(prev => [DEFAULT_GROUP.title, ...prev]);
+    }
+  }, [groups]);
+
+  useEffect(() => {
+    // Pastikan default items ada
+    const defaultItems = getDefaultItems();
+    const hasDefaultItems = defaultItems.some(d => 
+      items.some(item => item.id === d.id)
+    );
+    if (!hasDefaultItems && items.length > 0) {
+      setItems(prev => [...defaultItems, ...prev]);
+    } else if (items.length === 0) {
+      setItems(defaultItems);
+    }
+  }, [items]);
 
   // ============================================================
   // UNDO
@@ -227,7 +211,7 @@ function AppContent() {
     // Cek apakah item adalah default
     const item = findItemById(items, id);
     if (item && item.isDefault) {
-      // Hanya izinkan update field tertentu (bukan delete)
+      // Hanya izinkan update field tertentu
       if (field === 'item' || field === 'status' || field === 'dueDate' || field === 'people' || field === 'document' || field === 'rev') {
         const newItems = updateItemRecursive(items, id, field, value);
         saveHistory(newItems);
@@ -322,16 +306,16 @@ function AppContent() {
 
     const newItem = {
       id: Date.now(),
-      group: parent.group || "Target & PLANNING",
+      group: parent.group || DEFAULT_GROUP.title,
       item: finalTitle,
       document: "NO. DO",
       people: "",
       status: "Default",
-      dueDate: "dd/mm/ttt",
+      dueDate: "",
       rev: "R0",
       children: [],
       isExpanded: false,
-      isDefault: false, // Sub item dari default tidak otomatis default
+      isDefault: false,
     };
 
     const addChildRecursive = (items) => {
@@ -362,8 +346,7 @@ function AppContent() {
   // ============================================================
   const addItem = (groupName) => {
     // Cek apakah group adalah default
-    const meta = groupMeta[groupName];
-    if (meta && meta.isDefault) {
+    if (groupName === DEFAULT_GROUP.title) {
       alert('⚠️ Tidak bisa menambah item ke group default!');
       return;
     }
@@ -376,7 +359,7 @@ function AppContent() {
       document: "NO. DO",
       people: "",
       status: firstStatus,
-      dueDate: "dd/mm/ttt",
+      dueDate: "",
       rev: "R0",
       children: [],
       isExpanded: false,
@@ -391,13 +374,16 @@ function AppContent() {
 
   const renameGroup = (oldName, newName) => {
     // Cek apakah group adalah default
-    const meta = groupMeta[oldName];
-    if (meta && meta.isDefault) {
+    if (oldName === DEFAULT_GROUP.title) {
       alert('⚠️ Group default tidak bisa diubah namanya!');
       return;
     }
 
     if (!newName || !newName.trim()) return;
+    if (newName.trim() === DEFAULT_GROUP.title) {
+      alert(`"${DEFAULT_GROUP.title}" adalah nama group default!`);
+      return;
+    }
     if (items.some((item) => item.group === newName.trim() && item.group !== oldName)) {
       alert(`Group "${newName.trim()}" already exists!`);
       return;
@@ -416,69 +402,42 @@ function AppContent() {
     const newItems = renameGroupRecursive(items);
     saveHistory(newItems);
     
+    // Update groups
+    setGroups(prev => prev.map(g => g === oldName ? newName.trim() : g));
+    
     const newColors = { ...groupColors };
     if (newColors[oldName] !== undefined) {
       newColors[newName.trim()] = newColors[oldName];
       delete newColors[oldName];
       setGroupColors(newColors);
     }
-
-    // Update groupMeta
-    const newMeta = { ...groupMeta };
-    if (newMeta[oldName]) {
-      newMeta[newName.trim()] = { ...newMeta[oldName] };
-      delete newMeta[oldName];
-      setGroupMeta(newMeta);
-    }
   };
 
   const deleteGroup = (groupName) => {
     // Cek apakah group adalah default
-    const meta = groupMeta[groupName];
-    if (meta && meta.isDefault) {
+    if (groupName === DEFAULT_GROUP.title) {
       alert('⚠️ Group default tidak bisa dihapus!');
       return;
     }
 
     if (!confirm(`Delete entire group "${groupName}" and all its items?`)) return;
+    
+    // Hapus items di group tersebut
     const newItems = items.filter((it) => it.group !== groupName);
     saveHistory(newItems);
+    
+    // Hapus group
+    const newGroups = groups.filter(g => g !== groupName);
+    setGroups(newGroups);
+    
     const newColors = { ...groupColors };
     delete newColors[groupName];
     setGroupColors(newColors);
-    const newMeta = { ...groupMeta };
-    delete newMeta[groupName];
-    setGroupMeta(newMeta);
 
     // Jika tidak ada group tersisa, restore default
-    const remainingGroups = [...new Set(newItems.map(item => item.group))];
-    if (remainingGroups.length === 0) {
-      restoreDefaultGroups();
+    if (newGroups.length === 0) {
+      restoreDefaultGroup();
     }
-  };
-
-  // ============================================================
-  // RESTORE DEFAULT GROUPS
-  // ============================================================
-  const restoreDefaultGroups = () => {
-    const defaultItems = getDefaultItems();
-    const newMeta = { ...groupMeta };
-    DEFAULT_GROUPS.forEach(g => {
-      newMeta[g.title] = {
-        id: g.id,
-        isDefault: true,
-        isDeletable: false,
-        color: g.color || '#3b82f6',
-      };
-    });
-    setGroupMeta(newMeta);
-    setItems(defaultItems);
-    // Update group colors
-    const defaultColors = {};
-    DEFAULT_GROUPS.forEach(g => {
-      defaultColors[g.title] = g.color || '#3b82f6';
-    });
-    setGroupColors(prev => ({ ...prev, ...defaultColors }));
   };
 
   const addGroup = () => {
@@ -486,16 +445,18 @@ function AppContent() {
     if (!name || !name.trim()) return;
     
     // Cek apakah nama sama dengan default group
-    const defaultGroupNames = DEFAULT_GROUPS.map(g => g.title);
-    if (defaultGroupNames.includes(name.trim())) {
-      alert(`"${name.trim()}" adalah nama group default!`);
+    if (name.trim() === DEFAULT_GROUP.title) {
+      alert(`"${DEFAULT_GROUP.title}" adalah nama group default!`);
       return;
     }
     
-    if (items.some((item) => item.group === name.trim())) {
+    if (groups.includes(name.trim())) {
       alert(`Group "${name.trim()}" already exists!`);
       return;
     }
+    
+    setGroups(prev => [...prev, name.trim()]);
+    setGroupColors((prev) => ({ ...prev, [name.trim()]: "#3b82f6" }));
     
     const firstStatus = "Default";
     const newItem = {
@@ -505,31 +466,17 @@ function AppContent() {
       document: "NO. DO",
       people: "",
       status: firstStatus,
-      dueDate: "dd/mm/ttt",
+      dueDate: "",
       rev: "R0",
       children: [],
       isExpanded: false,
       isDefault: false,
     };
     saveHistory([...items, newItem]);
-    setGroupColors((prev) => ({ ...prev, [name.trim()]: "#3b82f6" }));
-    setGroupMeta(prev => ({
-      ...prev,
-      [name.trim()]: {
-        id: `group-${Date.now()}`,
-        isDefault: false,
-        isDeletable: true,
-        color: '#3b82f6',
-      }
-    }));
   };
 
   const updateGroupColor = (groupName, color) => {
     setGroupColors((prev) => ({ ...prev, [groupName]: color }));
-    setGroupMeta(prev => ({
-      ...prev,
-      [groupName]: { ...prev[groupName], color: color }
-    }));
   };
 
   // ============================================================
@@ -537,12 +484,11 @@ function AppContent() {
   // ============================================================
   const getAllGroups = () => {
     const allGroupNames = [...new Set(items.map((item) => item.group))];
-    // Pastikan default groups selalu ada
-    const defaultGroupNames = DEFAULT_GROUPS.map(g => g.title);
-    const missingDefaults = defaultGroupNames.filter(
-      name => !allGroupNames.includes(name)
-    );
-    return [...allGroupNames, ...missingDefaults];
+    // Pastikan default group selalu ada
+    if (!allGroupNames.includes(DEFAULT_GROUP.title)) {
+      return [DEFAULT_GROUP.title, ...allGroupNames];
+    }
+    return allGroupNames;
   };
 
   // ============================================================
@@ -640,7 +586,7 @@ function AppContent() {
   // EXPORT
   // ============================================================
   const exportData = () => {
-    const dataStr = JSON.stringify({ items, statuses, groupColors, groupMeta }, null, 2);
+    const dataStr = JSON.stringify({ items, statuses, groupColors, groups }, null, 2);
     const blob = new Blob([dataStr], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -715,11 +661,9 @@ function AppContent() {
   const allGroups = getAllGroups();
 
   // ============================================================
-  // CEK APAKAH DEFAULT GROUPS ADA
+  // CEK APAKAH DEFAULT GROUP ADA
   // ============================================================
-  const hasDefaultGroups = allGroups.some(
-    group => groupMeta[group]?.isDefault
-  );
+  const hasDefaultGroup = allGroups.includes(DEFAULT_GROUP.title);
 
   return (
     <div className="app-container">
@@ -747,7 +691,6 @@ function AppContent() {
           groups={allGroups}
           statuses={statuses}
           groupColors={groupColors}
-          groupMeta={groupMeta}
           onUpdateGroupColor={updateGroupColor}
           onUpdateItem={updateItem}
           onDeleteItem={deleteItem}
@@ -758,6 +701,7 @@ function AppContent() {
           onOpenStatusManager={openStatusManager}
           onRenameGroup={renameGroup}
           onOpenAddColumn={() => setShowAddColumnPopup(true)}
+          defaultGroupName={DEFAULT_GROUP.title}
         />
 
         <div className="board-footer">
@@ -767,9 +711,9 @@ function AppContent() {
             <strong style={{ color: "#f59e0b" }}>{pendingItems}</strong>
           </div>
           <div>
-            {hasDefaultGroups && (
+            {hasDefaultGroup && (
               <span style={{ color: "#4CAF50", fontSize: "12px" }}>
-                ⭐ Default groups active
+                ⭐ Default group active
               </span>
             )}
           </div>
