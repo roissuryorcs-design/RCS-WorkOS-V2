@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 
-export default function Header() {
+export default function Header({ isDefaultOnly = false }) {
   const [boardName, setBoardName] = useState(() => {
     return localStorage.getItem("boardName") || "BOARD NAME";
   });
@@ -14,6 +14,10 @@ export default function Header() {
   const [tempName, setTempName] = useState(boardName);
   const [tempDesc, setTempDesc] = useState(description);
 
+  // Jika hanya default group, gunakan "BOARD NAME" dan "add a description"
+  const displayName = isDefaultOnly ? "BOARD NAME" : boardName;
+  const displayDesc = isDefaultOnly ? "add a description" : description;
+
   useEffect(() => {
     localStorage.setItem("boardName", boardName);
   }, [boardName]);
@@ -22,13 +26,28 @@ export default function Header() {
     localStorage.setItem("boardDescription", description);
   }, [description]);
 
+  // Jika isDefaultOnly true, tidak perlu simpan karena hanya tampilan
   const handleNameClick = () => {
+    if (isDefaultOnly) {
+      // Jika hanya default group, izinkan edit tapi langsung simpan
+      setIsEditingName(true);
+      setTempName("BOARD NAME");
+      return;
+    }
     setIsEditingName(true);
     setTempName(boardName);
   };
 
   const handleNameSave = () => {
     setIsEditingName(false);
+    if (isDefaultOnly) {
+      // Jika hanya default group, simpan sebagai custom name
+      const newName = tempName.trim();
+      if (newName && newName !== "BOARD NAME") {
+        setBoardName(newName);
+      }
+      return;
+    }
     const newName = tempName.trim();
     if (newName) {
       setBoardName(newName);
@@ -47,12 +66,24 @@ export default function Header() {
   };
 
   const handleDescClick = () => {
+    if (isDefaultOnly) {
+      setIsEditingDesc(true);
+      setTempDesc("add a description");
+      return;
+    }
     setIsEditingDesc(true);
     setTempDesc(description);
   };
 
   const handleDescSave = () => {
     setIsEditingDesc(false);
+    if (isDefaultOnly) {
+      const newDesc = tempDesc.trim();
+      if (newDesc && newDesc !== "add a description") {
+        setDescription(newDesc);
+      }
+      return;
+    }
     const newDesc = tempDesc.trim();
     if (newDesc) {
       setDescription(newDesc);
@@ -73,6 +104,7 @@ export default function Header() {
   return (
     <div className="header-container" style={{ padding: "16px 24px" }}>
       <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+        {/* BOARD NAME */}
         {isEditingName ? (
           <input
             type="text"
@@ -113,13 +145,14 @@ export default function Header() {
             onClick={handleNameClick}
             title="Click to edit board name"
           >
-            {boardName}
+            {displayName}
             <span style={{ fontSize: "14px", color: "var(--text-muted)", marginLeft: "8px", fontWeight: 400 }}>
               ✎
             </span>
           </h1>
         )}
 
+        {/* DESCRIPTION */}
         {isEditingDesc ? (
           <input
             type="text"
@@ -157,7 +190,7 @@ export default function Header() {
             onClick={handleDescClick}
             title="Click to edit description"
           >
-            {description}
+            {displayDesc}
             <span style={{ fontSize: "11px", color: "var(--text-muted)", marginLeft: "6px" }}>
               ✎
             </span>
