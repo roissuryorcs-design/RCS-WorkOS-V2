@@ -582,7 +582,7 @@ function AppContent() {
       />
 
       <div className="main-content">
-        <Header />
+        <Header isDefaultOnly={allGroups.length === 1 && allGroups[0] === DEFAULT_GROUP.title} />
 
         <Toolbar
           search={search}
