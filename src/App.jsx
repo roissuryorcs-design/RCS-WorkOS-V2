@@ -75,7 +75,6 @@ function AppContent() {
   // PASTIKAN SELALU ADA GROUP (AUTO-RESTORE)
   // ============================================================
   useEffect(() => {
-    // Jika groups kosong → restore default
     if (groups.length === 0) {
       setGroups([DEFAULT_GROUP.title]);
       setGroupColors(prev => ({
@@ -300,15 +299,9 @@ function AppContent() {
   };
 
   // ============================================================
-  // ADD ITEM (di group)
+  // ADD ITEM (di group) - TANPA PROTEKSI DEFAULT
   // ============================================================
   const addItem = (groupName) => {
-    // Cek apakah group adalah default
-    if (groupName === DEFAULT_GROUP.title) {
-      alert('⚠️ Tidak bisa menambah item ke group default!');
-      return;
-    }
-
     const firstStatus = "Default";
     const newItem = {
       id: Date.now(),
@@ -327,15 +320,10 @@ function AppContent() {
   };
 
   // ============================================================
-  // GROUP CRUD
+  // GROUP CRUD - TANPA PROTEKSI DEFAULT
   // ============================================================
 
   const renameGroup = (oldName, newName) => {
-    if (oldName === DEFAULT_GROUP.title) {
-      alert('⚠️ Group default tidak bisa diubah namanya!');
-      return;
-    }
-
     if (!newName || !newName.trim()) return;
     if (newName.trim() === DEFAULT_GROUP.title) {
       alert(`"${DEFAULT_GROUP.title}" adalah nama group default!`);
@@ -370,30 +358,17 @@ function AppContent() {
   };
 
   const deleteGroup = (groupName) => {
-    // ============================================================
-    // INI YANG PENTING: GROUP DEFAULT BOLEH DIHAPUS!
-    // TAPI setelah dihapus, otomatis muncul lagi
-    // ============================================================
     if (!confirm(`Delete group "${groupName}" and all its items?`)) return;
     
-    // Hapus items di group tersebut
     const newItems = items.filter((it) => it.group !== groupName);
     saveHistory(newItems);
     
-    // Hapus group
     const newGroups = groups.filter(g => g !== groupName);
     setGroups(newGroups);
     
     const newColors = { ...groupColors };
     delete newColors[groupName];
     setGroupColors(newColors);
-
-    // ============================================================
-    // AUTO-RESTORE: Jika tidak ada group tersisa
-    // Maka group default akan muncul otomatis (via useEffect)
-    // ============================================================
-    // useEffect di atas akan mendeteksi groups.length === 0
-    // dan otomatis restore default group!
   };
 
   const addGroup = () => {
@@ -439,7 +414,6 @@ function AppContent() {
   // ============================================================
   const getAllGroups = () => {
     const allGroupNames = [...new Set(items.map((item) => item.group))];
-    // Pastikan setidaknya ada 1 group
     if (allGroupNames.length === 0) {
       return [DEFAULT_GROUP.title];
     }
