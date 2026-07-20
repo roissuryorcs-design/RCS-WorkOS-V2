@@ -435,18 +435,24 @@ export default function BoardTable({
 
                                 return (
                                   <Row
-                                    key={item.id}
-                                    item={item}
-                                    groupColor={groupColor}
-                                    visibleColumns={safeColumns}
-                                    isSelected={selectedItems.includes(item.id)}
-                                    onToggleSelect={toggleSelectItem}
-                                    onUpdate={handleUpdateItem}
-                                    onDelete={handleDeleteItem}
-                                    onOpenStatusManager={onOpenStatusManager}
-                                    onAddSubItem={handleAddSubItem}
-                                    selectedItems={selectedItems}
-                                  />
+  key={item.id}
+  item={item}
+  groupColor={groupColor}
+  visibleColumns={safeColumns}
+  isSelected={selectedItems.includes(item.id)}
+  onToggleSelect={toggleSelectItem}
+  onUpdate={(field, value) => {
+    console.log('🟢 Row onUpdate - item.id:', item.id, 'field:', field, 'value:', value);
+    onUpdateItem(item.id, field, value);
+  }}
+  onDelete={() => {
+    console.log('🟢 Row onDelete - item.id:', item.id);
+    onDeleteItem(item.id);
+  }}
+  onOpenStatusManager={onOpenStatusManager}
+  onAddSubItem={handleAddSubItem}
+  selectedItems={selectedItems}
+/>
                                 );
                               })}
                             </tbody>
