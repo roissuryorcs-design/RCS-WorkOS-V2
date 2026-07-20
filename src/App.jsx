@@ -582,7 +582,7 @@ function AppContent() {
       />
 
       <div className="main-content">
-        <Header title="FOREL FPSO HVAC" subtitle="Engineering" />
+        <Header />
 
         <Toolbar
           search={search}
