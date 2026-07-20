@@ -1,5 +1,5 @@
-jsx
 // src/components/DateCell.jsx
+
 import { useState, useRef, useEffect } from "react";
 
 export default function DateCell({ date, onChange, placeholder = "dd/mm/ttt" }) {
@@ -42,6 +42,9 @@ export default function DateCell({ date, onChange, placeholder = "dd/mm/ttt" }) 
     return val;
   };
 
+  // Cek apakah dark mode aktif
+  const isDarkMode = document.documentElement.classList.contains("dark");
+
   return (
     <div ref={wrapperRef} style={{ position: "relative", width: "100%" }}>
       <div
@@ -60,26 +63,30 @@ export default function DateCell({ date, onChange, placeholder = "dd/mm/ttt" }) 
         onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
         onClick={() => {
           setIsOpen(true);
-          // Menunggu render sebentar sebelum memicu picker browser
-          setTimeout(() => {
-            if (inputRef.current) {
-               inputRef.current.showPicker?.();
-               inputRef.current.focus();
-            }
-          }, 50);
+          setTimeout(() => inputRef.current?.showPicker?.(), 100);
         }}
       >
-        <span
+        {/* ICON CALENDAR - WARNA PUTIH UNTUK DARK MODE */}
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="#ffffff"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
           style={{
-            fontSize: "16px",
-            lineHeight: 1,
             flexShrink: 0,
-            color: "var(--text-secondary)",
-            opacity: 0.9,
+            opacity: 0.8,
+            filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.3))",
           }}
         >
-          📅
-        </span>
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+          <line x1="16" y1="2" x2="16" y2="6" />
+          <line x1="8" y1="2" x2="8" y2="6" />
+          <line x1="3" y1="10" x2="21" y2="10" />
+        </svg>
 
         <span
           style={{
@@ -93,24 +100,26 @@ export default function DateCell({ date, onChange, placeholder = "dd/mm/ttt" }) 
       </div>
 
       {isOpen && (
-        jsx
-<input
-  ref={inputRef}
-  type="date"
-  value={inputValue || ""}
-  onChange={handleDateSelect}
-  style={{
-    position: "absolute",
-    top: "100%",
-    left: 0,
-    zIndex: 100,
-    padding: "6px",
-    background: "var(--bg-modal)",
-    color: "var(--text-primary)",
-    colorScheme: "dark", // Pastikan huruf 'S' besar (camelCase)
-    WebkitColorScheme: "dark", // Untuk kompatibilitas beberapa versi safari/chrome
-  }}
-/>
+        <input
+          ref={inputRef}
+          type="date"
+          value={inputValue || ""}
+          onChange={handleDateSelect}
+          style={{
+            position: "absolute",
+            top: "100%",
+            left: 0,
+            zIndex: 100,
+            padding: "6px",
+            border: "1px solid var(--border-color)",
+            borderRadius: "6px",
+            background: "var(--bg-modal)",
+            color: "var(--text-primary)",
+            marginTop: "4px",
+            width: "200px",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+          }}
+        />
       )}
     </div>
   );
