@@ -15,7 +15,7 @@ import {
   saveGroups,
   loadItems,
   saveItems,
-  ensureDefaultGroup,
+  ensureGroupExists,
   deleteGroupSafe,
   addGroupSafe 
 } from "./data/treeData";
@@ -44,15 +44,12 @@ function AppContent() {
   const [activeStatusColumnId, setActiveStatusColumnId] = useState(null);
   const [showAddColumnPopup, setShowAddColumnPopup] = useState(false);
   
-  // ============================================================
-  // STATE UNTUK GROUPS
-  // ============================================================
   const [groups, setGroups] = useState(() => loadGroups());
 
   const { columns, addColumn, renameColumn, toggleColumn, deleteColumn, resetColumns, updateColumnStatuses, updateColumnStatusOrder } = useColumns();
 
   // ============================================================
-  // AUTO SAVE GROUPS & ITEMS
+  // AUTO SAVE
   // ============================================================
   useEffect(() => {
     saveGroups(groups);
@@ -62,34 +59,40 @@ function AppContent() {
     saveItems(items);
   }, [items]);
 
+  useEffect(() => {
+    localStorage.setItem("forelStatuses", JSON.stringify(statuses));
+  }, [statuses]);
+
+  useEffect(() => {
+    localStorage.setItem("forelFavorites", JSON.stringify(favorites));
+  }, [favorites]);
+
+  useEffect(() => {
+    localStorage.setItem("forelGroupColors", JSON.stringify(groupColors));
+  }, [groupColors]);
+
   // ============================================================
-  // RESTORE DEFAULT GROUP
+  // PASTIKAN SELALU ADA GROUP (AUTO-RESTORE)
   // ============================================================
-  const restoreDefaultGroup = () => {
-    const defaultItems = getDefaultItems();
-    const defaultGroupName = DEFAULT_GROUP.title;
-    
-    // Pastikan default items ada
-    const defaultItemIds = defaultItems.map(item => item.id);
-    const existingDefaultItems = items.filter(item => 
-      defaultItemIds.includes(item.id)
-    );
-    
-    if (existingDefaultItems.length === 0) {
-      setItems(prev => [...defaultItems, ...prev]);
+  useEffect(() => {
+    // Jika groups kosong → restore default
+    if (groups.length === 0) {
+      setGroups([DEFAULT_GROUP.title]);
+      setGroupColors(prev => ({
+        ...prev,
+        [DEFAULT_GROUP.title]: DEFAULT_GROUP.color || '#4CAF50'
+      }));
     }
-    
-    // Pastikan group default ada
-    if (!groups.includes(defaultGroupName)) {
-      setGroups(prev => [defaultGroupName, ...prev]);
+  }, [groups]);
+
+  // ============================================================
+  // PASTIKAN DEFAULT ITEMS ADA SAAT ITEMS KOSONG
+  // ============================================================
+  useEffect(() => {
+    if (items.length === 0) {
+      setItems(getDefaultItems());
     }
-    
-    // Pastikan warna default group
-    setGroupColors(prev => ({
-      ...prev,
-      [defaultGroupName]: DEFAULT_GROUP.color || '#4CAF50'
-    }));
-  };
+  }, [items]);
 
   // ============================================================
   // LOAD DATA
@@ -101,7 +104,6 @@ function AppContent() {
 
     const defaultStatuses = { Default: "#9ca3af" };
 
-    // Load statuses
     if (savedStatuses) {
       const parsed = JSON.parse(savedStatuses);
       if (Object.keys(parsed).length === 0) {
@@ -123,44 +125,6 @@ function AppContent() {
       setGroupColors(JSON.parse(savedGroupColors));
     }
   }, []);
-
-  // ============================================================
-  // AUTO SAVE LAINNYA
-  // ============================================================
-  useEffect(() => {
-    localStorage.setItem("forelStatuses", JSON.stringify(statuses));
-  }, [statuses]);
-
-  useEffect(() => {
-    localStorage.setItem("forelFavorites", JSON.stringify(favorites));
-  }, [favorites]);
-
-  useEffect(() => {
-    localStorage.setItem("forelGroupColors", JSON.stringify(groupColors));
-  }, [groupColors]);
-
-  // ============================================================
-  // PASTIKAN DEFAULT GROUP & ITEMS SELALU ADA
-  // ============================================================
-  useEffect(() => {
-    // Pastikan default group ada di groups
-    if (!groups.includes(DEFAULT_GROUP.title)) {
-      setGroups(prev => [DEFAULT_GROUP.title, ...prev]);
-    }
-  }, [groups]);
-
-  useEffect(() => {
-    // Pastikan default items ada
-    const defaultItems = getDefaultItems();
-    const hasDefaultItems = defaultItems.some(d => 
-      items.some(item => item.id === d.id)
-    );
-    if (!hasDefaultItems && items.length > 0) {
-      setItems(prev => [...defaultItems, ...prev]);
-    } else if (items.length === 0) {
-      setItems(defaultItems);
-    }
-  }, [items]);
 
   // ============================================================
   // UNDO
@@ -208,15 +172,11 @@ function AppContent() {
   };
 
   const updateItem = (id, field, value) => {
-    // Cek apakah item adalah default
     const item = findItemById(items, id);
     if (item && item.isDefault) {
-      // Hanya izinkan update field tertentu
       if (field === 'item' || field === 'status' || field === 'dueDate' || field === 'people' || field === 'document' || field === 'rev') {
         const newItems = updateItemRecursive(items, id, field, value);
         saveHistory(newItems);
-      } else {
-        console.warn('⚠️ Cannot update default item field:', field);
       }
       return;
     }
@@ -225,15 +185,14 @@ function AppContent() {
   };
 
   // ============================================================
-  // DELETE ITEM - RECURSIVE (dengan proteksi default)
+  // DELETE ITEM - RECURSIVE
   // ============================================================
   const deleteItemRecursive = (items, id) => {
     return items
       .filter((it) => {
-        // Cek apakah item adalah default
         if (it.id === id && it.isDefault) {
           alert('⚠️ Item default tidak bisa dihapus!');
-          return true; // Jangan hapus
+          return true;
         }
         return it.id !== id;
       })
@@ -260,7 +219,7 @@ function AppContent() {
   };
 
   // ============================================================
-  // ADD SUB ITEM (dengan batasan level)
+  // ADD SUB ITEM
   // ============================================================
   const addSubItem = (parentId, newTitle = null) => {
     const parent = findItemById(items, parentId);
@@ -269,7 +228,6 @@ function AppContent() {
       return;
     }
 
-    // Cek apakah parent adalah default
     if (parent.isDefault) {
       alert('⚠️ Tidak bisa menambah sub item ke item default!');
       return;
@@ -342,7 +300,7 @@ function AppContent() {
   };
 
   // ============================================================
-  // ADD ITEM (di group) - dengan proteksi default group
+  // ADD ITEM (di group)
   // ============================================================
   const addItem = (groupName) => {
     // Cek apakah group adalah default
@@ -369,11 +327,10 @@ function AppContent() {
   };
 
   // ============================================================
-  // GROUP CRUD (dengan proteksi default)
+  // GROUP CRUD
   // ============================================================
 
   const renameGroup = (oldName, newName) => {
-    // Cek apakah group adalah default
     if (oldName === DEFAULT_GROUP.title) {
       alert('⚠️ Group default tidak bisa diubah namanya!');
       return;
@@ -402,7 +359,6 @@ function AppContent() {
     const newItems = renameGroupRecursive(items);
     saveHistory(newItems);
     
-    // Update groups
     setGroups(prev => prev.map(g => g === oldName ? newName.trim() : g));
     
     const newColors = { ...groupColors };
@@ -414,13 +370,11 @@ function AppContent() {
   };
 
   const deleteGroup = (groupName) => {
-    // Cek apakah group adalah default
-    if (groupName === DEFAULT_GROUP.title) {
-      alert('⚠️ Group default tidak bisa dihapus!');
-      return;
-    }
-
-    if (!confirm(`Delete entire group "${groupName}" and all its items?`)) return;
+    // ============================================================
+    // INI YANG PENTING: GROUP DEFAULT BOLEH DIHAPUS!
+    // TAPI setelah dihapus, otomatis muncul lagi
+    // ============================================================
+    if (!confirm(`Delete group "${groupName}" and all its items?`)) return;
     
     // Hapus items di group tersebut
     const newItems = items.filter((it) => it.group !== groupName);
@@ -434,17 +388,18 @@ function AppContent() {
     delete newColors[groupName];
     setGroupColors(newColors);
 
-    // Jika tidak ada group tersisa, restore default
-    if (newGroups.length === 0) {
-      restoreDefaultGroup();
-    }
+    // ============================================================
+    // AUTO-RESTORE: Jika tidak ada group tersisa
+    // Maka group default akan muncul otomatis (via useEffect)
+    // ============================================================
+    // useEffect di atas akan mendeteksi groups.length === 0
+    // dan otomatis restore default group!
   };
 
   const addGroup = () => {
     const name = prompt("Enter new group name:");
     if (!name || !name.trim()) return;
     
-    // Cek apakah nama sama dengan default group
     if (name.trim() === DEFAULT_GROUP.title) {
       alert(`"${DEFAULT_GROUP.title}" adalah nama group default!`);
       return;
@@ -480,13 +435,13 @@ function AppContent() {
   };
 
   // ============================================================
-  // GET ALL GROUPS (termasuk default)
+  // GET ALL GROUPS
   // ============================================================
   const getAllGroups = () => {
     const allGroupNames = [...new Set(items.map((item) => item.group))];
-    // Pastikan default group selalu ada
-    if (!allGroupNames.includes(DEFAULT_GROUP.title)) {
-      return [DEFAULT_GROUP.title, ...allGroupNames];
+    // Pastikan setidaknya ada 1 group
+    if (allGroupNames.length === 0) {
+      return [DEFAULT_GROUP.title];
     }
     return allGroupNames;
   };
@@ -660,9 +615,6 @@ function AppContent() {
   const pendingItems = totalItems - doneItems;
   const allGroups = getAllGroups();
 
-  // ============================================================
-  // CEK APAKAH DEFAULT GROUP ADA
-  // ============================================================
   const hasDefaultGroup = allGroups.includes(DEFAULT_GROUP.title);
 
   return (
