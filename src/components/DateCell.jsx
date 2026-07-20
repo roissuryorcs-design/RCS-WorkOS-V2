@@ -63,10 +63,10 @@ export default function DateCell({ date, onChange, placeholder = "dd/mm/ttt" }) 
           setTimeout(() => inputRef.current?.showPicker?.(), 100);
         }}
       >
-        {/* ICON CALENDAR - WARNA TERANG UNTUK DARK MODE */}
+        {/* ICON CALENDAR - MENGGUNAKAN CSS VARIABLE */}
         <svg
-          width="16"
-          height="16"
+          width="18"
+          height="18"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -76,7 +76,7 @@ export default function DateCell({ date, onChange, placeholder = "dd/mm/ttt" }) 
           style={{
             flexShrink: 0,
             color: "var(--text-secondary)",
-            opacity: 0.8,
+            opacity: 0.9,
           }}
         >
           <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
