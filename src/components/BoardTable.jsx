@@ -442,6 +442,7 @@ export default function BoardTable({
   isSelected={selectedItems.includes(item.id)}
   onToggleSelect={toggleSelectItem}
   onUpdate={(field, value) => {
+   onUpdate={(field, value) => {
     console.log('🟢 Row onUpdate - item.id:', item.id, 'field:', field, 'value:', value);
     onUpdateItem(item.id, field, value);
   }}
