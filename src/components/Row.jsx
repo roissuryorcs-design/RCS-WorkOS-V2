@@ -6,7 +6,7 @@ export default function Row({
   item,
   groupColor,
   groupName,
-  isDefaultGroup = false,  // NEW: apakah group ini default
+  isDefaultGroup = false,
   visibleColumns,
   isSelected,
   onToggleSelect,
@@ -236,32 +236,6 @@ export default function Row({
     width: '100%',
   };
 
-  // ============================================================
-  // RENDER LEVEL BADGE
-  // ============================================================
-  const getLevelBadge = () => {
-    const level = depth + 1;
-    const colors = ['#4CAF50', '#2196F3', '#FF9800', '#9C27B0'];
-    const labels = ['L1', 'L2', 'L3', 'L4'];
-    return (
-      <span
-        style={{
-          backgroundColor: colors[depth] || '#757575',
-          color: 'white',
-          fontSize: '9px',
-          fontWeight: 'bold',
-          padding: '1px 6px',
-          borderRadius: '10px',
-          flexShrink: 0,
-          marginRight: '4px',
-          opacity: 0.8,
-        }}
-      >
-        {labels[depth] || `L${level}`}
-      </span>
-    );
-  };
-
   return (
     <>
       <tr className={isSelected ? "row-selected" : ""}>
@@ -290,7 +264,7 @@ export default function Row({
             checked={isSelected}
             onChange={handleToggleSelect}
             style={{ cursor: "pointer", width: 16, height: 16, margin: 0 }}
-            disabled={isDefaultGroup} // NEW: disable checkbox untuk default group
+            disabled={isDefaultGroup}
           />
           {isDefaultGroup && (
             <span 
@@ -323,9 +297,6 @@ export default function Row({
                 }}
               >
                 <div style={contentWrapperStyle}>
-                  {/* LEVEL BADGE */}
-                  {depth >= 0 && getLevelBadge()}
-
                   {/* TOMBOL EXPAND / COLLAPSE */}
                   {hasChildren ? (
                     <button
@@ -557,7 +528,7 @@ export default function Row({
           depth={depth + 1}
           groupColor={groupColor}
           groupName={groupName}
-          isDefaultGroup={isDefaultGroup} // NEW: pass down
+          isDefaultGroup={isDefaultGroup}
           visibleColumns={visibleColumns}
           isSelected={selectedItems.includes(child.id)}
           onToggleSelect={onToggleSelect}
