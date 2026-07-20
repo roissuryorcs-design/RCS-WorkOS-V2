@@ -1,21 +1,29 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Row from "./Row";
 import ResizableHeader from "./ResizableHeader";
 import { useColumns } from "../context/ColumnContext";
+import { 
+  loadGroups, 
+  saveGroups, 
+  deleteGroupSafe, 
+  addGroupSafe,
+  ensureDefaultGroups,
+  DEFAULT_GROUPS 
+} from "../data/treeData";
 
 export default function BoardTable({
   items,
-  groups,
-  groupColors,
-  onUpdateGroupColor,
+  groups: externalGroups,
+  groupColors: externalGroupColors,
+  onUpdateGroupColor: externalOnUpdateGroupColor,
   onUpdateItem,
   onDeleteItem,
-  onAddGroup,
-  onDeleteGroup,
+  onAddGroup: externalOnAddGroup,
+  onDeleteGroup: externalOnDeleteGroup,
   onAddItem,
   onAddSubItem,
   onOpenStatusManager,
-  onRenameGroup,
+  onRenameGroup: externalOnRenameGroup,
   onOpenAddColumn,
 }) {
   const {
@@ -27,6 +35,74 @@ export default function BoardTable({
     visibleColumns,
   } = useColumns();
 
+  // ============================================================
+  // STATE UNTUK DEFAULT GROUPS
+  // ============================================================
+  const [groups, setGroups] = useState(() => {
+    // Jika externalGroups ada dan tidak kosong, gunakan itu
+    if (externalGroups && externalGroups.length > 0) {
+      return externalGroups;
+    }
+    // Jika tidak, load dari localStorage atau default
+    return loadGroups().map(g => g.title);
+  });
+
+  const [groupColors, setGroupColors] = useState(() => {
+    if (externalGroupColors && Object.keys(externalGroupColors).length > 0) {
+      return externalGroupColors;
+    }
+    const defaultColors = {};
+    const loaded = loadGroups();
+    loaded.forEach(g => {
+      defaultColors[g.title] = g.color || '#3b82f6';
+    });
+    return defaultColors;
+  });
+
+  const [groupMeta, setGroupMeta] = useState(() => {
+    // Simpan metadata group (isDefault, isDeletable, id)
+    const meta = {};
+    const loaded = loadGroups();
+    loaded.forEach(g => {
+      meta[g.title] = {
+        id: g.id,
+        isDefault: g.isDefault || false,
+        isDeletable: g.isDeletable !== undefined ? g.isDeletable : true,
+        color: g.color || '#3b82f6',
+      };
+    });
+    return meta;
+  });
+
+  // Simpan ke localStorage setiap kali berubah
+  useEffect(() => {
+    const groupsData = groups.map(title => {
+      const meta = groupMeta[title] || {};
+      return {
+        id: meta.id || `group-${Date.now()}`,
+        title: title,
+        isDefault: meta.isDefault || false,
+        isDeletable: meta.isDeletable !== undefined ? meta.isDeletable : true,
+        color: meta.color || '#3b82f6',
+        items: items.filter(item => item.group === title),
+      };
+    });
+    saveGroups(groupsData);
+  }, [groups, groupMeta, items]);
+
+  // Sinkronkan dengan props external jika berubah
+  useEffect(() => {
+    if (externalGroups && externalGroups.length > 0) {
+      setGroups(externalGroups);
+    }
+  }, [externalGroups]);
+
+  useEffect(() => {
+    if (externalGroupColors && Object.keys(externalGroupColors).length > 0) {
+      setGroupColors(externalGroupColors);
+    }
+  }, [externalGroupColors]);
+
   const [collapsed, setCollapsed] = useState({});
   const [popupGroup, setPopupGroup] = useState(null);
   const [selectedItems, setSelectedItems] = useState([]);
@@ -37,10 +113,145 @@ export default function BoardTable({
 
   const closePopup = () => setPopupGroup(null);
 
-  const handleRenameGroup = (groupName) => {
-    const newName = prompt("Enter new group name:", groupName);
-    if (newName && newName.trim() && newName.trim() !== groupName) {
-      onRenameGroup(groupName, newName.trim());
+  // ============================================================
+  // HANDLE RENAME GROUP (dengan proteksi default)
+  // ============================================================
+  const handleRenameGroup = (oldName, newName) => {
+    const meta = groupMeta[oldName];
+    if (meta && meta.isDefault) {
+      alert('⚠️ Group default tidak bisa diubah namanya!');
+      return;
+    }
+    
+    if (externalOnRenameGroup) {
+      externalOnRenameGroup(oldName, newName);
+    }
+    
+    // Update local state
+    setGroups(prev => prev.map(g => g === oldName ? newName : g));
+    setGroupColors(prev => {
+      const newColors = { ...prev };
+      newColors[newName] = prev[oldName];
+      delete newColors[oldName];
+      return newColors;
+    });
+    setGroupMeta(prev => {
+      const newMeta = { ...prev };
+      newMeta[newName] = { ...prev[oldName] };
+      delete newMeta[oldName];
+      return newMeta;
+    });
+  };
+
+  // ============================================================
+  // HANDLE DELETE GROUP (dengan proteksi)
+  // ============================================================
+  const handleDeleteGroup = (groupName) => {
+    const meta = groupMeta[groupName];
+    
+    // Cek apakah group adalah default
+    if (meta && meta.isDefault) {
+      alert('⚠️ Group default tidak bisa dihapus!');
+      return;
+    }
+
+    if (externalOnDeleteGroup) {
+      externalOnDeleteGroup(groupName);
+    }
+
+    // Hapus dari state lokal
+    setGroups(prev => {
+      const newGroups = prev.filter(g => g !== groupName);
+      
+      // Jika tidak ada group tersisa, restore default
+      if (newGroups.length === 0) {
+        const defaultTitles = DEFAULT_GROUPS.map(g => g.title);
+        // Tambahkan default groups ke groupMeta
+        const newMeta = { ...groupMeta };
+        DEFAULT_GROUPS.forEach(g => {
+          newMeta[g.title] = {
+            id: g.id,
+            isDefault: true,
+            isDeletable: false,
+            color: g.color,
+          };
+        });
+        setGroupMeta(newMeta);
+        return defaultTitles;
+      }
+      
+      // Cek apakah masih ada default group
+      const hasDefault = newGroups.some(g => groupMeta[g]?.isDefault);
+      if (!hasDefault) {
+        const defaultTitles = DEFAULT_GROUPS.map(g => g.title);
+        const newMeta = { ...groupMeta };
+        DEFAULT_GROUPS.forEach(g => {
+          newMeta[g.title] = {
+            id: g.id,
+            isDefault: true,
+            isDeletable: false,
+            color: g.color,
+          };
+        });
+        setGroupMeta(newMeta);
+        return [...defaultTitles, ...newGroups];
+      }
+      
+      return newGroups;
+    });
+  };
+
+  // ============================================================
+  // HANDLE ADD GROUP (dengan proteksi duplikat)
+  // ============================================================
+  const handleAddGroup = () => {
+    const defaultTitles = DEFAULT_GROUPS.map(g => g.title);
+    const newTitle = prompt("Masukkan nama group baru:");
+    if (!newTitle || !newTitle.trim()) return;
+    
+    // Cek apakah nama sudah ada
+    if (groups.includes(newTitle.trim()) || defaultTitles.includes(newTitle.trim())) {
+      alert(`Group "${newTitle.trim()}" sudah ada!`);
+      return;
+    }
+
+    if (externalOnAddGroup) {
+      externalOnAddGroup(newTitle.trim());
+    }
+
+    setGroups(prev => [...prev, newTitle.trim()]);
+    setGroupColors(prev => ({ ...prev, [newTitle.trim()]: '#757575' }));
+    setGroupMeta(prev => ({
+      ...prev,
+      [newTitle.trim()]: {
+        id: `group-${Date.now()}`,
+        isDefault: false,
+        isDeletable: true,
+        color: '#757575',
+      }
+    }));
+  };
+
+  // ============================================================
+  // HANDLE UPDATE GROUP COLOR
+  // ============================================================
+  const handleUpdateGroupColor = (groupName, color) => {
+    if (externalOnUpdateGroupColor) {
+      externalOnUpdateGroupColor(groupName, color);
+    }
+    setGroupColors(prev => ({ ...prev, [groupName]: color }));
+    setGroupMeta(prev => ({
+      ...prev,
+      [groupName]: { ...prev[groupName], color: color }
+    }));
+  };
+
+  // ============================================================
+  // HANDLE ADD ITEM (dengan validasi group)
+  // ============================================================
+  const handleAddItem = (groupName) => {
+    if (onAddItem) {
+      onAddItem(groupName);
     }
   };
 
@@ -134,8 +345,24 @@ export default function BoardTable({
   
   const totalWidth = safeColumns.reduce((sum, col) => sum + col.width, 0) + CHECKBOX_WIDTH + ADD_COLUMN_WIDTH;
 
+  // Cek apakah semua group adalah default
+  const allGroupsDefault = groups.every(g => groupMeta[g]?.isDefault);
+
   if (groups.length === 0) {
-    return <div style={{ padding: 20, color: "var(--text-muted)" }}>No groups found. Add a new group.</div>;
+    // Restore default jika tidak ada group
+    const defaultTitles = DEFAULT_GROUPS.map(g => g.title);
+    const newMeta = { ...groupMeta };
+    DEFAULT_GROUPS.forEach(g => {
+      newMeta[g.title] = {
+        id: g.id,
+        isDefault: true,
+        isDeletable: false,
+        color: g.color,
+      };
+    });
+    setGroupMeta(newMeta);
+    setGroups(defaultTitles);
+    return null;
   }
 
   return (
@@ -154,12 +381,25 @@ export default function BoardTable({
         </div>
       )}
 
+      {/* Info Default Groups */}
+      {allGroupsDefault && (
+        <div className="info-default-groups">
+          <p>
+            💡 Semua group adalah <span className="badge-default">Default</span>. 
+            Group default tidak bisa dihapus atau diubah namanya.
+          </p>
+        </div>
+      )}
+
       <div className="board-scroll-container">
         <div className="board-scroll-content">
           {groups.map((groupName) => {
             const tasks = grouped[groupName] || [];
             const isCollapsed = collapsed[groupName] || false;
-            const groupColor = groupColors[groupName] || "#3b82f6";
+            const meta = groupMeta[groupName] || {};
+            const groupColor = meta.color || groupColors[groupName] || "#3b82f6";
+            const isDefault = meta.isDefault || false;
+            const isDeletable = meta.isDeletable !== undefined ? meta.isDeletable : true;
 
             return (
               <div 
@@ -286,7 +526,7 @@ export default function BoardTable({
                       <input
                         type="color"
                         value={groupColor}
-                        onChange={(e) => onUpdateGroupColor(groupName, e.target.value)}
+                        onChange={(e) => handleUpdateGroupColor(groupName, e.target.value)}
                         className="group-color-picker"
                         style={{
                           flexShrink: 0,
@@ -319,6 +559,16 @@ export default function BoardTable({
                         }}
                       >
                         {groupName}
+                        {isDefault && (
+                          <span className="badge-default" style={{ marginLeft: '8px', fontSize: '11px' }}>
+                            ⭐ Default
+                          </span>
+                        )}
+                        {!isDeletable && isDefault && (
+                          <span className="badge-protected" style={{ marginLeft: '4px', fontSize: '11px' }}>
+                            🔒
+                          </span>
+                        )}
                       </h3>
                     </div>
                   </div>
@@ -327,11 +577,35 @@ export default function BoardTable({
                 {popupGroup === groupName && (
                   <>
                     <div className="group-popup">
-                      <button onClick={() => { closePopup(); handleRenameGroup(groupName); }}>
-                        ✏️ Rename Group
+                      <button 
+                        onClick={() => { 
+                          closePopup(); 
+                          if (isDefault) {
+                            alert('⚠️ Group default tidak bisa diubah namanya!');
+                          } else {
+                            handleRenameGroup(groupName, prompt("Masukkan nama baru:", groupName));
+                          }
+                        }}
+                        style={{ opacity: isDefault ? 0.5 : 1 }}
+                        disabled={isDefault}
+                      >
+                        ✏️ Rename Group {isDefault && '(disabled)'}
                       </button>
-                      <button onClick={() => { closePopup(); onDeleteGroup(groupName); }}>
-                        🗑️ Delete Group
+                      <button 
+                        onClick={() => { 
+                          closePopup(); 
+                          if (isDefault) {
+                            alert('⚠️ Group default tidak bisa dihapus!');
+                          } else {
+                            if (confirm(`Hapus group "${groupName}"?`)) {
+                              handleDeleteGroup(groupName);
+                            }
+                          }
+                        }}
+                        style={{ opacity: isDefault ? 0.5 : 1 }}
+                        disabled={isDefault}
+                      >
+                        🗑️ Delete Group {isDefault && '(disabled)'}
                       </button>
                     </div>
                     <div className="group-popup-overlay" onClick={closePopup} />
@@ -411,9 +685,6 @@ export default function BoardTable({
                             </thead>
                             <tbody>
                               {tasks.map((item) => {
-                                // ============================================================
-                                // PERBAIKAN: onUpdate MENERIMA ID DARI PARAMETER
-                                // ============================================================
                                 const handleUpdate = (id, field, value) => {
                                   console.log('🟢 BoardTable handleUpdate - id:', id, 'field:', field, 'value:', value);
                                   onUpdateItem(id, field, value);
@@ -435,6 +706,8 @@ export default function BoardTable({
                                     onOpenStatusManager={onOpenStatusManager}
                                     onAddSubItem={handleAddSubItem}
                                     selectedItems={selectedItems}
+                                    groupName={groupName}
+                                    isDefaultGroup={isDefault}
                                   />
                                 );
                               })}
@@ -514,7 +787,7 @@ export default function BoardTable({
                             }}
                           >
                             <button
-                              onClick={() => onAddItem(groupName)}
+                              onClick={() => handleAddItem(groupName)}
                               style={{
                                 border: 'none',
                                 background: 'transparent',
@@ -549,7 +822,7 @@ export default function BoardTable({
                         style={{ borderLeft: `4px solid ${groupColor}` }}
                       >
                         No items in this group.
-                        <button onClick={() => onAddItem(groupName)}>Add item</button>
+                        <button onClick={() => handleAddItem(groupName)}>Add item</button>
                       </div>
                     )}
                   </div>
@@ -561,7 +834,44 @@ export default function BoardTable({
       </div>
 
       <div className="add-group-container">
-        <button onClick={onAddGroup}>+ Add new group</button>
+        <button onClick={handleAddGroup}>+ Add new group</button>
+        <button 
+          onClick={() => {
+            if (confirm('Reset semua group ke default? Group custom akan dihapus.')) {
+              const defaultTitles = DEFAULT_GROUPS.map(g => g.title);
+              const newMeta = { ...groupMeta };
+              DEFAULT_GROUPS.forEach(g => {
+                newMeta[g.title] = {
+                  id: g.id,
+                  isDefault: true,
+                  isDeletable: false,
+                  color: g.color,
+                };
+              });
+              setGroupMeta(newMeta);
+              setGroups(defaultTitles);
+              // Hapus items yang tidak termasuk default
+              const defaultItemIds = [];
+              DEFAULT_GROUPS.forEach(g => {
+                g.items.forEach(item => defaultItemIds.push(item.id));
+              });
+              // Filter items
+              const newItems = items.filter(item => defaultItemIds.includes(item.id));
+              // Update items melalui callback
+              if (onUpdateItem) {
+                // Hapus semua items
+                items.forEach(item => {
+                  if (!defaultItemIds.includes(item.id)) {
+                    onDeleteItem(item.id);
+                  }
+                });
+              }
+            }
+          }}
+          style={{ marginLeft: '12px' }}
+        >
+          🔄 Reset Default
+        </button>
       </div>
     </div>
   );
