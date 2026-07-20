@@ -30,7 +30,7 @@
 }
 
 .dark .row-level-2, .dark .row-level-3, .dark .row-level-4 {
-  background-color: rgba(255, 255, 255, 0.02);
+  background-color: rgba(255,  ﻿255, 255, 0.02);
 }
 
 .btn-arrow-hover {
@@ -465,7 +465,7 @@ tr:hover .btn-delete-item:not(:disabled) {
 }
 
 /* ============================================================
-   DATE INPUT - PERBAIKAN IKON CALENDAR DI DARK MODE
+   DATE INPUT - PERBAIKAN IKON CALENDAR DI DARK MODE (1 KALI)
    ============================================================ */
 
 /* Color-scheme untuk dark mode */
@@ -514,49 +514,3 @@ tr:hover .btn-delete-item:not(:disabled) {
     filter: invert(1) brightness(1.5);
     opacity: 0.9;
 }
-/* ============================================================
-   DATE INPUT - PERBAIKAN IKON CALENDAR DI DARK MODE
-   ============================================================ */
-
-.date-cell-input {
-    color-scheme: dark;
-}
-
-.date-cell-input::-webkit-calendar-picker-indicator {
-    filter: invert(1) brightness(1.5);
-    cursor: pointer;
-    opacity: 0.8;
-    padding: 2px;
-}
-
-.date-cell-input::-webkit-calendar-picker-indicator:hover {
-    opacity: 1;
-    filter: invert(1) brightness(2);
-}
-
-.date-cell-input::-moz-calendar-picker-indicator {
-    filter: invert(1) brightness(1.5);
-    cursor: pointer;
-    opacity: 0.8;
-}
-
-:root:not(.dark) .date-cell-input::-webkit-calendar-picker-indicator {
-    filter: invert(0) brightness(0.5);
-    opacity: 0.6;
-}
-
-:root:not(.dark) .date-cell-input::-moz-calendar-picker-indicator {
-    filter: invert(0) brightness(0.5);
-    opacity: 0.6;
-}
-
-.dark .date-cell-input::-webkit-calendar-picker-indicator {
-    filter: invert(1) brightness(1.5);
-    opacity: 0.9;
-}
-
-.dark .date-cell-input::-moz-calendar-picker-indicator {
-    filter: invert(1) brightness(1.5);
-    opacity: 0.9;
-}
-
