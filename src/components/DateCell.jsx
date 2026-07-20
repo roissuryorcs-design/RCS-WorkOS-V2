@@ -18,17 +18,6 @@ export default function DateCell({ date, onChange, placeholder = "dd/mm/ttt" }) 
     }
   };
 
-  const formatDisplayDate = (val) => {
-    if (!val) return "";
-    if (val.includes("-")) {
-      const parts = val.split("-");
-      if (parts.length === 3) {
-        return `${parts[2]}/${parts[1]}/${parts[0]}`;
-      }
-    }
-    return val;
-  };
-
   const convertToDateInputValue = (val) => {
     if (!val) return "";
     if (val.includes("/")) {
