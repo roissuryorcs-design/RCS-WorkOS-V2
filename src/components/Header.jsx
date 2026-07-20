@@ -14,9 +14,16 @@ export default function Header({ isDefaultOnly = false }) {
   const [tempName, setTempName] = useState(boardName);
   const [tempDesc, setTempDesc] = useState(description);
 
-  // Jika hanya default group, gunakan "BOARD NAME" dan "add a description"
-  const displayName = isDefaultOnly ? "BOARD NAME" : boardName;
-  const displayDesc = isDefaultOnly ? "add a description" : description;
+  // Cek apakah user sudah pernah rename board name
+  const hasCustomName = localStorage.getItem("boardName") !== null && localStorage.getItem("boardName") !== "BOARD NAME";
+  const hasCustomDesc = localStorage.getItem("boardDescription") !== null && localStorage.getItem("boardDescription") !== "add a description";
+
+  // Tentukan nama yang ditampilkan:
+  // - Jika hanya default group DAN belum pernah rename: tampilkan "BOARD NAME"
+  // - Jika sudah pernah rename: tampilkan nama custom
+  // - Jika ada group lain: tampilkan nama custom
+  const displayName = (isDefaultOnly && !hasCustomName) ? "BOARD NAME" : boardName;
+  const displayDesc = (isDefaultOnly && !hasCustomDesc) ? "add a description" : description;
 
   useEffect(() => {
     localStorage.setItem("boardName", boardName);
@@ -26,28 +33,13 @@ export default function Header({ isDefaultOnly = false }) {
     localStorage.setItem("boardDescription", description);
   }, [description]);
 
-  // Jika isDefaultOnly true, tidak perlu simpan karena hanya tampilan
   const handleNameClick = () => {
-    if (isDefaultOnly) {
-      // Jika hanya default group, izinkan edit tapi langsung simpan
-      setIsEditingName(true);
-      setTempName("BOARD NAME");
-      return;
-    }
     setIsEditingName(true);
     setTempName(boardName);
   };
 
   const handleNameSave = () => {
     setIsEditingName(false);
-    if (isDefaultOnly) {
-      // Jika hanya default group, simpan sebagai custom name
-      const newName = tempName.trim();
-      if (newName && newName !== "BOARD NAME") {
-        setBoardName(newName);
-      }
-      return;
-    }
     const newName = tempName.trim();
     if (newName) {
       setBoardName(newName);
@@ -66,24 +58,12 @@ export default function Header({ isDefaultOnly = false }) {
   };
 
   const handleDescClick = () => {
-    if (isDefaultOnly) {
-      setIsEditingDesc(true);
-      setTempDesc("add a description");
-      return;
-    }
     setIsEditingDesc(true);
     setTempDesc(description);
   };
 
   const handleDescSave = () => {
     setIsEditingDesc(false);
-    if (isDefaultOnly) {
-      const newDesc = tempDesc.trim();
-      if (newDesc && newDesc !== "add a description") {
-        setDescription(newDesc);
-      }
-      return;
-    }
     const newDesc = tempDesc.trim();
     if (newDesc) {
       setDescription(newDesc);
