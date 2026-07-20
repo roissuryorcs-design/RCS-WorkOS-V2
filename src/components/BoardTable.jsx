@@ -13,7 +13,6 @@ export default function BoardTable({
   onAddGroup,
   onDeleteGroup,
   onAddItem,
-  onAddSubItem,
   onOpenStatusManager,
   onRenameGroup,
   onOpenAddColumn,
@@ -84,11 +83,12 @@ export default function BoardTable({
   };
 
   // ============================================================
-  // FUNGSI ADD SUB ITEM - DENGAN CEK LEVEL (MAX 4)
+  // FUNGSI TAMBAH SUB ITEM - DENGAN LOGIKA DARI VERCEL AI
   // ============================================================
   const handleAddSubItem = (parentId) => {
     if (!onAddSubItem) return;
-    
+
+    // Cari parent item
     const findParent = (items, id) => {
       for (const item of items) {
         if (item.id === id) return item;
@@ -103,6 +103,7 @@ export default function BoardTable({
     const parent = findParent(items, parentId);
     if (!parent) return;
 
+    // Hitung kedalaman (depth)
     const getDepth = (items, id, currentDepth = 0) => {
       for (const item of items) {
         if (item.id === id) return currentDepth;
@@ -115,15 +116,25 @@ export default function BoardTable({
     };
 
     const currentDepth = getDepth(items, parentId, 0);
+    const newDepth = currentDepth + 1;
+
+    // Maksimal 4 level
     if (currentDepth >= 3) {
       alert('Maximum 4 levels reached!');
       return;
     }
 
-    // Placeholder berdasarkan level
-    const placeholders = ["", "New Task", "Sub Item", "Sub Sub Item", "Sub Sub Sub Item"];
-    const newTitle = placeholders[currentDepth + 1] || "New Task";
+    // Fungsi menentukan nama berdasarkan level (dari Vercel AI)
+    const getLevelName = (depth) => {
+      if (depth <= 0) return "New Task";
+      if (depth === 1) return "Sub Item";
+      if (depth === 2) return "Sub Sub Item";
+      return "Sub Sub Sub Item";
+    };
 
+    const newTitle = getLevelName(newDepth);
+
+    // Panggil onAddSubItem dari App.jsx
     onAddSubItem(parentId, newTitle);
   };
 
