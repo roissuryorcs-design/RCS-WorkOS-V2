@@ -1,6 +1,7 @@
 import { useState } from "react";
 import StatusCell from "./StatusCell";
 import FileAttachment from "./FileAttachment";
+import DateCell from "./DateCell"; // ← TAMBAHKAN IMPORT INI!
 
 export default function Row({
   item,
@@ -63,11 +64,10 @@ export default function Row({
 
       case "date":
         return (
-          <input
-            type="date"
-            value={value}
-            onChange={(e) => onUpdate(item.id, col.id, e.target.value)}
-            style={inputStyle}
+          <DateCell
+            date={value}
+            onChange={(val) => onUpdate(item.id, col.id, val)}
+            placeholder="dd/mm/ttt"
           />
         );
 
@@ -187,6 +187,12 @@ export default function Row({
         return;
       }
       onAddSubItem(item.id);
+    }
+  };
+
+  const handleDelete = () => {
+    if (confirm(`Hapus item "${item.item || 'untitled'}"?`)) {
+      onDelete(item.id);
     }
   };
 
@@ -389,10 +395,6 @@ export default function Row({
                       +
                     </button>
                   )}
-
-                  {/* ============================================================
-                      TOMBOL ✕ DIHAPUS DARI SINI!
-                      ============================================================ */}
                 </div>
               </td>
             );
