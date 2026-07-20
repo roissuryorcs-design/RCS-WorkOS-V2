@@ -16,15 +16,7 @@ export default function Row({
   maxDepth = 4,
   selectedItems = [],
 }) {
-  // Gunakan item.isExpanded sebagai source of truth
   const [expanded, setExpanded] = useState(item.isExpanded !== false);
-  
-  // Update expanded ketika item.isExpanded berubah dari props
-  // Ini penting agar perubahan dari App.jsx (addSubItem) tercermin
-  if (item.isExpanded !== expanded) {
-    setExpanded(item.isExpanded !== false);
-  }
-
   const [isEditing, setIsEditing] = useState(false);
   const [tempName, setTempName] = useState(item.item);
   const hasChildren = item.children && item.children.length > 0;
@@ -33,6 +25,11 @@ export default function Row({
 
   const placeholders = ["", "New Task", "Sub Item", "Sub Sub Item", "Sub Sub Sub Item"];
   const placeholder = placeholders[depth] || "New Task";
+
+  // Sinkronisasi expanded dengan item.isExpanded
+  if (item.isExpanded !== expanded) {
+    setExpanded(item.isExpanded !== false);
+  }
 
   const inputStyle = {
     border: "none",
@@ -58,7 +55,7 @@ export default function Row({
             status={item[col.id]}
             statuses={col.statuses || {}}
             statusOrder={col.statusOrder || []}
-            onChange={(val) => onUpdate(col.id, val)}
+            onChange={(val) => onUpdate(item.id, col.id, val)}
             onOpenStatusManager={onOpenStatusManager}
           />
         );
@@ -68,7 +65,7 @@ export default function Row({
           <input
             type="date"
             value={value}
-            onChange={(e) => onUpdate(col.id, e.target.value)}
+            onChange={(e) => onUpdate(item.id, col.id, e.target.value)}
             style={inputStyle}
           />
         );
@@ -78,7 +75,7 @@ export default function Row({
           <input
             type="number"
             value={value}
-            onChange={(e) => onUpdate(col.id, e.target.value)}
+            onChange={(e) => onUpdate(item.id, col.id, e.target.value)}
             style={inputStyle}
           />
         );
@@ -88,7 +85,7 @@ export default function Row({
           <input
             type="checkbox"
             checked={value || false}
-            onChange={(e) => onUpdate(col.id, e.target.checked)}
+            onChange={(e) => onUpdate(item.id, col.id, e.target.checked)}
             style={{ cursor: "pointer", width: 16, height: 16 }}
           />
         );
@@ -98,7 +95,7 @@ export default function Row({
           <input
             type="text"
             value={value}
-            onChange={(e) => onUpdate(col.id, e.target.value)}
+            onChange={(e) => onUpdate(item.id, col.id, e.target.value)}
             style={inputStyle}
             placeholder="Assign to..."
           />
@@ -141,7 +138,7 @@ export default function Row({
         return (
           <input
             value={value}
-            onChange={(e) => onUpdate(col.id, e.target.value)}
+            onChange={(e) => onUpdate(item.id, col.id, e.target.value)}
             style={inputStyle}
             placeholder={col.label}
           />
@@ -164,10 +161,15 @@ export default function Row({
     setTempName(e.target.value);
   };
 
+  // ============================================================
+  // PERBAIKAN: onUpdate dipanggil dengan 3 parameter (id, field, value)
+  // ============================================================
   const handleEditSave = () => {
     setIsEditing(false);
-    if (tempName.trim() !== "" && tempName.trim() !== item.item) {
-      onUpdate('item', tempName.trim());
+    const newName = tempName.trim();
+    if (newName !== "" && newName !== item.item) {
+      console.log('🟢 Row handleEditSave - item.id:', item.id, 'newName:', newName);
+      onUpdate(item.id, 'item', newName);
     }
   };
 
@@ -209,7 +211,7 @@ export default function Row({
   const contentWrapperStyle = {
     display: 'flex',
     alignItems: 'center',
-    gap: '4px',
+    gap: '6px',
     minHeight: '38px',
     width: '100%',
   };
@@ -265,8 +267,7 @@ export default function Row({
                   {hasChildren ? (
                     <button
                       onClick={() => {
-                        // Toggle expanded dan update di App.jsx
-                        onUpdate('isExpanded', !expanded);
+                        onUpdate(item.id, 'isExpanded', !expanded);
                       }}
                       className="btn-arrow-hover"
                       style={{
@@ -284,6 +285,7 @@ export default function Row({
                         justifyContent: 'center',
                         opacity: 1,
                         transition: 'opacity 0.2s',
+                        fontWeight: 'bold',
                       }}
                     >
                       {expanded ? '▾' : '▸'}
@@ -291,9 +293,9 @@ export default function Row({
                   ) : (
                     <span 
                       style={{ 
-                        width: '18px', 
+                        width: '28px',
                         flexShrink: 0,
-                        fontSize: '12px',
+                        fontSize: '20px',
                         color: 'var(--text-secondary)',
                         opacity: 0.15,
                         textAlign: 'center',
@@ -438,7 +440,7 @@ export default function Row({
         />
       </tr>
 
-      {/* SUB ITEM - RECURSIVE - hanya render jika expanded */}
+      {/* SUB ITEM - RECURSIVE */}
       {hasChildren && expanded && item.children.map((child) => (
         <Row
           key={child.id}
