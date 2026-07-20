@@ -84,31 +84,51 @@ export default function BoardTable({
   };
 
   // ============================================================
-  // FUNGSI TAMBAH SUB ITEM - DENGAN LOGIKA DARI VERCEL AI
+  // FUNGSI TAMBAH SUB ITEM - UNTUK SEMUA LEVEL (RECURSIVE)
   // ============================================================
   const handleAddSubItem = (parentId) => {
-    if (!onAddSubItem) return;
+    if (!onAddSubItem) {
+      console.warn('onAddSubItem is not defined');
+      return;
+    }
 
-    // Cari parent item
+    console.log('🔵 handleAddSubItem called with parentId:', parentId);
+    console.log('🔵 Current items:', items);
+
+    // Cari parent item di semua level (recursive)
     const findParent = (items, id) => {
       for (const item of items) {
-        if (item.id === id) return item;
-        if (item.children) {
+        if (item.id === id) {
+          console.log('🔵 Found parent:', item);
+          return item;
+        }
+        if (item.children && item.children.length > 0) {
           const found = findParent(item.children, id);
-          if (found) return found;
+          if (found) {
+            console.log('🔵 Found parent in children:', found);
+            return found;
+          }
         }
       }
       return null;
     };
 
     const parent = findParent(items, parentId);
-    if (!parent) return;
+    if (!parent) {
+      console.warn('Parent not found for id:', parentId);
+      return;
+    }
+
+    console.log('🔵 Parent found:', parent);
 
     // Hitung kedalaman (depth)
     const getDepth = (items, id, currentDepth = 0) => {
       for (const item of items) {
-        if (item.id === id) return currentDepth;
-        if (item.children) {
+        if (item.id === id) {
+          console.log('🔵 Found depth:', currentDepth, 'for id:', id);
+          return currentDepth;
+        }
+        if (item.children && item.children.length > 0) {
           const found = getDepth(item.children, id, currentDepth + 1);
           if (found !== -1) return found;
         }
@@ -117,7 +137,10 @@ export default function BoardTable({
     };
 
     const currentDepth = getDepth(items, parentId, 0);
+    console.log('🔵 Current depth:', currentDepth);
+    
     const newDepth = currentDepth + 1;
+    console.log('🔵 New depth:', newDepth);
 
     // Maksimal 4 level
     if (currentDepth >= 3) {
@@ -125,17 +148,19 @@ export default function BoardTable({
       return;
     }
 
-    // Fungsi menentukan nama berdasarkan level (dari Vercel AI)
+    // Fungsi menentukan nama berdasarkan level
     const getLevelName = (depth) => {
       if (depth <= 0) return "New Task";
       if (depth === 1) return "Sub Item";
       if (depth === 2) return "Sub Sub Item";
-      return "Sub Sub Sub Item";
+      if (depth === 3) return "Sub Sub Sub Item";
+      return "New Task";
     };
 
     const newTitle = getLevelName(newDepth);
+    console.log('🔵 New title:', newTitle);
 
-    // Panggil onAddSubItem dari App.jsx dengan 2 parameter
+    // Panggil onAddSubItem dari App.jsx
     onAddSubItem(parentId, newTitle);
   };
 
@@ -184,7 +209,6 @@ export default function BoardTable({
                   overflow: 'visible',
                 }}
               >
-                {/* GARIS VERTIKAL WARNA GRUP - STICKY */}
                 <div 
                   className="ai-sticky-line"
                   style={{ 
@@ -203,7 +227,6 @@ export default function BoardTable({
                   }}
                 />
 
-                {/* GROUP HEADER */}
                 <div 
                   className="group-header"
                   style={{
@@ -336,7 +359,6 @@ export default function BoardTable({
                   </div>
                 </div>
 
-                {/* POPUP GROUP */}
                 {popupGroup === groupName && (
                   <>
                     <div className="group-popup">
@@ -351,7 +373,6 @@ export default function BoardTable({
                   </>
                 )}
 
-                {/* GROUP CONTENT */}
                 {!isCollapsed && (
                   <div className="group-content">
                     {tasks.length > 0 ? (
@@ -426,41 +447,35 @@ export default function BoardTable({
                             <tbody>
                               {tasks.map((item) => {
                                 const handleUpdateItem = (field, value) => {
+                                  console.log('🟢 handleUpdateItem - item.id:', item.id, 'field:', field, 'value:', value);
                                   onUpdateItem(item.id, field, value);
                                 };
 
                                 const handleDeleteItem = () => {
+                                  console.log('🟢 handleDeleteItem - item.id:', item.id);
                                   onDeleteItem(item.id);
                                 };
 
                                 return (
                                   <Row
-  key={item.id}
-  item={item}
-  groupColor={groupColor}
-  visibleColumns={safeColumns}
-  isSelected={selectedItems.includes(item.id)}
-  onToggleSelect={toggleSelectItem}
-  onUpdate={(field, value) => {
-   onUpdate={(field, value) => {
-    console.log('🟢 Row onUpdate - item.id:', item.id, 'field:', field, 'value:', value);
-    onUpdateItem(item.id, field, value);
-  }}
-  onDelete={() => {
-    console.log('🟢 Row onDelete - item.id:', item.id);
-    onDeleteItem(item.id);
-  }}
-  onOpenStatusManager={onOpenStatusManager}
-  onAddSubItem={handleAddSubItem}
-  selectedItems={selectedItems}
-/>
+                                    key={item.id}
+                                    item={item}
+                                    groupColor={groupColor}
+                                    visibleColumns={safeColumns}
+                                    isSelected={selectedItems.includes(item.id)}
+                                    onToggleSelect={toggleSelectItem}
+                                    onUpdate={handleUpdateItem}
+                                    onDelete={handleDeleteItem}
+                                    onOpenStatusManager={onOpenStatusManager}
+                                    onAddSubItem={handleAddSubItem}
+                                    selectedItems={selectedItems}
+                                  />
                                 );
                               })}
                             </tbody>
                           </table>
                         </div>
 
-                        {/* ADD ITEM */}
                         <div 
                           className="add-item-container"
                           style={{ 
