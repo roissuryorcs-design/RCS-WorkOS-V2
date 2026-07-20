@@ -172,7 +172,7 @@ export default function ResizableHeader({
         }}
       >
         {/* ============================================================
-            TOMBOL ⋮ DI SEBELAH KIRI TEKS (UNTUK COLUMN MENU)
+            TOMBOL ⋮ DI SEBELAH KIRI TEKS - DIPERBAIKI VISIBILITASNYA
             ============================================================ */}
         {showMenuButton && (
           <button
@@ -184,16 +184,25 @@ export default function ResizableHeader({
               background: "none",
               border: "none",
               cursor: "pointer",
-              fontSize: 14,
-              color: "var(--text-muted)",
-              padding: "0 4px",
-              opacity: 0.4,
-              transition: "opacity 0.2s",
+              fontSize: 20, // ← DIPERBESAR (dari 14 → 20)
+              fontWeight: 700, // ← DITAMBAH (lebih tebal)
+              color: "var(--text-secondary)", // ← WARNA LEBIH TERANG
+              padding: "0 6px", // ← DIPERBESAR
+              opacity: 0.8, // ← DIPERBESAR (dari 0.4 → 0.8)
+              transition: "opacity 0.2s, background 0.2s",
               pointerEvents: isResizingRef.current ? "none" : "auto",
               flexShrink: 0,
+              borderRadius: "4px",
+              lineHeight: 1,
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.opacity = 1)}
-            onMouseLeave={(e) => (e.currentTarget.style.opacity = 0.4)}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.opacity = 1;
+              e.currentTarget.style.background = "var(--bg-hover)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.opacity = 0.8;
+              e.currentTarget.style.background = "transparent";
+            }}
             title="Column menu"
           >
             ⋮
@@ -215,7 +224,7 @@ export default function ResizableHeader({
         {/* ============================================================
             SPACER KOSONG UNTUK KOLOM TANPA ⋮
             ============================================================ */}
-        {!showMenuButton && <span style={{ width: 22, flexShrink: 0 }} />}
+        {!showMenuButton && <span style={{ width: 28, flexShrink: 0 }} />}
 
         {/* ============================================================
             RESIZE HANDLE - TETAP DI KANAN
