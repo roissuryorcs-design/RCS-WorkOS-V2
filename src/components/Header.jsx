@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 
 export default function Header({ isDefaultOnly = false }) {
-  // State untuk menyimpan nama custom (yang di-rename user)
+  // State untuk menyimpan nama custom (hanya jika user sudah pernah rename)
   const [customName, setCustomName] = useState(() => {
     return localStorage.getItem("boardName") || "";
   });
@@ -16,22 +16,21 @@ export default function Header({ isDefaultOnly = false }) {
   const [tempName, setTempName] = useState("");
   const [tempDesc, setTempDesc] = useState("");
 
-  // Tentukan nama yang ditampilkan:
-  // - Jika hanya default group DAN belum pernah rename: tampilkan "BOARD NAME"
-  // - Jika hanya default group TAPI sudah pernah rename: tampilkan customName
-  // - Jika ada group lain: tampilkan customName (jika ada) atau "BOARD NAME"
+  // ============================================================
+  // LOGIKA UTAMA:
+  // - Jika user BELUM pernah rename → tampilkan "BOARD NAME"
+  // - Jika user SUDAH pernah rename → tampilkan customName
+  // - isDefaultOnly TIDAK mempengaruhi tampilan!
+  // ============================================================
   const hasCustomName = customName && customName.trim() !== "";
   const hasCustomDesc = customDesc && customDesc.trim() !== "";
 
-  const displayName = isDefaultOnly 
-    ? (hasCustomName ? customName : "BOARD NAME")
-    : (hasCustomName ? customName : "BOARD NAME");
-  
-  const displayDesc = isDefaultOnly 
-    ? (hasCustomDesc ? customDesc : "add a description")
-    : (hasCustomDesc ? customDesc : "add a description");
+  const displayName = hasCustomName ? customName : "BOARD NAME";
+  const displayDesc = hasCustomDesc ? customDesc : "add a description";
 
-  // Simpan customName ke localStorage setiap berubah
+  // ============================================================
+  // Simpan customName ke localStorage
+  // ============================================================
   useEffect(() => {
     if (customName) {
       localStorage.setItem("boardName", customName);
@@ -48,6 +47,9 @@ export default function Header({ isDefaultOnly = false }) {
     }
   }, [customDesc]);
 
+  // ============================================================
+  // HANDLE EDIT BOARD NAME
+  // ============================================================
   const handleNameClick = () => {
     setIsEditingName(true);
     setTempName(customName || "BOARD NAME");
@@ -72,6 +74,9 @@ export default function Header({ isDefaultOnly = false }) {
     }
   };
 
+  // ============================================================
+  // HANDLE EDIT DESCRIPTION
+  // ============================================================
   const handleDescClick = () => {
     setIsEditingDesc(true);
     setTempDesc(customDesc || "add a description");
