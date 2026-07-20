@@ -93,30 +93,24 @@ export default function DateCell({ date, onChange, placeholder = "dd/mm/ttt" }) 
       </div>
 
       {isOpen && (
-        <input
-          ref={inputRef}
-          type="date"
-          value={inputValue || ""}
-          onChange={handleDateSelect}
-          style={{
-            position: "absolute",
-            top: "100%",
-            left: 0,
-            zIndex: 100,
-            padding: "6px",
-            border: "1px solid var(--border-color)",
-            borderRadius: "6px",
-            background: "var(--bg-modal)",
-            color: "var(--text-primary)",
-            marginTop: "4px",
-            width: "200px",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-            // PERBAIKAN DI SINI:
-            colorScheme: "dark", 
-          }}
-          // Memastikan saat input kehilangan fokus, panel tertutup
-          onBlur={() => setTimeout(() => setIsOpen(false), 200)}
-        />
+        jsx
+<input
+  ref={inputRef}
+  type="date"
+  value={inputValue || ""}
+  onChange={handleDateSelect}
+  style={{
+    position: "absolute",
+    top: "100%",
+    left: 0,
+    zIndex: 100,
+    padding: "6px",
+    background: "var(--bg-modal)",
+    color: "var(--text-primary)",
+    colorScheme: "dark", // Pastikan huruf 'S' besar (camelCase)
+    WebkitColorScheme: "dark", // Untuk kompatibilitas beberapa versi safari/chrome
+  }}
+/>
       )}
     </div>
   );
