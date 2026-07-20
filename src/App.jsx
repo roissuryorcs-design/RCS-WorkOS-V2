@@ -258,17 +258,26 @@ function AppContent() {
     saveHistory(newItems);
   };
 
-  // === FIND ITEM BY ID ===
-  const findItemById = (items, id) => {
-    for (const item of items) {
-      if (item.id === id) return item;
-      if (item.children) {
-        const found = findItemById(item.children, id);
-        if (found) return found;
+// ============================================================
+// FIND ITEM BY ID - RECURSIVE
+// ============================================================
+const findItemById = (items, id) => {
+  for (const item of items) {
+    if (item.id === id) {
+      console.log('🔵 findItemById found:', item);
+      return item;
+    }
+    if (item.children && item.children.length > 0) {
+      const found = findItemById(item.children, id);
+      if (found) {
+        console.log('🔵 findItemById found in children:', found);
+        return found;
       }
     }
-    return null;
-  };
+  }
+  console.log('🔵 findItemById not found for id:', id);
+  return null;
+};
 
   // ============================================================
   // ADD SUB ITEM - DENGAN EXPAND OTOMATIS
