@@ -41,8 +41,6 @@ export default function ResizableHeader({
     startX.current = e.clientX;
     startWidth.current = rect?.width || 60;
 
-    console.log("🔵 Resize start:", column.id, "width:", startWidth.current);
-
     const onMove = (ev) => {
       if (!isResizingRef.current) return;
       ev.preventDefault();
@@ -59,7 +57,6 @@ export default function ResizableHeader({
     };
 
     const onUp = () => {
-      console.log("🔴 Resize end:", column.id);
       isResizingRef.current = false;
       setIsResizing(false);
 
@@ -127,16 +124,13 @@ export default function ResizableHeader({
     }
   }, [column.width]);
 
-  // ============================================================
-  // STICKY – dengan box-shadow untuk border
-  // ============================================================
   const stickyStyle = isSticky
     ? {
         position: "sticky",
         left: stickyLeft || 0,
         zIndex: 20,
         background: "var(--bg-secondary)",
-        boxShadow: "inset -2px 0 0 0 var(--border-color)", // ← border kanan
+        boxShadow: "inset -2px 0 0 0 var(--border-color)",
       }
     : {};
 
@@ -161,6 +155,7 @@ export default function ResizableHeader({
         background: "transparent",
         transition: "background 0.15s",
         pointerEvents: "auto",
+        textAlign: "center",
         ...stickyStyle,
       }}
     >
@@ -168,14 +163,16 @@ export default function ResizableHeader({
         style={{
           display: "flex",
           alignItems: "center",
-          justifyContent: "space-between",
+          justifyContent: "center",
           gap: 4,
           pointerEvents: isResizingRef.current ? "none" : "auto",
+          width: "100%",
         }}
       >
-        <span>{children}</span>
-
-        <div style={{ display: "flex", alignItems: "center" }}>
+        {/* ============================================================
+            TOMBOL ⋮ DI SEBELAH KIRI TEKS (UNTUK COLUMN MENU)
+            ============================================================ */}
+        {column.id !== "item" && (
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -188,45 +185,69 @@ export default function ResizableHeader({
               fontSize: 14,
               color: "var(--text-muted)",
               padding: "0 4px",
-              opacity: 0.5,
+              opacity: 0.4,
               transition: "opacity 0.2s",
               pointerEvents: isResizingRef.current ? "none" : "auto",
+              flexShrink: 0,
             }}
+            onMouseEnter={(e) => (e.currentTarget.style.opacity = 1)}
+            onMouseLeave={(e) => (e.currentTarget.style.opacity = 0.4)}
+            title="Column menu"
           >
             ⋮
           </button>
+        )}
 
-          <div
-            onMouseDown={handleResizeStart}
-            style={{
-              position: "absolute",
-              right: -6,
-              top: 0,
-              width: 14,
-              height: "100%",
-              cursor: "col-resize",
-              background: isResizingRef.current ? "var(--btn-primary-bg)" : "transparent",
-              opacity: isResizingRef.current ? 0.8 : 0,
-              transition: "opacity 0.2s, background 0.2s",
-              borderRadius: 2,
-              zIndex: 20,
-              borderLeft: isResizingRef.current ? "2px solid var(--btn-primary-bg)" : "none",
-              pointerEvents: "auto",
-            }}
-            onMouseEnter={(e) => {
-              if (!isResizingRef.current) {
-                e.currentTarget.style.opacity = 0.6;
-                e.currentTarget.style.background = "var(--btn-primary-bg)";
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!isResizingRef.current) {
-                e.currentTarget.style.opacity = 0;
-                e.currentTarget.style.background = "transparent";
-              }
-            }}
-          />
-        </div>
+        {/* ============================================================
+            TEKS HEADER (DI-CENTER)
+            ============================================================ */}
+        <span
+          style={{
+            flex: 1,
+            textAlign: "center",
+          }}
+        >
+          {children}
+        </span>
+
+        {/* ============================================================
+            SPACER KOSONG UNTUK ITEM COLUMN (karena tidak ada ⋮)
+            ============================================================ */}
+        {column.id === "item" && <span style={{ width: 20, flexShrink: 0 }} />}
+
+        {/* ============================================================
+            RESIZE HANDLE - TETAP DI KANAN
+            ============================================================ */}
+        <div
+          onMouseDown={handleResizeStart}
+          style={{
+            position: "absolute",
+            right: -6,
+            top: 0,
+            width: 14,
+            height: "100%",
+            cursor: "col-resize",
+            background: isResizingRef.current ? "var(--btn-primary-bg)" : "transparent",
+            opacity: isResizingRef.current ? 0.8 : 0,
+            transition: "opacity 0.2s, background 0.2s",
+            borderRadius: 2,
+            zIndex: 20,
+            borderLeft: isResizingRef.current ? "2px solid var(--btn-primary-bg)" : "none",
+            pointerEvents: "auto",
+          }}
+          onMouseEnter={(e) => {
+            if (!isResizingRef.current) {
+              e.currentTarget.style.opacity = 0.6;
+              e.currentTarget.style.background = "var(--btn-primary-bg)";
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!isResizingRef.current) {
+              e.currentTarget.style.opacity = 0;
+              e.currentTarget.style.background = "transparent";
+            }
+          }}
+        />
       </div>
 
       {showMenu && (
