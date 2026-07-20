@@ -120,7 +120,7 @@ export default function BoardTable({
   };
 
   // ============================================================
-  // ADD GROUP
+  // ADD GROUP - LANGSUNG DENGAN 1 ITEM
   // ============================================================
   const handleAddGroup = () => {
     const newTitle = prompt("Masukkan nama group baru:");
@@ -142,6 +142,13 @@ export default function BoardTable({
 
     setGroups(prev => [...prev, newTitle.trim()]);
     setGroupColors(prev => ({ ...prev, [newTitle.trim()]: '#757575' }));
+
+    // ============================================================
+    // TAMBAHKAN 1 ITEM DI GROUP BARU
+    // ============================================================
+    if (onAddItem) {
+      onAddItem(newTitle.trim());
+    }
   };
 
   // ============================================================
@@ -284,10 +291,6 @@ export default function BoardTable({
         </div>
       )}
 
-      {/* ============================================================
-          INFO DEFAULT GROUP - DIHAPUS!
-          ============================================================ */}
-
       <div className="board-scroll-container">
         <div className="board-scroll-content">
           {groups.map((groupName) => {
@@ -364,9 +367,6 @@ export default function BoardTable({
                       borderLeft: `4px solid ${groupColor}`,
                     }}
                   >
-                    {/* ============================================================
-                        TOMBOL TOGGLE (▼/▶) - DI KIRI
-                        ============================================================ */}
                     <button 
                       className="group-toggle-btn"
                       onClick={() => toggleCollapse(groupName)}
@@ -395,9 +395,6 @@ export default function BoardTable({
                       {isCollapsed ? '▶' : '▼'}
                     </button>
 
-                    {/* ============================================================
-                        TOMBOL ⋮ (GROUP MENU) + JUDUL GROUP + COLOR PICKER
-                        ============================================================ */}
                     <div
                       style={{
                         flex: 1,
@@ -508,7 +505,6 @@ export default function BoardTable({
                           <table className="board-table" style={{ width: totalWidth }}>
                             <thead>
                               <tr className="table-header-row">
-                                {/* CHECKBOX HEADER */}
                                 <th 
                                   className="checkbox-header" 
                                   style={{ 
@@ -545,7 +541,6 @@ export default function BoardTable({
                                   />
                                 </th>
 
-                                {/* TABEL HEADER - DENGAN ⋮ DI SEBELAH KIRI (CENTER) */}
                                 {safeColumns.map((col, idx) => {
                                   const isItem = col.id === "item";
                                   const isLast = idx === safeColumns.length - 1;
