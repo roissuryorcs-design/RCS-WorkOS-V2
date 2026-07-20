@@ -7,7 +7,7 @@ import Toolbar from "./components/Toolbar";
 import BoardTable from "./components/BoardTable";
 import StatusManager from "./components/StatusManager";
 import ColumnManager from "./components/ColumnManager";
-import AddColumnPopup from "./components/AddColumnPopup"; // ← import file baru
+import AddColumnPopup from "./components/AddColumnPopup";
 import "./App.css";
 
 function AppContent() {
@@ -20,9 +20,8 @@ function AppContent() {
   const [showColumnManager, setShowColumnManager] = useState(false);
   const [groupColors, setGroupColors] = useState({});
   const [activeStatusColumnId, setActiveStatusColumnId] = useState(null);
-  const [showAddColumnPopup, setShowAddColumnPopup] = useState(false); // ← BARU
+  const [showAddColumnPopup, setShowAddColumnPopup] = useState(false);
 
-  // Ambil fungsi dari context kolom
   const { columns, addColumn, renameColumn, toggleColumn, deleteColumn, resetColumns, updateColumnStatuses, updateColumnStatusOrder } = useColumns();
 
   // ----- LOAD DATA -----
@@ -46,14 +45,125 @@ function AppContent() {
     }
 
     if (savedItems) {
-      setItems(JSON.parse(savedItems));
+      const parsedItems = JSON.parse(savedItems);
+      const ensureChildren = (items) => {
+        return items.map(item => ({
+          ...item,
+          children: item.children || [],
+          isExpanded: item.isExpanded !== undefined ? item.isExpanded : false,
+          ...(item.children ? { children: ensureChildren(item.children) } : {})
+        }));
+      };
+      setItems(ensureChildren(parsedItems));
     } else {
       setItems([
-        { id: 1, group: "Target & PLANNING", item: "Scope of Work", document: "", people: "Done", status: "Default", dueDate: "dd/mm/tttt", rev: "R0" },
-        { id: 2, group: "Target & PLANNING", item: "GA Drawings", document: "", people: "Done", status: "Default", dueDate: "dd/mm/tttt", rev: "R0" },
-        { id: 3, group: "Target & PLANNING", item: "General Arrangement", document: "ID-F-FT-NN1-GAD-FP-0", people: "RS", status: "Default", dueDate: "01/07/2026", rev: "R1" },
-        { id: 4, group: "Completed", item: "HVAC Room Arrangement DI", document: "P2104-V-D-GSHD-ME-GA", people: "Done", status: "Default", dueDate: "dd/mm/tttt", rev: "R0" },
-        { id: 5, group: "Completed", item: "Layout Drawings", document: "", people: "Done", status: "Default", dueDate: "dd/mm/tttt", rev: "R0" },
+        { 
+          id: 1, 
+          group: "Target & PLANNING", 
+          item: "Scope of Work", 
+          document: "NO. DO", 
+          people: "Done", 
+          status: "Default", 
+          dueDate: "dd/mm/ttt", 
+          rev: "R0",
+          children: [],
+          isExpanded: false,
+        },
+        { 
+          id: 2, 
+          group: "Target & PLANNING", 
+          item: "GA Drawings", 
+          document: "NO. DO", 
+          people: "Done", 
+          status: "Default", 
+          dueDate: "dd/mm/ttt", 
+          rev: "R0",
+          children: [
+            {
+              id: 6,
+              item: "General Arrangement",
+              document: "ID-F-FT-NN1-GAD-FP-0",
+              people: "RS",
+              status: "Default",
+              dueDate: "01/07/2026",
+              rev: "R1",
+              children: [
+                {
+                  id: 7,
+                  item: "HVAC Room Arrangement",
+                  document: "P2104-V-D-GSHD-ME-GA",
+                  people: "Done",
+                  status: "Default",
+                  dueDate: "dd/mm/ttt",
+                  rev: "R0",
+                  children: [
+                    {
+                      id: 8,
+                      item: "Drawing A",
+                      document: "DWG-A-001",
+                      people: "John",
+                      status: "Default",
+                      dueDate: "dd/mm/ttt",
+                      rev: "R1",
+                      children: [],
+                      isExpanded: false,
+                    },
+                    {
+                      id: 9,
+                      item: "Drawing B",
+                      document: "DWG-B-002",
+                      people: "Jane",
+                      status: "Default",
+                      dueDate: "dd/mm/ttt",
+                      rev: "R0",
+                      children: [],
+                      isExpanded: false,
+                    }
+                  ],
+                  isExpanded: true,
+                }
+              ],
+              isExpanded: true,
+            }
+          ],
+          isExpanded: true,
+        },
+        { 
+          id: 3, 
+          group: "Target & PLANNING", 
+          item: "General Arrangement", 
+          document: "ID-F-FT-NN1-GAD-FP-0", 
+          people: "RS", 
+          status: "Default", 
+          dueDate: "01/07/2026", 
+          rev: "R1",
+          children: [],
+          isExpanded: false,
+        },
+        { 
+          id: 4, 
+          group: "Completed", 
+          item: "HVAC Room Arrangement DI", 
+          document: "P2104-V-D-GSHD-ME-GA", 
+          people: "Done", 
+          status: "Default", 
+          dueDate: "dd/mm/ttt", 
+          rev: "R0",
+          children: [],
+          isExpanded: false,
+        },
+        { 
+          id: 5, 
+          group: "Completed", 
+          item: "Layout Drawings", 
+          document: "NO. DO", 
+          people: "Done", 
+          status: "Default", 
+          dueDate: "dd/mm/ttt", 
+          rev: "R0",
+          children: [],
+          isExpanded: false,
+        },
       ]);
     }
 
@@ -103,36 +213,188 @@ function AppContent() {
     setItems(prevState);
   };
 
-  // ----- CRUD ITEM -----
+  // ============================================================
+  // CRUD ITEM - DENGAN DUKUNGAN SUB ITEM (RECURSIVE)
+  // ============================================================
+
+  const updateItemRecursive = (items, id, field, value) => {
+    return items.map((it) => {
+      if (it.id === id) {
+        return { ...it, [field]: value };
+      }
+      if (it.children && it.children.length > 0) {
+        return { ...it, children: updateItemRecursive(it.children, id, field, value) };
+      }
+      return it;
+    });
+  };
+
+  const deleteItemRecursive = (items, id) => {
+    return items
+      .filter((it) => it.id !== id)
+      .map((it) => {
+        if (it.children && it.children.length > 0) {
+          return { ...it, children: deleteItemRecursive(it.children, id) };
+        }
+        return it;
+      });
+  };
+
+  const findItemById = (items, id) => {
+    for (const item of items) {
+      if (item.id === id) return item;
+      if (item.children) {
+        const found = findItemById(item.children, id);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+
   const updateItem = (id, field, value) => {
-    const newItems = items.map((it) =>
-      it.id === id ? { ...it, [field]: value } : it
-    );
+    const newItems = updateItemRecursive(items, id, field, value);
     saveHistory(newItems);
   };
 
   const deleteItem = (id) => {
     if (!confirm("Delete this item?")) return;
-    const newItems = items.filter((it) => it.id !== id);
+    const item = findItemById(items, id);
+    if (item && item.children && item.children.length > 0) {
+      if (!confirm(`Item "${item.item}" has ${item.children.length} sub item(s). Delete all?`)) return;
+    }
+    const newItems = deleteItemRecursive(items, id);
     saveHistory(newItems);
   };
 
+  // ============================================================
+  // ADD SUB ITEM - MENERIMA newTitle DARI BoardTable
+  // ============================================================
+  const addSubItem = (parentId, newTitle = null) => {
+    const parent = findItemById(items, parentId);
+    if (!parent) {
+      console.warn('Parent not found:', parentId);
+      return;
+    }
+
+    // Cek kedalaman (max 4 level)
+    const getDepth = (item, currentDepth = 0) => {
+      if (!item.children || item.children.length === 0) return currentDepth;
+      let maxChildDepth = currentDepth;
+      item.children.forEach(child => {
+        const childDepth = getDepth(child, currentDepth + 1);
+        if (childDepth > maxChildDepth) maxChildDepth = childDepth;
+      });
+      return maxChildDepth;
+    };
+
+    const currentDepth = getDepth(parent);
+    if (currentDepth >= 3) {
+      alert('Maximum 4 levels reached!');
+      return;
+    }
+
+    // Fallback jika newTitle tidak diberikan
+    const getLevelName = (depth) => {
+      if (depth <= 0) return "New Task";
+      if (depth === 1) return "Sub Item";
+      if (depth === 2) return "Sub Sub Item";
+      return "Sub Sub Sub Item";
+    };
+
+    const finalTitle = newTitle || getLevelName(currentDepth + 1);
+
+    const newItem = {
+      id: Date.now(),
+      group: parent.group || "Target & PLANNING",
+      item: finalTitle,
+      document: "NO. DO",
+      people: "",
+      status: "Default",
+      dueDate: "dd/mm/ttt",
+      rev: "R0",
+      children: [],
+      isExpanded: false,
+    };
+
+    const addChildRecursive = (items) => {
+      return items.map((it) => {
+        if (it.id === parentId) {
+          return {
+            ...it,
+            children: [...(it.children || []), newItem],
+            isExpanded: true,
+          };
+        }
+        if (it.children && it.children.length > 0) {
+          return { ...it, children: addChildRecursive(it.children) };
+        }
+        return it;
+      });
+    };
+
+    const newItems = addChildRecursive(items);
+    saveHistory(newItems);
+  };
+
+  // ----- ADD ITEM (di group) -----
   const addItem = (groupName) => {
     const firstStatus = "Default";
     const newItem = {
       id: Date.now(),
       group: groupName || "Target & PLANNING",
       item: "New Task",
-      document: "",
+      document: "NO. DO",
       people: "",
       status: firstStatus,
-      dueDate: "-",
+      dueDate: "dd/mm/ttt",
       rev: "R0",
+      children: [],
+      isExpanded: false,
     };
     saveHistory([...items, newItem]);
   };
 
-  // ----- GROUP CRUD -----
+  // ============================================================
+  // GROUP CRUD - RENAME & DELETE GROUP
+  // ============================================================
+
+  const renameGroup = (oldName, newName) => {
+    if (!newName || !newName.trim()) return;
+    if (items.some((item) => item.group === newName.trim() && item.group !== oldName)) {
+      alert(`Group "${newName.trim()}" already exists!`);
+      return;
+    }
+    
+    const renameGroupRecursive = (items) => {
+      return items.map((it) => {
+        const updated = it.group === oldName ? { ...it, group: newName.trim() } : it;
+        if (updated.children && updated.children.length > 0) {
+          return { ...updated, children: renameGroupRecursive(updated.children) };
+        }
+        return updated;
+      });
+    };
+
+    const newItems = renameGroupRecursive(items);
+    saveHistory(newItems);
+    
+    const newColors = { ...groupColors };
+    if (newColors[oldName] !== undefined) {
+      newColors[newName.trim()] = newColors[oldName];
+      delete newColors[oldName];
+      setGroupColors(newColors);
+    }
+  };
+
+  const deleteGroup = (groupName) => {
+    if (!confirm(`Delete entire group "${groupName}" and all its items?`)) return;
+    const newItems = items.filter((it) => it.group !== groupName);
+    saveHistory(newItems);
+    const newColors = { ...groupColors };
+    delete newColors[groupName];
+    setGroupColors(newColors);
+  };
+
   const addGroup = () => {
     const name = prompt("Enter new group name:");
     if (!name || !name.trim()) return;
@@ -145,42 +407,23 @@ function AppContent() {
       id: Date.now(),
       group: name.trim(),
       item: `New Task in ${name.trim()}`,
-      document: "",
+      document: "NO. DO",
       people: "",
       status: firstStatus,
-      dueDate: "-",
+      dueDate: "dd/mm/ttt",
       rev: "R0",
+      children: [],
+      isExpanded: false,
     };
     saveHistory([...items, newItem]);
-    setGroupColors(prev => ({ ...prev, [name.trim()]: "#3b82f6" }));
-  };
-
-  const deleteGroup = (groupName) => {
-    if (!confirm(`Delete entire group "${groupName}" and all its items?`)) return;
-    const newItems = items.filter((it) => it.group !== groupName);
-    saveHistory(newItems);
-    const newColors = { ...groupColors };
-    delete newColors[groupName];
-    setGroupColors(newColors);
-  };
-
-  const renameGroup = (oldName, newName) => {
-    if (!newName || !newName.trim()) return;
-    if (items.some(item => item.group === newName.trim() && item.group !== oldName)) {
-      alert(`Group "${newName.trim()}" already exists!`);
-      return;
-    }
-    const newItems = items.map(item =>
-      item.group === oldName ? { ...item, group: newName.trim() } : item
-    );
-    saveHistory(newItems);
+    setGroupColors((prev) => ({ ...prev, [name.trim()]: "#3b82f6" }));
   };
 
   const updateGroupColor = (groupName, color) => {
-    setGroupColors(prev => ({ ...prev, [groupName]: color }));
+    setGroupColors((prev) => ({ ...prev, [groupName]: color }));
   };
 
-  // ----- STATUS CRUD (Global, untuk kompatibilitas) -----
+  // ----- STATUS CRUD -----
   const addStatus = (name, color) => {
     const finalName = name.trim() || "Default";
     if (statuses[finalName]) {
@@ -201,9 +444,18 @@ function AppContent() {
       return;
     }
     const remainingStatus = currentKeys.find((k) => k !== name) || "Default";
-    const newItems = items.map((it) =>
-      it.status === name ? { ...it, status: remainingStatus } : it
-    );
+    
+    const updateStatusRecursive = (items) => {
+      return items.map((it) => {
+        const updated = it.status === name ? { ...it, status: remainingStatus } : it;
+        if (updated.children && updated.children.length > 0) {
+          return { ...updated, children: updateStatusRecursive(updated.children) };
+        }
+        return updated;
+      });
+    };
+
+    const newItems = updateStatusRecursive(items);
     const newStatuses = { ...statuses };
     delete newStatuses[name];
     setStatuses(newStatuses);
@@ -221,23 +473,26 @@ function AppContent() {
     delete newStatuses[oldName];
     newStatuses[newName.trim()] = color;
     setStatuses(newStatuses);
-    const newItems = items.map((item) =>
-      item.status === oldName ? { ...item, status: newName.trim() } : item
-    );
+    
+    const renameStatusRecursive = (items) => {
+      return items.map((it) => {
+        const updated = it.status === oldName ? { ...it, status: newName.trim() } : it;
+        if (updated.children && updated.children.length > 0) {
+          return { ...updated, children: renameStatusRecursive(updated.children) };
+        }
+        return updated;
+      });
+    };
+
+    const newItems = renameStatusRecursive(items);
     setItems(newItems);
   };
 
-  // ============================================================
-  // FUNGSI UNTUK MEMBUKA STATUS MANAGER PER KOLOM
-  // ============================================================
   const openStatusManager = (columnId) => {
     setActiveStatusColumnId(columnId);
     setShowStatusManager(true);
   };
 
-  // ============================================================
-  // FUNGSI UNTUK MENAMBAH KOLOM (dari popup)
-  // ============================================================
   const handleAddColumn = (name, type) => {
     addColumn(name, type);
   };
@@ -267,19 +522,67 @@ function AppContent() {
     URL.revokeObjectURL(url);
   };
 
+  // ============================================================
+  // FILTER & SEARCH (termasuk sub item)
+  // ============================================================
+  const filterItemsRecursive = (items, searchTerm) => {
+    const lowerSearch = searchTerm.toLowerCase();
+    return items
+      .map((item) => {
+        const matches = 
+          item.item.toLowerCase().includes(lowerSearch) ||
+          (item.document && item.document.toLowerCase().includes(lowerSearch)) ||
+          (item.people && item.people.toLowerCase().includes(lowerSearch));
+
+        let filteredChildren = [];
+        if (item.children && item.children.length > 0) {
+          filteredChildren = filterItemsRecursive(item.children, searchTerm);
+        }
+
+        if (matches || filteredChildren.length > 0) {
+          return {
+            ...item,
+            children: filteredChildren,
+            isExpanded: filteredChildren.length > 0 ? true : item.isExpanded,
+          };
+        }
+        return null;
+      })
+      .filter(Boolean);
+  };
+
+  // ----- STATS (termasuk sub item) -----
+  const countAllItems = (items) => {
+    let count = 0;
+    items.forEach((item) => {
+      count++;
+      if (item.children && item.children.length > 0) {
+        count += countAllItems(item.children);
+      }
+    });
+    return count;
+  };
+
+  const countDoneItems = (items) => {
+    let count = 0;
+    items.forEach((item) => {
+      if (item.status === "Done") count++;
+      if (item.children && item.children.length > 0) {
+        count += countDoneItems(item.children);
+      }
+    });
+    return count;
+  };
+
   // ----- FILTER -----
-  const filteredItems = items.filter((it) =>
-    it.item.toLowerCase().includes(search.toLowerCase()) ||
-    it.document.toLowerCase().includes(search.toLowerCase()) ||
-    it.people.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredItems = search.trim() === "" 
+    ? items 
+    : filterItemsRecursive(items, search);
 
   // ----- STATS -----
-  const totalItems = filteredItems.length;
+  const totalItems = countAllItems(filteredItems);
   const hasDoneStatus = Object.keys(statuses).includes("Done");
-  const doneItems = hasDoneStatus
-    ? filteredItems.filter((it) => it.status === "Done").length
-    : 0;
+  const doneItems = hasDoneStatus ? countDoneItems(filteredItems) : 0;
   const pendingItems = totalItems - doneItems;
   const allGroups = [...new Set(items.map((item) => item.group))];
 
@@ -316,9 +619,10 @@ function AppContent() {
           onAddGroup={addGroup}
           onDeleteGroup={deleteGroup}
           onAddItem={addItem}
+          onAddSubItem={addSubItem}
           onOpenStatusManager={openStatusManager}
           onRenameGroup={renameGroup}
-          onOpenAddColumn={() => setShowAddColumnPopup(true)} // ← KIRIM
+          onOpenAddColumn={() => setShowAddColumnPopup(true)}
         />
 
         <div className="board-footer">
@@ -334,8 +638,8 @@ function AppContent() {
       {showStatusManager && (
         <StatusManager
           columnId={activeStatusColumnId}
-          statuses={columns.find(c => c.id === activeStatusColumnId)?.statuses || {}}
-          statusOrder={columns.find(c => c.id === activeStatusColumnId)?.statusOrder || []}
+          statuses={columns.find((c) => c.id === activeStatusColumnId)?.statuses || {}}
+          statusOrder={columns.find((c) => c.id === activeStatusColumnId)?.statusOrder || []}
           onUpdateStatuses={(newStatuses) => {
             updateColumnStatuses(activeStatusColumnId, newStatuses);
           }}
