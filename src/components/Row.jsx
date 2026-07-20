@@ -16,7 +16,15 @@ export default function Row({
   maxDepth = 4,
   selectedItems = [],
 }) {
+  // Gunakan item.isExpanded sebagai source of truth
   const [expanded, setExpanded] = useState(item.isExpanded !== false);
+  
+  // Update expanded ketika item.isExpanded berubah dari props
+  // Ini penting agar perubahan dari App.jsx (addSubItem) tercermin
+  if (item.isExpanded !== expanded) {
+    setExpanded(item.isExpanded !== false);
+  }
+
   const [isEditing, setIsEditing] = useState(false);
   const [tempName, setTempName] = useState(item.item);
   const hasChildren = item.children && item.children.length > 0;
@@ -175,6 +183,7 @@ export default function Row({
   const handleAddSubItemClick = (e) => {
     e.stopPropagation();
     if (onAddSubItem) {
+      console.log('🔵 Row + button clicked for item.id:', item.id, 'depth:', depth);
       onAddSubItem(item.id);
     }
   };
@@ -255,7 +264,10 @@ export default function Row({
                   {/* TOMBOL EXPAND / COLLAPSE */}
                   {hasChildren ? (
                     <button
-                      onClick={() => setExpanded(!expanded)}
+                      onClick={() => {
+                        // Toggle expanded dan update di App.jsx
+                        onUpdate('isExpanded', !expanded);
+                      }}
                       className="btn-arrow-hover"
                       style={{
                         background: 'transparent',
@@ -426,7 +438,7 @@ export default function Row({
         />
       </tr>
 
-      {/* SUB ITEM - RECURSIVE */}
+      {/* SUB ITEM - RECURSIVE - hanya render jika expanded */}
       {hasChildren && expanded && item.children.map((child) => (
         <Row
           key={child.id}
