@@ -190,9 +190,6 @@ export default function Row({
     }
   };
 
-  // ============================================================
-  // HANDLE DELETE ITEM - TANPA PROTEKSI
-  // ============================================================
   const handleDelete = () => {
     if (confirm(`Hapus item "${item.item || 'untitled'}"?`)) {
       onDelete(item.id);
@@ -229,7 +226,6 @@ export default function Row({
   return (
     <>
       <tr className={isSelected ? "row-selected" : ""}>
-        {/* CHECKBOX */}
         <td 
           className="row-checkbox-cell" 
           style={{ 
@@ -257,7 +253,6 @@ export default function Row({
           />
         </td>
 
-        {/* ITEM CELL */}
         {visibleColumns.map((col, idx) => {
           const isLast = idx === visibleColumns.length - 1;
           const isItem = col.id === "item";
@@ -273,7 +268,6 @@ export default function Row({
                 }}
               >
                 <div style={contentWrapperStyle}>
-                  {/* TOMBOL EXPAND / COLLAPSE */}
                   {hasChildren ? (
                     <button
                       onClick={() => {
@@ -315,7 +309,6 @@ export default function Row({
                     </span>
                   )}
 
-                  {/* NAMA ITEM */}
                   {isEditing ? (
                     <input
                       type="text"
@@ -367,7 +360,6 @@ export default function Row({
                     </span>
                   )}
 
-                  {/* TOMBOL ADD SUB ITEM (+) */}
                   {canHaveChildren && onAddSubItem && (
                     <button
                       onClick={handleAddSubItemClick}
@@ -404,7 +396,6 @@ export default function Row({
                     </button>
                   )}
 
-                  {/* TOMBOL DELETE ITEM - TANPA PROTEKSI */}
                   <button
                     onClick={handleDelete}
                     className="btn-delete-item"
@@ -461,7 +452,6 @@ export default function Row({
           );
         })}
 
-        {/* ADD COLUMN SPACER */}
         <td
           className="row-add-cell"
           style={{
@@ -479,7 +469,6 @@ export default function Row({
         />
       </tr>
 
-      {/* SUB ITEM - RECURSIVE */}
       {hasChildren && expanded && item.children.map((child) => (
         <Row
           key={child.id}
