@@ -179,12 +179,8 @@ export default function Row({
     }
   };
 
-  // ============================================================
-  // PERBAIKAN: Menggunakan table-cell + flex wrapper
-  // ============================================================
   const paddingLeft = depth * indentSize + 8;
 
-  // Style untuk td item cell - table-cell agar tinggi sinkron
   const itemCellStyle = {
     display: 'table-cell',
     verticalAlign: 'middle',
@@ -201,7 +197,6 @@ export default function Row({
     width: '100%',
   };
 
-  // Wrapper flex untuk isi di dalam td
   const contentWrapperStyle = {
     display: 'flex',
     alignItems: 'center',
@@ -213,7 +208,7 @@ export default function Row({
   return (
     <>
       <tr className={isSelected ? "row-selected" : ""}>
-        {/* CHECKBOX - tetap table-cell */}
+        {/* CHECKBOX */}
         <td 
           className="row-checkbox-cell" 
           style={{ 
@@ -241,7 +236,7 @@ export default function Row({
           />
         </td>
 
-        {/* ITEM CELL - table-cell + flex wrapper */}
+        {/* ITEM CELL */}
         {visibleColumns.map((col, idx) => {
           const isLast = idx === visibleColumns.length - 1;
           const isItem = col.id === "item";
@@ -256,7 +251,6 @@ export default function Row({
                   borderRight: isLast ? "none" : "2px solid var(--border-color)",
                 }}
               >
-                {/* WRAPPER FLEX untuk isi dalam td */}
                 <div style={contentWrapperStyle}>
                   {/* TOMBOL EXPAND / COLLAPSE */}
                   {hasChildren ? (
@@ -268,7 +262,7 @@ export default function Row({
                         border: 'none',
                         cursor: 'pointer',
                         padding: '0',
-                        fontSize: '18px',
+                        fontSize: '12px',
                         color: 'var(--text-secondary)',
                         flexShrink: 0,
                         width: '18px',
@@ -280,7 +274,7 @@ export default function Row({
                         transition: 'opacity 0.2s',
                       }}
                     >
-                      {expanded ? '˅' : '˃'}
+                      {expanded ? '▾' : '▸'}
                     </button>
                   ) : (
                     <span 
@@ -297,7 +291,7 @@ export default function Row({
                     </span>
                   )}
 
-                  {/* NAMA ITEM - BISA DI-EDIT */}
+                  {/* NAMA ITEM */}
                   {isEditing ? (
                     <input
                       type="text"
@@ -349,7 +343,7 @@ export default function Row({
                     </span>
                   )}
 
-                  {/* TOMBOL ADD SUB ITEM (+) - MUNCUL SAAT HOVER */}
+                  {/* TOMBOL ADD SUB ITEM (+) */}
                   {canHaveChildren && onAddSubItem && (
                     <button
                       onClick={handleAddSubItemClick}
