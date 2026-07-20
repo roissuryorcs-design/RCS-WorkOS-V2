@@ -1,5 +1,5 @@
+jsx
 // src/components/DateCell.jsx
-
 import { useState, useRef, useEffect } from "react";
 
 export default function DateCell({ date, onChange, placeholder = "dd/mm/ttt" }) {
@@ -60,10 +60,15 @@ export default function DateCell({ date, onChange, placeholder = "dd/mm/ttt" }) 
         onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
         onClick={() => {
           setIsOpen(true);
-          setTimeout(() => inputRef.current?.showPicker?.(), 100);
+          // Menunggu render sebentar sebelum memicu picker browser
+          setTimeout(() => {
+            if (inputRef.current) {
+               inputRef.current.showPicker?.();
+               inputRef.current.focus();
+            }
+          }, 50);
         }}
       >
-        {/* ICON CALENDAR - MENGGUNAKAN EMOJI DENGAN BACKGROUND AGAR TERLIHAT */}
         <span
           style={{
             fontSize: "16px",
@@ -106,7 +111,11 @@ export default function DateCell({ date, onChange, placeholder = "dd/mm/ttt" }) 
             marginTop: "4px",
             width: "200px",
             boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+            // PERBAIKAN DI SINI:
+            colorScheme: "dark", 
           }}
+          // Memastikan saat input kehilangan fokus, panel tertutup
+          onBlur={() => setTimeout(() => setIsOpen(false), 200)}
         />
       )}
     </div>
