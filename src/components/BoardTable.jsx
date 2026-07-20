@@ -86,9 +86,6 @@ export default function BoardTable({
 
   const closePopup = () => setPopupGroup(null);
 
-  // ============================================================
-  // RENAME GROUP - TANPA PROTEKSI
-  // ============================================================
   const handleRenameGroup = (oldName, newName) => {
     if (externalOnRenameGroup) {
       externalOnRenameGroup(oldName, newName);
@@ -103,9 +100,6 @@ export default function BoardTable({
     });
   };
 
-  // ============================================================
-  // DELETE GROUP - TANPA PROTEKSI
-  // ============================================================
   const handleDeleteGroup = (groupName) => {
     if (externalOnDeleteGroup) {
       externalOnDeleteGroup(groupName);
@@ -143,17 +137,12 @@ export default function BoardTable({
     setGroups(prev => [...prev, newTitle.trim()]);
     setGroupColors(prev => ({ ...prev, [newTitle.trim()]: '#757575' }));
 
-    // ============================================================
     // TAMBAHKAN 1 ITEM DI GROUP BARU
-    // ============================================================
     if (onAddItem) {
       onAddItem(newTitle.trim());
     }
   };
 
-  // ============================================================
-  // UPDATE GROUP COLOR
-  // ============================================================
   const handleUpdateGroupColor = (groupName, color) => {
     if (externalOnUpdateGroupColor) {
       externalOnUpdateGroupColor(groupName, color);
@@ -161,9 +150,6 @@ export default function BoardTable({
     setGroupColors(prev => ({ ...prev, [groupName]: color }));
   };
 
-  // ============================================================
-  // ADD ITEM - TANPA PROTEKSI
-  // ============================================================
   const handleAddItem = (groupName) => {
     if (onAddItem) {
       onAddItem(groupName);
@@ -265,9 +251,6 @@ export default function BoardTable({
     return null;
   }
 
-  // ============================================================
-  // TAMPILAN GROUP TITLE: "Group Title" (bukan "Default")
-  // ============================================================
   const getDisplayTitle = (groupName) => {
     if (groupName === defaultGroupName) {
       return "Group Title";
@@ -724,19 +707,6 @@ export default function BoardTable({
 
       <div className="add-group-container">
         <button onClick={handleAddGroup}>+ Add new group</button>
-        <button 
-          onClick={() => {
-            if (confirm('Reset semua group ke default?')) {
-              setGroups([defaultGroupName]);
-              setGroupColors({
-                [defaultGroupName]: DEFAULT_GROUP.color || '#4CAF50'
-              });
-            }
-          }}
-          style={{ marginLeft: '12px' }}
-        >
-          🔄 Reset Default
-        </button>
       </div>
     </div>
   );
