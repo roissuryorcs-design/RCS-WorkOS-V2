@@ -93,13 +93,13 @@ export default function BoardTable({
     }
 
     console.log('🔵 handleAddSubItem called with parentId:', parentId);
-    console.log('🔵 Current items:', items);
+    console.log('🔵 Current items:', JSON.stringify(items, null, 2));
 
     // Cari parent item di semua level (recursive)
     const findParent = (items, id) => {
       for (const item of items) {
         if (item.id === id) {
-          console.log('🔵 Found parent:', item);
+          console.log('🔵 Found parent at root:', item);
           return item;
         }
         if (item.children && item.children.length > 0) {
@@ -120,6 +120,7 @@ export default function BoardTable({
     }
 
     console.log('🔵 Parent found:', parent);
+    console.log('🔵 Parent children:', parent.children);
 
     // Hitung kedalaman (depth)
     const getDepth = (items, id, currentDepth = 0) => {
@@ -160,7 +161,7 @@ export default function BoardTable({
     const newTitle = getLevelName(newDepth);
     console.log('🔵 New title:', newTitle);
 
-    // Panggil onAddSubItem dari App.jsx
+    // Panggil onAddSubItem dari App.jsx dengan parentId dan newTitle
     onAddSubItem(parentId, newTitle);
   };
 
