@@ -17,10 +17,19 @@ export default function Header({ isDefaultOnly = false }) {
   const [tempDesc, setTempDesc] = useState("");
 
   // Tentukan nama yang ditampilkan:
-  // - Jika hanya default group: tampilkan "BOARD NAME"
+  // - Jika hanya default group DAN belum pernah rename: tampilkan "BOARD NAME"
+  // - Jika hanya default group TAPI sudah pernah rename: tampilkan customName
   // - Jika ada group lain: tampilkan customName (jika ada) atau "BOARD NAME"
-  const displayName = isDefaultOnly ? "BOARD NAME" : (customName || "BOARD NAME");
-  const displayDesc = isDefaultOnly ? "add a description" : (customDesc || "add a description");
+  const hasCustomName = customName && customName.trim() !== "";
+  const hasCustomDesc = customDesc && customDesc.trim() !== "";
+
+  const displayName = isDefaultOnly 
+    ? (hasCustomName ? customName : "BOARD NAME")
+    : (hasCustomName ? customName : "BOARD NAME");
+  
+  const displayDesc = isDefaultOnly 
+    ? (hasCustomDesc ? customDesc : "add a description")
+    : (hasCustomDesc ? customDesc : "add a description");
 
   // Simpan customName ke localStorage setiap berubah
   useEffect(() => {
@@ -41,7 +50,6 @@ export default function Header({ isDefaultOnly = false }) {
 
   const handleNameClick = () => {
     setIsEditingName(true);
-    // Saat edit, tampilkan customName (bukan displayName)
     setTempName(customName || "BOARD NAME");
   };
 
