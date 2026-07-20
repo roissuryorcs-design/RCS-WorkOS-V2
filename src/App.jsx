@@ -214,9 +214,10 @@ function AppContent() {
   };
 
   // ============================================================
-  // CRUD ITEM - DENGAN DUKUNGAN SUB ITEM (RECURSIVE)
+  // CRUD ITEM - RECURSIVE
   // ============================================================
 
+  // === UPDATE ITEM (RENAME) - MENCARI DI SEMUA LEVEL ===
   const updateItemRecursive = (items, id, field, value) => {
     return items.map((it) => {
       if (it.id === id) {
@@ -229,6 +230,13 @@ function AppContent() {
     });
   };
 
+  const updateItem = (id, field, value) => {
+    console.log('🔵 updateItem called with:', { id, field, value });
+    const newItems = updateItemRecursive(items, id, field, value);
+    saveHistory(newItems);
+  };
+
+  // === DELETE ITEM ===
   const deleteItemRecursive = (items, id) => {
     return items
       .filter((it) => it.id !== id)
@@ -238,22 +246,6 @@ function AppContent() {
         }
         return it;
       });
-  };
-
-  const findItemById = (items, id) => {
-    for (const item of items) {
-      if (item.id === id) return item;
-      if (item.children) {
-        const found = findItemById(item.children, id);
-        if (found) return found;
-      }
-    }
-    return null;
-  };
-
-  const updateItem = (id, field, value) => {
-    const newItems = updateItemRecursive(items, id, field, value);
-    saveHistory(newItems);
   };
 
   const deleteItem = (id) => {
@@ -266,10 +258,24 @@ function AppContent() {
     saveHistory(newItems);
   };
 
+  // === FIND ITEM BY ID ===
+  const findItemById = (items, id) => {
+    for (const item of items) {
+      if (item.id === id) return item;
+      if (item.children) {
+        const found = findItemById(item.children, id);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+
   // ============================================================
-  // ADD SUB ITEM - MENERIMA newTitle DARI BoardTable
+  // ADD SUB ITEM - DENGAN EXPAND OTOMATIS
   // ============================================================
   const addSubItem = (parentId, newTitle = null) => {
+    console.log('🔵 addSubItem called with:', { parentId, newTitle });
+    
     const parent = findItemById(items, parentId);
     if (!parent) {
       console.warn('Parent not found:', parentId);
@@ -322,7 +328,7 @@ function AppContent() {
           return {
             ...it,
             children: [...(it.children || []), newItem],
-            isExpanded: true,
+            isExpanded: true,  // ← PASTIKAN PARENT EXPAND!
           };
         }
         if (it.children && it.children.length > 0) {
@@ -355,7 +361,7 @@ function AppContent() {
   };
 
   // ============================================================
-  // GROUP CRUD - RENAME & DELETE GROUP
+  // GROUP CRUD
   // ============================================================
 
   const renameGroup = (oldName, newName) => {
@@ -523,7 +529,7 @@ function AppContent() {
   };
 
   // ============================================================
-  // FILTER & SEARCH (termasuk sub item)
+  // FILTER & SEARCH
   // ============================================================
   const filterItemsRecursive = (items, searchTerm) => {
     const lowerSearch = searchTerm.toLowerCase();
@@ -551,7 +557,7 @@ function AppContent() {
       .filter(Boolean);
   };
 
-  // ----- STATS (termasuk sub item) -----
+  // ----- STATS -----
   const countAllItems = (items) => {
     let count = 0;
     items.forEach((item) => {
@@ -574,19 +580,16 @@ function AppContent() {
     return count;
   };
 
-  // ----- FILTER -----
   const filteredItems = search.trim() === "" 
     ? items 
     : filterItemsRecursive(items, search);
 
-  // ----- STATS -----
   const totalItems = countAllItems(filteredItems);
   const hasDoneStatus = Object.keys(statuses).includes("Done");
   const doneItems = hasDoneStatus ? countDoneItems(filteredItems) : 0;
   const pendingItems = totalItems - doneItems;
   const allGroups = [...new Set(items.map((item) => item.group))];
 
-  // ----- RENDER -----
   return (
     <div className="app-container">
       <Sidebar
