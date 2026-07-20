@@ -28,7 +28,6 @@ export default function Row({
   const placeholders = ["", "New Task", "Sub Item", "Sub Sub Item", "Sub Sub Sub Item"];
   const placeholder = placeholders[depth] || "New Task";
 
-  // Sinkronisasi expanded dengan item.isExpanded
   if (item.isExpanded !== expanded) {
     setExpanded(item.isExpanded !== false);
   }
@@ -136,7 +135,7 @@ export default function Row({
           />
         );
 
-      default: // text
+      default:
         return (
           <input
             value={value}
@@ -167,7 +166,6 @@ export default function Row({
     setIsEditing(false);
     const newName = tempName.trim();
     if (newName !== "" && newName !== item.item) {
-      console.log('🟢 Row handleEditSave - item.id:', item.id, 'newName:', newName);
       onUpdate(item.id, 'item', newName);
     }
   };
@@ -184,33 +182,25 @@ export default function Row({
   const handleAddSubItemClick = (e) => {
     e.stopPropagation();
     if (onAddSubItem) {
-      // Cek apakah sudah mencapai level 4
       if (depth >= 3) {
         alert('⚠️ Maximum 4 levels reached! Tidak bisa menambah sub item lagi.');
         return;
       }
-      console.log('🔵 Row + button clicked for item.id:', item.id, 'depth:', depth);
       onAddSubItem(item.id);
     }
   };
 
   // ============================================================
-  // HANDLE DELETE ITEM (dengan proteksi)
+  // HANDLE DELETE ITEM - TANPA PROTEKSI
   // ============================================================
   const handleDelete = () => {
-    if (isDefaultGroup) {
-      alert('⚠️ Item di group default tidak bisa dihapus!');
-      return;
-    }
     if (confirm(`Hapus item "${item.item || 'untitled'}"?`)) {
       onDelete(item.id);
     }
   };
 
   const paddingLeft = depth * indentSize + 8;
-
-  // Warna border untuk default group
-  const defaultGroupBorderColor = isDefaultGroup ? '#4CAF50' : groupColor;
+  const defaultGroupBorderColor = groupColor;
 
   const itemCellStyle = {
     display: 'table-cell',
@@ -264,20 +254,7 @@ export default function Row({
             checked={isSelected}
             onChange={handleToggleSelect}
             style={{ cursor: "pointer", width: 16, height: 16, margin: 0 }}
-            disabled={isDefaultGroup}
           />
-          {isDefaultGroup && (
-            <span 
-              style={{ 
-                fontSize: '10px', 
-                color: '#4CAF50', 
-                display: 'block',
-                marginTop: '2px',
-              }}
-            >
-              🔒
-            </span>
-          )}
         </td>
 
         {/* ITEM CELL */}
@@ -293,7 +270,6 @@ export default function Row({
                 style={{
                   ...itemCellStyle,
                   borderRight: isLast ? "none" : "2px solid var(--border-color)",
-                  borderLeft: isDefaultGroup ? `2px solid #4CAF50` : 'none',
                 }}
               >
                 <div style={contentWrapperStyle}>
@@ -374,10 +350,8 @@ export default function Row({
                         textOverflow: 'ellipsis',
                         padding: '0 4px',
                         fontWeight: depth === 0 ? 600 : 400,
-                        color: isDefaultGroup ? '#2E7D32' : (depth === 0 ? 'var(--text-primary)' : 'var(--text-secondary)'),
+                        color: depth === 0 ? 'var(--text-primary)' : 'var(--text-secondary)',
                         fontSize: '13px',
-                        borderLeft: isDefaultGroup ? '2px solid #4CAF50' : 'none',
-                        paddingLeft: isDefaultGroup ? '8px' : '4px',
                       }}
                       onClick={handleStartEdit}
                       onMouseEnter={(e) => {
@@ -387,19 +361,9 @@ export default function Row({
                       onMouseLeave={(e) => {
                         e.currentTarget.style.background = 'transparent';
                       }}
-                      title={isDefaultGroup ? '🔒 Item di group default' : 'Click to edit'}
+                      title="Click to edit"
                     >
                       {item.item || placeholder}
-                      {isDefaultGroup && (
-                        <span style={{ 
-                          fontSize: '10px', 
-                          color: '#4CAF50', 
-                          marginLeft: '6px',
-                          fontWeight: 'normal',
-                        }}>
-                          ⭐
-                        </span>
-                      )}
                     </span>
                   )}
 
@@ -440,36 +404,31 @@ export default function Row({
                     </button>
                   )}
 
-                  {/* TOMBOL DELETE ITEM */}
+                  {/* TOMBOL DELETE ITEM - TANPA PROTEKSI */}
                   <button
                     onClick={handleDelete}
                     className="btn-delete-item"
                     style={{
                       background: 'none',
                       border: 'none',
-                      cursor: isDefaultGroup ? 'not-allowed' : 'pointer',
-                      color: isDefaultGroup ? '#ccc' : '#f44336',
+                      cursor: 'pointer',
+                      color: '#f44336',
                       fontSize: '14px',
                       padding: '0 4px',
-                      opacity: isDefaultGroup ? 0.3 : 0,
+                      opacity: 0,
                       transition: 'opacity 0.2s',
                       flexShrink: 0,
                       borderRadius: '4px',
                     }}
                     onMouseEnter={(e) => {
-                      if (!isDefaultGroup) {
-                        e.currentTarget.style.opacity = 1;
-                        e.currentTarget.style.background = '#ffebee';
-                      }
+                      e.currentTarget.style.opacity = 1;
+                      e.currentTarget.style.background = '#ffebee';
                     }}
                     onMouseLeave={(e) => {
-                      if (!isDefaultGroup) {
-                        e.currentTarget.style.opacity = 0;
-                        e.currentTarget.style.background = 'transparent';
-                      }
+                      e.currentTarget.style.opacity = 0;
+                      e.currentTarget.style.background = 'transparent';
                     }}
-                    title={isDefaultGroup ? '🔒 Item di group default tidak bisa dihapus' : 'Delete item'}
-                    disabled={isDefaultGroup}
+                    title="Delete item"
                   >
                     ✕
                   </button>
