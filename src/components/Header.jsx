@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 
 export default function Header({ isDefaultOnly = false }) {
-  // State untuk menyimpan nama custom (hanya jika user sudah pernah rename)
+  // State untuk menyimpan nama custom
   const [customName, setCustomName] = useState(() => {
     return localStorage.getItem("boardName") || "";
   });
@@ -18,18 +18,22 @@ export default function Header({ isDefaultOnly = false }) {
 
   // ============================================================
   // LOGIKA UTAMA:
-  // - Jika user BELUM pernah rename → tampilkan "BOARD NAME"
-  // - Jika user SUDAH pernah rename → tampilkan customName
-  // - isDefaultOnly TIDAK mempengaruhi tampilan!
+  // - Jika isDefaultOnly = true → tampilkan "BOARD NAME"
+  // - Jika isDefaultOnly = false → tampilkan customName (jika ada)
   // ============================================================
   const hasCustomName = customName && customName.trim() !== "";
   const hasCustomDesc = customDesc && customDesc.trim() !== "";
 
-  const displayName = hasCustomName ? customName : "BOARD NAME";
-  const displayDesc = hasCustomDesc ? customDesc : "add a description";
+  // 🔥 INI YANG PALING PENTING!
+  const displayName = isDefaultOnly ? "BOARD NAME" : (hasCustomName ? customName : "BOARD NAME");
+  const displayDesc = isDefaultOnly ? "add a description" : (hasCustomDesc ? customDesc : "add a description");
+
+  // Debug: log untuk memastikan props diterima
+  console.log("🔵 Header props - isDefaultOnly:", isDefaultOnly);
+  console.log("🔵 Header - displayName:", displayName);
 
   // ============================================================
-  // Simpan customName ke localStorage
+  // Simpan ke localStorage
   // ============================================================
   useEffect(() => {
     if (customName) {
