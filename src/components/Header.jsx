@@ -3,48 +3,55 @@
 import { useState, useEffect } from "react";
 
 export default function Header({ isDefaultOnly = false }) {
-  const [boardName, setBoardName] = useState(() => {
-    return localStorage.getItem("boardName") || "BOARD NAME";
+  // State untuk menyimpan nama custom (yang di-rename user)
+  const [customName, setCustomName] = useState(() => {
+    return localStorage.getItem("boardName") || "";
   });
-  const [description, setDescription] = useState(() => {
-    return localStorage.getItem("boardDescription") || "add a description";
+  const [customDesc, setCustomDesc] = useState(() => {
+    return localStorage.getItem("boardDescription") || "";
   });
+
   const [isEditingName, setIsEditingName] = useState(false);
   const [isEditingDesc, setIsEditingDesc] = useState(false);
-  const [tempName, setTempName] = useState(boardName);
-  const [tempDesc, setTempDesc] = useState(description);
-
-  // Cek apakah user sudah pernah rename board name
-  const hasCustomName = localStorage.getItem("boardName") !== null && localStorage.getItem("boardName") !== "BOARD NAME";
-  const hasCustomDesc = localStorage.getItem("boardDescription") !== null && localStorage.getItem("boardDescription") !== "add a description";
+  const [tempName, setTempName] = useState("");
+  const [tempDesc, setTempDesc] = useState("");
 
   // Tentukan nama yang ditampilkan:
-  // - Jika hanya default group DAN belum pernah rename: tampilkan "BOARD NAME"
-  // - Jika sudah pernah rename: tampilkan nama custom
-  // - Jika ada group lain: tampilkan nama custom
-  const displayName = (isDefaultOnly && !hasCustomName) ? "BOARD NAME" : boardName;
-  const displayDesc = (isDefaultOnly && !hasCustomDesc) ? "add a description" : description;
+  // - Jika hanya default group: tampilkan "BOARD NAME"
+  // - Jika ada group lain: tampilkan customName (jika ada) atau "BOARD NAME"
+  const displayName = isDefaultOnly ? "BOARD NAME" : (customName || "BOARD NAME");
+  const displayDesc = isDefaultOnly ? "add a description" : (customDesc || "add a description");
+
+  // Simpan customName ke localStorage setiap berubah
+  useEffect(() => {
+    if (customName) {
+      localStorage.setItem("boardName", customName);
+    } else {
+      localStorage.removeItem("boardName");
+    }
+  }, [customName]);
 
   useEffect(() => {
-    localStorage.setItem("boardName", boardName);
-  }, [boardName]);
-
-  useEffect(() => {
-    localStorage.setItem("boardDescription", description);
-  }, [description]);
+    if (customDesc) {
+      localStorage.setItem("boardDescription", customDesc);
+    } else {
+      localStorage.removeItem("boardDescription");
+    }
+  }, [customDesc]);
 
   const handleNameClick = () => {
     setIsEditingName(true);
-    setTempName(boardName);
+    // Saat edit, tampilkan customName (bukan displayName)
+    setTempName(customName || "BOARD NAME");
   };
 
   const handleNameSave = () => {
     setIsEditingName(false);
     const newName = tempName.trim();
-    if (newName) {
-      setBoardName(newName);
+    if (newName && newName !== "BOARD NAME") {
+      setCustomName(newName);
     } else {
-      setBoardName("BOARD NAME");
+      setCustomName("");
     }
   };
 
@@ -53,22 +60,22 @@ export default function Header({ isDefaultOnly = false }) {
       handleNameSave();
     } else if (e.key === "Escape") {
       setIsEditingName(false);
-      setTempName(boardName);
+      setTempName(customName || "BOARD NAME");
     }
   };
 
   const handleDescClick = () => {
     setIsEditingDesc(true);
-    setTempDesc(description);
+    setTempDesc(customDesc || "add a description");
   };
 
   const handleDescSave = () => {
     setIsEditingDesc(false);
     const newDesc = tempDesc.trim();
-    if (newDesc) {
-      setDescription(newDesc);
+    if (newDesc && newDesc !== "add a description") {
+      setCustomDesc(newDesc);
     } else {
-      setDescription("add a description");
+      setCustomDesc("");
     }
   };
 
@@ -77,7 +84,7 @@ export default function Header({ isDefaultOnly = false }) {
       handleDescSave();
     } else if (e.key === "Escape") {
       setIsEditingDesc(false);
-      setTempDesc(description);
+      setTempDesc(customDesc || "add a description");
     }
   };
 
