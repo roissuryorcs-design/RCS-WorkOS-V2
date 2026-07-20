@@ -190,12 +190,6 @@ export default function Row({
     }
   };
 
-  const handleDelete = () => {
-    if (confirm(`Hapus item "${item.item || 'untitled'}"?`)) {
-      onDelete(item.id);
-    }
-  };
-
   const paddingLeft = depth * indentSize + 8;
   const defaultGroupBorderColor = groupColor;
 
@@ -396,33 +390,9 @@ export default function Row({
                     </button>
                   )}
 
-                  <button
-                    onClick={handleDelete}
-                    className="btn-delete-item"
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      color: '#f44336',
-                      fontSize: '14px',
-                      padding: '0 4px',
-                      opacity: 0,
-                      transition: 'opacity 0.2s',
-                      flexShrink: 0,
-                      borderRadius: '4px',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.opacity = 1;
-                      e.currentTarget.style.background = '#ffebee';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.opacity = 0;
-                      e.currentTarget.style.background = 'transparent';
-                    }}
-                    title="Delete item"
-                  >
-                    ✕
-                  </button>
+                  {/* ============================================================
+                      TOMBOL ✕ DIHAPUS DARI SINI!
+                      ============================================================ */}
                 </div>
               </td>
             );
