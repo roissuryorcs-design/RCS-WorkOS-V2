@@ -228,21 +228,28 @@ function AppContent() {
   };
 
   // ============================================================
-  // UPDATE ITEM - RECURSIVE
+  // UPDATE ITEM - RECURSIVE (CARI DI SEMUA LEVEL)
   // ============================================================
   const updateItemRecursive = (items, id, field, value) => {
+    console.log('🔵 updateItemRecursive - searching for id:', id, 'field:', field, 'value:', value);
+    
     return items.map((it) => {
+      // Cek apakah item ini yang dicari
       if (it.id === id) {
+        console.log('🔵 Found item to update:', it);
         return { ...it, [field]: value };
       }
+      // Jika item ini punya children, cari di dalamnya
       if (it.children && it.children.length > 0) {
-        return { ...it, children: updateItemRecursive(it.children, id, field, value) };
+        const updatedChildren = updateItemRecursive(it.children, id, field, value);
+        return { ...it, children: updatedChildren };
       }
       return it;
     });
   };
 
   const updateItem = (id, field, value) => {
+    console.log('🟢 updateItem called with:', { id, field, value });
     const newItems = updateItemRecursive(items, id, field, value);
     saveHistory(newItems);
   };
@@ -272,9 +279,11 @@ function AppContent() {
   };
 
   // ============================================================
-  // ADD SUB ITEM - TANPA BATASAN GLOBAL (HANYA PER PARENT)
+  // ADD SUB ITEM
   // ============================================================
   const addSubItem = (parentId, newTitle = null) => {
+    console.log('🔵 addSubItem called with:', { parentId, newTitle });
+    
     const parent = findItemById(items, parentId);
     if (!parent) {
       console.warn('Parent not found for id:', parentId);
@@ -296,6 +305,7 @@ function AppContent() {
     };
 
     const currentDepth = getDepthForParent(items, parentId, 0);
+    console.log('🔵 Current depth for parent:', currentDepth);
 
     // Maksimal 4 level per parent (0,1,2,3)
     if (currentDepth >= 3) {
@@ -313,6 +323,7 @@ function AppContent() {
     };
 
     const finalTitle = newTitle || getLevelName(currentDepth + 1);
+    console.log('🔵 Final title:', finalTitle);
 
     const newItem = {
       id: Date.now(),
