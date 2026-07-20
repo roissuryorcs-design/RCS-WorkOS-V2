@@ -30,7 +30,7 @@
 }
 
 .dark .row-level-2, .dark .row-level-3, .dark .row-level-4 {
-  background-color: rgba(255,  ﻿255, 255, 0.02);
+  background-color: rgba(255, 255, 255, 0.02);
 }
 
 .btn-arrow-hover {
@@ -465,52 +465,72 @@ tr:hover .btn-delete-item:not(:disabled) {
 }
 
 /* ============================================================
-   DATE INPUT - PERBAIKAN IKON CALENDAR DI DARK MODE (1 KALI)
+   DATE INPUT - PERBAIKAN IKON CALENDAR DI DARK MODE (VERSI PASTI)
    ============================================================ */
 
-/* Color-scheme untuk dark mode */
-.date-cell-input {
+/* Pastikan ikon calendar muncul di dark mode */
+input[type="date"] {
     color-scheme: dark;
 }
 
-/* Filter untuk Webkit (Chrome, Safari, Edge) */
+/* Webkit (Chrome, Safari, Edge) - PAKSA MUNCUL + BACKGROUND PUTIH */
+input[type="date"]::-webkit-calendar-picker-indicator {
+    display: block !important;
+    opacity: 1 !important;
+    background-color: white !important;
+    padding: 4px !important;
+    border-radius: 4px !important;
+    cursor: pointer !important;
+    filter: invert(0) !important;
+    width: 16px !important;
+    height: 16px !important;
+}
+
+/* Dark mode - background ikon putih tetap terlihat */
+.dark input[type="date"]::-webkit-calendar-picker-indicator {
+    background-color: white !important;
+    filter: invert(0) !important;
+    opacity: 1 !important;
+}
+
+/* Light mode - background ikon abu-abu terang */
+:root:not(.dark) input[type="date"]::-webkit-calendar-picker-indicator {
+    background-color: #e0e0e0 !important;
+    filter: invert(0) !important;
+    opacity: 1 !important;
+}
+
+/* Firefox */
+input[type="date"]::-moz-calendar-picker-indicator {
+    display: block !important;
+    opacity: 1 !important;
+    background-color: white !important;
+    padding: 4px !important;
+    border-radius: 4px !important;
+    cursor: pointer !important;
+    filter: invert(0) !important;
+}
+
+.dark input[type="date"]::-moz-calendar-picker-indicator {
+    background-color: white !important;
+    filter: invert(0) !important;
+    opacity: 1 !important;
+}
+
+/* Untuk date-cell-input class (DateCell komponen) */
 .date-cell-input::-webkit-calendar-picker-indicator {
-    filter: invert(1) brightness(1.5);
-    cursor: pointer;
-    opacity: 0.8;
-    padding: 2px;
+    display: block !important;
+    opacity: 1 !important;
+    background-color: white !important;
+    padding: 4px !important;
+    border-radius: 4px !important;
+    cursor: pointer !important;
+    width: 16px !important;
+    height: 16px !important;
 }
 
-.date-cell-input::-webkit-calendar-picker-indicator:hover {
-    opacity: 1;
-    filter: invert(1) brightness(2);
-}
-
-/* Untuk Firefox */
-.date-cell-input::-moz-calendar-picker-indicator {
-    filter: invert(1) brightness(1.5);
-    cursor: pointer;
-    opacity: 0.8;
-}
-
-/* LIGHT MODE - ikon tetap terlihat */
-:root:not(.dark) .date-cell-input::-webkit-calendar-picker-indicator {
-    filter: invert(0) brightness(0.5);
-    opacity: 0.6;
-}
-
-:root:not(.dark) .date-cell-input::-moz-calendar-picker-indicator {
-    filter: invert(0) brightness(0.5);
-    opacity: 0.6;
-}
-
-/* DARK MODE - ikon putih terang */
 .dark .date-cell-input::-webkit-calendar-picker-indicator {
-    filter: invert(1) brightness(1.5);
-    opacity: 0.9;
-}
-
-.dark .date-cell-input::-moz-calendar-picker-indicator {
-    filter: invert(1) brightness(1.5);
-    opacity: 0.9;
+    background-color: white !important;
+    filter: invert(0) !important;
+    opacity: 1 !important;
 }
