@@ -453,7 +453,9 @@ export default function BoardTable({
                                     visibleColumns={safeColumns}
                                     isSelected={selectedItems.includes(item.id)}
                                     onToggleSelect={toggleSelectItem}
-                                    onUpdate={handleUpdateItem}
+                                    onUpdate={(field, value) => {
+    console.log('🟢 BoardTable onUpdate - item.id:', item.id, 'field:', field, 'value:', value);
+    onUpdateItem(item.id, field, value);
                                     onDelete={handleDeleteItem}
                                     onOpenStatusManager={onOpenStatusManager}
                                     onAddSubItem={handleAddSubItem}
