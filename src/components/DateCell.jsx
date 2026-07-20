@@ -22,16 +22,12 @@ export default function DateCell({ date, onChange, placeholder = "dd/mm/ttt" }) 
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleInputChange = (e) => {
-    const value = e.target.value;
-    setInputValue(value);
-    onChange(value);
-  };
-
   const handleDateSelect = (e) => {
     const value = e.target.value;
     setInputValue(value);
-    onChange(value);
+    if (onChange) {
+      onChange(value);
+    }
     setIsOpen(false);
   };
 
@@ -52,12 +48,13 @@ export default function DateCell({ date, onChange, placeholder = "dd/mm/ttt" }) 
         style={{
           display: "flex",
           alignItems: "center",
-          gap: "4px",
+          gap: "6px",
           cursor: "pointer",
-          padding: "2px 4px",
+          padding: "4px 6px",
           borderRadius: "4px",
           transition: "background 0.15s",
           width: "100%",
+          minHeight: "32px",
         }}
         onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-hover)")}
         onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
@@ -66,15 +63,7 @@ export default function DateCell({ date, onChange, placeholder = "dd/mm/ttt" }) 
           setTimeout(() => inputRef.current?.showPicker?.(), 100);
         }}
       >
-        <span
-          style={{
-            flex: 1,
-            fontSize: 13,
-            color: date ? "var(--text-primary)" : "var(--text-muted)",
-          }}
-        >
-          {date ? formatDisplayDate(date) : placeholder}
-        </span>
+        {/* ICON CALENDAR - WARNA TERANG UNTUK DARK MODE */}
         <svg
           width="16"
           height="16"
@@ -87,7 +76,7 @@ export default function DateCell({ date, onChange, placeholder = "dd/mm/ttt" }) 
           style={{
             flexShrink: 0,
             color: "var(--text-secondary)",
-            opacity: 0.7,
+            opacity: 0.8,
           }}
         >
           <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
@@ -95,6 +84,16 @@ export default function DateCell({ date, onChange, placeholder = "dd/mm/ttt" }) 
           <line x1="8" y1="2" x2="8" y2="6" />
           <line x1="3" y1="10" x2="21" y2="10" />
         </svg>
+
+        <span
+          style={{
+            flex: 1,
+            fontSize: 13,
+            color: date ? "var(--text-primary)" : "var(--text-muted)",
+          }}
+        >
+          {date ? formatDisplayDate(date) : placeholder}
+        </span>
       </div>
 
       {isOpen && (
@@ -108,13 +107,14 @@ export default function DateCell({ date, onChange, placeholder = "dd/mm/ttt" }) 
             top: "100%",
             left: 0,
             zIndex: 100,
-            padding: "4px",
+            padding: "6px",
             border: "1px solid var(--border-color)",
-            borderRadius: "4px",
+            borderRadius: "6px",
             background: "var(--bg-modal)",
             color: "var(--text-primary)",
             marginTop: "4px",
             width: "200px",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
           }}
         />
       )}
