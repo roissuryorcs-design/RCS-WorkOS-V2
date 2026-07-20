@@ -253,12 +253,20 @@ export default function BoardTable({
   
   const totalWidth = safeColumns.reduce((sum, col) => sum + col.width, 0) + CHECKBOX_WIDTH + ADD_COLUMN_WIDTH;
 
-  const onlyDefaultGroup = groups.length === 1 && groups[0] === defaultGroupName;
-
   if (groups.length === 0) {
     setGroups([defaultGroupName]);
     return null;
   }
+
+  // ============================================================
+  // TAMPILAN GROUP TITLE: "Group Title" (bukan "Default")
+  // ============================================================
+  const getDisplayTitle = (groupName) => {
+    if (groupName === defaultGroupName) {
+      return "Group Title";
+    }
+    return groupName;
+  };
 
   return (
     <div className="board-table-wrapper">
@@ -276,14 +284,9 @@ export default function BoardTable({
         </div>
       )}
 
-      {onlyDefaultGroup && (
-        <div className="info-default-groups">
-          <p>
-            💡 <span className="badge-default">⭐ Default</span> group akan otomatis muncul 
-            jika tidak ada group lain. Group default bisa dihapus, tapi akan muncul lagi!
-          </p>
-        </div>
-      )}
+      {/* ============================================================
+          INFO DEFAULT GROUP - DIHAPUS!
+          ============================================================ */}
 
       <div className="board-scroll-container">
         <div className="board-scroll-content">
@@ -292,8 +295,7 @@ export default function BoardTable({
             const isCollapsed = collapsed[groupName] || false;
             const isDefault = groupName === defaultGroupName;
             const groupColor = groupColors[groupName] || (isDefault ? DEFAULT_GROUP.color || '#4CAF50' : "#3b82f6");
-
-            const displayTitle = isDefault ? "Group Title" : groupName;
+            const displayTitle = getDisplayTitle(groupName);
 
             return (
               <div 
@@ -506,9 +508,7 @@ export default function BoardTable({
                           <table className="board-table" style={{ width: totalWidth }}>
                             <thead>
                               <tr className="table-header-row">
-                                {/* ============================================================
-                                    CHECKBOX HEADER - TANPA TOMBOL ⋮
-                                    ============================================================ */}
+                                {/* CHECKBOX HEADER */}
                                 <th 
                                   className="checkbox-header" 
                                   style={{ 
@@ -545,9 +545,7 @@ export default function BoardTable({
                                   />
                                 </th>
 
-                                {/* ============================================================
-                                    TABEL HEADER - DENGAN ⋮ DI SEBELAH KIRI (CENTER)
-                                    ============================================================ */}
+                                {/* TABEL HEADER - DENGAN ⋮ DI SEBELAH KIRI (CENTER) */}
                                 {safeColumns.map((col, idx) => {
                                   const isItem = col.id === "item";
                                   const isLast = idx === safeColumns.length - 1;
