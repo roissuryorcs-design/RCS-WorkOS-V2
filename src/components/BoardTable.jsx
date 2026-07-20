@@ -83,23 +83,13 @@ export default function BoardTable({
     }
   };
 
-  // ============================================================
-  // FUNGSI TAMBAH SUB ITEM
-  // ============================================================
   const handleAddSubItem = (parentId) => {
-    if (!onAddSubItem) {
-      console.warn('onAddSubItem is not defined');
-      return;
-    }
-
-    console.log('🔵 handleAddSubItem called with parentId:', parentId);
-
+    if (!onAddSubItem) return;
+    
     const findParent = (items, id) => {
       for (const item of items) {
-        if (item.id === id) {
-          return item;
-        }
-        if (item.children && item.children.length > 0) {
+        if (item.id === id) return item;
+        if (item.children) {
           const found = findParent(item.children, id);
           if (found) return found;
         }
@@ -108,33 +98,24 @@ export default function BoardTable({
     };
 
     const parent = findParent(items, parentId);
-    if (!parent) {
-      console.warn('Parent not found for id:', parentId);
-      return;
-    }
+    if (!parent) return;
 
-    const findDepthInTree = (items, id, currentDepth = 0) => {
+    const getDepth = (items, id, currentDepth = 0) => {
       for (const item of items) {
-        if (item.id === id) {
-          return currentDepth;
-        }
-        if (item.children && item.children.length > 0) {
-          const found = findDepthInTree(item.children, id, currentDepth + 1);
+        if (item.id === id) return currentDepth;
+        if (item.children) {
+          const found = getDepth(item.children, id, currentDepth + 1);
           if (found !== -1) return found;
         }
       }
       return -1;
     };
 
-    const currentDepth = findDepthInTree(items, parentId, 0);
-    console.log('🔵 Current depth for parent:', currentDepth);
-
+    const currentDepth = getDepth(items, parentId, 0);
     if (currentDepth >= 3) {
-      alert('Maximum 4 levels reached for this item!');
+      alert('Maximum 4 levels reached!');
       return;
     }
-
-    const newDepth = currentDepth + 1;
 
     const getLevelName = (depth) => {
       if (depth <= 0) return "New Task";
@@ -144,9 +125,7 @@ export default function BoardTable({
       return "New Task";
     };
 
-    const newTitle = getLevelName(newDepth);
-    console.log('🔵 New title:', newTitle);
-
+    const newTitle = getLevelName(currentDepth + 1);
     onAddSubItem(parentId, newTitle);
   };
 
@@ -433,8 +412,13 @@ export default function BoardTable({
                             <tbody>
                               {tasks.map((item) => {
                                 // ============================================================
-                                // PERBAIKAN: Props Row yang BENAR
+                                // PERBAIKAN: onUpdate MENERIMA ID DARI PARAMETER
                                 // ============================================================
+                                const handleUpdate = (id, field, value) => {
+                                  console.log('🟢 BoardTable handleUpdate - id:', id, 'field:', field, 'value:', value);
+                                  onUpdateItem(id, field, value);
+                                };
+
                                 return (
                                   <Row
                                     key={item.id}
@@ -443,10 +427,7 @@ export default function BoardTable({
                                     visibleColumns={safeColumns}
                                     isSelected={selectedItems.includes(item.id)}
                                     onToggleSelect={toggleSelectItem}
-                                    onUpdate={(field, value) => {
-                                      console.log('🟢 BoardTable onUpdate - item.id:', item.id, 'field:', field, 'value:', value);
-                                      onUpdateItem(item.id, field, value);
-                                    }}
+                                    onUpdate={handleUpdate}
                                     onDelete={() => {
                                       console.log('🟢 BoardTable onDelete - item.id:', item.id);
                                       onDeleteItem(item.id);
