@@ -1,35 +1,38 @@
 /* src/css/board.css */
 
+/* ============================================================
+   EXISTING STYLES (PERTAHANKAN SEMUA YANG SUDAH ADA)
+   ============================================================ */
+
 /* Indentasi Level */
 .row-level-1 .row-item-cell-content {
   padding-left: 8px;
 }
 
 .row-level-2 .row-item-cell-content {
-  padding-left: 32px; /* Indentasi level 2 */
-  border-left: 2px solid rgba(59, 130, 246, 0.2); /* Garis bantu tipis */
+  padding-left: 32px;
+  border-left: 2px solid rgba(59, 130, 246, 0.2);
 }
 
 .row-level-3 .row-item-cell-content {
-  padding-left: 56px; /* Indentasi level 3 */
+  padding-left: 56px;
   border-left: 2px solid rgba(59, 130, 246, 0.4);
 }
 
 .row-level-4 .row-item-cell-content {
-  padding-left: 80px; /* Indentasi level 4 */
+  padding-left: 80px;
   border-left: 2px solid rgba(59, 130, 246, 0.6);
 }
 
-/* Styling Baris Sub-item agar terlihat sedikit berbeda */
+/* Styling Baris Sub-item */
 .row-level-2, .row-level-3, .row-level-4 {
-  background-color: rgba(0, 0, 0, 0.02); /* Sedikit lebih gelap/terang untuk membedakan */
+  background-color: rgba(0, 0, 0, 0.02);
 }
 
 .dark .row-level-2, .dark .row-level-3, .dark .row-level-4 {
   background-color: rgba(255, 255, 255, 0.02);
 }
 
-/* Menyesuaikan tombol expand (panah) */
 .btn-arrow-hover {
   transition: transform 0.2s ease;
   width: 24px;
@@ -40,20 +43,423 @@
 }
 
 .btn-arrow-hover.collapsed {
-  transform: rotate(-90deg); /* Putar panah jika tertutup */
+  transform: rotate(-90deg);
 }
 
-/* Proteksi visual untuk Group Default */
 .group-wrapper.is-default .group-menu-btn {
-  display: none; /* Sembunyikan tombol hapus jika grup default */
+  display: none;
 }
 
-/* Garis vertikal penghubung (Optional: agar terlihat seperti tree) */
 .row-item-cell-content {
   position: relative;
 }
 
-/* Hover effect agar baris lebih jelas */
 .board-table tr:hover {
   background-color: rgba(59, 130, 246, 0.05) !important;
+}
+
+/* ============================================================
+   TAMBAHAN: DEFAULT GROUP STYLING
+   ============================================================ */
+
+/* Badge Default Group */
+.badge-default {
+  background: #4CAF50;
+  color: white;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 600;
+  margin-left: 8px;
+  display: inline-block;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.badge-protected {
+  background: #ff9800;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 600;
+  margin-left: 4px;
+  display: inline-block;
+}
+
+/* Group Header dengan default indicator */
+.group-header.is-default {
+  border-bottom-color: #4CAF50 !important;
+}
+
+.group-header.is-default .group-title {
+  color: #2E7D32 !important;
+}
+
+/* Info Default Groups */
+.info-default-groups {
+  background: #f0f7f0;
+  padding: 12px 16px;
+  border-radius: 6px;
+  border-left: 4px solid #4CAF50;
+  margin: 0 0 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.info-default-groups p {
+  margin: 0;
+  color: #2E7D32;
+  font-size: 13px;
+  flex: 1;
+}
+
+.info-default-groups .badge-default {
+  font-size: 10px;
+  margin: 0 4px;
+}
+
+/* ============================================================
+   GROUP POPUP MENU
+   ============================================================ */
+
+.group-popup {
+  position: absolute;
+  top: 48px;
+  left: 0;
+  background: var(--bg-primary, #fff);
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  padding: 6px 0;
+  z-index: 2000;
+  min-width: 180px;
+}
+
+.group-popup button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-primary, #333);
+  transition: background 0.15s;
+  text-align: left;
+}
+
+.group-popup button:hover:not(:disabled) {
+  background: var(--bg-hover, #f5f5f5);
+}
+
+.group-popup button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.group-popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1999;
+  background: transparent;
+}
+
+/* ============================================================
+   ADD GROUP CONTAINER
+   ============================================================ */
+
+.add-group-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 0;
+  margin-top: 8px;
+  border-top: 2px dashed var(--border-color, #e0e0e0);
+  flex-wrap: wrap;
+}
+
+.add-group-container button {
+  background: transparent;
+  border: 2px dashed var(--border-color, #ddd);
+  color: var(--text-secondary, #666);
+  cursor: pointer;
+  padding: 8px 20px;
+  border-radius: 6px;
+  font-size: 13px;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+
+.add-group-container button:hover {
+  border-color: #3b82f6;
+  color: #3b82f6;
+  background: rgba(59, 130, 246, 0.05);
+}
+
+.add-group-container .btn-reset-default {
+  border-color: #ff9800;
+  color: #ff9800;
+}
+
+.add-group-container .btn-reset-default:hover {
+  border-color: #f57c00;
+  color: #f57c00;
+  background: rgba(255, 152, 0, 0.05);
+}
+
+/* ============================================================
+   ROW ITEM DEFAULT GROUP STYLING
+   ============================================================ */
+
+/* Item di default group - hijau accent */
+.row-item-default .row-item-cell {
+  border-left: 3px solid #4CAF50 !important;
+}
+
+.row-item-default .item-text {
+  color: #1B5E20 !important;
+}
+
+.row-item-default .item-text .badge-default-small {
+  font-size: 9px;
+  color: #4CAF50;
+  margin-left: 6px;
+}
+
+/* Level badge */
+.level-badge {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 10px;
+  color: white;
+  flex-shrink: 0;
+  letter-spacing: 0.3px;
+}
+
+.level-badge.l1 { background: #4CAF50; }
+.level-badge.l2 { background: #2196F3; }
+.level-badge.l3 { background: #FF9800; }
+.level-badge.l4 { background: #9C27B0; }
+
+/* Hover effect untuk default group items */
+.board-table .row-default-item:hover {
+  background-color: rgba(76, 175, 80, 0.05) !important;
+}
+
+/* ============================================================
+   BUTTON REVEAL (Plus & Delete)
+   ============================================================ */
+
+.btn-plus-reveal {
+  opacity: 0;
+  transition: opacity 0.2s, background 0.2s;
+}
+
+tr:hover .btn-plus-reveal {
+  opacity: 1;
+}
+
+.btn-delete-item {
+  opacity: 0;
+  transition: opacity 0.2s, background 0.2s;
+}
+
+tr:hover .btn-delete-item:not(:disabled) {
+  opacity: 1;
+}
+
+.btn-delete-item:disabled {
+  cursor: not-allowed;
+  opacity: 0.3 !important;
+}
+
+/* ============================================================
+   SELECTED ITEMS BAR
+   ============================================================ */
+
+.selected-items-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: var(--bg-hover, #f5f5f5);
+  border-radius: 6px;
+  margin-bottom: 12px;
+  border: 1px solid var(--border-color, #e0e0e0);
+  flex-wrap: wrap;
+}
+
+.selected-items-bar .delete-selected-btn {
+  background: #f44336;
+  color: white;
+  border: none;
+  padding: 4px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.selected-items-bar .delete-selected-btn:hover {
+  background: #d32f2f;
+}
+
+.selected-items-bar .cancel-selected-btn {
+  background: transparent;
+  border: 1px solid var(--border-color, #ddd);
+  color: var(--text-secondary, #666);
+  padding: 4px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.selected-items-bar .cancel-selected-btn:hover {
+  background: var(--bg-hover, #f5f5f5);
+}
+
+/* ============================================================
+   EMPTY GROUP MESSAGE
+   ============================================================ */
+
+.empty-group-message {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  color: var(--text-muted, #999);
+  font-size: 13px;
+  background: var(--bg-secondary, #fafafa);
+  border: 2px dashed var(--border-color, #e0e0e0);
+  border-top: none;
+  border-radius: 0 0 4px 4px;
+}
+
+.empty-group-message button {
+  background: transparent;
+  border: none;
+  color: #3b82f6;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.empty-group-message button:hover {
+  background: rgba(59, 130, 246, 0.08);
+}
+
+/* ============================================================
+   RESPONSIVE & SCROLLING
+   ============================================================ */
+
+.board-scroll-container {
+  overflow: auto;
+  width: 100%;
+  padding-bottom: 8px;
+}
+
+.board-scroll-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: fit-content;
+}
+
+/* ============================================================
+   DARK MODE SUPPORT
+   ============================================================ */
+
+.dark .badge-default {
+  background: #388E3C;
+}
+
+.dark .badge-protected {
+  background: #E65100;
+}
+
+.dark .info-default-groups {
+  background: #1a2a1a;
+  border-left-color: #4CAF50;
+}
+
+.dark .info-default-groups p {
+  color: #81C784;
+}
+
+.dark .group-popup {
+  background: var(--bg-primary, #1e1e1e);
+  border-color: var(--border-color, #333);
+}
+
+.dark .group-popup button:hover:not(:disabled) {
+  background: var(--bg-hover, #2a2a2a);
+}
+
+.dark .add-group-container button {
+  border-color: var(--border-color, #333);
+  color: var(--text-secondary, #999);
+}
+
+.dark .add-group-container button:hover {
+  border-color: #3b82f6;
+  color: #3b82f6;
+}
+
+.dark .row-item-default .item-text {
+  color: #81C784 !important;
+}
+
+.dark .empty-group-message {
+  background: var(--bg-secondary, #1a1a1a);
+  border-color: var(--border-color, #333);
+}
+
+.dark .selected-items-bar {
+  background: var(--bg-hover, #2a2a2a);
+  border-color: var(--border-color, #333);
+}
+
+/* ============================================================
+   LEVEL INDICATOR STRIPES (Optional)
+   ============================================================ */
+
+.level-indicator {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+}
+
+.level-indicator.l1 { background: #4CAF50; }
+.level-indicator.l2 { background: #2196F3; }
+.level-indicator.l3 { background: #FF9800; }
+.level-indicator.l4 { background: #9C27B0; }
+
+/* ============================================================
+   ANIMATION
+   ============================================================ */
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.group-popup {
+  animation: fadeIn 0.15s ease;
+}
+
+.info-default-groups {
+  animation: fadeIn 0.3s ease;
 }
