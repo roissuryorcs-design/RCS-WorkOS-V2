@@ -82,7 +82,6 @@ export const getDefaultItems = () => {
 // FUNGSI UTAMA: Pastikan selalu ada 1 group
 // ============================================================
 export const ensureGroupExists = (groups) => {
-  // Jika tidak ada group sama sekali → buat default
   if (!groups || groups.length === 0) {
     return [DEFAULT_GROUP.title];
   }
@@ -91,12 +90,9 @@ export const ensureGroupExists = (groups) => {
 
 export const deleteGroupSafe = (groups, groupName) => {
   const newGroups = groups.filter(g => g !== groupName);
-  
-  // Jika setelah dihapus tidak ada group → restore default
   if (newGroups.length === 0) {
     return [DEFAULT_GROUP.title];
   }
-  
   return newGroups;
 };
 
