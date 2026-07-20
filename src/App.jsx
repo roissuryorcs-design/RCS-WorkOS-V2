@@ -202,6 +202,7 @@ function AppContent() {
 
   // ----- UNDO -----
   const saveHistory = (newItems) => {
+    console.log('🔵 saveHistory called with:', newItems);
     setHistory((prev) => [...prev, items]);
     setItems(newItems);
   };
@@ -214,13 +215,33 @@ function AppContent() {
   };
 
   // ============================================================
-  // CRUD ITEM - RECURSIVE
+  // FIND ITEM BY ID - RECURSIVE
   // ============================================================
+  const findItemById = (items, id) => {
+    for (const item of items) {
+      if (item.id === id) {
+        console.log('🔵 findItemById found:', item);
+        return item;
+      }
+      if (item.children && item.children.length > 0) {
+        const found = findItemById(item.children, id);
+        if (found) {
+          console.log('🔵 findItemById found in children:', found);
+          return found;
+        }
+      }
+    }
+    console.log('🔵 findItemById not found for id:', id);
+    return null;
+  };
 
-  // === UPDATE ITEM (RENAME) - MENCARI DI SEMUA LEVEL ===
+  // ============================================================
+  // UPDATE ITEM - RECURSIVE
+  // ============================================================
   const updateItemRecursive = (items, id, field, value) => {
     return items.map((it) => {
       if (it.id === id) {
+        console.log('🔵 updateItemRecursive updating:', it);
         return { ...it, [field]: value };
       }
       if (it.children && it.children.length > 0) {
@@ -231,12 +252,14 @@ function AppContent() {
   };
 
   const updateItem = (id, field, value) => {
-    console.log('🔵 updateItem called with:', { id, field, value });
+    console.log('🟢 updateItem called with:', { id, field, value });
     const newItems = updateItemRecursive(items, id, field, value);
     saveHistory(newItems);
   };
 
-  // === DELETE ITEM ===
+  // ============================================================
+  // DELETE ITEM - RECURSIVE
+  // ============================================================
   const deleteItemRecursive = (items, id) => {
     return items
       .filter((it) => it.id !== id)
@@ -258,36 +281,16 @@ function AppContent() {
     saveHistory(newItems);
   };
 
-// ============================================================
-// FIND ITEM BY ID - RECURSIVE
-// ============================================================
-const findItemById = (items, id) => {
-  for (const item of items) {
-    if (item.id === id) {
-      console.log('🔵 findItemById found:', item);
-      return item;
-    }
-    if (item.children && item.children.length > 0) {
-      const found = findItemById(item.children, id);
-      if (found) {
-        console.log('🔵 findItemById found in children:', found);
-        return found;
-      }
-    }
-  }
-  console.log('🔵 findItemById not found for id:', id);
-  return null;
-};
-
   // ============================================================
-  // ADD SUB ITEM - DENGAN EXPAND OTOMATIS
+  // ADD SUB ITEM - OTOMATIS EXPAND
   // ============================================================
   const addSubItem = (parentId, newTitle = null) => {
     console.log('🔵 addSubItem called with:', { parentId, newTitle });
+    console.log('🔵 Current items:', JSON.stringify(items, null, 2));
     
     const parent = findItemById(items, parentId);
     if (!parent) {
-      console.warn('Parent not found:', parentId);
+      console.warn('Parent not found for id:', parentId);
       return;
     }
 
@@ -303,20 +306,24 @@ const findItemById = (items, id) => {
     };
 
     const currentDepth = getDepth(parent);
+    console.log('🔵 Current depth:', currentDepth);
+    
     if (currentDepth >= 3) {
       alert('Maximum 4 levels reached!');
       return;
     }
 
-    // Fallback jika newTitle tidak diberikan
+    // Tentukan nama berdasarkan level
     const getLevelName = (depth) => {
       if (depth <= 0) return "New Task";
       if (depth === 1) return "Sub Item";
       if (depth === 2) return "Sub Sub Item";
-      return "Sub Sub Sub Item";
+      if (depth === 3) return "Sub Sub Sub Item";
+      return "New Task";
     };
 
     const finalTitle = newTitle || getLevelName(currentDepth + 1);
+    console.log('🔵 Final title:', finalTitle);
 
     const newItem = {
       id: Date.now(),
@@ -331,23 +338,31 @@ const findItemById = (items, id) => {
       isExpanded: false,
     };
 
+    console.log('🔵 New item:', newItem);
+
     const addChildRecursive = (items) => {
       return items.map((it) => {
         if (it.id === parentId) {
+          console.log('🔵 Found parent in map:', it);
           return {
             ...it,
             children: [...(it.children || []), newItem],
-            isExpanded: true,  // ← PASTIKAN PARENT EXPAND!
+            isExpanded: true,  // ← PASTIKAN EXPAND!
           };
         }
         if (it.children && it.children.length > 0) {
-          return { ...it, children: addChildRecursive(it.children) };
+          return {
+            ...it,
+            children: addChildRecursive(it.children)
+          };
         }
         return it;
       });
     };
 
     const newItems = addChildRecursive(items);
+    console.log('🔵 New items after add:', JSON.stringify(newItems, null, 2));
+    
     saveHistory(newItems);
   };
 
