@@ -463,3 +463,54 @@ tr:hover .btn-delete-item:not(:disabled) {
 .info-default-groups {
   animation: fadeIn 0.3s ease;
 }
+
+/* ============================================================
+   DATE INPUT - PERBAIKAN IKON CALENDAR DI DARK MODE
+   ============================================================ */
+
+/* Color-scheme untuk dark mode */
+.date-cell-input {
+    color-scheme: dark;
+}
+
+/* Filter untuk Webkit (Chrome, Safari, Edge) */
+.date-cell-input::-webkit-calendar-picker-indicator {
+    filter: invert(1) brightness(1.5);
+    cursor: pointer;
+    opacity: 0.8;
+    padding: 2px;
+}
+
+.date-cell-input::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+    filter: invert(1) brightness(2);
+}
+
+/* Untuk Firefox */
+.date-cell-input::-moz-calendar-picker-indicator {
+    filter: invert(1) brightness(1.5);
+    cursor: pointer;
+    opacity: 0.8;
+}
+
+/* LIGHT MODE - ikon tetap terlihat */
+:root:not(.dark) .date-cell-input::-webkit-calendar-picker-indicator {
+    filter: invert(0) brightness(0.5);
+    opacity: 0.6;
+}
+
+:root:not(.dark) .date-cell-input::-moz-calendar-picker-indicator {
+    filter: invert(0) brightness(0.5);
+    opacity: 0.6;
+}
+
+/* DARK MODE - ikon putih terang */
+.dark .date-cell-input::-webkit-calendar-picker-indicator {
+    filter: invert(1) brightness(1.5);
+    opacity: 0.9;
+}
+
+.dark .date-cell-input::-moz-calendar-picker-indicator {
+    filter: invert(1) brightness(1.5);
+    opacity: 0.9;
+}
