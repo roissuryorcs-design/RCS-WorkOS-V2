@@ -84,7 +84,7 @@ export default function BoardTable({
   };
 
   // ============================================================
-  // FUNGSI TAMBAH SUB ITEM - UNTUK SEMUA LEVEL (RECURSIVE)
+  // FUNGSI TAMBAH SUB ITEM - CEK KEDALAMAN PER PARENT
   // ============================================================
   const handleAddSubItem = (parentId) => {
     if (!onAddSubItem) {
@@ -93,21 +93,16 @@ export default function BoardTable({
     }
 
     console.log('🔵 handleAddSubItem called with parentId:', parentId);
-    console.log('🔵 Current items:', JSON.stringify(items, null, 2));
 
-    // Cari parent item di semua level (recursive)
+    // Cari parent item di semua level
     const findParent = (items, id) => {
       for (const item of items) {
         if (item.id === id) {
-          console.log('🔵 Found parent at root:', item);
           return item;
         }
         if (item.children && item.children.length > 0) {
           const found = findParent(item.children, id);
-          if (found) {
-            console.log('🔵 Found parent in children:', found);
-            return found;
-          }
+          if (found) return found;
         }
       }
       return null;
@@ -119,35 +114,30 @@ export default function BoardTable({
       return;
     }
 
-    console.log('🔵 Parent found:', parent);
-    console.log('🔵 Parent children:', parent.children);
-
-    // Hitung kedalaman (depth)
-    const getDepth = (items, id, currentDepth = 0) => {
+    // Hitung kedalaman untuk PARENT ini (bukan seluruh board)
+    const findDepthInTree = (items, id, currentDepth = 0) => {
       for (const item of items) {
         if (item.id === id) {
-          console.log('🔵 Found depth:', currentDepth, 'for id:', id);
           return currentDepth;
         }
         if (item.children && item.children.length > 0) {
-          const found = getDepth(item.children, id, currentDepth + 1);
+          const found = findDepthInTree(item.children, id, currentDepth + 1);
           if (found !== -1) return found;
         }
       }
       return -1;
     };
 
-    const currentDepth = getDepth(items, parentId, 0);
-    console.log('🔵 Current depth:', currentDepth);
-    
-    const newDepth = currentDepth + 1;
-    console.log('🔵 New depth:', newDepth);
+    const currentDepth = findDepthInTree(items, parentId, 0);
+    console.log('🔵 Current depth for parent:', currentDepth);
 
-    // Maksimal 4 level
+    // Maksimal 4 level (0,1,2,3)
     if (currentDepth >= 3) {
-      alert('Maximum 4 levels reached!');
+      alert('Maximum 4 levels reached for this item!');
       return;
     }
+
+    const newDepth = currentDepth + 1;
 
     // Fungsi menentukan nama berdasarkan level
     const getLevelName = (depth) => {
@@ -161,7 +151,7 @@ export default function BoardTable({
     const newTitle = getLevelName(newDepth);
     console.log('🔵 New title:', newTitle);
 
-    // Panggil onAddSubItem dari App.jsx dengan parentId dan newTitle
+    // Panggil onAddSubItem dari App.jsx
     onAddSubItem(parentId, newTitle);
   };
 
@@ -448,12 +438,10 @@ export default function BoardTable({
                             <tbody>
                               {tasks.map((item) => {
                                 const handleUpdateItem = (field, value) => {
-                                  console.log('🟢 handleUpdateItem - item.id:', item.id, 'field:', field, 'value:', value);
                                   onUpdateItem(item.id, field, value);
                                 };
 
                                 const handleDeleteItem = () => {
-                                  console.log('🟢 handleDeleteItem - item.id:', item.id);
                                   onDeleteItem(item.id);
                                 };
 
