@@ -87,10 +87,9 @@ export default function BoardTable({
   const closePopup = () => setPopupGroup(null);
 
   // ============================================================
-  // RENAME GROUP: Default BOLEH diubah tapi ditolak oleh parent
+  // RENAME GROUP - TANPA PROTEKSI
   // ============================================================
   const handleRenameGroup = (oldName, newName) => {
-    // Serahkan ke parent (App.jsx) untuk validasi
     if (externalOnRenameGroup) {
       externalOnRenameGroup(oldName, newName);
     }
@@ -105,11 +104,9 @@ export default function BoardTable({
   };
 
   // ============================================================
-  // DELETE GROUP: Default BOLEH dihapus!
-  // Parent (App.jsx) akan restore jika semua group hilang
+  // DELETE GROUP - TANPA PROTEKSI
   // ============================================================
   const handleDeleteGroup = (groupName) => {
-    // Serahkan ke parent (App.jsx) untuk handle delete & auto-restore
     if (externalOnDeleteGroup) {
       externalOnDeleteGroup(groupName);
     }
@@ -158,13 +155,9 @@ export default function BoardTable({
   };
 
   // ============================================================
-  // ADD ITEM: Default group TIDAK BISA ditambah item
+  // ADD ITEM - TANPA PROTEKSI
   // ============================================================
   const handleAddItem = (groupName) => {
-    if (groupName === defaultGroupName) {
-      alert('⚠️ Tidak bisa menambah item ke group default!');
-      return;
-    }
     if (onAddItem) {
       onAddItem(groupName);
     }
@@ -260,7 +253,6 @@ export default function BoardTable({
   
   const totalWidth = safeColumns.reduce((sum, col) => sum + col.width, 0) + CHECKBOX_WIDTH + ADD_COLUMN_WIDTH;
 
-  // Cek apakah hanya ada default group
   const onlyDefaultGroup = groups.length === 1 && groups[0] === defaultGroupName;
 
   if (groups.length === 0) {
@@ -284,7 +276,6 @@ export default function BoardTable({
         </div>
       )}
 
-      {/* Info Default Group */}
       {onlyDefaultGroup && (
         <div className="info-default-groups">
           <p>
@@ -678,32 +669,25 @@ export default function BoardTable({
                               style={{
                                 border: 'none',
                                 background: 'transparent',
-                                color: isDefault ? '#9e9e9e' : '#3b82f6',
-                                cursor: isDefault ? 'not-allowed' : 'pointer',
+                                color: '#3b82f6',
+                                cursor: 'pointer',
                                 fontSize: 13,
                                 padding: '4px 0',
                                 textAlign: 'left',
                                 width: '100%',
                                 transition: 'background 0.15s',
-                                opacity: isDefault ? 0.5 : 1,
                               }}
                               onMouseEnter={(e) => {
-                                if (!isDefault) {
-                                  e.currentTarget.style.background = 'var(--bg-hover)';
-                                  e.currentTarget.style.paddingLeft = '8px';
-                                  e.currentTarget.style.borderRadius = '4px';
-                                }
+                                e.currentTarget.style.background = 'var(--bg-hover)';
+                                e.currentTarget.style.paddingLeft = '8px';
+                                e.currentTarget.style.borderRadius = '4px';
                               }}
                               onMouseLeave={(e) => {
-                                if (!isDefault) {
-                                  e.currentTarget.style.background = 'transparent';
-                                  e.currentTarget.style.paddingLeft = '0';
-                                }
+                                e.currentTarget.style.background = 'transparent';
+                                e.currentTarget.style.paddingLeft = '0';
                               }}
-                              title={isDefault ? 'Tidak bisa menambah item ke group default' : 'Add new item'}
-                              disabled={isDefault}
                             >
-                              + Add item {isDefault && '(disabled)'}
+                              + Add item
                             </button>
                           </div>
 
@@ -716,11 +700,7 @@ export default function BoardTable({
                         style={{ borderLeft: `4px solid ${groupColor}` }}
                       >
                         No items in this group.
-                        <button 
-                          onClick={() => handleAddItem(groupName)}
-                          disabled={isDefault}
-                          style={{ opacity: isDefault ? 0.5 : 1 }}
-                        >
+                        <button onClick={() => handleAddItem(groupName)}>
                           Add item
                         </button>
                       </div>
