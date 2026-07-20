@@ -1,0 +1,59 @@
+/* src/css/board.css */
+
+/* Indentasi Level */
+.row-level-1 .row-item-cell-content {
+  padding-left: 8px;
+}
+
+.row-level-2 .row-item-cell-content {
+  padding-left: 32px; /* Indentasi level 2 */
+  border-left: 2px solid rgba(59, 130, 246, 0.2); /* Garis bantu tipis */
+}
+
+.row-level-3 .row-item-cell-content {
+  padding-left: 56px; /* Indentasi level 3 */
+  border-left: 2px solid rgba(59, 130, 246, 0.4);
+}
+
+.row-level-4 .row-item-cell-content {
+  padding-left: 80px; /* Indentasi level 4 */
+  border-left: 2px solid rgba(59, 130, 246, 0.6);
+}
+
+/* Styling Baris Sub-item agar terlihat sedikit berbeda */
+.row-level-2, .row-level-3, .row-level-4 {
+  background-color: rgba(0, 0, 0, 0.02); /* Sedikit lebih gelap/terang untuk membedakan */
+}
+
+.dark .row-level-2, .dark .row-level-3, .dark .row-level-4 {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+/* Menyesuaikan tombol expand (panah) */
+.btn-arrow-hover {
+  transition: transform 0.2s ease;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-arrow-hover.collapsed {
+  transform: rotate(-90deg); /* Putar panah jika tertutup */
+}
+
+/* Proteksi visual untuk Group Default */
+.group-wrapper.is-default .group-menu-btn {
+  display: none; /* Sembunyikan tombol hapus jika grup default */
+}
+
+/* Garis vertikal penghubung (Optional: agar terlihat seperti tree) */
+.row-item-cell-content {
+  position: relative;
+}
+
+/* Hover effect agar baris lebih jelas */
+.board-table tr:hover {
+  background-color: rgba(59, 130, 246, 0.05) !important;
+}
