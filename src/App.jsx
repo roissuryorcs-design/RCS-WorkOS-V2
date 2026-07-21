@@ -29,9 +29,82 @@ function AppContent() {
   const { columns, addColumn, renameColumn, toggleColumn, deleteColumn, resetColumns, updateColumnStatuses, updateColumnStatusOrder } = useColumns();
 
   // ============================================================
+  // 🔥 INISIALISASI DATA DEFAULT
+  // ============================================================
+  const initializeDefaultData = () => {
+    // Cek apakah data sudah ada
+    const existingItems = localStorage.getItem("forelItems");
+    const existingTitle = localStorage.getItem("forelBoardTitle");
+    
+    // Jika tidak ada data sama sekali, buat default
+    if (!existingItems && !existingTitle) {
+      console.log("🔵 Initializing default data...");
+      
+      // Set default title
+      localStorage.setItem("forelBoardTitle", "BOARD TITLE");
+      localStorage.setItem("forelBoardSubtitle", "Sub Title / Description");
+      
+      // Set default items
+      const defaultItems = [
+        { 
+          id: 1, 
+          group: "Default Group", 
+          item: "Task 1", 
+          document: "DOC-001", 
+          people: "Assign to...", 
+          status: "Default", 
+          dueDate: "", 
+          rev: "R0",
+          children: [],
+          isExpanded: false,
+        },
+        { 
+          id: 2, 
+          group: "Default Group", 
+          item: "Task 2", 
+          document: "DOC-002", 
+          people: "Assign to...", 
+          status: "Default", 
+          dueDate: "", 
+          rev: "R0",
+          children: [],
+          isExpanded: false,
+        },
+        { 
+          id: 3, 
+          group: "Default Group", 
+          item: "Task 3", 
+          document: "DOC-003", 
+          people: "Assign to...", 
+          status: "Default", 
+          dueDate: "", 
+          rev: "R0",
+          children: [],
+          isExpanded: false,
+        },
+      ];
+      localStorage.setItem("forelItems", JSON.stringify(defaultItems));
+      
+      // Set default statuses
+      localStorage.setItem("forelStatuses", JSON.stringify({ Default: "#9ca3af" }));
+      
+      // Set default favorites
+      localStorage.setItem("forelFavorites", JSON.stringify(["Workspace", "Administration"]));
+      
+      // Set default group colors
+      localStorage.setItem("forelGroupColors", JSON.stringify({ "Default Group": "#3b82f6" }));
+      
+      console.log("✅ Default data initialized!");
+    }
+  };
+
+  // ============================================================
   // LOAD DATA
   // ============================================================
   useEffect(() => {
+    // 🔥 Panggil inisialisasi data
+    initializeDefaultData();
+
     const savedItems = localStorage.getItem("forelItems");
     const savedStatuses = localStorage.getItem("forelStatuses");
     const savedFavs = localStorage.getItem("forelFavorites");
@@ -48,12 +121,14 @@ function AppContent() {
       setBoardTitle(savedBoardTitle);
     } else {
       setBoardTitle("BOARD TITLE");
+      localStorage.setItem("forelBoardTitle", "BOARD TITLE");
     }
 
     if (savedBoardSubtitle && savedBoardSubtitle.trim() !== "") {
       setBoardSubtitle(savedBoardSubtitle);
     } else {
       setBoardSubtitle("Sub Title / Description");
+      localStorage.setItem("forelBoardSubtitle", "Sub Title / Description");
     }
 
     // LOAD STATUSES
@@ -279,9 +354,8 @@ function AppContent() {
   }, [boardSubtitle]);
 
   // ============================================================
-  // 🔥 FIX: HAPUS RESET TITLE SAAT GROUP KOSONG
+  // 🔥 HAPUS RESET TITLE - KOMENTAR/ HAPUS
   // ============================================================
-  // ❌ KODE INI DIHAPUS / DI-COMMENT
   // useEffect(() => {
   //   const allGroups = [...new Set(items.map((item) => item.group))];
   //   if (allGroups.length === 0 && items.length === 0) {
@@ -738,14 +812,9 @@ function AppContent() {
 
       <div className="main-content">
         {/* ============================================================
-            HEADER - PAKAI COMPONENT HEADER (TANPA ICON ✎)
+            HEADER - PAKAI COMPONENT HEADER (TANPA PROPS)
             ============================================================ */}
-        <Header
-          boardTitle={boardTitle}
-          boardSubtitle={boardSubtitle}
-          onTitleChange={handleTitleChange}
-          onSubtitleChange={handleSubtitleChange}
-        />
+        <Header />
 
         <Toolbar
           search={search}
