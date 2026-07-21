@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 
-export default function DateCell({ date, onChange, placeholder = "dd - mmm - yyyy" }) {
+export default function DateCell({ date, onChange, placeholder = "dd - mm - yy" }) {
   const [inputValue, setInputValue] = useState(date || "");
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
@@ -16,6 +16,16 @@ export default function DateCell({ date, onChange, placeholder = "dd - mmm - yyy
   ];
 
   // ============================================================
+  // CEK APAKAH VALUE ADALAH TANGGAL VALID
+  // ============================================================
+  const isValidDate = (val) => {
+    if (!val) return false;
+    // Cek format "DD - MMM - YYYY"
+    const pattern = /^(\d{2})\s*-\s*([A-Za-z]{3})\s*-\s*(\d{4})$/;
+    return pattern.test(val);
+  };
+
+  // ============================================================
   // FORMAT TANGGAL KE "DD - MMM - YYYY"
   // ============================================================
   const formatDateToText = (val) => {
@@ -23,13 +33,12 @@ export default function DateCell({ date, onChange, placeholder = "dd - mmm - yyy
     
     // Jika sudah dalam format "DD - MMM - YYYY"
     const pattern = /^(\d{2})\s*-\s*([A-Za-z]{3})\s*-\s*(\d{4})$/;
-    const match = val.match(pattern);
-    if (match) {
+    if (pattern.test(val)) {
       return val;
     }
     
     // Jika dari input date (yyyy-mm-dd)
-    if (val.includes("-")) {
+    if (val.includes("-") && val.length === 10) {
       const parts = val.split("-");
       if (parts.length === 3) {
         const year = parts[0];
@@ -89,36 +98,11 @@ export default function DateCell({ date, onChange, placeholder = "dd - mmm - yyy
     }
     
     // Jika dalam format yyyy-mm-dd
-    if (val.includes("-")) {
-      const parts = val.split("-");
-      if (parts.length === 3 && parts[0].length === 4) {
-        return val;
-      }
+    if (val.includes("-") && val.length === 10) {
+      return val;
     }
     
     return "";
-  };
-
-  // ============================================================
-  // PARSING TANGGAL DARI TEXT UNTUK VALIDASI
-  // ============================================================
-  const parseDateFromText = (val) => {
-    // Coba parse dari format "DD - MMM - YYYY"
-    const pattern = /^(\d{2})\s*-\s*([A-Za-z]{3})\s*-\s*(\d{4})$/;
-    const match = val.match(pattern);
-    if (match) {
-      const day = parseInt(match[1]);
-      const monthName = match[2];
-      const year = parseInt(match[3]);
-      const monthIndex = MONTHS_SHORT.findIndex(m => m.toLowerCase() === monthName.toLowerCase());
-      if (monthIndex !== -1) {
-        const date = new Date(year, monthIndex, day);
-        if (!isNaN(date.getTime())) {
-          return date;
-        }
-      }
-    }
-    return null;
   };
 
   // ============================================================
@@ -126,60 +110,28 @@ export default function DateCell({ date, onChange, placeholder = "dd - mmm - yyy
   // ============================================================
   const handleDateChange = (e) => {
     const value = e.target.value;
-    const formattedDate = formatDateToText(value);
-    setInputValue(formattedDate);
-    
-    if (onChange) {
-      onChange(formattedDate);
-    }
-  };
-
-  // ============================================================
-  // HANDLE PERUBAHAN TANGGAL DARI TEXT INPUT MANUAL
-  // ============================================================
-  const handleTextChange = (e) => {
-    const value = e.target.value;
-    setInputValue(value);
-    
-    // Validasi format "DD - MMM - YYYY"
-    const pattern = /^(\d{2})\s*-\s*([A-Za-z]{3})\s*-\s*(\d{4})$/;
-    if (pattern.test(value)) {
-      const parsed = parseDateFromText(value);
-      if (parsed) {
-        if (onChange) {
-          onChange(value);
-        }
+    if (value) {
+      const formattedDate = formatDateToText(value);
+      setInputValue(formattedDate);
+      if (onChange) {
+        onChange(formattedDate);
+      }
+    } else {
+      setInputValue("");
+      if (onChange) {
+        onChange("");
       }
     }
   };
 
   // ============================================================
-  // HANDLE BLUR - FORMAT OTOMATIS
+  // HANDLE BLUR
   // ============================================================
   const handleBlur = () => {
     setIsFocused(false);
-    
-    if (!inputValue) return;
-    
-    // Coba format ulang jika user mengetik manual
-    const formatted = formatDateToText(inputValue);
-    if (formatted && formatted !== inputValue) {
-      setInputValue(formatted);
-      if (onChange) {
-        onChange(formatted);
-      }
-    }
-  };
-
-  // ============================================================
-  // HANDLE KEYDOWN - ENTER UNTUK KONFIRMASI
-  // ============================================================
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleBlur();
+    setTimeout(() => {
       setShowDatePicker(false);
-    }
+    }, 200);
   };
 
   // ============================================================
@@ -218,6 +170,9 @@ export default function DateCell({ date, onChange, placeholder = "dd - mmm - yyy
   // ============================================================
   const displayText = formatDateToText(inputValue);
   const dateInputValue = convertToDateInputValue(inputValue);
+  
+  // Tentukan apakah value adalah tanggal valid
+  const hasValidDate = isValidDate(displayText);
 
   return (
     <div 
@@ -269,8 +224,8 @@ export default function DateCell({ date, onChange, placeholder = "dd - mmm - yyy
           strokeLinejoin="round"
           style={{
             flexShrink: 0,
-            color: displayText ? "var(--text-primary, #333)" : "var(--text-muted, #999)",
-            opacity: displayText ? 0.8 : 0.5,
+            color: hasValidDate ? "var(--text-primary, #333)" : "var(--text-muted, #999)",
+            opacity: hasValidDate ? 0.8 : 0.5,
           }}
         >
           <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
@@ -279,18 +234,18 @@ export default function DateCell({ date, onChange, placeholder = "dd - mmm - yyy
           <line x1="3" y1="10" x2="21" y2="10" />
         </svg>
 
-        {/* Text Tanggal - Format "DD - MMM - YYYY" */}
+        {/* Text Tanggal */}
         <span
           style={{
             fontSize: "13px",
-            color: displayText ? "var(--text-primary, #333)" : "var(--text-muted, #999)",
+            color: hasValidDate ? "var(--text-primary, #333)" : "var(--text-muted, #999)",
             flex: 1,
             fontFamily: "inherit",
             userSelect: "none",
-            fontWeight: displayText ? 500 : 400,
+            fontWeight: hasValidDate ? 500 : 400,
           }}
         >
-          {displayText || placeholder}
+          {hasValidDate ? displayText : placeholder}
         </span>
       </div>
 
@@ -322,7 +277,6 @@ export default function DateCell({ date, onChange, placeholder = "dd - mmm - yyy
             onChange={handleDateChange}
             onFocus={() => setIsFocused(true)}
             onBlur={handleBlur}
-            onKeyDown={handleKeyDown}
             style={{
               width: "100%",
               padding: "8px 12px",
@@ -349,7 +303,7 @@ export default function DateCell({ date, onChange, placeholder = "dd - mmm - yyy
           </div>
 
           {/* Tombol Clear */}
-          {displayText && (
+          {hasValidDate && (
             <button
               onClick={(e) => {
                 e.stopPropagation();

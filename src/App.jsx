@@ -29,9 +29,71 @@ function AppContent() {
   const { columns, addColumn, renameColumn, toggleColumn, deleteColumn, resetColumns, updateColumnStatuses, updateColumnStatusOrder } = useColumns();
 
   // ============================================================
+  // 🔥 INISIALISASI DATA DEFAULT
+  // ============================================================
+  const initializeDefaultData = () => {
+    const existingItems = localStorage.getItem("forelItems");
+    const existingTitle = localStorage.getItem("forelBoardTitle");
+    
+    if (!existingItems && !existingTitle) {
+      console.log("🔵 Initializing default data...");
+      
+      localStorage.setItem("forelBoardTitle", "BOARD TITLE");
+      localStorage.setItem("forelBoardSubtitle", "Sub Title / Description");
+      
+      const defaultItems = [
+        { 
+          id: 1, 
+          group: "Default Group", 
+          item: "Task 1", 
+          document: "DOC-001", 
+          people: "Assign to...", 
+          status: "Default", 
+          dueDate: "", 
+          rev: "R0",
+          children: [],
+          isExpanded: false,
+        },
+        { 
+          id: 2, 
+          group: "Default Group", 
+          item: "Task 2", 
+          document: "DOC-002", 
+          people: "Assign to...", 
+          status: "Default", 
+          dueDate: "", 
+          rev: "R0",
+          children: [],
+          isExpanded: false,
+        },
+        { 
+          id: 3, 
+          group: "Default Group", 
+          item: "Task 3", 
+          document: "DOC-003", 
+          people: "Assign to...", 
+          status: "Default", 
+          dueDate: "", 
+          rev: "R0",
+          children: [],
+          isExpanded: false,
+        },
+      ];
+      localStorage.setItem("forelItems", JSON.stringify(defaultItems));
+      localStorage.setItem("forelStatuses", JSON.stringify({ Default: "#9ca3af" }));
+      localStorage.setItem("forelFavorites", JSON.stringify(["Workspace", "Administration"]));
+      localStorage.setItem("forelGroupColors", JSON.stringify({ "Default Group": "#3b82f6" }));
+      
+      console.log("✅ Default data initialized!");
+    }
+  };
+
+  // ============================================================
   // LOAD DATA
   // ============================================================
   useEffect(() => {
+    initializeDefaultData();
+
     const savedItems = localStorage.getItem("forelItems");
     const savedStatuses = localStorage.getItem("forelStatuses");
     const savedFavs = localStorage.getItem("forelFavorites");
@@ -252,7 +314,7 @@ function AppContent() {
   }, [items, isInitialized]);
 
   // ============================================================
-  // AUTO-SAVE KE localStorage
+  // AUTO-SAVE (TANPA BOARD TITLE - HEADER SUDAH HANDLE)
   // ============================================================
   useEffect(() => {
     if (isInitialized) {
@@ -857,6 +919,7 @@ function AppContent() {
         </div>
       </div>
 
+      {/* MODALS */}
       {showStatusManager && (
         <StatusManager
           columnId={activeStatusColumnId}
