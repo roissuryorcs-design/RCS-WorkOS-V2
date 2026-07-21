@@ -20,15 +20,15 @@ const UpdatePanel = () => {
   const panelRef = useRef(null);
   const inputRef = useRef(null);
   const fileInputRef = useRef(null);
-  const topRef = useRef(null);
+  const listContainerRef = useRef(null);
 
   const itemUpdates = selectedItem ? getItemUpdates(selectedItem) : [];
   const sortedUpdates = [...itemUpdates].reverse();
 
   // Scroll ke atas saat update baru
   useEffect(() => {
-    if (topRef.current && itemUpdates.length > 0) {
-      topRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (listContainerRef.current) {
+      listContainerRef.current.scrollTop = 0;
     }
   }, [itemUpdates]);
 
@@ -111,8 +111,6 @@ const UpdatePanel = () => {
   };
 
   const saveEdit = (updateId) => {
-    // Update logic di context
-    // Untuk sekarang, kita simpan di localStorage
     const updates = JSON.parse(localStorage.getItem('forelUpdates') || '[]');
     const updated = updates.map(u => {
       if (u.id === updateId) {
@@ -123,7 +121,6 @@ const UpdatePanel = () => {
     localStorage.setItem('forelUpdates', JSON.stringify(updated));
     setEditingUpdateId(null);
     setEditText('');
-    // Refresh
     window.dispatchEvent(new Event('storage'));
   };
 
@@ -151,9 +148,9 @@ const UpdatePanel = () => {
           <span key={index} style={{
             color: '#1a73e8',
             background: '#e8f0fe',
-            padding: '0 4px',
+            padding: '0 6px',
             borderRadius: '4px',
-            fontWeight: 500,
+            fontWeight: 600,
           }}>
             {part}
           </span>
@@ -200,7 +197,7 @@ const UpdatePanel = () => {
           left: 0,
           right: 0,
           bottom: 0,
-          background: 'rgba(0,0,0,0.3)',
+          background: 'rgba(0,0,0,0.35)',
           zIndex: 999,
           animation: 'fadeIn 0.2s ease',
         }}
@@ -214,10 +211,10 @@ const UpdatePanel = () => {
           top: 0,
           right: 0,
           bottom: 0,
-          width: '460px',
+          width: '480px',
           maxWidth: '92vw',
-          background: 'white',
-          boxShadow: '-4px 0 24px rgba(0,0,0,0.15)',
+          background: '#ffffff',
+          boxShadow: '-4px 0 32px rgba(0,0,0,0.2)',
           zIndex: 1000,
           display: 'flex',
           flexDirection: 'column',
@@ -230,18 +227,18 @@ const UpdatePanel = () => {
             ============================================================ */}
         <div style={{
           padding: '16px 20px',
-          borderBottom: '1px solid #e5e7eb',
+          borderBottom: '2px solid #e5e7eb',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          background: '#f8f9fa',
+          background: '#fafafa',
           flexShrink: 0,
         }}>
           <div>
-            <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600 }}>
+            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: '#1f2937' }}>
               💬 Updates
             </h3>
-            <span style={{ fontSize: '12px', color: '#999' }}>
+            <span style={{ fontSize: '13px', color: '#6b7280', fontWeight: 500 }}>
               {itemUpdates.length} comments
             </span>
           </div>
@@ -250,11 +247,12 @@ const UpdatePanel = () => {
             style={{
               background: 'none',
               border: 'none',
-              fontSize: '20px',
+              fontSize: '22px',
               cursor: 'pointer',
-              color: '#666',
+              color: '#6b7280',
               padding: '4px 8px',
-              borderRadius: '4px',
+              borderRadius: '6px',
+              transition: 'background 0.2s',
             }}
             onMouseEnter={(e) => e.currentTarget.style.background = '#f0f0f0'}
             onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
@@ -264,281 +262,12 @@ const UpdatePanel = () => {
         </div>
 
         {/* ============================================================
-            UPDATE LIST - Terbaru di ATAS
-            ============================================================ */}
-        <div style={{
-          flex: 1,
-          overflowY: 'auto',
-          padding: '16px 20px',
-        }}>
-          <div ref={topRef} />
-
-          {sortedUpdates.length === 0 ? (
-            <div style={{
-              textAlign: 'center',
-              color: '#999',
-              padding: '60px 20px',
-            }}>
-              <div style={{ fontSize: '48px', marginBottom: '16px' }}>💬</div>
-              <p style={{ margin: 0, fontWeight: 500, fontSize: '16px' }}>No updates yet</p>
-              <p style={{ fontSize: '14px', margin: '8px 0 0' }}>
-                Share progress or mention a teammate
-              </p>
-            </div>
-          ) : (
-            sortedUpdates.map((update) => {
-              const isEditing = editingUpdateId === update.id;
-              return (
-                <div key={update.id} style={{
-                  marginBottom: '20px',
-                  paddingBottom: '20px',
-                  borderBottom: '1px solid #e5e7eb',
-                }}>
-                  {/* Update */}
-                  <div style={{
-                    padding: '12px 16px',
-                    background: '#f8f9fa',
-                    borderRadius: '8px',
-                    borderLeft: '3px solid #4CAF50',
-                  }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '4px' }}>
-                      <strong style={{ fontSize: '13px', color: '#333' }}>
-                        {update.author || 'User'}
-                      </strong>
-                      <span style={{ fontSize: '11px', color: '#999' }}>
-                        {formatDate(update.timestamp)}
-                      </span>
-                    </div>
-
-                    {/* Edit mode */}
-                    {isEditing ? (
-                      <div style={{ marginTop: '6px' }}>
-                        <textarea
-                          value={editText}
-                          onChange={(e) => setEditText(e.target.value)}
-                          style={{
-                            width: '100%',
-                            padding: '8px 12px',
-                            border: '1px solid #4CAF50',
-                            borderRadius: '4px',
-                            fontSize: '13px',
-                            outline: 'none',
-                            fontFamily: 'inherit',
-                            resize: 'vertical',
-                            minHeight: '60px',
-                          }}
-                          autoFocus
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' && e.shiftKey) {
-                              e.preventDefault();
-                              saveEdit(update.id);
-                            }
-                            if (e.key === 'Escape') {
-                              setEditingUpdateId(null);
-                            }
-                          }}
-                        />
-                        <div style={{ marginTop: '6px', display: 'flex', gap: '8px' }}>
-                          <button
-                            onClick={() => saveEdit(update.id)}
-                            style={{
-                              padding: '4px 16px',
-                              background: '#4CAF50',
-                              color: 'white',
-                              border: 'none',
-                              borderRadius: '4px',
-                              fontSize: '12px',
-                              cursor: 'pointer',
-                            }}
-                          >
-                            Save
-                          </button>
-                          <button
-                            onClick={() => setEditingUpdateId(null)}
-                            style={{
-                              padding: '4px 16px',
-                              background: '#e5e7eb',
-                              color: '#333',
-                              border: 'none',
-                              borderRadius: '4px',
-                              fontSize: '12px',
-                              cursor: 'pointer',
-                            }}
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <p style={{ margin: '6px 0 8px', fontSize: '14px', color: '#333', wordWrap: 'break-word' }}>
-                        {renderTextWithMentions(update.text)}
-                      </p>
-                    )}
-
-                    {/* Files */}
-                    {update.files && update.files.length > 0 && (
-                      <div style={{ marginTop: '6px', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                        {update.files.map((file, idx) => (
-                          <div key={idx} style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            padding: '4px 10px',
-                            background: 'white',
-                            borderRadius: '4px',
-                            border: '1px solid #e5e7eb',
-                            fontSize: '12px',
-                          }}>
-                            {file.type && file.type.startsWith('image/') ? (
-                              <div style={{ width: '50px', height: '50px', borderRadius: '4px', overflow: 'hidden' }}>
-                                <img src={file.url} alt={file.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                              </div>
-                            ) : (
-                              <span>📄</span>
-                            )}
-                            <span style={{ maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                              {file.name}
-                            </span>
-                            <span style={{ fontSize: '10px', color: '#999' }}>
-                              {formatFileSize(file.size)}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Action buttons */}
-                    <div style={{ marginTop: '6px', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                      <button
-                        onClick={() => setReplyingTo(replyingTo === update.id ? null : update.id)}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          color: '#666',
-                          fontSize: '12px',
-                          cursor: 'pointer',
-                          padding: '2px 8px',
-                          borderRadius: '4px',
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.background = '#e8e8e8'}
-                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                      >
-                        ↳ Reply
-                      </button>
-                      <button
-                        onClick={() => startEdit(update)}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          color: '#666',
-                          fontSize: '12px',
-                          cursor: 'pointer',
-                          padding: '2px 8px',
-                          borderRadius: '4px',
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.background = '#e8e8e8'}
-                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                      >
-                        ✎ Edit
-                      </button>
-                      <button
-                        onClick={() => deleteUpdate(update.id)}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          color: '#e74c3c',
-                          fontSize: '12px',
-                          cursor: 'pointer',
-                          padding: '2px 8px',
-                          borderRadius: '4px',
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.background = '#fde8e8'}
-                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                      >
-                        ✕ Delete
-                      </button>
-                    </div>
-
-                    {/* Reply input */}
-                    {replyingTo === update.id && (
-                      <div style={{ marginTop: '10px', display: 'flex', gap: '8px' }}>
-                        <input
-                          type="text"
-                          value={replyText}
-                          onChange={(e) => setReplyText(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') handleReplySubmit(update.id);
-                            if (e.key === 'Escape') setReplyingTo(null);
-                          }}
-                          placeholder="Write a reply and mention others with @"
-                          style={{
-                            flex: 1,
-                            padding: '6px 12px',
-                            border: '1px solid #ddd',
-                            borderRadius: '4px',
-                            fontSize: '13px',
-                            outline: 'none',
-                          }}
-                          autoFocus
-                        />
-                        <button
-                          onClick={() => handleReplySubmit(update.id)}
-                          style={{
-                            padding: '6px 16px',
-                            background: '#4CAF50',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            fontSize: '13px',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          Reply
-                        </button>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* ============================================================
-                      REPLIES - Ditampilkan di bawah update
-                      ============================================================ */}
-                  {update.replies && update.replies.length > 0 && (
-                    <div style={{ marginTop: '8px', paddingLeft: '24px', borderLeft: '2px solid #e5e7eb' }}>
-                      {update.replies.map((reply) => (
-                        <div key={reply.id} style={{
-                          marginTop: '8px',
-                          padding: '10px 14px',
-                          background: '#fafafa',
-                          borderRadius: '6px',
-                        }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '4px' }}>
-                            <strong style={{ fontSize: '12px', color: '#333' }}>
-                              {reply.author || 'User'}
-                            </strong>
-                            <span style={{ fontSize: '10px', color: '#999' }}>
-                              {formatDate(reply.timestamp)}
-                            </span>
-                          </div>
-                          <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#333' }}>
-                            {renderTextWithMentions(reply.text)}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })
-          )}
-        </div>
-
-        {/* ============================================================
-            INPUT - DI BAWAH (dengan textarea)
+            INPUT - DI ATAS (seperti Monday.com)
             ============================================================ */}
         <div style={{
           padding: '16px 20px',
-          borderTop: '1px solid #e5e7eb',
-          background: 'white',
+          borderBottom: '2px solid #e5e7eb',
+          background: '#fafafa',
           flexShrink: 0,
         }}>
           {/* Preview uploaded files */}
@@ -550,8 +279,9 @@ const UpdatePanel = () => {
                   alignItems: 'center',
                   gap: '6px',
                   padding: '4px 10px',
-                  background: '#f0f0f0',
-                  borderRadius: '4px',
+                  background: '#ffffff',
+                  borderRadius: '6px',
+                  border: '1px solid #e5e7eb',
                   fontSize: '12px',
                 }}>
                   {file.type && file.type.startsWith('image/') ? <span>🖼️</span> : <span>📄</span>}
@@ -564,7 +294,7 @@ const UpdatePanel = () => {
                       background: 'none',
                       border: 'none',
                       cursor: 'pointer',
-                      color: '#999',
+                      color: '#9ca3af',
                       fontSize: '14px',
                       padding: '0 4px',
                     }}
@@ -587,27 +317,30 @@ const UpdatePanel = () => {
               style={{ display: 'none' }}
             />
 
-            {/* Textarea - bisa nulis banyak */}
+            {/* Textarea */}
             <textarea
               ref={inputRef}
               value={newUpdate}
               onChange={handleMention}
               placeholder="Write an update and mention others with @"
-              rows={3}
+              rows={2}
               style={{
                 width: '100%',
                 padding: '10px 14px',
-                border: '1px solid #ddd',
+                border: '2px solid #d1d5db',
                 borderRadius: '8px',
-                fontSize: '13px',
+                fontSize: '14px',
                 outline: 'none',
                 fontFamily: 'inherit',
                 resize: 'vertical',
-                minHeight: '60px',
+                minHeight: '50px',
                 transition: 'border-color 0.2s',
+                backgroundColor: '#ffffff',
+                color: '#1f2937',
+                fontWeight: 400,
               }}
               onFocus={(e) => e.currentTarget.style.borderColor = '#4CAF50'}
-              onBlur={(e) => e.currentTarget.style.borderColor = '#ddd'}
+              onBlur={(e) => e.currentTarget.style.borderColor = '#d1d5db'}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
@@ -617,18 +350,18 @@ const UpdatePanel = () => {
             />
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-              <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   style={{
                     background: 'none',
                     border: 'none',
-                    fontSize: '18px',
+                    fontSize: '20px',
                     cursor: 'pointer',
                     padding: '4px 8px',
-                    borderRadius: '4px',
-                    color: '#666',
+                    borderRadius: '6px',
+                    color: '#6b7280',
                     transition: 'background 0.2s',
                   }}
                   onMouseEnter={(e) => e.currentTarget.style.background = '#f0f0f0'}
@@ -637,22 +370,22 @@ const UpdatePanel = () => {
                 >
                   📎
                 </button>
-                <span style={{ fontSize: '11px', color: '#999' }}>
+                <span style={{ fontSize: '12px', color: '#9ca3af', fontWeight: 400 }}>
                   Shift+Enter untuk new line
                 </span>
               </div>
               <button
                 type="submit"
                 style={{
-                  padding: '8px 24px',
+                  padding: '8px 28px',
                   background: '#4CAF50',
                   color: 'white',
                   border: 'none',
                   borderRadius: '20px',
-                  fontSize: '13px',
+                  fontSize: '14px',
                   cursor: 'pointer',
                   transition: 'background 0.2s',
-                  fontWeight: 500,
+                  fontWeight: 600,
                 }}
                 onMouseEnter={(e) => e.currentTarget.style.background = '#43a047'}
                 onMouseLeave={(e) => e.currentTarget.style.background = '#4CAF50'}
@@ -661,6 +394,313 @@ const UpdatePanel = () => {
               </button>
             </div>
           </form>
+        </div>
+
+        {/* ============================================================
+            UPDATE LIST - Dengan SCROLLBAR VERTIKAL
+            ============================================================ */}
+        <div
+          ref={listContainerRef}
+          style={{
+            flex: 1,
+            overflowY: 'auto',
+            padding: '16px 20px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px',
+            backgroundColor: '#f9fafb',
+          }}
+        >
+          {sortedUpdates.length === 0 ? (
+            <div style={{
+              textAlign: 'center',
+              color: '#9ca3af',
+              padding: '60px 20px',
+            }}>
+              <div style={{ fontSize: '48px', marginBottom: '16px' }}>💬</div>
+              <p style={{ margin: 0, fontWeight: 600, fontSize: '16px', color: '#6b7280' }}>No updates yet</p>
+              <p style={{ fontSize: '14px', margin: '8px 0 0', fontWeight: 400 }}>
+                Share progress or mention a teammate
+              </p>
+            </div>
+          ) : (
+            sortedUpdates.map((update) => {
+              const isEditing = editingUpdateId === update.id;
+              return (
+                /* ============================================================
+                   🔥 1 BORDER PER UPDATE (Update + semua reply dalam 1 card)
+                   ============================================================ */
+                <div key={update.id} style={{
+                  border: '2px solid #e5e7eb',
+                  borderRadius: '10px',
+                  padding: '14px 16px',
+                  backgroundColor: '#ffffff',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+                }}>
+                  {/* UPDATE */}
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '4px' }}>
+                      <strong style={{ fontSize: '14px', color: '#1f2937', fontWeight: 700 }}>
+                        {update.author || 'User'}
+                      </strong>
+                      <span style={{ fontSize: '12px', color: '#6b7280', fontWeight: 500 }}>
+                        {formatDate(update.timestamp)}
+                      </span>
+                    </div>
+
+                    {/* Edit mode */}
+                    {isEditing ? (
+                      <div style={{ marginTop: '8px' }}>
+                        <textarea
+                          value={editText}
+                          onChange={(e) => setEditText(e.target.value)}
+                          style={{
+                            width: '100%',
+                            padding: '8px 12px',
+                            border: '2px solid #4CAF50',
+                            borderRadius: '6px',
+                            fontSize: '14px',
+                            outline: 'none',
+                            fontFamily: 'inherit',
+                            resize: 'vertical',
+                            minHeight: '60px',
+                            backgroundColor: '#ffffff',
+                            color: '#1f2937',
+                          }}
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && e.shiftKey) {
+                              e.preventDefault();
+                              saveEdit(update.id);
+                            }
+                            if (e.key === 'Escape') {
+                              setEditingUpdateId(null);
+                            }
+                          }}
+                        />
+                        <div style={{ marginTop: '6px', display: 'flex', gap: '8px' }}>
+                          <button
+                            onClick={() => saveEdit(update.id)}
+                            style={{
+                              padding: '4px 16px',
+                              background: '#4CAF50',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '6px',
+                              fontSize: '13px',
+                              cursor: 'pointer',
+                              fontWeight: 600,
+                            }}
+                          >
+                            Save
+                          </button>
+                          <button
+                            onClick={() => setEditingUpdateId(null)}
+                            style={{
+                              padding: '4px 16px',
+                              background: '#e5e7eb',
+                              color: '#374151',
+                              border: 'none',
+                              borderRadius: '6px',
+                              fontSize: '13px',
+                              cursor: 'pointer',
+                              fontWeight: 500,
+                            }}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <p style={{
+                        margin: '8px 0 10px',
+                        fontSize: '15px',
+                        color: '#1f2937',
+                        wordWrap: 'break-word',
+                        fontWeight: 400,
+                        lineHeight: 1.6,
+                      }}>
+                        {renderTextWithMentions(update.text)}
+                      </p>
+                    )}
+
+                    {/* Files */}
+                    {update.files && update.files.length > 0 && (
+                      <div style={{ marginTop: '6px', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                        {update.files.map((file, idx) => (
+                          <div key={idx} style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            padding: '4px 10px',
+                            background: '#f3f4f6',
+                            borderRadius: '6px',
+                            border: '1px solid #e5e7eb',
+                            fontSize: '12px',
+                          }}>
+                            {file.type && file.type.startsWith('image/') ? (
+                              <div style={{ width: '40px', height: '40px', borderRadius: '4px', overflow: 'hidden' }}>
+                                <img src={file.url} alt={file.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              </div>
+                            ) : (
+                              <span>📄</span>
+                            )}
+                            <span style={{ maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 500 }}>
+                              {file.name}
+                            </span>
+                            <span style={{ fontSize: '10px', color: '#6b7280' }}>
+                              {formatFileSize(file.size)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Action buttons */}
+                    <div style={{ marginTop: '8px', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                      <button
+                        onClick={() => setReplyingTo(replyingTo === update.id ? null : update.id)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#4B5563',
+                          fontSize: '13px',
+                          cursor: 'pointer',
+                          padding: '2px 8px',
+                          borderRadius: '4px',
+                          fontWeight: 600,
+                          transition: 'background 0.2s',
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = '#e8e8e8'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                      >
+                        ↳ Reply
+                      </button>
+                      <button
+                        onClick={() => startEdit(update)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#4B5563',
+                          fontSize: '13px',
+                          cursor: 'pointer',
+                          padding: '2px 8px',
+                          borderRadius: '4px',
+                          fontWeight: 600,
+                          transition: 'background 0.2s',
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = '#e8e8e8'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                      >
+                        ✎ Edit
+                      </button>
+                      <button
+                        onClick={() => deleteUpdate(update.id)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#ef4444',
+                          fontSize: '13px',
+                          cursor: 'pointer',
+                          padding: '2px 8px',
+                          borderRadius: '4px',
+                          fontWeight: 600,
+                          transition: 'background 0.2s',
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = '#fde8e8'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                      >
+                        ✕ Delete
+                      </button>
+                    </div>
+
+                    {/* Reply input */}
+                    {replyingTo === update.id && (
+                      <div style={{ marginTop: '10px', display: 'flex', gap: '8px' }}>
+                        <input
+                          type="text"
+                          value={replyText}
+                          onChange={(e) => setReplyText(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleReplySubmit(update.id);
+                            if (e.key === 'Escape') setReplyingTo(null);
+                          }}
+                          placeholder="Write a reply and mention others with @"
+                          style={{
+                            flex: 1,
+                            padding: '8px 12px',
+                            border: '2px solid #d1d5db',
+                            borderRadius: '6px',
+                            fontSize: '14px',
+                            outline: 'none',
+                            fontFamily: 'inherit',
+                            fontWeight: 400,
+                            color: '#1f2937',
+                          }}
+                          autoFocus
+                        />
+                        <button
+                          onClick={() => handleReplySubmit(update.id)}
+                          style={{
+                            padding: '6px 16px',
+                            background: '#4CAF50',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '6px',
+                            fontSize: '13px',
+                            cursor: 'pointer',
+                            fontWeight: 600,
+                          }}
+                        >
+                          Reply
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* ============================================================
+                      REPLIES - Di dalam border yang sama
+                      ============================================================ */}
+                  {update.replies && update.replies.length > 0 && (
+                    <div style={{
+                      marginTop: '12px',
+                      paddingTop: '12px',
+                      borderTop: '2px solid #e5e7eb',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '10px',
+                    }}>
+                      {update.replies.map((reply) => (
+                        <div key={reply.id} style={{
+                          padding: '10px 14px',
+                          background: '#f3f4f6',
+                          borderRadius: '6px',
+                        }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '4px' }}>
+                            <strong style={{ fontSize: '13px', color: '#1f2937', fontWeight: 700 }}>
+                              {reply.author || 'User'}
+                            </strong>
+                            <span style={{ fontSize: '11px', color: '#6b7280', fontWeight: 500 }}>
+                              {formatDate(reply.timestamp)}
+                            </span>
+                          </div>
+                          <p style={{
+                            margin: '6px 0 0',
+                            fontSize: '14px',
+                            color: '#1f2937',
+                            fontWeight: 400,
+                            lineHeight: 1.5,
+                          }}>
+                            {renderTextWithMentions(reply.text)}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
 
@@ -672,6 +712,21 @@ const UpdatePanel = () => {
         @keyframes fadeIn {
           from { opacity: 0; }
           to { opacity: 1; }
+        }
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+          width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+          background: #f1f1f1;
+          border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb {
+          background: #c1c7cd;
+          border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+          background: #a0a6ab;
         }
       `}</style>
     </>
