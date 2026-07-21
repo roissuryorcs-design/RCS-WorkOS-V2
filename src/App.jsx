@@ -10,6 +10,21 @@ import ColumnManager from "./components/ColumnManager";
 import AddColumnPopup from "./components/AddColumnPopup";
 import "./App.css";
 
+// ============================================================
+// IMPORT DARI treeData.jsx
+// ============================================================
+import { 
+  loadItems as loadItemsFromTree, 
+  loadGroups as loadGroupsFromTree,
+  saveItems as saveItemsToTree,
+  saveGroups as saveGroupsToTree,
+  getDefaultItems,
+  DEFAULT_GROUP,
+  ensureGroupExists,
+  addGroupSafe,
+  deleteGroupSafe
+} from "./data/treeData";
+
 function AppContent() {
   const [items, setItems] = useState([]);
   const [statuses, setStatuses] = useState({});
@@ -23,28 +38,95 @@ function AppContent() {
   const [showAddColumnPopup, setShowAddColumnPopup] = useState(false);
   const [boardTitle, setBoardTitle] = useState("FOREL FPSO HVAC");
   const [boardSubtitle, setBoardSubtitle] = useState("Sub Title / Description");
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const { columns, addColumn, renameColumn, toggleColumn, deleteColumn, resetColumns, updateColumnStatuses, updateColumnStatusOrder } = useColumns();
 
   // ============================================================
-  // CEK: Jika semua group dihapus, reset board title & subtitle ke default
+  // FLAG UNTUK MENCEGAH INFINITE LOOP AUTO-ADD
   // ============================================================
-  useEffect(() => {
-    const allGroups = [...new Set(items.map((item) => item.group))];
-    if (allGroups.length === 0 && items.length === 0) {
-      setBoardTitle("BOARD TITLE");
-      setBoardSubtitle("Sub Title / Description");
-    }
-  }, [items]);
+  const [hasAutoAdded, setHasAutoAdded] = useState(false);
 
   // ============================================================
-  // FUNGSI UNTUK RESET BOARD TITLE (opsional)
+  // FUNGSI: TAMBAH 3 ITEM SEKALIGUS KE SATU GROUP
   // ============================================================
-  const resetBoardTitle = () => {
-    setBoardTitle("BOARD TITLE");
+  const addMultipleItemsToGroup = (groupName, count = 3) => {
+    const existingItems = items.filter(item => item.group === groupName);
+    const startIndex = existingItems.length;
+    
+    const newItems = Array.from({ length: count }, (_, i) => ({
+      id: Date.now() + i + Math.random() * 1000,
+      group: groupName,
+      item: `Task ${startIndex + i + 1}`,
+      document: `DOC-${String(startIndex + i + 1).padStart(3, '0')}`,
+      people: "",
+      status: "Default",
+      dueDate: "dd/mm/ttt",
+      rev: "R0",
+      children: [],
+      isExpanded: false,
+    }));
+    
+    const updatedItems = [...items, ...newItems];
+    setItems(updatedItems);
+    localStorage.setItem("forelItems", JSON.stringify(updatedItems));
+    
+    console.log(`✅ Auto-added ${count} items to group "${groupName}"`);
   };
 
-  // ----- LOAD DATA -----
+  // ============================================================
+  // CEK DAN AUTO-ADD 3 ITEM KE GRUP KOSONG
+  // ============================================================
+  const ensureAllGroupsHaveItems = (currentItems, currentGroups) => {
+    if (hasAutoAdded) return currentItems;
+    if (!currentGroups || currentGroups.length === 0) return currentItems;
+    
+    let needsAdd = false;
+    const groupsToCheck = [...new Set(currentItems.map(item => item.group))];
+    
+    // Cek apakah ada grup yang tidak punya items
+    currentGroups.forEach(group => {
+      const groupItems = currentItems.filter(item => item.group === group);
+      if (groupItems.length === 0) {
+        needsAdd = true;
+      }
+    });
+    
+    if (needsAdd) {
+      setHasAutoAdded(true);
+      let updatedItems = [...currentItems];
+      
+      currentGroups.forEach(group => {
+        const groupItems = updatedItems.filter(item => item.group === group);
+        if (groupItems.length === 0) {
+          // Tambah 3 item
+          const startIndex = updatedItems.filter(item => item.group === group).length;
+          const newItems = Array.from({ length: 3 }, (_, i) => ({
+            id: Date.now() + i + Math.random() * 1000,
+            group: group,
+            item: `Task ${startIndex + i + 1}`,
+            document: `DOC-${String(startIndex + i + 1).padStart(3, '0')}`,
+            people: "",
+            status: "Default",
+            dueDate: "dd/mm/ttt",
+            rev: "R0",
+            children: [],
+            isExpanded: false,
+          }));
+          updatedItems = [...updatedItems, ...newItems];
+          console.log(`✅ Auto-added 3 items to group "${group}"`);
+        }
+      });
+      
+      return updatedItems;
+    }
+    
+    return currentItems;
+  };
+
+  // ============================================================
+  // LOAD DATA - DENGAN AUTO-ADD 3 ITEM
+  // ============================================================
   useEffect(() => {
     const savedItems = localStorage.getItem("forelItems");
     const savedStatuses = localStorage.getItem("forelStatuses");
@@ -55,6 +137,7 @@ function AppContent() {
 
     const defaultStatuses = { Default: "#9ca3af" };
 
+    // Load statuses
     if (savedStatuses) {
       const parsed = JSON.parse(savedStatuses);
       if (Object.keys(parsed).length === 0) {
@@ -66,6 +149,10 @@ function AppContent() {
       setStatuses(defaultStatuses);
     }
 
+    // Load items dengan auto-add 3 items
+    let loadedItems = [];
+    let allGroups = [];
+
     if (savedItems) {
       const parsedItems = JSON.parse(savedItems);
       const ensureChildren = (items) => {
@@ -76,13 +163,23 @@ function AppContent() {
           ...(item.children ? { children: ensureChildren(item.children) } : {})
         }));
       };
-      setItems(ensureChildren(parsedItems));
+      loadedItems = ensureChildren(parsedItems);
+      
+      // Ambil semua group dari items
+      allGroups = [...new Set(loadedItems.map(item => item.group))];
+      
+      // Jika tidak ada group, buat default group
+      if (allGroups.length === 0) {
+        allGroups = ["Default Group"];
+      }
     } else {
       // ============================================================
-      // DEFAULT: 1 GROUP DENGAN 3 ITEM (TANPA NAMA GROUP TERTENTU)
+      // DEFAULT: 1 GROUP DENGAN 3 ITEM
       // ============================================================
       const defaultGroup = "Default Group";
-      setItems([
+      allGroups = [defaultGroup];
+      
+      loadedItems = [
         { 
           id: 1, 
           group: defaultGroup, 
@@ -119,23 +216,68 @@ function AppContent() {
           children: [],
           isExpanded: false,
         },
-      ]);
+      ];
+      
+      // Simpan default items ke localStorage
+      localStorage.setItem("forelItems", JSON.stringify(loadedItems));
     }
 
+    // ============================================================
+    // AUTO-ADD 3 ITEMS KE GRUP KOSONG (jika ada)
+    // ============================================================
+    let finalItems = loadedItems;
+    let needsAutoAdd = false;
+    
+    allGroups.forEach(group => {
+      const groupItems = finalItems.filter(item => item.group === group);
+      if (groupItems.length === 0) {
+        needsAutoAdd = true;
+      }
+    });
+    
+    if (needsAutoAdd && allGroups.length > 0) {
+      allGroups.forEach(group => {
+        const groupItems = finalItems.filter(item => item.group === group);
+        if (groupItems.length === 0) {
+          const startIndex = finalItems.filter(item => item.group === group).length;
+          const newItems = Array.from({ length: 3 }, (_, i) => ({
+            id: Date.now() + i + Math.random() * 1000,
+            group: group,
+            item: `Task ${startIndex + i + 1}`,
+            document: `DOC-${String(startIndex + i + 1).padStart(3, '0')}`,
+            people: "",
+            status: "Default",
+            dueDate: "dd/mm/ttt",
+            rev: "R0",
+            children: [],
+            isExpanded: false,
+          }));
+          finalItems = [...finalItems, ...newItems];
+          console.log(`✅ Auto-added 3 items to group "${group}"`);
+        }
+      });
+      
+      // Simpan hasil auto-add
+      localStorage.setItem("forelItems", JSON.stringify(finalItems));
+      setHasAutoAdded(true);
+    }
+
+    setItems(finalItems);
+
+    // Load favorites
     if (savedFavs) {
       setFavorites(JSON.parse(savedFavs));
     } else {
       setFavorites(["Workspace", "Administration"]);
     }
 
+    // Load group colors
     if (savedGroupColors) {
       setGroupColors(JSON.parse(savedGroupColors));
     } else {
       const defaultColors = {};
-      // Ambil semua group dari items (jika ada)
-      const groups = [...new Set(JSON.parse(savedItems || "[]").map(item => item.group))];
+      const groups = [...new Set(finalItems.map(item => item.group))];
       if (groups.length === 0) {
-        // Jika tidak ada group, buat default color untuk "Default Group"
         defaultColors["Default Group"] = "#3b82f6";
       } else {
         groups.forEach(g => { defaultColors[g] = "#3b82f6"; });
@@ -143,6 +285,7 @@ function AppContent() {
       setGroupColors(defaultColors);
     }
 
+    // Load board title
     if (savedBoardTitle) {
       setBoardTitle(savedBoardTitle);
     }
@@ -150,12 +293,18 @@ function AppContent() {
     if (savedBoardSubtitle) {
       setBoardSubtitle(savedBoardSubtitle);
     }
+
+    setIsInitialized(true);
   }, []);
 
-  // ----- AUTO SAVE -----
+  // ============================================================
+  // AUTO-SAVE KE localStorage
+  // ============================================================
   useEffect(() => {
-    localStorage.setItem("forelItems", JSON.stringify(items));
-  }, [items]);
+    if (isInitialized) {
+      localStorage.setItem("forelItems", JSON.stringify(items));
+    }
+  }, [items, isInitialized]);
 
   useEffect(() => {
     localStorage.setItem("forelStatuses", JSON.stringify(statuses));
@@ -177,7 +326,20 @@ function AppContent() {
     localStorage.setItem("forelBoardSubtitle", boardSubtitle);
   }, [boardSubtitle]);
 
-  // ----- UNDO -----
+  // ============================================================
+  // CEK: Jika semua group dihapus, reset board title & subtitle
+  // ============================================================
+  useEffect(() => {
+    const allGroups = [...new Set(items.map((item) => item.group))];
+    if (allGroups.length === 0 && items.length === 0) {
+      setBoardTitle("BOARD TITLE");
+      setBoardSubtitle("Sub Title / Description");
+    }
+  }, [items]);
+
+  // ============================================================
+  // UNDO
+  // ============================================================
   const saveHistory = (newItems) => {
     setHistory((prev) => [...prev, items]);
     setItems(newItems);
@@ -324,7 +486,9 @@ function AppContent() {
     saveHistory(newItems);
   };
 
-  // ----- ADD ITEM (di group) -----
+  // ============================================================
+  // ADD ITEM (di group) - DENGAN AUTO CHECK KOSONG
+  // ============================================================
   const addItem = (groupName) => {
     const firstStatus = "Default";
     const newItem = {
@@ -343,7 +507,7 @@ function AppContent() {
   };
 
   // ============================================================
-  // GROUP CRUD
+  // GROUP CRUD - DENGAN AUTO-ADD 3 ITEM SAAT GROUP BARU
   // ============================================================
 
   const renameGroup = (oldName, newName) => {
@@ -381,8 +545,14 @@ function AppContent() {
     const newColors = { ...groupColors };
     delete newColors[groupName];
     setGroupColors(newColors);
+    
+    // Reset auto-add flag agar bisa auto-add jika ada group kosong
+    setHasAutoAdded(false);
   };
 
+  // ============================================================
+  // ADD GROUP - DENGAN AUTO-ADD 3 ITEM
+  // ============================================================
   const addGroup = () => {
     const name = prompt("Enter new group name:");
     if (!name || !name.trim()) return;
@@ -390,28 +560,38 @@ function AppContent() {
       alert(`Group "${name.trim()}" already exists!`);
       return;
     }
+    
+    const groupName = name.trim();
     const firstStatus = "Default";
-    const newItem = {
-      id: Date.now(),
-      group: name.trim(),
-      item: `New Task in ${name.trim()}`,
-      document: "NO. DO",
+    
+    // Buat 3 item sekaligus untuk group baru
+    const newItems = Array.from({ length: 3 }, (_, i) => ({
+      id: Date.now() + i + Math.random() * 1000,
+      group: groupName,
+      item: `Task ${i + 1} in ${groupName}`,
+      document: `DOC-${String(i + 1).padStart(3, '0')}`,
       people: "",
       status: firstStatus,
       dueDate: "dd/mm/ttt",
       rev: "R0",
       children: [],
       isExpanded: false,
-    };
-    saveHistory([...items, newItem]);
-    setGroupColors((prev) => ({ ...prev, [name.trim()]: "#3b82f6" }));
+    }));
+    
+    const updatedItems = [...items, ...newItems];
+    saveHistory(updatedItems);
+    setGroupColors((prev) => ({ ...prev, [groupName]: "#3b82f6" }));
+    
+    console.log(`✅ Added new group "${groupName}" with 3 items`);
   };
 
   const updateGroupColor = (groupName, color) => {
     setGroupColors((prev) => ({ ...prev, [groupName]: color }));
   };
 
-  // ----- STATUS CRUD -----
+  // ============================================================
+  // STATUS CRUD
+  // ============================================================
   const addStatus = (name, color) => {
     const finalName = name.trim() || "Default";
     if (statuses[finalName]) {
@@ -485,7 +665,9 @@ function AppContent() {
     addColumn(name, type);
   };
 
-  // ----- FAVORITES -----
+  // ============================================================
+  // FAVORITES
+  // ============================================================
   const addFavorite = () => {
     const name = prompt("Enter favorite name:");
     if (name && name.trim()) {
@@ -498,7 +680,9 @@ function AppContent() {
     setFavorites(newFavs);
   };
 
-  // ----- EXPORT -----
+  // ============================================================
+  // EXPORT
+  // ============================================================
   const exportData = () => {
     const dataStr = JSON.stringify({ items, statuses, groupColors }, null, 2);
     const blob = new Blob([dataStr], { type: "application/json" });
@@ -539,7 +723,9 @@ function AppContent() {
       .filter(Boolean);
   };
 
-  // ----- STATS -----
+  // ============================================================
+  // STATS
+  // ============================================================
   const countAllItems = (items) => {
     let count = 0;
     items.forEach((item) => {
@@ -581,9 +767,6 @@ function AppContent() {
       />
 
       <div className="main-content">
-        {/* ============================================================
-            HEADER DENGAN BOARD TITLE & SUB TITLE DINAMIS
-            ============================================================ */}
         <div className="header-sticky">
           <h1 
             className="header-title" 
