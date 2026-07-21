@@ -32,19 +32,15 @@ function AppContent() {
   // 🔥 INISIALISASI DATA DEFAULT
   // ============================================================
   const initializeDefaultData = () => {
-    // Cek apakah data sudah ada
     const existingItems = localStorage.getItem("forelItems");
     const existingTitle = localStorage.getItem("forelBoardTitle");
     
-    // Jika tidak ada data sama sekali, buat default
     if (!existingItems && !existingTitle) {
       console.log("🔵 Initializing default data...");
       
-      // Set default title
       localStorage.setItem("forelBoardTitle", "BOARD TITLE");
       localStorage.setItem("forelBoardSubtitle", "Sub Title / Description");
       
-      // Set default items
       const defaultItems = [
         { 
           id: 1, 
@@ -84,14 +80,8 @@ function AppContent() {
         },
       ];
       localStorage.setItem("forelItems", JSON.stringify(defaultItems));
-      
-      // Set default statuses
       localStorage.setItem("forelStatuses", JSON.stringify({ Default: "#9ca3af" }));
-      
-      // Set default favorites
       localStorage.setItem("forelFavorites", JSON.stringify(["Workspace", "Administration"]));
-      
-      // Set default group colors
       localStorage.setItem("forelGroupColors", JSON.stringify({ "Default Group": "#3b82f6" }));
       
       console.log("✅ Default data initialized!");
@@ -102,7 +92,6 @@ function AppContent() {
   // LOAD DATA
   // ============================================================
   useEffect(() => {
-    // 🔥 Panggil inisialisasi data
     initializeDefaultData();
 
     const savedItems = localStorage.getItem("forelItems");
@@ -114,9 +103,7 @@ function AppContent() {
 
     const defaultStatuses = { Default: "#9ca3af" };
 
-    // ============================================================
-    // LOAD BOARD TITLE - PRIORITASKAN LOCALSTORAGE
-    // ============================================================
+    // LOAD BOARD TITLE
     if (savedBoardTitle && savedBoardTitle.trim() !== "") {
       setBoardTitle(savedBoardTitle);
     } else {
@@ -325,7 +312,7 @@ function AppContent() {
   }, [items, isInitialized]);
 
   // ============================================================
-  // AUTO-SAVE
+  // AUTO-SAVE (TANPA BOARD TITLE - HEADER SUDAH HANDLE)
   // ============================================================
   useEffect(() => {
     if (isInitialized) {
@@ -345,16 +332,19 @@ function AppContent() {
     localStorage.setItem("forelGroupColors", JSON.stringify(groupColors));
   }, [groupColors]);
 
-  useEffect(() => {
-    localStorage.setItem("forelBoardTitle", boardTitle);
-  }, [boardTitle]);
+  // ============================================================
+  // 🔥 HAPUS AUTO-SAVE TITLE - HEADER SUDAH HANDLE SENDIRI
+  // ============================================================
+  // useEffect(() => {
+  //   localStorage.setItem("forelBoardTitle", boardTitle);
+  // }, [boardTitle]);
 
-  useEffect(() => {
-    localStorage.setItem("forelBoardSubtitle", boardSubtitle);
-  }, [boardSubtitle]);
+  // useEffect(() => {
+  //   localStorage.setItem("forelBoardSubtitle", boardSubtitle);
+  // }, [boardSubtitle]);
 
   // ============================================================
-  // 🔥 HAPUS RESET TITLE - KOMENTAR/ HAPUS
+  // 🔥 HAPUS RESET TITLE SAAT GROUP KOSONG
   // ============================================================
   // useEffect(() => {
   //   const allGroups = [...new Set(items.map((item) => item.group))];
@@ -363,19 +353,6 @@ function AppContent() {
   //     setBoardSubtitle("Sub Title / Description");
   //   }
   // }, [items]);
-
-  // ============================================================
-  // HANDLER UNTUK HEADER
-  // ============================================================
-  const handleTitleChange = (newTitle) => {
-    setBoardTitle(newTitle);
-    localStorage.setItem("forelBoardTitle", newTitle);
-  };
-
-  const handleSubtitleChange = (newSubtitle) => {
-    setBoardSubtitle(newSubtitle);
-    localStorage.setItem("forelBoardSubtitle", newSubtitle);
-  };
 
   // ============================================================
   // UNDO
