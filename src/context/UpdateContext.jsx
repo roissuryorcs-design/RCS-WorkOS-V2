@@ -36,7 +36,7 @@ export const UpdateProvider = ({ children }) => {
   };
 
   // ============================================================
-  // ADD REPLY (Bisa reply ke update atau reply ke reply)
+  // ADD REPLY
   // ============================================================
   const addReply = (updateId, replyData, parentReplyId = null) => {
     if (!replyData || (!replyData.text && !replyData.files)) return;
@@ -47,13 +47,12 @@ export const UpdateProvider = ({ children }) => {
       files: replyData.files || [],
       author: 'User',
       timestamp: new Date().toISOString(),
-      replies: [], // Untuk nested reply
+      replies: [],
       parentReplyId: parentReplyId,
     };
     
     setUpdates(updates.map(u => {
       if (u.id === updateId) {
-        // Cari reply berdasarkan parentReplyId
         if (parentReplyId) {
           const addNestedReply = (replies) => {
             return replies.map(r => {
@@ -75,13 +74,21 @@ export const UpdateProvider = ({ children }) => {
   };
 
   // ============================================================
-  // EDIT UPDATE
+  // 🔥 EDIT UPDATE - dengan files
   // ============================================================
-  const editUpdate = (updateId, newText) => {
+  const editUpdate = (updateId, newText, files = null) => {
     if (!newText) return;
-    setUpdates(updates.map(u => 
-      u.id === updateId ? { ...u, text: newText } : u
-    ));
+    
+    setUpdates(updates.map(u => {
+      if (u.id === updateId) {
+        const updated = { ...u, text: newText };
+        if (files !== null) {
+          updated.files = files;
+        }
+        return updated;
+      }
+      return u;
+    }));
   };
 
   // ============================================================
@@ -92,15 +99,19 @@ export const UpdateProvider = ({ children }) => {
   };
 
   // ============================================================
-  // EDIT REPLY (Support nested)
+  // 🔥 EDIT REPLY - dengan files
   // ============================================================
-  const editReply = (updateId, replyId, newText) => {
+  const editReply = (updateId, replyId, newText, files = null) => {
     if (!newText) return;
     
     const editNestedReply = (replies) => {
       return replies.map(r => {
         if (r.id === replyId) {
-          return { ...r, text: newText };
+          const updated = { ...r, text: newText };
+          if (files !== null) {
+            updated.files = files;
+          }
+          return updated;
         }
         if (r.replies && r.replies.length > 0) {
           return { ...r, replies: editNestedReply(r.replies) };
@@ -118,7 +129,7 @@ export const UpdateProvider = ({ children }) => {
   };
 
   // ============================================================
-  // DELETE REPLY (Support nested)
+  // DELETE REPLY
   // ============================================================
   const deleteReply = (updateId, replyId) => {
     const deleteNestedReply = (replies) => {
