@@ -16,22 +16,30 @@ const UpdatePanel = () => {
   } = useUpdates();
 
   const [newUpdate, setNewUpdate] = useState('');
-  const [replyingTo, setReplyingTo] = useState(null); // { updateId, parentReplyId }
+  const [replyingTo, setReplyingTo] = useState(null);
   const [replyText, setReplyText] = useState('');
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [replyFiles, setReplyFiles] = useState([]);
   
+  // 🔥 Edit Update dengan files
   const [editingUpdateId, setEditingUpdateId] = useState(null);
   const [editText, setEditText] = useState('');
+  const [editFiles, setEditFiles] = useState([]);
+  const [editNewFiles, setEditNewFiles] = useState([]);
   
+  // 🔥 Edit Reply dengan files
   const [editingReplyId, setEditingReplyId] = useState(null);
   const [editingReplyUpdateId, setEditingReplyUpdateId] = useState(null);
   const [editReplyText, setEditReplyText] = useState('');
+  const [editReplyFiles, setEditReplyFiles] = useState([]);
+  const [editReplyNewFiles, setEditReplyNewFiles] = useState([]);
 
   const panelRef = useRef(null);
   const inputRef = useRef(null);
   const fileInputRef = useRef(null);
   const replyFileInputRef = useRef(null);
+  const editFileInputRef = useRef(null);
+  const editReplyFileInputRef = useRef(null);
   const listContainerRef = useRef(null);
 
   const itemUpdates = selectedItem ? getItemUpdates(selectedItem) : [];
@@ -104,6 +112,60 @@ const UpdatePanel = () => {
   };
 
   // ============================================================
+  // 🔥 HANDLE UPLOAD FILE UNTUK EDIT UPDATE
+  // ============================================================
+  const handleEditFileUpload = (e) => {
+    const files = Array.from(e.target.files);
+    const newFiles = files.map(file => ({
+      id: Date.now() + Math.random(),
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      url: URL.createObjectURL(file),
+      file: file,
+    }));
+    setEditNewFiles([...editNewFiles, ...newFiles]);
+    if (editFileInputRef.current) {
+      editFileInputRef.current.value = '';
+    }
+  };
+
+  const removeEditFile = (fileId, isExisting = false) => {
+    if (isExisting) {
+      setEditFiles(editFiles.filter(f => f.id !== fileId));
+    } else {
+      setEditNewFiles(editNewFiles.filter(f => f.id !== fileId));
+    }
+  };
+
+  // ============================================================
+  // 🔥 HANDLE UPLOAD FILE UNTUK EDIT REPLY
+  // ============================================================
+  const handleEditReplyFileUpload = (e) => {
+    const files = Array.from(e.target.files);
+    const newFiles = files.map(file => ({
+      id: Date.now() + Math.random(),
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      url: URL.createObjectURL(file),
+      file: file,
+    }));
+    setEditReplyNewFiles([...editReplyNewFiles, ...newFiles]);
+    if (editReplyFileInputRef.current) {
+      editReplyFileInputRef.current.value = '';
+    }
+  };
+
+  const removeEditReplyFile = (fileId, isExisting = false) => {
+    if (isExisting) {
+      setEditReplyFiles(editReplyFiles.filter(f => f.id !== fileId));
+    } else {
+      setEditReplyNewFiles(editReplyNewFiles.filter(f => f.id !== fileId));
+    }
+  };
+
+  // ============================================================
   // HANDLE SUBMIT UPDATE
   // ============================================================
   const handleSubmit = (e) => {
@@ -125,7 +187,7 @@ const UpdatePanel = () => {
   };
 
   // ============================================================
-  // HANDLE REPLY SUBMIT (Support nested)
+  // HANDLE REPLY SUBMIT
   // ============================================================
   const handleReplySubmit = () => {
     if (replyText.trim() || replyFiles.length > 0) {
@@ -147,24 +209,33 @@ const UpdatePanel = () => {
   };
 
   // ============================================================
-  // HANDLE EDIT UPDATE
+  // 🔥 HANDLE EDIT UPDATE (dengan files)
   // ============================================================
   const startEditUpdate = (update) => {
     setEditingUpdateId(update.id);
     setEditText(update.text);
+    setEditFiles(update.files || []);
+    setEditNewFiles([]);
   };
 
   const handleSaveEditUpdate = (updateId) => {
     if (editText.trim()) {
-      editUpdate(updateId, editText.trim());
+      // Gabungkan files lama + files baru
+      const allFiles = [...editFiles, ...editNewFiles];
+      // Update di context (perlu modify editUpdate)
+      editUpdate(updateId, editText.trim(), allFiles);
       setEditingUpdateId(null);
       setEditText('');
+      setEditFiles([]);
+      setEditNewFiles([]);
     }
   };
 
   const handleCancelEditUpdate = () => {
     setEditingUpdateId(null);
     setEditText('');
+    setEditFiles([]);
+    setEditNewFiles([]);
   };
 
   const handleDeleteUpdate = (updateId) => {
@@ -174,20 +245,25 @@ const UpdatePanel = () => {
   };
 
   // ============================================================
-  // HANDLE EDIT REPLY
+  // 🔥 HANDLE EDIT REPLY (dengan files)
   // ============================================================
   const startEditReply = (updateId, reply) => {
     setEditingReplyId(reply.id);
     setEditingReplyUpdateId(updateId);
     setEditReplyText(reply.text);
+    setEditReplyFiles(reply.files || []);
+    setEditReplyNewFiles([]);
   };
 
   const handleSaveEditReply = (updateId, replyId) => {
     if (editReplyText.trim()) {
-      editReply(updateId, replyId, editReplyText.trim());
+      const allFiles = [...editReplyFiles, ...editReplyNewFiles];
+      editReply(updateId, replyId, editReplyText.trim(), allFiles);
       setEditingReplyId(null);
       setEditingReplyUpdateId(null);
       setEditReplyText('');
+      setEditReplyFiles([]);
+      setEditReplyNewFiles([]);
     }
   };
 
@@ -195,6 +271,8 @@ const UpdatePanel = () => {
     setEditingReplyId(null);
     setEditingReplyUpdateId(null);
     setEditReplyText('');
+    setEditReplyFiles([]);
+    setEditReplyNewFiles([]);
   };
 
   const handleDeleteReply = (updateId, replyId) => {
@@ -228,7 +306,7 @@ const UpdatePanel = () => {
   };
 
   // ============================================================
-  // RENDER REPLIES (Recursive untuk nested reply)
+  // RENDER REPLIES (Recursive)
   // ============================================================
   const renderReplies = (replies, updateId, depth = 0) => {
     if (!replies || replies.length === 0) return null;
@@ -264,6 +342,69 @@ const UpdatePanel = () => {
 
               {isEditingReply ? (
                 <div style={{ marginTop: '4px' }}>
+                  {/* 🔥 Edit Reply Files Preview */}
+                  {([...editReplyFiles, ...editReplyNewFiles]).length > 0 && (
+                    <div style={{ marginBottom: '4px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                      {editReplyFiles.map((file) => (
+                        <div key={file.id} style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          padding: '2px 6px',
+                          background: '#e5e7eb',
+                          borderRadius: '4px',
+                          fontSize: '10px',
+                        }}>
+                          <span>📄</span>
+                          <span>{file.name}</span>
+                          <button
+                            onClick={() => removeEditReplyFile(file.id, true)}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              cursor: 'pointer',
+                              color: '#ef4444',
+                              fontSize: '12px',
+                              fontWeight: 700,
+                              padding: '0 2px',
+                            }}
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+                      {editReplyNewFiles.map((file) => (
+                        <div key={file.id} style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          padding: '2px 6px',
+                          background: '#dbeafe',
+                          borderRadius: '4px',
+                          fontSize: '10px',
+                          border: '1px solid #3b82f6',
+                        }}>
+                          <span>📄</span>
+                          <span>{file.name}</span>
+                          <button
+                            onClick={() => removeEditReplyFile(file.id, false)}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              cursor: 'pointer',
+                              color: '#ef4444',
+                              fontSize: '12px',
+                              fontWeight: 700,
+                              padding: '0 2px',
+                            }}
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
                   <textarea
                     value={editReplyText}
                     onChange={(e) => setEditReplyText(e.target.value)}
@@ -291,7 +432,35 @@ const UpdatePanel = () => {
                       }
                     }}
                   />
-                  <div style={{ marginTop: '4px', display: 'flex', gap: '6px' }}>
+                  <div style={{ marginTop: '4px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                    {/* 🔥 Tombol Attachment untuk Edit Reply */}
+                    <input
+                      ref={editReplyFileInputRef}
+                      type="file"
+                      multiple
+                      accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+                      onChange={handleEditReplyFileUpload}
+                      style={{ display: 'none' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => editReplyFileInputRef.current?.click()}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        fontSize: '14px',
+                        cursor: 'pointer',
+                        padding: '2px 6px',
+                        borderRadius: '4px',
+                        color: '#6b7280',
+                        transition: 'background 0.2s',
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = '#e8e8e8'}
+                      onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                      title="Upload file"
+                    >
+                      📎
+                    </button>
                     <button
                       onClick={() => handleSaveEditReply(updateId, reply.id)}
                       style={{
@@ -337,7 +506,7 @@ const UpdatePanel = () => {
               )}
 
               {/* Reply files */}
-              {reply.files && reply.files.length > 0 && (
+              {!isEditingReply && reply.files && reply.files.length > 0 && (
                 <div style={{ marginTop: '4px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                   {reply.files.map((file, idx) => (
                     <div key={idx} style={{
@@ -361,7 +530,6 @@ const UpdatePanel = () => {
 
               {/* Reply actions */}
               <div style={{ marginTop: '4px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {/* 🔥 Tombol Reply di level reply */}
                 <button
                   onClick={() => setReplyingTo({ updateId, parentReplyId: reply.id })}
                   style={{
@@ -733,6 +901,69 @@ const UpdatePanel = () => {
 
                     {isEditingUpdate ? (
                       <div style={{ marginTop: '6px' }}>
+                        {/* 🔥 Edit Update Files Preview */}
+                        {([...editFiles, ...editNewFiles]).length > 0 && (
+                          <div style={{ marginBottom: '4px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                            {editFiles.map((file) => (
+                              <div key={file.id} style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                padding: '2px 6px',
+                                background: '#e5e7eb',
+                                borderRadius: '4px',
+                                fontSize: '10px',
+                              }}>
+                                <span>📄</span>
+                                <span>{file.name}</span>
+                                <button
+                                  onClick={() => removeEditFile(file.id, true)}
+                                  style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    color: '#ef4444',
+                                    fontSize: '12px',
+                                    fontWeight: 700,
+                                    padding: '0 2px',
+                                  }}
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            ))}
+                            {editNewFiles.map((file) => (
+                              <div key={file.id} style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                padding: '2px 6px',
+                                background: '#dbeafe',
+                                borderRadius: '4px',
+                                fontSize: '10px',
+                                border: '1px solid #3b82f6',
+                              }}>
+                                <span>📄</span>
+                                <span>{file.name}</span>
+                                <button
+                                  onClick={() => removeEditFile(file.id, false)}
+                                  style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    color: '#ef4444',
+                                    fontSize: '12px',
+                                    fontWeight: 700,
+                                    padding: '0 2px',
+                                  }}
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
                         <textarea
                           value={editText}
                           onChange={(e) => setEditText(e.target.value)}
@@ -760,7 +991,35 @@ const UpdatePanel = () => {
                             }
                           }}
                         />
-                        <div style={{ marginTop: '4px', display: 'flex', gap: '6px' }}>
+                        <div style={{ marginTop: '4px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                          {/* 🔥 Tombol Attachment untuk Edit Update */}
+                          <input
+                            ref={editFileInputRef}
+                            type="file"
+                            multiple
+                            accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+                            onChange={handleEditFileUpload}
+                            style={{ display: 'none' }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => editFileInputRef.current?.click()}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              fontSize: '14px',
+                              cursor: 'pointer',
+                              padding: '2px 6px',
+                              borderRadius: '4px',
+                              color: '#6b7280',
+                              transition: 'background 0.2s',
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.background = '#e8e8e8'}
+                            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                            title="Upload file"
+                          >
+                            📎
+                          </button>
                           <button
                             onClick={() => handleSaveEditUpdate(update.id)}
                             style={{
@@ -806,8 +1065,8 @@ const UpdatePanel = () => {
                       </p>
                     )}
 
-                    {/* Update files dengan tombol X */}
-                    {update.files && update.files.length > 0 && (
+                    {/* Update files - tampilan normal */}
+                    {!isEditingUpdate && update.files && update.files.length > 0 && (
                       <div style={{ marginTop: '4px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                         {update.files.map((file, idx) => (
                           <div key={idx} style={{
@@ -892,7 +1151,7 @@ const UpdatePanel = () => {
                       </button>
                     </div>
 
-                    {/* REPLY INPUT (untuk update atau nested reply) */}
+                    {/* REPLY INPUT */}
                     {replyingTo && replyingTo.updateId === update.id && (
                       <div style={{ marginTop: '8px', padding: '8px 10px', background: '#f3f4f6', borderRadius: '6px' }}>
                         {replyFiles.length > 0 && (
