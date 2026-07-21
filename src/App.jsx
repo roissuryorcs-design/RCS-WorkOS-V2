@@ -684,7 +684,7 @@ function AppContent() {
         {/* ============================================================
             HEADER - PAKAI COMPONENT HEADER (dengan props groups)
             ============================================================ */}
-        <Header groups={allGroups && allGroups.length > 0 ? allGroups : undefined} />
+        <Header groups={allGroups || []} />
 
         <Toolbar
           search={search}
