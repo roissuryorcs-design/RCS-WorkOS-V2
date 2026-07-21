@@ -651,7 +651,8 @@ function AppContent() {
   const countDoneItems = (items) => {
     let count = 0;
     items.forEach((item) => {
-      if (item.status === "Done") count++;
+      // 🔥 PERBAIKI: Case insensitive untuk status "Done"
+      if (item.status && item.status.toLowerCase() === "done") count++;
       if (item.children && item.children.length > 0) {
         count += countDoneItems(item.children);
       }
@@ -664,8 +665,7 @@ function AppContent() {
     : filterItemsRecursive(items, search);
 
   const totalItems = countAllItems(filteredItems);
-  const hasDoneStatus = Object.keys(statuses).includes("Done");
-  const doneItems = hasDoneStatus ? countDoneItems(filteredItems) : 0;
+  const doneItems = countDoneItems(filteredItems);
   const pendingItems = totalItems - doneItems;
   const allGroups = [...new Set(items.map((item) => item.group))];
 
@@ -713,21 +713,25 @@ function AppContent() {
           onOpenAddColumn={() => setShowAddColumnPopup(true)}
         />
 
-<div className="board-footer">
-  <div className="footer-stats">
-    <span>Total: <strong>{totalItems}</strong> items</span>
-    <span className="footer-divider">|</span>
-    <span>Done: <strong style={{ color: "#22c55e" }}>{doneItems}</strong></span>
-    <span className="footer-divider">|</span>
-    <span>Pending: <strong style={{ color: "#f59e0b" }}>{pendingItems}</strong></span>
-  </div>
-  <div className="footer-actions">
-    <span className="footer-status">
-      <span className="status-dot"></span>
-      Auto-saved
-    </span>
-  </div>
-</div>
+        {/* ============================================================
+            FOOTER - DENGAN AUTO-SAVED INDICATOR
+            ============================================================ */}
+        <div className="board-footer">
+          <div className="footer-stats">
+            <span>Total: <strong>{totalItems}</strong> items</span>
+            <span className="footer-divider">|</span>
+            <span>Done: <strong style={{ color: "#22c55e" }}>{doneItems}</strong></span>
+            <span className="footer-divider">|</span>
+            <span>Pending: <strong style={{ color: "#f59e0b" }}>{pendingItems}</strong></span>
+          </div>
+          <div className="footer-actions">
+            <span className="footer-status">
+              <span className="status-dot"></span>
+              Auto-saved
+            </span>
+          </div>
+        </div>
+      </div>
 
       {showStatusManager && (
         <StatusManager
