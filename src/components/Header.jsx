@@ -1,5 +1,3 @@
-// src/components/Header.jsx
-
 import { useState, useEffect } from "react";
 
 export default function Header({ isDefaultOnly = false }) {
@@ -24,13 +22,8 @@ export default function Header({ isDefaultOnly = false }) {
   const hasCustomName = customName && customName.trim() !== "";
   const hasCustomDesc = customDesc && customDesc.trim() !== "";
 
-  // 🔥 INI YANG PALING PENTING!
   const displayName = isDefaultOnly ? "BOARD NAME" : (hasCustomName ? customName : "BOARD NAME");
   const displayDesc = isDefaultOnly ? "add a description" : (hasCustomDesc ? customDesc : "add a description");
-
-  // Debug: log untuk memastikan props diterima
-  console.log("🔵 Header props - isDefaultOnly:", isDefaultOnly);
-  console.log("🔵 Header - displayName:", displayName);
 
   // ============================================================
   // Simpan ke localStorage
@@ -108,7 +101,7 @@ export default function Header({ isDefaultOnly = false }) {
   return (
     <div className="header-container" style={{ padding: "16px 24px" }}>
       <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-        {/* BOARD NAME */}
+        {/* BOARD NAME - TANPA ICON ✎ */}
         {isEditingName ? (
           <input
             type="text"
@@ -150,12 +143,11 @@ export default function Header({ isDefaultOnly = false }) {
             title="Click to edit board name"
           >
             {displayName}
-            <span style={{ fontSize: "14px", color: "var(--text-muted)", marginLeft: "8px", fontWeight: 400 }}>
-            </span>
+            {/* ✎ TELAH DIHAPUS */}
           </h1>
         )}
 
-        {/* DESCRIPTION */}
+        {/* DESCRIPTION - TANPA ICON ✎ */}
         {isEditingDesc ? (
           <input
             type="text"
@@ -194,8 +186,7 @@ export default function Header({ isDefaultOnly = false }) {
             title="Click to edit description"
           >
             {displayDesc}
-            <span style={{ fontSize: "11px", color: "var(--text-muted)", marginLeft: "6px" }}>
-            </span>
+            {/* ✎ TELAH DIHAPUS */}
           </span>
         )}
       </div>
