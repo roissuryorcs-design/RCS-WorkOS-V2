@@ -22,6 +22,7 @@ function AppContent() {
   const [activeStatusColumnId, setActiveStatusColumnId] = useState(null);
   const [showAddColumnPopup, setShowAddColumnPopup] = useState(false);
   const [boardTitle, setBoardTitle] = useState("FOREL FPSO HVAC");
+  const [boardSubtitle, setBoardSubtitle] = useState("Sub Title"); // ← TAMBAHKAN
 
   const { columns, addColumn, renameColumn, toggleColumn, deleteColumn, resetColumns, updateColumnStatuses, updateColumnStatusOrder } = useColumns();
 
@@ -49,6 +50,7 @@ function AppContent() {
     const savedFavs = localStorage.getItem("forelFavorites");
     const savedGroupColors = localStorage.getItem("forelGroupColors");
     const savedBoardTitle = localStorage.getItem("forelBoardTitle");
+    const savedBoardSubtitle = localStorage.getItem("forelBoardSubtitle"); // ← TAMBAHKAN
 
     const defaultStatuses = { Default: "#9ca3af" };
 
@@ -204,6 +206,10 @@ function AppContent() {
     if (savedBoardTitle) {
       setBoardTitle(savedBoardTitle);
     }
+
+    if (savedBoardSubtitle) { // ← TAMBAHKAN
+      setBoardSubtitle(savedBoardSubtitle);
+    }
   }, []);
 
   // ----- AUTO SAVE -----
@@ -226,6 +232,10 @@ function AppContent() {
   useEffect(() => {
     localStorage.setItem("forelBoardTitle", boardTitle);
   }, [boardTitle]);
+
+  useEffect(() => { // ← TAMBAHKAN
+    localStorage.setItem("forelBoardSubtitle", boardSubtitle);
+  }, [boardSubtitle]);
 
   // ----- UNDO -----
   const saveHistory = (newItems) => {
@@ -632,7 +642,7 @@ function AppContent() {
 
       <div className="main-content">
         {/* ============================================================
-            HEADER DENGAN BOARD TITLE DINAMIS
+            HEADER DENGAN BOARD TITLE & SUB TITLE DINAMIS
             ============================================================ */}
         <div className="header-sticky">
           <h1 
@@ -659,13 +669,71 @@ function AppContent() {
               outline: 'none',
               padding: '2px 4px',
               borderRadius: '4px',
+              position: 'relative',
             }}
           >
             {boardTitle}
-            <span style={{ fontSize: '14px', color: 'var(--text-muted)', marginLeft: '8px', fontWeight: 400 }}>
+            <span 
+              className="header-edit-icon"
+              style={{ 
+                fontSize: '14px', 
+                color: 'var(--text-muted)', 
+                marginLeft: '8px', 
+                fontWeight: 400,
+                opacity: 0,
+                transition: 'opacity 0.2s ease',
+                display: 'inline-block',
+              }}
+            >
+              ✎
             </span>
           </h1>
-          <p className="header-subtitle">Engineering</p>
+          
+          <p 
+            className="header-subtitle"
+            title="Click to edit subtitle"
+            contentEditable
+            suppressContentEditableWarning
+            onBlur={(e) => {
+              const newSubtitle = e.target.textContent.trim();
+              if (newSubtitle) {
+                setBoardSubtitle(newSubtitle);
+              } else {
+                e.target.textContent = boardSubtitle;
+              }
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                e.target.blur();
+              }
+            }}
+            style={{
+              cursor: 'text',
+              outline: 'none',
+              padding: '2px 4px',
+              borderRadius: '4px',
+              position: 'relative',
+              display: 'inline-block',
+              margin: 0,
+            }}
+          >
+            {boardSubtitle}
+            <span 
+              className="header-edit-icon"
+              style={{ 
+                fontSize: '12px', 
+                color: 'var(--text-muted)', 
+                marginLeft: '6px', 
+                fontWeight: 400,
+                opacity: 0,
+                transition: 'opacity 0.2s ease',
+                display: 'inline-block',
+              }}
+            >
+              ✎
+            </span>
+          </p>
         </div>
 
         <Toolbar
