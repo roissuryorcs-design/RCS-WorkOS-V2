@@ -777,12 +777,11 @@ export default function App() {
   return (
     <ThemeProvider>
       <ColumnProvider>
-        <AppContent />
+        <UpdateProvider>
+          <AppContent />
+          <UpdatePanel />
+        </UpdateProvider>
       </ColumnProvider>
     </ThemeProvider>
-    <UpdateProvider>
-  <AppContent />
-  <UpdatePanel />
-</UpdateProvider>
   );
 }
