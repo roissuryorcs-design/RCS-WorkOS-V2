@@ -310,12 +310,18 @@ const UpdatePanel = () => {
   };
 
   // ============================================================
-  // RENDER FILES - LIST DENGAN NOMOR URUT DAN WARNA BIRU
+  // RENDER FILES - LIST DENGAN NOMOR URUT, WARNA BIRU, WRAP TEXT
   // ============================================================
   const renderFiles = (files) => {
     if (!files || files.length === 0) return null;
     return (
-      <div style={{ marginTop: '4px', display: 'flex', flexWrap: 'wrap', gap: '4px 12px' }}>
+      <div style={{ 
+        marginTop: '4px', 
+        display: 'flex', 
+        flexWrap: 'wrap', 
+        gap: '4px 12px',
+        maxWidth: '100%',
+      }}>
         {files.map((file, index) => (
           <span key={file.id} style={{
             fontSize: '12px',
@@ -325,6 +331,8 @@ const UpdatePanel = () => {
             display: 'inline-flex',
             alignItems: 'center',
             gap: '4px',
+            wordBreak: 'break-all',
+            maxWidth: '100%',
           }}>
             {index + 1}. {file.name}
           </span>
@@ -334,7 +342,76 @@ const UpdatePanel = () => {
   };
 
   // ============================================================
-  // RENDER REPLIES (Recursive) - dengan reply dinamis per reply
+  // RENDER FILES PREVIEW UNTUK EDIT - DENGAN TOMBOL X
+  // ============================================================
+  const renderEditFilesPreview = (existingFiles, newFiles, onRemove, isReply = false) => {
+    const allFiles = [...existingFiles, ...newFiles];
+    if (allFiles.length === 0) return null;
+    
+    return (
+      <div style={{ 
+        marginBottom: '4px', 
+        display: 'flex', 
+        flexWrap: 'wrap', 
+        gap: '4px 8px',
+        maxWidth: '100%',
+        padding: '4px 6px',
+        background: '#f8f9fa',
+        borderRadius: '4px',
+        border: '1px solid #e5e7eb',
+      }}>
+        {allFiles.map((file, index) => {
+          const isNew = newFiles.some(f => f.id === file.id);
+          return (
+            <div key={file.id} style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              padding: '2px 6px',
+              background: isNew ? '#dbeafe' : '#e5e7eb',
+              borderRadius: '4px',
+              border: isNew ? '1px solid #3b82f6' : '1px solid #d1d5db',
+              fontSize: '11px',
+              maxWidth: '100%',
+              flexWrap: 'wrap',
+            }}>
+              <span style={{ color: '#1a73e8', fontWeight: 500 }}>{index + 1}.</span>
+              <span style={{ 
+                color: '#1a73e8', 
+                textDecoration: 'underline',
+                wordBreak: 'break-all',
+                maxWidth: '250px',
+              }}>
+                {file.name}
+              </span>
+              <button
+                onClick={() => onRemove(file.id, !isNew)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: '#ef4444',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  padding: '0 2px',
+                  borderRadius: '4px',
+                  transition: 'background 0.2s',
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = '#fee2e2'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                title="Remove file"
+              >
+                ✕
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  // ============================================================
+  // RENDER REPLIES (Recursive)
   // ============================================================
   const renderReplies = (replies, updateId, depth = 0) => {
     if (!replies || replies.length === 0) return null;
@@ -372,66 +449,18 @@ const UpdatePanel = () => {
 
               {isEditingReply ? (
                 <div style={{ marginTop: '4px' }}>
-                  {([...editReplyFiles, ...editReplyNewFiles]).length > 0 && (
-                    <div style={{ marginBottom: '4px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                      {editReplyFiles.map((file, idx) => (
-                        <div key={file.id} style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          padding: '2px 6px',
-                          background: '#e5e7eb',
-                          borderRadius: '4px',
-                          fontSize: '10px',
-                        }}>
-                          <span style={{ color: '#1a73e8' }}>{idx + 1}.</span>
-                          <span>{file.name}</span>
-                          <button
-                            onClick={() => removeEditReplyFile(file.id, true)}
-                            style={{
-                              background: 'none',
-                              border: 'none',
-                              cursor: 'pointer',
-                              color: '#ef4444',
-                              fontSize: '12px',
-                              fontWeight: 700,
-                              padding: '0 2px',
-                            }}
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      ))}
-                      {editReplyNewFiles.map((file, idx) => (
-                        <div key={file.id} style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          padding: '2px 6px',
-                          background: '#dbeafe',
-                          borderRadius: '4px',
-                          fontSize: '10px',
-                          border: '1px solid #3b82f6',
-                        }}>
-                          <span style={{ color: '#1a73e8' }}>{editReplyFiles.length + idx + 1}.</span>
-                          <span>{file.name}</span>
-                          <button
-                            onClick={() => removeEditReplyFile(file.id, false)}
-                            style={{
-                              background: 'none',
-                              border: 'none',
-                              cursor: 'pointer',
-                              color: '#ef4444',
-                              fontSize: '12px',
-                              fontWeight: 700,
-                              padding: '0 2px',
-                            }}
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      ))}
-                    </div>
+                  {/* 🔥 Preview file di Edit Reply */}
+                  {renderEditFilesPreview(
+                    editReplyFiles,
+                    editReplyNewFiles,
+                    (fileId, isExisting) => {
+                      if (isExisting) {
+                        setEditReplyFiles(editReplyFiles.filter(f => f.id !== fileId));
+                      } else {
+                        setEditReplyNewFiles(editReplyNewFiles.filter(f => f.id !== fileId));
+                      }
+                    },
+                    true
                   )}
 
                   <textarea
@@ -533,13 +562,11 @@ const UpdatePanel = () => {
                 </p>
               )}
 
-              {/* 🔥 Files dengan list dan warna biru */}
               {!isEditingReply && reply.files && reply.files.length > 0 && (
                 renderFiles(reply.files)
               )}
 
               <div style={{ marginTop: '4px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {/* 🔥 Tombol Reply di level reply - posisi dinamis */}
                 <button
                   onClick={() => setReplyingTo({ updateId, parentReplyId: reply.id })}
                   style={{
@@ -596,7 +623,7 @@ const UpdatePanel = () => {
                 </button>
               </div>
 
-              {/* 🔥 REPLY INPUT DINAMIS - muncul tepat di bawah reply ini */}
+              {/* 🔥 Reply input dinamis di bawah reply ini */}
               {isReplyingToThis && (
                 <div style={{
                   marginTop: '8px',
@@ -759,15 +786,6 @@ const UpdatePanel = () => {
   };
 
   // ============================================================
-  // FORMAT FILE SIZE
-  // ============================================================
-  const formatFileSize = (bytes) => {
-    if (bytes < 1024) return bytes + ' B';
-    if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
-    return (bytes / 1048576).toFixed(1) + ' MB';
-  };
-
-  // ============================================================
   // FORMAT DATE
   // ============================================================
   const formatDate = (timestamp) => {
@@ -878,7 +896,7 @@ const UpdatePanel = () => {
                   fontSize: '11px',
                 }}>
                   <span style={{ color: '#1a73e8' }}>{idx + 1}.</span>
-                  <span style={{ color: '#1a73e8', textDecoration: 'underline' }}>{file.name}</span>
+                  <span style={{ color: '#1a73e8', textDecoration: 'underline', wordBreak: 'break-all' }}>{file.name}</span>
                   <button
                     onClick={() => removeFile(file.id)}
                     style={{
@@ -1061,66 +1079,18 @@ const UpdatePanel = () => {
 
                     {isEditingUpdate ? (
                       <div style={{ marginTop: '6px' }}>
-                        {([...editFiles, ...editNewFiles]).length > 0 && (
-                          <div style={{ marginBottom: '4px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                            {editFiles.map((file, idx) => (
-                              <div key={file.id} style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '4px',
-                                padding: '2px 6px',
-                                background: '#e5e7eb',
-                                borderRadius: '4px',
-                                fontSize: '10px',
-                              }}>
-                                <span style={{ color: '#1a73e8' }}>{idx + 1}.</span>
-                                <span>{file.name}</span>
-                                <button
-                                  onClick={() => removeEditFile(file.id, true)}
-                                  style={{
-                                    background: 'none',
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    color: '#ef4444',
-                                    fontSize: '12px',
-                                    fontWeight: 700,
-                                    padding: '0 2px',
-                                  }}
-                                >
-                                  ✕
-                                </button>
-                              </div>
-                            ))}
-                            {editNewFiles.map((file, idx) => (
-                              <div key={file.id} style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '4px',
-                                padding: '2px 6px',
-                                background: '#dbeafe',
-                                borderRadius: '4px',
-                                fontSize: '10px',
-                                border: '1px solid #3b82f6',
-                              }}>
-                                <span style={{ color: '#1a73e8' }}>{editFiles.length + idx + 1}.</span>
-                                <span>{file.name}</span>
-                                <button
-                                  onClick={() => removeEditFile(file.id, false)}
-                                  style={{
-                                    background: 'none',
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    color: '#ef4444',
-                                    fontSize: '12px',
-                                    fontWeight: 700,
-                                    padding: '0 2px',
-                                  }}
-                                >
-                                  ✕
-                                </button>
-                              </div>
-                            ))}
-                          </div>
+                        {/* 🔥 Preview file di Edit Update */}
+                        {renderEditFilesPreview(
+                          editFiles,
+                          editNewFiles,
+                          (fileId, isExisting) => {
+                            if (isExisting) {
+                              setEditFiles(editFiles.filter(f => f.id !== fileId));
+                            } else {
+                              setEditNewFiles(editNewFiles.filter(f => f.id !== fileId));
+                            }
+                          },
+                          false
                         )}
 
                         <textarea
@@ -1223,7 +1193,6 @@ const UpdatePanel = () => {
                       </p>
                     )}
 
-                    {/* 🔥 Files dengan list dan warna biru */}
                     {!isEditingUpdate && update.files && update.files.length > 0 && (
                       renderFiles(update.files)
                     )}
@@ -1285,7 +1254,7 @@ const UpdatePanel = () => {
                       </button>
                     </div>
 
-                    {/* 🔥 REPLY INPUT DINAMIS - muncul tepat di bawah update ini */}
+                    {/* REPLY INPUT DINAMIS di bawah update */}
                     {isReplyingToUpdate && (
                       <div style={{
                         marginTop: '10px',
