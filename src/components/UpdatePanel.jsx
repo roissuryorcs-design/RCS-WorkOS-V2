@@ -923,4 +923,127 @@ const UpdatePanel = () => {
                                       padding: '2px 10px',
                                       background: '#e5e7eb',
                                       color: '#374151',
-                                      border: 'none
+                                      border: 'none',
+                                      borderRadius: '4px',
+                                      fontSize: '10px',
+                                      cursor: 'pointer',
+                                      fontWeight: 500,
+                                    }}
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <p style={{
+                                margin: '4px 0 0',
+                                fontSize: '13px',
+                                color: '#1f2937',
+                                fontWeight: 400,
+                                lineHeight: 1.4,
+                              }}>
+                                {renderTextWithMentions(reply.text)}
+                              </p>
+                            )}
+
+                            {reply.files && reply.files.length > 0 && (
+                              <div style={{ marginTop: '4px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                                {reply.files.map((file, idx) => (
+                                  <div key={idx} style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '4px',
+                                    padding: '1px 6px',
+                                    background: '#ffffff',
+                                    borderRadius: '4px',
+                                    border: '1px solid #d1d5db',
+                                    fontSize: '10px',
+                                  }}>
+                                    <span>📄</span>
+                                    <span style={{ maxWidth: '60px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                      {file.name}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+
+                            <div style={{ marginTop: '4px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                              <button
+                                onClick={() => startEditReply(update.id, reply)}
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  color: '#4B5563',
+                                  fontSize: '10px',
+                                  cursor: 'pointer',
+                                  padding: '0 4px',
+                                  borderRadius: '4px',
+                                  fontWeight: 600,
+                                  transition: 'background 0.2s',
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.background = '#e8e8e8'}
+                                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                              >
+                                ✎ Edit
+                              </button>
+                              <button
+                                onClick={() => handleDeleteReply(update.id, reply.id)}
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  color: '#ef4444',
+                                  fontSize: '10px',
+                                  cursor: 'pointer',
+                                  padding: '0 4px',
+                                  borderRadius: '4px',
+                                  fontWeight: 600,
+                                  transition: 'background 0.2s',
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.background = '#fde8e8'}
+                                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                              >
+                                ✕ Delete
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes slideInRight {
+          from { transform: translateX(100%); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        ::-webkit-scrollbar {
+          width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+          background: #f1f1f1;
+          border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb {
+          background: #c1c7cd;
+          border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+          background: #9ca3af;
+        }
+      `}</style>
+    </>
+  );
+};
+
+export default UpdatePanel;
