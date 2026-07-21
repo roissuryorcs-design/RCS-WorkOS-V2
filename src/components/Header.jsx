@@ -15,15 +15,38 @@ export default function Header({ isDefaultOnly = false }) {
   const [tempDesc, setTempDesc] = useState("");
 
   // ============================================================
+  // 🔥 FIX: LOAD DATA SAAT PERTAMA KALI
+  // ============================================================
+  useEffect(() => {
+    const savedName = localStorage.getItem("boardName");
+    const savedDesc = localStorage.getItem("boardDescription");
+    
+    if (savedName) {
+      setCustomName(savedName);
+    }
+    if (savedDesc) {
+      setCustomDesc(savedDesc);
+    }
+  }, []);
+
+  // ============================================================
   // LOGIKA UTAMA:
   // - Jika isDefaultOnly = true → tampilkan "BOARD NAME"
   // - Jika isDefaultOnly = false → tampilkan customName (jika ada)
+  // 🔥 FIX: Jangan override customName dengan "BOARD NAME"
   // ============================================================
   const hasCustomName = customName && customName.trim() !== "";
   const hasCustomDesc = customDesc && customDesc.trim() !== "";
 
-  const displayName = isDefaultOnly ? "BOARD NAME" : (hasCustomName ? customName : "BOARD NAME");
-  const displayDesc = isDefaultOnly ? "add a description" : (hasCustomDesc ? customDesc : "add a description");
+  // 🔥 FIX: Gunakan customName meskipun isDefaultOnly true
+  // Tapi tetap tampilkan "BOARD NAME" jika tidak ada customName
+  const displayName = hasCustomName ? customName : "BOARD NAME";
+  const displayDesc = hasCustomDesc ? customDesc : "add a description";
+
+  // Debug: log untuk memastikan
+  console.log("🔵 Header - isDefaultOnly:", isDefaultOnly);
+  console.log("🔵 Header - customName:", customName);
+  console.log("🔵 Header - displayName:", displayName);
 
   // ============================================================
   // Simpan ke localStorage
@@ -143,7 +166,6 @@ export default function Header({ isDefaultOnly = false }) {
             title="Click to edit board name"
           >
             {displayName}
-            {/* ✎ TELAH DIHAPUS */}
           </h1>
         )}
 
@@ -186,7 +208,6 @@ export default function Header({ isDefaultOnly = false }) {
             title="Click to edit description"
           >
             {displayDesc}
-            {/* ✎ TELAH DIHAPUS */}
           </span>
         )}
       </div>
