@@ -1,66 +1,53 @@
+jsx
 import React, { useState, useEffect } from 'react';
 
 const Header = ({ groups }) => {
-  // 1. 🔥 LOAD DARI LOCALSTORAGE - PASTI
+  // 1. LOAD DARI LOCALSTORAGE
+  // Menggunakan lazy initializer agar hanya berjalan sekali saat refresh
   const [title, setTitle] = useState(() => {
     const saved = localStorage.getItem('forelBoardTitle');
-    console.log('🔵 Load title from localStorage:', saved);
-    return saved !== null && saved !== '' ? saved : 'BOARD TITLE';
+    return saved && saved.trim() !== '' ? saved : 'BOARD TITLE';
   });
 
   const [subtitle, setSubtitle] = useState(() => {
     const saved = localStorage.getItem('forelBoardSubtitle');
-    console.log('🔵 Load subtitle from localStorage:', saved);
-    return saved !== null && saved !== '' ? saved : 'Sub Title / Description';
+    return saved && saved.trim() !== '' ? saved : 'Sub Title / Description';
   });
 
-  // 2. 🔥 SIMPAN KE LOCALSTORAGE SETIAP BERUBAH
+  // 2. SIMPAN KE LOCALSTORAGE SETIAP KALI STATE BERUBAH
   useEffect(() => {
-    console.log('💾 Saving title:', title);
-    localStorage.setItem('forelBoardTitle', title);
+    if (title !== 'BOARD TITLE') { // Opsional: jangan simpan jika masih default
+      localStorage.setItem('forelBoardTitle', title);
+    }
   }, [title]);
 
   useEffect(() => {
-    console.log('💾 Saving subtitle:', subtitle);
-    localStorage.setItem('forelBoardSubtitle', subtitle);
+    if (subtitle !== 'Sub Title / Description') {
+      localStorage.setItem('forelBoardSubtitle', subtitle);
+    }
   }, [subtitle]);
 
-  // 3. 🔥 RESET JIKA GROUP KOSONG
-  useEffect(() => {
-    const hasGroups = groups && groups.length > 0;
-    if (!hasGroups) {
-      console.log('🔄 No groups, resetting to default');
-      setTitle('BOARD TITLE');
-      setSubtitle('Sub Title / Description');
-      localStorage.setItem('forelBoardTitle', 'BOARD TITLE');
-      localStorage.setItem('forelBoardSubtitle', 'Sub Title / Description');
-    }
-  }, [groups]);
-
-  // 4. HANDLE BLUR - SIMPAN SAAT EDIT SELESAI
+  // 3. LOGIKA HANDLE EDIT (BLUR)
   const handleTitleBlur = (e) => {
-    // Ambil teks dari firstChild (abaikan span icon)
-    const textNode = e.currentTarget.firstChild;
-    const newText = textNode ? textNode.textContent.trim() : e.currentTarget.textContent.trim();
-    // Bersihkan dari karakter ✎
+    // Mengambil teks saja, mengabaikan elemen <span> ikon pensil
+    const newText = e.currentTarget.firstChild ? e.currentTarget.firstChild.textContent.trim() : '';
     const cleanText = newText.replace(/✎/g, '').trim();
-    console.log('📝 Title blurred, new text:', cleanText);
-    if (cleanText) {
+    
+    if (cleanText && cleanText !== title) {
       setTitle(cleanText);
     }
   };
 
   const handleSubtitleBlur = (e) => {
-    const textNode = e.currentTarget.firstChild;
-    const newText = textNode ? textNode.textContent.trim() : e.currentTarget.textContent.trim();
+    const newText = e.currentTarget.firstChild ? e.currentTarget.firstChild.textContent.trim() : '';
     const cleanText = newText.replace(/✎/g, '').trim();
-    console.log('📝 Subtitle blurred, new text:', cleanText);
-    if (cleanText) {
+    
+    if (cleanText && cleanText !== subtitle) {
       setSubtitle(cleanText);
     }
   };
 
-  // 5. HANDLE KEYDOWN - ENTER UNTUK SELESAI EDIT
+  // 4. HANDLE ENTER UNTUK SELESAI EDIT
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -69,7 +56,7 @@ const Header = ({ groups }) => {
   };
 
   return (
-    <div className="header-sticky">
+    <div className="header-sticky" style={{ padding: '20px', borderBottom: '1px solid #333' }}>
       <h1
         className="header-title"
         contentEditable={true}
@@ -82,59 +69,63 @@ const Header = ({ groups }) => {
           outline: 'none',
           padding: '2px 4px',
           borderRadius: '4px',
-          position: 'relative',
+          display: 'inline-block',
+          margin: 0,
+          position: 'relative'
         }}
       >
         {title}
         <span
           className="header-edit-icon"
+          contentEditable={false} // Pastikan ikon tidak bisa diedit
           style={{
             fontSize: '14px',
-            color: 'var(--text-muted)',
+            color: 'var(--text-muted, #8a94a6)',
             marginLeft: '8px',
             fontWeight: 400,
-            opacity: 0.5,
-            transition: 'opacity 0.2s ease',
+            opacity: 0.6,
             display: 'inline-block',
+            pointerEvents: 'none' // Agar tidak mengganggu klik pada teks
           }}
         >
           ✎
         </span>
       </h1>
 
-      <p
-        className="header-subtitle"
-        contentEditable={true}
-        onBlur={handleSubtitleBlur}
-        onKeyDown={handleKeyDown}
-        suppressContentEditableWarning={true}
-        spellCheck={false}
-        style={{
-          cursor: 'text',
-          outline: 'none',
-          padding: '2px 4px',
-          borderRadius: '4px',
-          position: 'relative',
-          display: 'inline-block',
-          margin: 0,
-        }}
-      >
-        {subtitle}
-        <span
-          className="header-edit-icon"
+      <div style={{ marginTop: '4px' }}>
+        <p
+          className="header-subtitle"
+          contentEditable={true}
+          onBlur={handleSubtitleBlur}
+          onKeyDown={handleKeyDown}
+          suppressContentEditableWarning={true}
+          spellCheck={false}
           style={{
-            fontSize: '12px',
-            color: 'var(--text-muted)',
-            marginLeft: '6px',
-            fontWeight: 400,
-            opacity: 0.5,
-            transition: 'opacity 0.2s ease',
+            cursor: 'text',
+            outline: 'none',
+            padding: '2px 4px',
+            borderRadius: '4px',
             display: 'inline-block',
+            margin: 0,
+            color: 'var(--text-muted, #8a94a6)'
           }}
         >
-          ✎
-        </span>
-      </p>
+          {subtitle}
+          <span
+            className="header-edit-icon"
+            contentEditable={false}
+            style={{
+              fontSize: '12px',
+              marginLeft: '6px',
+              opacity: 0.6,
+              display: 'inline-block',
+              pointerEvents: 'none'
+            }}
+          >
+            ✎
+          </span>
+        </p>
+      </div>
     </div>
   );
 };
