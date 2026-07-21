@@ -10,21 +10,6 @@ import ColumnManager from "./components/ColumnManager";
 import AddColumnPopup from "./components/AddColumnPopup";
 import "./App.css";
 
-// ============================================================
-// IMPORT DARI treeData.jsx
-// ============================================================
-import { 
-  loadItems as loadItemsFromTree, 
-  loadGroups as loadGroupsFromTree,
-  saveItems as saveItemsToTree,
-  saveGroups as saveGroupsToTree,
-  getDefaultItems,
-  DEFAULT_GROUP,
-  ensureGroupExists,
-  addGroupSafe,
-  deleteGroupSafe
-} from "./data/treeData";
-
 function AppContent() {
   const [items, setItems] = useState([]);
   const [statuses, setStatuses] = useState({});
@@ -39,93 +24,12 @@ function AppContent() {
   const [boardTitle, setBoardTitle] = useState("FOREL FPSO HVAC");
   const [boardSubtitle, setBoardSubtitle] = useState("Sub Title / Description");
   const [isInitialized, setIsInitialized] = useState(false);
+  const [hasAutoAdded, setHasAutoAdded] = useState(false);
 
   const { columns, addColumn, renameColumn, toggleColumn, deleteColumn, resetColumns, updateColumnStatuses, updateColumnStatusOrder } = useColumns();
 
   // ============================================================
-  // FLAG UNTUK MENCEGAH INFINITE LOOP AUTO-ADD
-  // ============================================================
-  const [hasAutoAdded, setHasAutoAdded] = useState(false);
-
-  // ============================================================
-  // FUNGSI: TAMBAH 3 ITEM SEKALIGUS KE SATU GROUP
-  // ============================================================
-  const addMultipleItemsToGroup = (groupName, count = 3) => {
-    const existingItems = items.filter(item => item.group === groupName);
-    const startIndex = existingItems.length;
-    
-    const newItems = Array.from({ length: count }, (_, i) => ({
-      id: Date.now() + i + Math.random() * 1000,
-      group: groupName,
-      item: `Task ${startIndex + i + 1}`,
-      document: `DOC-${String(startIndex + i + 1).padStart(3, '0')}`,
-      people: "",
-      status: "Default",
-      dueDate: "dd/mm/ttt",
-      rev: "R0",
-      children: [],
-      isExpanded: false,
-    }));
-    
-    const updatedItems = [...items, ...newItems];
-    setItems(updatedItems);
-    localStorage.setItem("forelItems", JSON.stringify(updatedItems));
-    
-    console.log(`✅ Auto-added ${count} items to group "${groupName}"`);
-  };
-
-  // ============================================================
-  // CEK DAN AUTO-ADD 3 ITEM KE GRUP KOSONG
-  // ============================================================
-  const ensureAllGroupsHaveItems = (currentItems, currentGroups) => {
-    if (hasAutoAdded) return currentItems;
-    if (!currentGroups || currentGroups.length === 0) return currentItems;
-    
-    let needsAdd = false;
-    const groupsToCheck = [...new Set(currentItems.map(item => item.group))];
-    
-    // Cek apakah ada grup yang tidak punya items
-    currentGroups.forEach(group => {
-      const groupItems = currentItems.filter(item => item.group === group);
-      if (groupItems.length === 0) {
-        needsAdd = true;
-      }
-    });
-    
-    if (needsAdd) {
-      setHasAutoAdded(true);
-      let updatedItems = [...currentItems];
-      
-      currentGroups.forEach(group => {
-        const groupItems = updatedItems.filter(item => item.group === group);
-        if (groupItems.length === 0) {
-          // Tambah 3 item
-          const startIndex = updatedItems.filter(item => item.group === group).length;
-          const newItems = Array.from({ length: 3 }, (_, i) => ({
-            id: Date.now() + i + Math.random() * 1000,
-            group: group,
-            item: `Task ${startIndex + i + 1}`,
-            document: `DOC-${String(startIndex + i + 1).padStart(3, '0')}`,
-            people: "",
-            status: "Default",
-            dueDate: "dd/mm/ttt",
-            rev: "R0",
-            children: [],
-            isExpanded: false,
-          }));
-          updatedItems = [...updatedItems, ...newItems];
-          console.log(`✅ Auto-added 3 items to group "${group}"`);
-        }
-      });
-      
-      return updatedItems;
-    }
-    
-    return currentItems;
-  };
-
-  // ============================================================
-  // LOAD DATA - DENGAN AUTO-ADD 3 ITEM
+  // LOAD DATA
   // ============================================================
   useEffect(() => {
     const savedItems = localStorage.getItem("forelItems");
@@ -137,7 +41,6 @@ function AppContent() {
 
     const defaultStatuses = { Default: "#9ca3af" };
 
-    // Load statuses
     if (savedStatuses) {
       const parsed = JSON.parse(savedStatuses);
       if (Object.keys(parsed).length === 0) {
@@ -149,7 +52,6 @@ function AppContent() {
       setStatuses(defaultStatuses);
     }
 
-    // Load items dengan auto-add 3 items
     let loadedItems = [];
     let allGroups = [];
 
@@ -164,18 +66,12 @@ function AppContent() {
         }));
       };
       loadedItems = ensureChildren(parsedItems);
-      
-      // Ambil semua group dari items
       allGroups = [...new Set(loadedItems.map(item => item.group))];
       
-      // Jika tidak ada group, buat default group
       if (allGroups.length === 0) {
         allGroups = ["Default Group"];
       }
     } else {
-      // ============================================================
-      // DEFAULT: 1 GROUP DENGAN 3 ITEM
-      // ============================================================
       const defaultGroup = "Default Group";
       allGroups = [defaultGroup];
       
@@ -183,9 +79,9 @@ function AppContent() {
         { 
           id: 1, 
           group: defaultGroup, 
-          item: "Item 1", 
-          document: "NO. DO", 
-          people: "Done", 
+          item: "Task 1", 
+          document: "DOC-001", 
+          people: "Assign to...", 
           status: "Default", 
           dueDate: "dd/mm/ttt", 
           rev: "R0",
@@ -195,9 +91,9 @@ function AppContent() {
         { 
           id: 2, 
           group: defaultGroup, 
-          item: "Item 2", 
-          document: "NO. DO", 
-          people: "Done", 
+          item: "Task 2", 
+          document: "DOC-002", 
+          people: "Assign to...", 
           status: "Default", 
           dueDate: "dd/mm/ttt", 
           rev: "R0",
@@ -207,9 +103,9 @@ function AppContent() {
         { 
           id: 3, 
           group: defaultGroup, 
-          item: "Item 3", 
-          document: "NO. DO", 
-          people: "", 
+          item: "Task 3", 
+          document: "DOC-003", 
+          people: "Assign to...", 
           status: "Default", 
           dueDate: "dd/mm/ttt", 
           rev: "R0",
@@ -218,12 +114,11 @@ function AppContent() {
         },
       ];
       
-      // Simpan default items ke localStorage
       localStorage.setItem("forelItems", JSON.stringify(loadedItems));
     }
 
     // ============================================================
-    // AUTO-ADD 3 ITEMS KE GRUP KOSONG (jika ada)
+    // AUTO-ADD 3 ITEMS KE GRUP KOSONG (LOAD)
     // ============================================================
     let finalItems = loadedItems;
     let needsAutoAdd = false;
@@ -257,21 +152,18 @@ function AppContent() {
         }
       });
       
-      // Simpan hasil auto-add
       localStorage.setItem("forelItems", JSON.stringify(finalItems));
       setHasAutoAdded(true);
     }
 
     setItems(finalItems);
 
-    // Load favorites
     if (savedFavs) {
       setFavorites(JSON.parse(savedFavs));
     } else {
       setFavorites(["Workspace", "Administration"]);
     }
 
-    // Load group colors
     if (savedGroupColors) {
       setGroupColors(JSON.parse(savedGroupColors));
     } else {
@@ -285,7 +177,6 @@ function AppContent() {
       setGroupColors(defaultColors);
     }
 
-    // Load board title
     if (savedBoardTitle) {
       setBoardTitle(savedBoardTitle);
     }
@@ -296,6 +187,58 @@ function AppContent() {
 
     setIsInitialized(true);
   }, []);
+
+  // ============================================================
+  // AUTO-ADD 3 ITEMS KE GRUP KOSONG (REAL-TIME - TANPA REFRESH)
+  // ============================================================
+  useEffect(() => {
+    if (!isInitialized) return;
+    if (hasAutoAdded) return;
+    
+    const allGroups = [...new Set(items.map(item => item.group))];
+    let needsAutoAdd = false;
+    const groupsToCheck = allGroups.length > 0 ? allGroups : ['Default Group'];
+    
+    groupsToCheck.forEach(group => {
+      const groupItems = items.filter(item => item.group === group);
+      if (groupItems.length === 0) {
+        needsAutoAdd = true;
+      }
+    });
+    
+    if (needsAutoAdd && groupsToCheck.length > 0) {
+      setHasAutoAdded(true);
+      let updatedItems = [...items];
+      
+      groupsToCheck.forEach(group => {
+        const groupItems = updatedItems.filter(item => item.group === group);
+        if (groupItems.length === 0) {
+          const startIndex = updatedItems.filter(item => item.group === group).length;
+          const newItems = Array.from({ length: 3 }, (_, i) => ({
+            id: Date.now() + i + Math.random() * 1000,
+            group: group,
+            item: `Task ${startIndex + i + 1}`,
+            document: `DOC-${String(startIndex + i + 1).padStart(3, '0')}`,
+            people: "",
+            status: "Default",
+            dueDate: "dd/mm/ttt",
+            rev: "R0",
+            children: [],
+            isExpanded: false,
+          }));
+          updatedItems = [...updatedItems, ...newItems];
+          console.log(`✅ Auto-added 3 items to group "${group}" (real-time)`);
+        }
+      });
+      
+      setItems(updatedItems);
+      localStorage.setItem("forelItems", JSON.stringify(updatedItems));
+      
+      setTimeout(() => {
+        setHasAutoAdded(false);
+      }, 1000);
+    }
+  }, [items, isInitialized]);
 
   // ============================================================
   // AUTO-SAVE KE localStorage
@@ -408,6 +351,9 @@ function AppContent() {
     }
     const newItems = deleteItemRecursive(items, id);
     saveHistory(newItems);
+    
+    // Reset auto-add flag agar bisa auto-add jika group kosong
+    setHasAutoAdded(false);
   };
 
   // ============================================================
@@ -487,15 +433,17 @@ function AppContent() {
   };
 
   // ============================================================
-  // ADD ITEM (di group) - DENGAN AUTO CHECK KOSONG
+  // ADD ITEM (di group)
   // ============================================================
   const addItem = (groupName) => {
     const firstStatus = "Default";
+    const groupItems = items.filter(item => item.group === groupName);
+    
     const newItem = {
       id: Date.now(),
       group: groupName || "Default Group",
-      item: "New Task",
-      document: "NO. DO",
+      item: `Task ${groupItems.length + 1}`,
+      document: `DOC-${String(groupItems.length + 1).padStart(3, '0')}`,
       people: "",
       status: firstStatus,
       dueDate: "dd/mm/ttt",
@@ -504,10 +452,13 @@ function AppContent() {
       isExpanded: false,
     };
     saveHistory([...items, newItem]);
+    
+    // Reset auto-add flag
+    setHasAutoAdded(false);
   };
 
   // ============================================================
-  // GROUP CRUD - DENGAN AUTO-ADD 3 ITEM SAAT GROUP BARU
+  // GROUP CRUD
   // ============================================================
 
   const renameGroup = (oldName, newName) => {
@@ -545,8 +496,6 @@ function AppContent() {
     const newColors = { ...groupColors };
     delete newColors[groupName];
     setGroupColors(newColors);
-    
-    // Reset auto-add flag agar bisa auto-add jika ada group kosong
     setHasAutoAdded(false);
   };
 
@@ -564,7 +513,6 @@ function AppContent() {
     const groupName = name.trim();
     const firstStatus = "Default";
     
-    // Buat 3 item sekaligus untuk group baru
     const newItems = Array.from({ length: 3 }, (_, i) => ({
       id: Date.now() + i + Math.random() * 1000,
       group: groupName,
@@ -581,6 +529,7 @@ function AppContent() {
     const updatedItems = [...items, ...newItems];
     saveHistory(updatedItems);
     setGroupColors((prev) => ({ ...prev, [groupName]: "#3b82f6" }));
+    setHasAutoAdded(false);
     
     console.log(`✅ Added new group "${groupName}" with 3 items`);
   };
