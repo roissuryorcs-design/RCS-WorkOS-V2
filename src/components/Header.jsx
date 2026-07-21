@@ -1,61 +1,66 @@
 import React, { useState, useEffect } from 'react';
 
 const Header = ({ groups }) => {
-  // 1. Inisialisasi State dari LocalStorage
+  // 1. 🔥 LOAD DARI LOCALSTORAGE - PASTI
   const [title, setTitle] = useState(() => {
-    return localStorage.getItem('forelBoardTitle') || 'BOARD TITLE';
+    const saved = localStorage.getItem('forelBoardTitle');
+    console.log('🔵 Load title from localStorage:', saved);
+    return saved !== null && saved !== '' ? saved : 'BOARD TITLE';
   });
 
   const [subtitle, setSubtitle] = useState(() => {
-    return localStorage.getItem('forelBoardSubtitle') || 'Sub Title / Description';
+    const saved = localStorage.getItem('forelBoardSubtitle');
+    console.log('🔵 Load subtitle from localStorage:', saved);
+    return saved !== null && saved !== '' ? saved : 'Sub Title / Description';
   });
 
-  // ============================================================
-  // 🔥 RESET TITLE KE DEFAULT JIKA GROUP KOSONG
-  // ============================================================
+  // 2. 🔥 SIMPAN KE LOCALSTORAGE SETIAP BERUBAH
   useEffect(() => {
-    // Cek apakah groups ada dan tidak kosong
+    console.log('💾 Saving title:', title);
+    localStorage.setItem('forelBoardTitle', title);
+  }, [title]);
+
+  useEffect(() => {
+    console.log('💾 Saving subtitle:', subtitle);
+    localStorage.setItem('forelBoardSubtitle', subtitle);
+  }, [subtitle]);
+
+  // 3. 🔥 RESET JIKA GROUP KOSONG
+  useEffect(() => {
     const hasGroups = groups && groups.length > 0;
-    
     if (!hasGroups) {
-      // Reset ke default
-      const defaultTitle = 'BOARD TITLE';
-      const defaultSubtitle = 'Sub Title / Description';
-      
-      setTitle(defaultTitle);
-      setSubtitle(defaultSubtitle);
-      localStorage.setItem('forelBoardTitle', defaultTitle);
-      localStorage.setItem('forelBoardSubtitle', defaultSubtitle);
-      
-      console.log('🔄 No groups found, resetting header to default');
+      console.log('🔄 No groups, resetting to default');
+      setTitle('BOARD TITLE');
+      setSubtitle('Sub Title / Description');
+      localStorage.setItem('forelBoardTitle', 'BOARD TITLE');
+      localStorage.setItem('forelBoardSubtitle', 'Sub Title / Description');
     }
   }, [groups]);
 
-  // 2. Fungsi untuk menyimpan perubahan Title
+  // 4. HANDLE BLUR - SIMPAN SAAT EDIT SELESAI
   const handleTitleBlur = (e) => {
+    // Ambil teks dari firstChild (abaikan span icon)
     const textNode = e.currentTarget.firstChild;
     const newText = textNode ? textNode.textContent.trim() : e.currentTarget.textContent.trim();
+    // Bersihkan dari karakter ✎
     const cleanText = newText.replace(/✎/g, '').trim();
+    console.log('📝 Title blurred, new text:', cleanText);
     if (cleanText) {
       setTitle(cleanText);
-      localStorage.setItem('forelBoardTitle', cleanText);
-      console.log('✅ Title saved:', cleanText);
     }
   };
 
-  // 3. Fungsi untuk menyimpan perubahan Subtitle
   const handleSubtitleBlur = (e) => {
     const textNode = e.currentTarget.firstChild;
     const newText = textNode ? textNode.textContent.trim() : e.currentTarget.textContent.trim();
     const cleanText = newText.replace(/✎/g, '').trim();
+    console.log('📝 Subtitle blurred, new text:', cleanText);
     if (cleanText) {
       setSubtitle(cleanText);
-      localStorage.setItem('forelBoardSubtitle', cleanText);
-      console.log('✅ Subtitle saved:', cleanText);
     }
   };
 
-  // 4. Mencegah baris baru saat tekan Enter
+  // 5. HANDLE KEYDOWN - ENTER UNTUK SELESAI EDIT
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -65,8 +70,7 @@ const Header = ({ groups }) => {
 
   return (
     <div className="header-sticky">
-      {/* BAGIAN JUDUL */}
-      <h1 
+      <h1
         className="header-title"
         contentEditable={true}
         onBlur={handleTitleBlur}
@@ -82,7 +86,7 @@ const Header = ({ groups }) => {
         }}
       >
         {title}
-        <span 
+        <span
           className="header-edit-icon"
           style={{
             fontSize: '14px',
@@ -98,8 +102,7 @@ const Header = ({ groups }) => {
         </span>
       </h1>
 
-      {/* BAGIAN SUBTITLE */}
-      <p 
+      <p
         className="header-subtitle"
         contentEditable={true}
         onBlur={handleSubtitleBlur}
@@ -117,7 +120,7 @@ const Header = ({ groups }) => {
         }}
       >
         {subtitle}
-        <span 
+        <span
           className="header-edit-icon"
           style={{
             fontSize: '12px',
