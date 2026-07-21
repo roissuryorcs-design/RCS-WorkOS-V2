@@ -37,12 +37,19 @@ const UpdatePanel = () => {
   const itemUpdates = selectedItem ? getItemUpdates(selectedItem) : [];
   const sortedUpdates = [...itemUpdates].reverse();
 
+  // Debug: Log jumlah update
+  useEffect(() => {
+    console.log('📊 Updates loaded:', itemUpdates.length);
+  }, [itemUpdates]);
+
+  // Scroll ke atas saat update baru
   useEffect(() => {
     if (listContainerRef.current) {
       listContainerRef.current.scrollTop = 0;
     }
   }, [itemUpdates]);
 
+  // Close panel dengan ESC
   useEffect(() => {
     const handleEsc = (e) => {
       if (e.key === 'Escape') closePanel();
@@ -51,6 +58,7 @@ const UpdatePanel = () => {
     return () => document.removeEventListener('keydown', handleEsc);
   }, [closePanel]);
 
+  // Auto-focus input saat panel terbuka
   useEffect(() => {
     if (isPanelOpen && inputRef.current) {
       setTimeout(() => inputRef.current.focus(), 300);
@@ -104,12 +112,13 @@ const UpdatePanel = () => {
   };
 
   // ============================================================
-  // HANDLE SUBMIT UPDATE
+  // 🔥 HANDLE SUBMIT UPDATE
   // ============================================================
   const handleSubmit = (e) => {
     e.preventDefault();
     const text = newUpdate.trim();
     if (text || uploadedFiles.length > 0) {
+      console.log('📝 Submitting update:', text, uploadedFiles.length);
       addUpdate(selectedItem, text, uploadedFiles);
       setNewUpdate('');
       setUploadedFiles([]);
@@ -117,7 +126,7 @@ const UpdatePanel = () => {
   };
 
   // ============================================================
-  // CANCEL UPDATE
+  // 🔥 CANCEL UPDATE
   // ============================================================
   const handleCancelUpdate = () => {
     setNewUpdate('');
@@ -128,9 +137,10 @@ const UpdatePanel = () => {
   };
 
   // ============================================================
-  // HANDLE REPLY SUBMIT
+  // 🔥 HANDLE REPLY SUBMIT
   // ============================================================
   const handleReplySubmit = (updateId) => {
+    console.log('📝 Submitting reply:', replyText, replyFiles.length);
     if (replyText.trim() || replyFiles.length > 0) {
       const replyData = {
         text: replyText.trim(),
@@ -143,6 +153,9 @@ const UpdatePanel = () => {
     }
   };
 
+  // ============================================================
+  // 🔥 CANCEL REPLY
+  // ============================================================
   const handleCancelReply = () => {
     setReplyText('');
     setReplyFiles([]);
@@ -150,7 +163,7 @@ const UpdatePanel = () => {
   };
 
   // ============================================================
-  // HANDLE EDIT UPDATE
+  // 🔥 HANDLE EDIT UPDATE
   // ============================================================
   const startEditUpdate = (update) => {
     setEditingUpdateId(update.id);
@@ -159,6 +172,7 @@ const UpdatePanel = () => {
 
   const handleSaveEditUpdate = (updateId) => {
     if (editText.trim()) {
+      console.log('📝 Saving edit update:', editText);
       editUpdate(updateId, editText.trim());
       setEditingUpdateId(null);
       setEditText('');
@@ -171,16 +185,17 @@ const UpdatePanel = () => {
   };
 
   // ============================================================
-  // HANDLE DELETE UPDATE
+  // 🔥 HANDLE DELETE UPDATE
   // ============================================================
   const handleDeleteUpdate = (updateId) => {
     if (confirm('Delete this update and all replies?')) {
+      console.log('🗑️ Deleting update:', updateId);
       deleteUpdate(updateId);
     }
   };
 
   // ============================================================
-  // HANDLE EDIT REPLY
+  // 🔥 HANDLE EDIT REPLY
   // ============================================================
   const startEditReply = (updateId, reply) => {
     setEditingReplyId(reply.id);
@@ -190,6 +205,7 @@ const UpdatePanel = () => {
 
   const handleSaveEditReply = (updateId, replyId) => {
     if (editReplyText.trim()) {
+      console.log('📝 Saving edit reply:', editReplyText);
       editReply(updateId, replyId, editReplyText.trim());
       setEditingReplyId(null);
       setEditingReplyUpdateId(null);
@@ -204,10 +220,11 @@ const UpdatePanel = () => {
   };
 
   // ============================================================
-  // HANDLE DELETE REPLY
+  // 🔥 HANDLE DELETE REPLY
   // ============================================================
   const handleDeleteReply = (updateId, replyId) => {
     if (confirm('Delete this reply?')) {
+      console.log('🗑️ Deleting reply:', replyId);
       deleteReply(updateId, replyId);
     }
   };
@@ -336,7 +353,7 @@ const UpdatePanel = () => {
         </div>
 
         {/* ============================================================
-            INPUT UPDATE - DENGAN CANCEL DAN ATTACHMENT
+            INPUT UPDATE
             ============================================================ */}
         <div style={{
           padding: '10px 14px',
@@ -344,7 +361,6 @@ const UpdatePanel = () => {
           background: '#f8f9fa',
           flexShrink: 0,
         }}>
-          {/* Preview uploaded files */}
           {uploadedFiles.length > 0 && (
             <div style={{ marginBottom: '6px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
               {uploadedFiles.map((file) => (
@@ -422,7 +438,6 @@ const UpdatePanel = () => {
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '4px' }}>
               <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-                {/* 🔥 TOMBOL ATTACHMENT */}
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
@@ -447,7 +462,6 @@ const UpdatePanel = () => {
                 </span>
               </div>
               <div style={{ display: 'flex', gap: '4px' }}>
-                {/* 🔥 TOMBOL CANCEL - Muncul jika ada teks atau file */}
                 {(newUpdate.trim() || uploadedFiles.length > 0) && (
                   <button
                     type="button"
@@ -642,7 +656,6 @@ const UpdatePanel = () => {
                     )}
 
                     <div style={{ marginTop: '6px', display: 'flex', gap: '10px', flexWrap: 'wrap', borderTop: '1px solid #f3f4f6', paddingTop: '6px' }}>
-                      {/* 🔥 TOMBOL REPLY */}
                       <button
                         onClick={() => setReplyingTo(replyingTo === update.id ? null : update.id)}
                         style={{
@@ -700,11 +713,10 @@ const UpdatePanel = () => {
                     </div>
 
                     {/* ============================================================
-                        REPLY INPUT - DENGAN ATTACHMENT DAN CANCEL
+                        REPLY INPUT
                         ============================================================ */}
                     {replyingTo === update.id && (
                       <div style={{ marginTop: '8px', padding: '8px 10px', background: '#f3f4f6', borderRadius: '6px' }}>
-                        {/* Reply file preview */}
                         {replyFiles.length > 0 && (
                           <div style={{ marginBottom: '4px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                             {replyFiles.map((file) => (
@@ -746,8 +758,13 @@ const UpdatePanel = () => {
                             value={replyText}
                             onChange={(e) => setReplyText(e.target.value)}
                             onKeyDown={(e) => {
-                              if (e.key === 'Enter') handleReplySubmit(update.id);
-                              if (e.key === 'Escape') handleCancelReply();
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                handleReplySubmit(update.id);
+                              }
+                              if (e.key === 'Escape') {
+                                handleCancelReply();
+                              }
                             }}
                             placeholder="Write a reply..."
                             style={{
@@ -763,7 +780,6 @@ const UpdatePanel = () => {
                             }}
                             autoFocus
                           />
-                          {/* 🔥 TOMBOL ATTACHMENT UNTUK REPLY */}
                           <input
                             ref={replyFileInputRef}
                             type="file"
@@ -791,7 +807,6 @@ const UpdatePanel = () => {
                           >
                             📎
                           </button>
-                          {/* 🔥 TOMBOL REPLY */}
                           <button
                             onClick={() => handleReplySubmit(update.id)}
                             style={{
@@ -807,7 +822,6 @@ const UpdatePanel = () => {
                           >
                             Reply
                           </button>
-                          {/* 🔥 TOMBOL CANCEL REPLY */}
                           <button
                             onClick={handleCancelReply}
                             style={{
@@ -909,127 +923,4 @@ const UpdatePanel = () => {
                                       padding: '2px 10px',
                                       background: '#e5e7eb',
                                       color: '#374151',
-                                      border: 'none',
-                                      borderRadius: '4px',
-                                      fontSize: '10px',
-                                      cursor: 'pointer',
-                                      fontWeight: 500,
-                                    }}
-                                  >
-                                    Cancel
-                                  </button>
-                                </div>
-                              </div>
-                            ) : (
-                              <p style={{
-                                margin: '4px 0 0',
-                                fontSize: '13px',
-                                color: '#1f2937',
-                                fontWeight: 400,
-                                lineHeight: 1.4,
-                              }}>
-                                {renderTextWithMentions(reply.text)}
-                              </p>
-                            )}
-
-                            {reply.files && reply.files.length > 0 && (
-                              <div style={{ marginTop: '4px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                                {reply.files.map((file, idx) => (
-                                  <div key={idx} style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '4px',
-                                    padding: '1px 6px',
-                                    background: '#ffffff',
-                                    borderRadius: '4px',
-                                    border: '1px solid #d1d5db',
-                                    fontSize: '10px',
-                                  }}>
-                                    <span>📄</span>
-                                    <span style={{ maxWidth: '60px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                      {file.name}
-                                    </span>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-
-                            <div style={{ marginTop: '4px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                              <button
-                                onClick={() => startEditReply(update.id, reply)}
-                                style={{
-                                  background: 'none',
-                                  border: 'none',
-                                  color: '#4B5563',
-                                  fontSize: '10px',
-                                  cursor: 'pointer',
-                                  padding: '0 4px',
-                                  borderRadius: '4px',
-                                  fontWeight: 600,
-                                  transition: 'background 0.2s',
-                                }}
-                                onMouseEnter={(e) => e.currentTarget.style.background = '#e8e8e8'}
-                                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                              >
-                                ✎ Edit
-                              </button>
-                              <button
-                                onClick={() => handleDeleteReply(update.id, reply.id)}
-                                style={{
-                                  background: 'none',
-                                  border: 'none',
-                                  color: '#ef4444',
-                                  fontSize: '10px',
-                                  cursor: 'pointer',
-                                  padding: '0 4px',
-                                  borderRadius: '4px',
-                                  fontWeight: 600,
-                                  transition: 'background 0.2s',
-                                }}
-                                onMouseEnter={(e) => e.currentTarget.style.background = '#fde8e8'}
-                                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                              >
-                                ✕ Delete
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            })
-          )}
-        </div>
-      </div>
-
-      <style>{`
-        @keyframes slideInRight {
-          from { transform: translateX(100%); opacity: 0; }
-          to { transform: translateX(0); opacity: 1; }
-        }
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        ::-webkit-scrollbar {
-          width: 6px;
-        }
-        ::-webkit-scrollbar-track {
-          background: #f1f1f1;
-          border-radius: 3px;
-        }
-        ::-webkit-scrollbar-thumb {
-          background: #c1c7cd;
-          border-radius: 3px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-          background: #9ca3af;
-        }
-      `}</style>
-    </>
-  );
-};
-
-export default UpdatePanel;
+                                      border: 'none
