@@ -281,6 +281,7 @@ function AppContent() {
   // ============================================================
   // 🔥 FIX: HAPUS RESET TITLE SAAT GROUP KOSONG
   // ============================================================
+  // ❌ KODE INI DIHAPUS / DI-COMMENT
   // useEffect(() => {
   //   const allGroups = [...new Set(items.map((item) => item.group))];
   //   if (allGroups.length === 0 && items.length === 0) {
