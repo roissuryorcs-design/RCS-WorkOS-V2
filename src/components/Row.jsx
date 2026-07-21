@@ -1,7 +1,8 @@
 import { useState } from "react";
 import StatusCell from "./StatusCell";
 import FileAttachment from "./FileAttachment";
-import DateCell from "./DateCell"; // ← TAMBAHKAN IMPORT INI!
+import DateCell from "./DateCell";
+import UpdateBubble from './UpdateBubble';
 
 export default function Row({
   item,
@@ -395,6 +396,9 @@ export default function Row({
                       +
                     </button>
                   )}
+
+                  {/* ✅ UPDATE BUBBLE - TAMBAHKAN DI SINI */}
+                  <UpdateBubble itemId={item.id} />
                 </div>
               </td>
             );
