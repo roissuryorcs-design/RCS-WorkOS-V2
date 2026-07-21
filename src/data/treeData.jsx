@@ -127,4 +127,53 @@ export const isDefaultGroupActive = (groups) => {
 
 // ============================================================
 // FUNGSI UNTUK MEMASTIKAN DEFAULT ITEMS ADA
-//
+// ============================================================
+export const ensureDefaultItems = (items, groups) => {
+  if (!isDefaultGroupActive(groups)) return items;
+  
+  const defaultItems = items.filter(item => item.group === DEFAULT_GROUP.title);
+  if (defaultItems.length === 0) {
+    return [...items, ...getDefaultItems()];
+  }
+  return items;
+};
+
+// ============================================================
+// LOCAL STORAGE (DI SINI BISA DI INTEGRASIKAN DENGAN APP)
+// ============================================================
+export const saveGroups = (groups) => {
+  localStorage.setItem('board-groups', JSON.stringify(groups));
+};
+
+export const loadGroups = () => {
+  const saved = localStorage.getItem('board-groups');
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      return ensureGroupExists(parsed);
+    } catch {
+      return [DEFAULT_GROUP.title];
+    }
+  }
+  return [DEFAULT_GROUP.title];
+};
+
+export const saveItems = (items) => {
+  localStorage.setItem('forelItems', JSON.stringify(items));
+};
+
+export const loadItems = () => {
+  const saved = localStorage.getItem('forelItems');
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      if (parsed.length === 0) {
+        return getDefaultItems();
+      }
+      return parsed;
+    } catch {
+      return getDefaultItems();
+    }
+  }
+  return getDefaultItems();
+};
