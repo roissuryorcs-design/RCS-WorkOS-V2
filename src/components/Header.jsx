@@ -12,7 +12,7 @@ export default function Header({ isDefaultOnly = false }) {
   const [tempDesc, setTempDesc] = useState("");
 
   // ============================================================
-  // 🔥 LOAD DATA DARI LOCALSTORAGE
+  // LOAD DATA DARI LOCALSTORAGE
   // ============================================================
   useEffect(() => {
     const savedName = localStorage.getItem("boardName");
@@ -28,7 +28,7 @@ export default function Header({ isDefaultOnly = false }) {
   }, []);
 
   // ============================================================
-  // 🔥 SIMPAN KE LOCALSTORAGE SETIAP ADA PERUBAHAN
+  // SIMPAN KE LOCALSTORAGE
   // ============================================================
   useEffect(() => {
     if (isLoaded) {
@@ -51,18 +51,13 @@ export default function Header({ isDefaultOnly = false }) {
   }, [customDesc, isLoaded]);
 
   // ============================================================
-  // 🔥 TAMPILKAN NAMA - PRIORITASKAN CUSTOM NAME
+  // TAMPILKAN NAMA
   // ============================================================
   const hasCustomName = customName && customName.trim() !== "";
   const hasCustomDesc = customDesc && customDesc.trim() !== "";
 
   const displayName = hasCustomName ? customName : "BOARD";
   const displayDesc = hasCustomDesc ? customDesc : "Sub Title/Description";
-
-  // Debug
-  console.log("🔵 Header - customName:", customName);
-  console.log("🔵 Header - displayName:", displayName);
-  console.log("🔵 Header - isLoaded:", isLoaded);
 
   // ============================================================
   // HANDLE EDIT BOARD NAME
@@ -119,7 +114,7 @@ export default function Header({ isDefaultOnly = false }) {
   };
 
   // ============================================================
-  // RENDER
+  // RENDER - TANPA ICON ✎
   // ============================================================
   return (
     <div className="header-container" style={{ padding: "16px 24px" }}>
