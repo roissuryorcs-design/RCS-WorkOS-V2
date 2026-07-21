@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 
-export default function DateCell({ date, onChange, placeholder = "dd - mmm - yyyy" }) {
+export default function DateCell({ date, onChange, placeholder = "dd - mm - yy" }) {
   const [inputValue, setInputValue] = useState(date || "");
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
@@ -16,7 +16,7 @@ export default function DateCell({ date, onChange, placeholder = "dd - mmm - yyy
   ];
 
   // ============================================================
-  // FORMAT TANGGAL KE "DD - MMM - YYYY"
+  // FORMAT TANGGAL KE "DD - MMM - YYYY" (untuk display setelah pilih)
   // ============================================================
   const formatDateToText = (val) => {
     if (!val) return "";
@@ -131,25 +131,6 @@ export default function DateCell({ date, onChange, placeholder = "dd - mmm - yyy
     
     if (onChange) {
       onChange(formattedDate);
-    }
-  };
-
-  // ============================================================
-  // HANDLE PERUBAHAN TANGGAL DARI TEXT INPUT MANUAL
-  // ============================================================
-  const handleTextChange = (e) => {
-    const value = e.target.value;
-    setInputValue(value);
-    
-    // Validasi format "DD - MMM - YYYY"
-    const pattern = /^(\d{2})\s*-\s*([A-Za-z]{3})\s*-\s*(\d{4})$/;
-    if (pattern.test(value)) {
-      const parsed = parseDateFromText(value);
-      if (parsed) {
-        if (onChange) {
-          onChange(value);
-        }
-      }
     }
   };
 
@@ -279,7 +260,7 @@ export default function DateCell({ date, onChange, placeholder = "dd - mmm - yyy
           <line x1="3" y1="10" x2="21" y2="10" />
         </svg>
 
-        {/* Text Tanggal - Format "DD - MMM - YYYY" */}
+        {/* Text Tanggal - Default "dd - mm - yy" / Setelah pilih "DD - MMM - YYYY" */}
         <span
           style={{
             fontSize: "13px",
