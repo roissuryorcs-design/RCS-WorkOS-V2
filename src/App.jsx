@@ -22,17 +22,18 @@ function AppContent() {
   const [activeStatusColumnId, setActiveStatusColumnId] = useState(null);
   const [showAddColumnPopup, setShowAddColumnPopup] = useState(false);
   const [boardTitle, setBoardTitle] = useState("FOREL FPSO HVAC");
-  const [boardSubtitle, setBoardSubtitle] = useState("Sub Title"); // ← TAMBAHKAN
+  const [boardSubtitle, setBoardSubtitle] = useState("Sub Title / Description");
 
   const { columns, addColumn, renameColumn, toggleColumn, deleteColumn, resetColumns, updateColumnStatuses, updateColumnStatusOrder } = useColumns();
 
   // ============================================================
-  // CEK: Jika semua group dihapus, reset board title ke default
+  // CEK: Jika semua group dihapus, reset board title & subtitle ke default
   // ============================================================
   useEffect(() => {
     const allGroups = [...new Set(items.map((item) => item.group))];
     if (allGroups.length === 0 && items.length === 0) {
       setBoardTitle("BOARD TITLE");
+      setBoardSubtitle("Sub Title / Description");
     }
   }, [items]);
 
@@ -50,7 +51,7 @@ function AppContent() {
     const savedFavs = localStorage.getItem("forelFavorites");
     const savedGroupColors = localStorage.getItem("forelGroupColors");
     const savedBoardTitle = localStorage.getItem("forelBoardTitle");
-    const savedBoardSubtitle = localStorage.getItem("forelBoardSubtitle"); // ← TAMBAHKAN
+    const savedBoardSubtitle = localStorage.getItem("forelBoardSubtitle");
 
     const defaultStatuses = { Default: "#9ca3af" };
 
@@ -207,7 +208,7 @@ function AppContent() {
       setBoardTitle(savedBoardTitle);
     }
 
-    if (savedBoardSubtitle) { // ← TAMBAHKAN
+    if (savedBoardSubtitle) {
       setBoardSubtitle(savedBoardSubtitle);
     }
   }, []);
@@ -233,7 +234,7 @@ function AppContent() {
     localStorage.setItem("forelBoardTitle", boardTitle);
   }, [boardTitle]);
 
-  useEffect(() => { // ← TAMBAHKAN
+  useEffect(() => {
     localStorage.setItem("forelBoardSubtitle", boardSubtitle);
   }, [boardSubtitle]);
 
@@ -685,6 +686,7 @@ function AppContent() {
                 display: 'inline-block',
               }}
             >
+              ✎
             </span>
           </h1>
           
@@ -730,6 +732,7 @@ function AppContent() {
                 display: 'inline-block',
               }}
             >
+              ✎
             </span>
           </p>
         </div>
