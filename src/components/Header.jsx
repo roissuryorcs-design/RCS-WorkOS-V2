@@ -1,7 +1,8 @@
+jsx
 import React, { useState, useEffect, useRef } from 'react';
 
-const Header = ({ groups }) => {
-  // 1. LOAD DARI LOCALSTORAGE
+const Header = ({ groups = [] }) => {
+  // 1. LOAD DATA DARI LOCALSTORAGE
   const [title, setTitle] = useState(() => {
     const saved = localStorage.getItem('forelBoardTitle');
     return saved && saved.trim() !== '' ? saved : 'BOARD TITLE';
@@ -12,11 +13,10 @@ const Header = ({ groups }) => {
     return saved && saved.trim() !== '' ? saved : 'Sub Title / Description';
   });
 
-  // 2. REF UNTUK ELEMENT
   const titleRef = useRef(null);
   const subtitleRef = useRef(null);
 
-  // 3. SIMPAN KE LOCALSTORAGE
+  // 2. SIMPAN KE LOCALSTORAGE
   useEffect(() => {
     localStorage.setItem('forelBoardTitle', title);
   }, [title]);
@@ -25,42 +25,37 @@ const Header = ({ groups }) => {
     localStorage.setItem('forelBoardSubtitle', subtitle);
   }, [subtitle]);
 
-  // 4. RESET JIKA GROUP KOSONG
+  // 3. RESET JIKA GROUP KOSONG
   useEffect(() => {
-    const hasGroups = groups && groups.length > 0;
-    if (!hasGroups) {
+    if (!groups || groups.length === 0) {
       setTitle('BOARD TITLE');
       setSubtitle('Sub Title / Description');
-      localStorage.setItem('forelBoardTitle', 'BOARD TITLE');
-      localStorage.setItem('forelBoardSubtitle', 'Sub Title / Description');
     }
   }, [groups]);
 
-  // 5. HANDLE BLUR
-  const handleTitleBlur = () => {
-    if (titleRef.current) {
-      // Ambil teks dari firstChild (abaikan span)
-      const textNode = titleRef.current.firstChild;
-      const newText = textNode ? textNode.textContent.trim() : titleRef.current.textContent.trim();
-      const cleanText = newText.replace(/✎/g, '').trim();
-      if (cleanText && cleanText !== title) {
-        setTitle(cleanText);
+  // 4. HANDLE BLUR (UPDATE STATE)
+  const handleBlur = (ref, setter, currentState) => {
+    if (ref.current) {
+      // Mengambil text content saja, mengabaikan element span (pencil icon)
+      const fullText = ref.current.innerText || ref.current.textContent;
+      const cleanText = fullText.replace(/✎/g, '').trim();
+
+      if (cleanText && cleanText !== currentState) {
+        setter(cleanText);
+      } else {
+        // Jika kosong, kembalikan ke state awal di dalam DOM
+        ref.current.firstChild.textContent = currentState;
       }
     }
   };
 
-  const handleSubtitleBlur = () => {
-    if (subtitleRef.current) {
-      const textNode = subtitleRef.current.firstChild;
-      const newText = textNode ? textNode.textContent.trim() : subtitleRef.current.textContent.trim();
-      const cleanText = newText.replace(/✎/g, '').trim();
-      if (cleanText && cleanText !== subtitle) {
-        setSubtitle(cleanText);
-      }
-    }
+  // 5. PREVENT RICH TEXT PASTE
+  const handlePaste = (e) => {
+    e.preventDefault();
+    const text = e.clipboardData.getData('text/plain');
+    document.execCommand('insertText', false, text);
   };
 
-  // 6. HANDLE KEYDOWN
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -69,16 +64,24 @@ const Header = ({ groups }) => {
   };
 
   return (
-    <div className="header-sticky" style={{ padding: '20px', borderBottom: '1px solid #333' }}>
-      {/* TITLE */}
+    <header 
+      className="header-sticky" 
+      style={{ 
+        padding: '20px', 
+        borderBottom: '1px solid #333',
+        display: 'block' 
+      }}
+    >
+      {/* TITLE CONTAINER */}
       <h1
         ref={titleRef}
         className="header-title"
         contentEditable={true}
-        onBlur={handleTitleBlur}
-        onKeyDown={handleKeyDown}
         suppressContentEditableWarning={true}
         spellCheck={false}
+        onBlur={() => handleBlur(titleRef, setTitle, title)}
+        onKeyDown={handleKeyDown}
+        onPaste={handlePaste}
         style={{
           cursor: 'text',
           outline: 'none',
@@ -89,6 +92,7 @@ const Header = ({ groups }) => {
           position: 'relative',
           fontSize: '24px',
           fontWeight: 700,
+          color: '#e8edf5', // Berdasarkan computed style
         }}
       >
         {title}
@@ -102,22 +106,24 @@ const Header = ({ groups }) => {
             opacity: 0.6,
             display: 'inline-block',
             pointerEvents: 'none',
+            userSelect: 'none'
           }}
         >
           ✎
         </span>
       </h1>
 
-      {/* SUBTITLE */}
+      {/* SUBTITLE CONTAINER */}
       <div style={{ marginTop: '4px' }}>
         <p
           ref={subtitleRef}
           className="header-subtitle"
           contentEditable={true}
-          onBlur={handleSubtitleBlur}
-          onKeyDown={handleKeyDown}
           suppressContentEditableWarning={true}
           spellCheck={false}
+          onBlur={() => handleBlur(subtitleRef, setSubtitle, subtitle)}
+          onKeyDown={handleKeyDown}
+          onPaste={handlePaste}
           style={{
             cursor: 'text',
             outline: 'none',
@@ -138,13 +144,14 @@ const Header = ({ groups }) => {
               opacity: 0.6,
               display: 'inline-block',
               pointerEvents: 'none',
+              userSelect: 'none'
             }}
           >
             ✎
           </span>
         </p>
       </div>
-    </div>
+    </header>
   );
 };
 
