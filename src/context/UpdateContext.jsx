@@ -18,7 +18,7 @@ export const UpdateProvider = ({ children }) => {
   }, [updates]);
 
   // ============================================================
-  // 🔥 ADD UPDATE
+  // ADD UPDATE
   // ============================================================
   const addUpdate = (itemId, text, files = []) => {
     if (!text && files.length === 0) return;
@@ -36,9 +36,9 @@ export const UpdateProvider = ({ children }) => {
   };
 
   // ============================================================
-  // 🔥 ADD REPLY
+  // ADD REPLY (Bisa reply ke update atau reply ke reply)
   // ============================================================
-  const addReply = (updateId, replyData) => {
+  const addReply = (updateId, replyData, parentReplyId = null) => {
     if (!replyData || (!replyData.text && !replyData.files)) return;
     
     const newReply = {
@@ -47,66 +47,101 @@ export const UpdateProvider = ({ children }) => {
       files: replyData.files || [],
       author: 'User',
       timestamp: new Date().toISOString(),
+      replies: [], // Untuk nested reply
+      parentReplyId: parentReplyId,
     };
     
-    setUpdates(updates.map(u => 
-      u.id === updateId 
-        ? { ...u, replies: [...u.replies, newReply] } 
-        : u
-    ));
+    setUpdates(updates.map(u => {
+      if (u.id === updateId) {
+        // Cari reply berdasarkan parentReplyId
+        if (parentReplyId) {
+          const addNestedReply = (replies) => {
+            return replies.map(r => {
+              if (r.id === parentReplyId) {
+                return { ...r, replies: [...r.replies, newReply] };
+              }
+              if (r.replies && r.replies.length > 0) {
+                return { ...r, replies: addNestedReply(r.replies) };
+              }
+              return r;
+            });
+          };
+          return { ...u, replies: addNestedReply(u.replies) };
+        }
+        return { ...u, replies: [...u.replies, newReply] };
+      }
+      return u;
+    }));
   };
 
   // ============================================================
-  // 🔥 EDIT UPDATE
+  // EDIT UPDATE
   // ============================================================
   const editUpdate = (updateId, newText) => {
     if (!newText) return;
-    
     setUpdates(updates.map(u => 
-      u.id === updateId 
-        ? { ...u, text: newText } 
-        : u
+      u.id === updateId ? { ...u, text: newText } : u
     ));
   };
 
   // ============================================================
-  // 🔥 DELETE UPDATE
+  // DELETE UPDATE
   // ============================================================
   const deleteUpdate = (updateId) => {
     setUpdates(updates.filter(u => u.id !== updateId));
   };
 
   // ============================================================
-  // 🔥 EDIT REPLY
+  // EDIT REPLY (Support nested)
   // ============================================================
   const editReply = (updateId, replyId, newText) => {
     if (!newText) return;
     
-    setUpdates(updates.map(u => 
-      u.id === updateId 
-        ? { 
-            ...u, 
-            replies: u.replies.map(r => 
-              r.id === replyId ? { ...r, text: newText } : r
-            ) 
-          } 
-        : u
-    ));
+    const editNestedReply = (replies) => {
+      return replies.map(r => {
+        if (r.id === replyId) {
+          return { ...r, text: newText };
+        }
+        if (r.replies && r.replies.length > 0) {
+          return { ...r, replies: editNestedReply(r.replies) };
+        }
+        return r;
+      });
+    };
+    
+    setUpdates(updates.map(u => {
+      if (u.id === updateId) {
+        return { ...u, replies: editNestedReply(u.replies) };
+      }
+      return u;
+    }));
   };
 
   // ============================================================
-  // 🔥 DELETE REPLY
+  // DELETE REPLY (Support nested)
   // ============================================================
   const deleteReply = (updateId, replyId) => {
-    setUpdates(updates.map(u => 
-      u.id === updateId 
-        ? { ...u, replies: u.replies.filter(r => r.id !== replyId) } 
-        : u
-    ));
+    const deleteNestedReply = (replies) => {
+      return replies
+        .filter(r => r.id !== replyId)
+        .map(r => {
+          if (r.replies && r.replies.length > 0) {
+            return { ...r, replies: deleteNestedReply(r.replies) };
+          }
+          return r;
+        });
+    };
+    
+    setUpdates(updates.map(u => {
+      if (u.id === updateId) {
+        return { ...u, replies: deleteNestedReply(u.replies) };
+      }
+      return u;
+    }));
   };
 
   // ============================================================
-  // 🔥 PANEL CONTROLS
+  // PANEL CONTROLS
   // ============================================================
   const openPanel = (itemId) => {
     setSelectedItem(itemId);
