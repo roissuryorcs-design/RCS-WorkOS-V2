@@ -11,7 +11,6 @@ import AddColumnPopup from "./components/AddColumnPopup";
 import "./App.css";
 import { UpdateProvider } from './context/UpdateContext';
 import UpdatePanel from './components/UpdatePanel';
-import UpdateBubble from './components/UpdateBubble';
 
 function AppContent() {
   const [items, setItems] = useState([]);
@@ -654,7 +653,6 @@ function AppContent() {
   const countDoneItems = (items) => {
     let count = 0;
     items.forEach((item) => {
-      // 🔥 PERBAIKI: Case insensitive untuk status "Done"
       if (item.status && item.status.toLowerCase() === "done") count++;
       if (item.children && item.children.length > 0) {
         count += countDoneItems(item.children);
@@ -715,7 +713,7 @@ function AppContent() {
           onRenameGroup={renameGroup}
           onOpenAddColumn={() => setShowAddColumnPopup(true)}
         />
-          <UpdateBubble itemId={item.id} />
+
         {/* ============================================================
             FOOTER - DENGAN AUTO-SAVED INDICATOR
             ============================================================ */}
