@@ -9,6 +9,9 @@ import StatusManager from "./components/StatusManager";
 import ColumnManager from "./components/ColumnManager";
 import AddColumnPopup from "./components/AddColumnPopup";
 import "./App.css";
+import { UpdateProvider } from './context/UpdateContext';
+import UpdatePanel from './components/UpdatePanel';
+import UpdateBubble from './components/UpdateBubble';
 
 function AppContent() {
   const [items, setItems] = useState([]);
@@ -712,7 +715,7 @@ function AppContent() {
           onRenameGroup={renameGroup}
           onOpenAddColumn={() => setShowAddColumnPopup(true)}
         />
-
+          <UpdateBubble itemId={item.id} />
         {/* ============================================================
             FOOTER - DENGAN AUTO-SAVED INDICATOR
             ============================================================ */}
@@ -777,5 +780,9 @@ export default function App() {
         <AppContent />
       </ColumnProvider>
     </ThemeProvider>
+    <UpdateProvider>
+  <AppContent />
+  <UpdatePanel />
+</UpdateProvider>
   );
 }
