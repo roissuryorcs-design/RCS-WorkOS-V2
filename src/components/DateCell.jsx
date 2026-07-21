@@ -41,7 +41,7 @@ export default function DateCell({ date, onChange, placeholder = "dd - mmm - yyy
       }
     }
     
-    // Jika dalam format dd / mm / yyyy
+    // Jika dalam format dd - mm - yyyy
     if (val.includes("/")) {
       const parts = val.split("/");
       if (parts.length === 3) {
