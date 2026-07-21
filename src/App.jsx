@@ -757,7 +757,6 @@ function AppContent() {
                 display: 'inline-block',
               }}
             >
-              ✎
             </span>
           </h1>
           
@@ -803,7 +802,6 @@ function AppContent() {
                 display: 'inline-block',
               }}
             >
-              ✎
             </span>
           </p>
         </div>
