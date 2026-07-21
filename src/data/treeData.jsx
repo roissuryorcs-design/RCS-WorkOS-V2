@@ -1,5 +1,6 @@
-// src/data/treeData.jsx
-
+// ============================================================
+// DEFAULT DATA - TIDAK DIUBAH, TETAP SEBAGAI REFERENSI
+// ============================================================
 export const DEFAULT_GROUP = {
   id: 'group-default',
   title: 'Default',
@@ -71,15 +72,30 @@ export const DEFAULT_COLUMNS = [
   { id: "rev", title: "REV", width: 80 }
 ];
 
+// ============================================================
+// FLATTEN ITEMS (untuk board)
+// ============================================================
+const flattenItems = (items, parentId = null) => {
+  let result = [];
+  items.forEach(item => {
+    result.push({
+      ...item,
+      parentId: parentId,
+      group: DEFAULT_GROUP.title,
+    });
+    if (item.children && item.children.length > 0) {
+      result = result.concat(flattenItems(item.children, item.id));
+    }
+  });
+  return result;
+};
+
 export const getDefaultItems = () => {
-  return DEFAULT_GROUP.items.map(item => ({
-    ...item,
-    group: DEFAULT_GROUP.title,
-  }));
+  return flattenItems(DEFAULT_GROUP.items);
 };
 
 // ============================================================
-// FUNGSI UTAMA: Pastikan selalu ada 1 group
+// FUNGSI UTAMA UNTUK GROUP
 // ============================================================
 export const ensureGroupExists = (groups) => {
   if (!groups || groups.length === 0) {
@@ -102,39 +118,13 @@ export const addGroupSafe = (groups, title) => {
   return [...groups, title];
 };
 
-export const saveGroups = (groups) => {
-  localStorage.setItem('board-groups', JSON.stringify(groups));
+// ============================================================
+// FUNGSI UNTUK CEK APAKAH DEFAULT GROUP AKTIF
+// ============================================================
+export const isDefaultGroupActive = (groups) => {
+  return groups && groups.includes(DEFAULT_GROUP.title);
 };
 
-export const loadGroups = () => {
-  const saved = localStorage.getItem('board-groups');
-  if (saved) {
-    try {
-      const parsed = JSON.parse(saved);
-      return ensureGroupExists(parsed);
-    } catch {
-      return [DEFAULT_GROUP.title];
-    }
-  }
-  return [DEFAULT_GROUP.title];
-};
-
-export const saveItems = (items) => {
-  localStorage.setItem('forelItems', JSON.stringify(items));
-};
-
-export const loadItems = () => {
-  const saved = localStorage.getItem('forelItems');
-  if (saved) {
-    try {
-      const parsed = JSON.parse(saved);
-      if (parsed.length === 0) {
-        return getDefaultItems();
-      }
-      return parsed;
-    } catch {
-      return getDefaultItems();
-    }
-  }
-  return getDefaultItems();
-};
+// ============================================================
+// FUNGSI UNTUK MEMASTIKAN DEFAULT ITEMS ADA
+//
