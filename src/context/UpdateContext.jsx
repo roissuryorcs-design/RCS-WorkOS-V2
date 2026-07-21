@@ -17,33 +17,97 @@ export const UpdateProvider = ({ children }) => {
     localStorage.setItem('forelUpdates', JSON.stringify(updates));
   }, [updates]);
 
-  // Tambah update baru
-  const addUpdate = (itemId, text, author = 'User') => {
+  // ============================================================
+  // 🔥 ADD UPDATE
+  // ============================================================
+  const addUpdate = (itemId, text, files = []) => {
+    if (!text && files.length === 0) return;
+    
     const newUpdate = {
-      id: Date.now(),
+      id: Date.now() + Math.random() * 1000,
       itemId,
-      text,
-      author,
+      text: text || '',
+      author: 'User',
       timestamp: new Date().toISOString(),
+      files: files || [],
       replies: [],
     };
     setUpdates([...updates, newUpdate]);
   };
 
-  // Tambah reply ke update
-  const addReply = (updateId, text, author = 'User') => {
+  // ============================================================
+  // 🔥 ADD REPLY
+  // ============================================================
+  const addReply = (updateId, replyData) => {
+    if (!replyData || (!replyData.text && !replyData.files)) return;
+    
     const newReply = {
-      id: Date.now(),
-      text,
-      author,
+      id: Date.now() + Math.random() * 1000,
+      text: replyData.text || '',
+      files: replyData.files || [],
+      author: 'User',
       timestamp: new Date().toISOString(),
     };
+    
     setUpdates(updates.map(u => 
-      u.id === updateId ? { ...u, replies: [...u.replies, newReply] } : u
+      u.id === updateId 
+        ? { ...u, replies: [...u.replies, newReply] } 
+        : u
     ));
   };
 
-  // Buka panel untuk item tertentu
+  // ============================================================
+  // 🔥 EDIT UPDATE
+  // ============================================================
+  const editUpdate = (updateId, newText) => {
+    if (!newText) return;
+    
+    setUpdates(updates.map(u => 
+      u.id === updateId 
+        ? { ...u, text: newText } 
+        : u
+    ));
+  };
+
+  // ============================================================
+  // 🔥 DELETE UPDATE
+  // ============================================================
+  const deleteUpdate = (updateId) => {
+    setUpdates(updates.filter(u => u.id !== updateId));
+  };
+
+  // ============================================================
+  // 🔥 EDIT REPLY
+  // ============================================================
+  const editReply = (updateId, replyId, newText) => {
+    if (!newText) return;
+    
+    setUpdates(updates.map(u => 
+      u.id === updateId 
+        ? { 
+            ...u, 
+            replies: u.replies.map(r => 
+              r.id === replyId ? { ...r, text: newText } : r
+            ) 
+          } 
+        : u
+    ));
+  };
+
+  // ============================================================
+  // 🔥 DELETE REPLY
+  // ============================================================
+  const deleteReply = (updateId, replyId) => {
+    setUpdates(updates.map(u => 
+      u.id === updateId 
+        ? { ...u, replies: u.replies.filter(r => r.id !== replyId) } 
+        : u
+    ));
+  };
+
+  // ============================================================
+  // 🔥 PANEL CONTROLS
+  // ============================================================
   const openPanel = (itemId) => {
     setSelectedItem(itemId);
     setIsPanelOpen(true);
@@ -54,7 +118,6 @@ export const UpdateProvider = ({ children }) => {
     setSelectedItem(null);
   };
 
-  // Get updates untuk item tertentu
   const getItemUpdates = (itemId) => {
     return updates.filter(u => u.itemId === itemId);
   };
@@ -65,6 +128,10 @@ export const UpdateProvider = ({ children }) => {
     isPanelOpen,
     addUpdate,
     addReply,
+    editUpdate,
+    deleteUpdate,
+    editReply,
+    deleteReply,
     openPanel,
     closePanel,
     getItemUpdates,
