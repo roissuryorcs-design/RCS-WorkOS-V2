@@ -58,7 +58,7 @@ const UpdatePanel = () => {
   }, [isPanelOpen]);
 
   // ============================================================
-  // HANDLE UPLOAD FILE
+  // HANDLE UPLOAD FILE UNTUK UPDATE
   // ============================================================
   const handleFileUpload = (e) => {
     const files = Array.from(e.target.files);
@@ -81,7 +81,7 @@ const UpdatePanel = () => {
   };
 
   // ============================================================
-  // HANDLE REPLY FILE UPLOAD
+  // HANDLE UPLOAD FILE UNTUK REPLY
   // ============================================================
   const handleReplyFileUpload = (e) => {
     const files = Array.from(e.target.files);
@@ -132,7 +132,6 @@ const UpdatePanel = () => {
   // ============================================================
   const handleReplySubmit = (updateId) => {
     if (replyText.trim() || replyFiles.length > 0) {
-      // Simpan reply dengan file
       const replyData = {
         text: replyText.trim(),
         files: replyFiles,
@@ -298,7 +297,7 @@ const UpdatePanel = () => {
         }}
       >
         {/* ============================================================
-            HEADER - TINGGI DIPENDEKKAN
+            HEADER
             ============================================================ */}
         <div style={{
           padding: '10px 16px',
@@ -337,7 +336,7 @@ const UpdatePanel = () => {
         </div>
 
         {/* ============================================================
-            INPUT - DI ATAS (Layout Efisien)
+            INPUT UPDATE - DENGAN CANCEL DAN ATTACHMENT
             ============================================================ */}
         <div style={{
           padding: '10px 14px',
@@ -345,6 +344,7 @@ const UpdatePanel = () => {
           background: '#f8f9fa',
           flexShrink: 0,
         }}>
+          {/* Preview uploaded files */}
           {uploadedFiles.length > 0 && (
             <div style={{ marginBottom: '6px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
               {uploadedFiles.map((file) => (
@@ -422,6 +422,7 @@ const UpdatePanel = () => {
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '4px' }}>
               <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                {/* 🔥 TOMBOL ATTACHMENT */}
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
@@ -446,8 +447,8 @@ const UpdatePanel = () => {
                 </span>
               </div>
               <div style={{ display: 'flex', gap: '4px' }}>
-                {/* 🔥 Tombol Cancel */}
-                {newUpdate.trim() || uploadedFiles.length > 0 ? (
+                {/* 🔥 TOMBOL CANCEL - Muncul jika ada teks atau file */}
+                {(newUpdate.trim() || uploadedFiles.length > 0) && (
                   <button
                     type="button"
                     onClick={handleCancelUpdate}
@@ -467,7 +468,7 @@ const UpdatePanel = () => {
                   >
                     Cancel
                   </button>
-                ) : null}
+                )}
                 <button
                   type="submit"
                   style={{
@@ -641,6 +642,7 @@ const UpdatePanel = () => {
                     )}
 
                     <div style={{ marginTop: '6px', display: 'flex', gap: '10px', flexWrap: 'wrap', borderTop: '1px solid #f3f4f6', paddingTop: '6px' }}>
+                      {/* 🔥 TOMBOL REPLY */}
                       <button
                         onClick={() => setReplyingTo(replyingTo === update.id ? null : update.id)}
                         style={{
@@ -698,7 +700,7 @@ const UpdatePanel = () => {
                     </div>
 
                     {/* ============================================================
-                        REPLY INPUT
+                        REPLY INPUT - DENGAN ATTACHMENT DAN CANCEL
                         ============================================================ */}
                     {replyingTo === update.id && (
                       <div style={{ marginTop: '8px', padding: '8px 10px', background: '#f3f4f6', borderRadius: '6px' }}>
@@ -761,6 +763,7 @@ const UpdatePanel = () => {
                             }}
                             autoFocus
                           />
+                          {/* 🔥 TOMBOL ATTACHMENT UNTUK REPLY */}
                           <input
                             ref={replyFileInputRef}
                             type="file"
@@ -788,6 +791,7 @@ const UpdatePanel = () => {
                           >
                             📎
                           </button>
+                          {/* 🔥 TOMBOL REPLY */}
                           <button
                             onClick={() => handleReplySubmit(update.id)}
                             style={{
@@ -803,6 +807,7 @@ const UpdatePanel = () => {
                           >
                             Reply
                           </button>
+                          {/* 🔥 TOMBOL CANCEL REPLY */}
                           <button
                             onClick={handleCancelReply}
                             style={{
@@ -824,7 +829,7 @@ const UpdatePanel = () => {
                   </div>
 
                   {/* ============================================================
-                      REPLIES LIST - Dengan Edit & Delete
+                      REPLIES LIST
                       ============================================================ */}
                   {update.replies && update.replies.length > 0 && (
                     <div style={{
