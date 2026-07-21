@@ -21,104 +21,22 @@ function AppContent() {
   const [groupColors, setGroupColors] = useState({});
   const [activeStatusColumnId, setActiveStatusColumnId] = useState(null);
   const [showAddColumnPopup, setShowAddColumnPopup] = useState(false);
-  const [boardTitle, setBoardTitle] = useState("BOARD TITLE");
-  const [boardSubtitle, setBoardSubtitle] = useState("Sub Title / Description");
   const [isInitialized, setIsInitialized] = useState(false);
   const [hasAutoAdded, setHasAutoAdded] = useState(false);
 
   const { columns, addColumn, renameColumn, toggleColumn, deleteColumn, resetColumns, updateColumnStatuses, updateColumnStatusOrder } = useColumns();
 
   // ============================================================
-  // 🔥 INISIALISASI DATA DEFAULT
-  // ============================================================
-  const initializeDefaultData = () => {
-    const existingItems = localStorage.getItem("forelItems");
-    const existingTitle = localStorage.getItem("forelBoardTitle");
-    
-    if (!existingItems && !existingTitle) {
-      console.log("🔵 Initializing default data...");
-      
-      localStorage.setItem("forelBoardTitle", "BOARD TITLE");
-      localStorage.setItem("forelBoardSubtitle", "Sub Title / Description");
-      
-      const defaultItems = [
-        { 
-          id: 1, 
-          group: "Default Group", 
-          item: "Task 1", 
-          document: "DOC-001", 
-          people: "Assign to...", 
-          status: "Default", 
-          dueDate: "", 
-          rev: "R0",
-          children: [],
-          isExpanded: false,
-        },
-        { 
-          id: 2, 
-          group: "Default Group", 
-          item: "Task 2", 
-          document: "DOC-002", 
-          people: "Assign to...", 
-          status: "Default", 
-          dueDate: "", 
-          rev: "R0",
-          children: [],
-          isExpanded: false,
-        },
-        { 
-          id: 3, 
-          group: "Default Group", 
-          item: "Task 3", 
-          document: "DOC-003", 
-          people: "Assign to...", 
-          status: "Default", 
-          dueDate: "", 
-          rev: "R0",
-          children: [],
-          isExpanded: false,
-        },
-      ];
-      localStorage.setItem("forelItems", JSON.stringify(defaultItems));
-      localStorage.setItem("forelStatuses", JSON.stringify({ Default: "#9ca3af" }));
-      localStorage.setItem("forelFavorites", JSON.stringify(["Workspace", "Administration"]));
-      localStorage.setItem("forelGroupColors", JSON.stringify({ "Default Group": "#3b82f6" }));
-      
-      console.log("✅ Default data initialized!");
-    }
-  };
-
-  // ============================================================
   // LOAD DATA
   // ============================================================
   useEffect(() => {
-    initializeDefaultData();
-
     const savedItems = localStorage.getItem("forelItems");
     const savedStatuses = localStorage.getItem("forelStatuses");
     const savedFavs = localStorage.getItem("forelFavorites");
     const savedGroupColors = localStorage.getItem("forelGroupColors");
-    const savedBoardTitle = localStorage.getItem("forelBoardTitle");
-    const savedBoardSubtitle = localStorage.getItem("forelBoardSubtitle");
 
     const defaultStatuses = { Default: "#9ca3af" };
 
-    // LOAD BOARD TITLE
-    if (savedBoardTitle && savedBoardTitle.trim() !== "") {
-      setBoardTitle(savedBoardTitle);
-    } else {
-      setBoardTitle("BOARD TITLE");
-      localStorage.setItem("forelBoardTitle", "BOARD TITLE");
-    }
-
-    if (savedBoardSubtitle && savedBoardSubtitle.trim() !== "") {
-      setBoardSubtitle(savedBoardSubtitle);
-    } else {
-      setBoardSubtitle("Sub Title / Description");
-      localStorage.setItem("forelBoardSubtitle", "Sub Title / Description");
-    }
-
-    // LOAD STATUSES
     if (savedStatuses) {
       const parsed = JSON.parse(savedStatuses);
       if (Object.keys(parsed).length === 0) {
@@ -130,7 +48,6 @@ function AppContent() {
       setStatuses(defaultStatuses);
     }
 
-    // LOAD ITEMS
     let loadedItems = [];
     let allGroups = [];
 
@@ -235,14 +152,12 @@ function AppContent() {
 
     setItems(finalItems);
 
-    // LOAD FAVORITES
     if (savedFavs) {
       setFavorites(JSON.parse(savedFavs));
     } else {
       setFavorites(["Workspace", "Administration"]);
     }
 
-    // LOAD GROUP COLORS
     if (savedGroupColors) {
       setGroupColors(JSON.parse(savedGroupColors));
     } else {
@@ -312,7 +227,7 @@ function AppContent() {
   }, [items, isInitialized]);
 
   // ============================================================
-  // AUTO-SAVE (TANPA BOARD TITLE - HEADER SUDAH HANDLE)
+  // AUTO-SAVE KE localStorage
   // ============================================================
   useEffect(() => {
     if (isInitialized) {
@@ -331,28 +246,6 @@ function AppContent() {
   useEffect(() => {
     localStorage.setItem("forelGroupColors", JSON.stringify(groupColors));
   }, [groupColors]);
-
-  // ============================================================
-  // 🔥 HAPUS AUTO-SAVE TITLE - HEADER SUDAH HANDLE SENDIRI
-  // ============================================================
-  // useEffect(() => {
-  //   localStorage.setItem("forelBoardTitle", boardTitle);
-  // }, [boardTitle]);
-
-  // useEffect(() => {
-  //   localStorage.setItem("forelBoardSubtitle", boardSubtitle);
-  // }, [boardSubtitle]);
-
-  // ============================================================
-  // 🔥 HAPUS RESET TITLE SAAT GROUP KOSONG
-  // ============================================================
-  // useEffect(() => {
-  //   const allGroups = [...new Set(items.map((item) => item.group))];
-  //   if (allGroups.length === 0 && items.length === 0) {
-  //     setBoardTitle("BOARD TITLE");
-  //     setBoardSubtitle("Sub Title / Description");
-  //   }
-  // }, [items]);
 
   // ============================================================
   // UNDO
@@ -789,7 +682,7 @@ function AppContent() {
 
       <div className="main-content">
         {/* ============================================================
-            HEADER - PAKAI COMPONENT HEADER (TANPA PROPS)
+            HEADER - PAKAI COMPONENT HEADER
             ============================================================ */}
         <Header />
 
@@ -830,7 +723,6 @@ function AppContent() {
         </div>
       </div>
 
-      {/* MODALS */}
       {showStatusManager && (
         <StatusManager
           columnId={activeStatusColumnId}
