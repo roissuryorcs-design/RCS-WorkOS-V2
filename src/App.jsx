@@ -682,9 +682,9 @@ function AppContent() {
 
       <div className="main-content">
         {/* ============================================================
-            HEADER - PAKAI COMPONENT HEADER
+            HEADER - PAKAI COMPONENT HEADER (dengan props groups)
             ============================================================ */}
-        <Header />
+        <Header groups={allGroups} />
 
         <Toolbar
           search={search}
