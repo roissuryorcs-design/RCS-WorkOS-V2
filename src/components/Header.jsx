@@ -2,12 +2,9 @@ import { useState, useEffect } from "react";
 
 export default function Header({ isDefaultOnly = false }) {
   // State untuk menyimpan nama custom
-  const [customName, setCustomName] = useState(() => {
-    return localStorage.getItem("boardName") || "";
-  });
-  const [customDesc, setCustomDesc] = useState(() => {
-    return localStorage.getItem("boardDescription") || "";
-  });
+  const [customName, setCustomName] = useState("");
+  const [customDesc, setCustomDesc] = useState("");
+  const [isLoaded, setIsLoaded] = useState(false);
 
   const [isEditingName, setIsEditingName] = useState(false);
   const [isEditingDesc, setIsEditingDesc] = useState(false);
@@ -15,70 +12,70 @@ export default function Header({ isDefaultOnly = false }) {
   const [tempDesc, setTempDesc] = useState("");
 
   // ============================================================
-  // 🔥 FIX: LOAD DATA SAAT PERTAMA KALI
+  // 🔥 LOAD DATA DARI LOCALSTORAGE
   // ============================================================
   useEffect(() => {
     const savedName = localStorage.getItem("boardName");
     const savedDesc = localStorage.getItem("boardDescription");
     
-    if (savedName) {
+    if (savedName && savedName.trim() !== "") {
       setCustomName(savedName);
     }
-    if (savedDesc) {
+    if (savedDesc && savedDesc.trim() !== "") {
       setCustomDesc(savedDesc);
     }
+    setIsLoaded(true);
   }, []);
 
   // ============================================================
-  // LOGIKA UTAMA:
-  // - Jika isDefaultOnly = true → tampilkan "BOARD NAME"
-  // - Jika isDefaultOnly = false → tampilkan customName (jika ada)
-  // 🔥 FIX: Jangan override customName dengan "BOARD NAME"
+  // 🔥 SIMPAN KE LOCALSTORAGE SETIAP ADA PERUBAHAN
+  // ============================================================
+  useEffect(() => {
+    if (isLoaded) {
+      if (customName && customName.trim() !== "" && customName !== "BOARD") {
+        localStorage.setItem("boardName", customName);
+      } else {
+        localStorage.removeItem("boardName");
+      }
+    }
+  }, [customName, isLoaded]);
+
+  useEffect(() => {
+    if (isLoaded) {
+      if (customDesc && customDesc.trim() !== "" && customDesc !== "Sub Title/Description") {
+        localStorage.setItem("boardDescription", customDesc);
+      } else {
+        localStorage.removeItem("boardDescription");
+      }
+    }
+  }, [customDesc, isLoaded]);
+
+  // ============================================================
+  // 🔥 TAMPILKAN NAMA - PRIORITASKAN CUSTOM NAME
   // ============================================================
   const hasCustomName = customName && customName.trim() !== "";
   const hasCustomDesc = customDesc && customDesc.trim() !== "";
 
-  // 🔥 FIX: Gunakan customName meskipun isDefaultOnly true
-  // Tapi tetap tampilkan "BOARD NAME" jika tidak ada customName
-  const displayName = hasCustomName ? customName : "BOARD NAME";
-  const displayDesc = hasCustomDesc ? customDesc : "add a description";
+  const displayName = hasCustomName ? customName : "BOARD";
+  const displayDesc = hasCustomDesc ? customDesc : "Sub Title/Description";
 
-  // Debug: log untuk memastikan
-  console.log("🔵 Header - isDefaultOnly:", isDefaultOnly);
+  // Debug
   console.log("🔵 Header - customName:", customName);
   console.log("🔵 Header - displayName:", displayName);
-
-  // ============================================================
-  // Simpan ke localStorage
-  // ============================================================
-  useEffect(() => {
-    if (customName) {
-      localStorage.setItem("boardName", customName);
-    } else {
-      localStorage.removeItem("boardName");
-    }
-  }, [customName]);
-
-  useEffect(() => {
-    if (customDesc) {
-      localStorage.setItem("boardDescription", customDesc);
-    } else {
-      localStorage.removeItem("boardDescription");
-    }
-  }, [customDesc]);
+  console.log("🔵 Header - isLoaded:", isLoaded);
 
   // ============================================================
   // HANDLE EDIT BOARD NAME
   // ============================================================
   const handleNameClick = () => {
     setIsEditingName(true);
-    setTempName(customName || "BOARD NAME");
+    setTempName(customName || "BOARD");
   };
 
   const handleNameSave = () => {
     setIsEditingName(false);
     const newName = tempName.trim();
-    if (newName && newName !== "BOARD NAME") {
+    if (newName && newName !== "BOARD") {
       setCustomName(newName);
     } else {
       setCustomName("");
@@ -90,7 +87,7 @@ export default function Header({ isDefaultOnly = false }) {
       handleNameSave();
     } else if (e.key === "Escape") {
       setIsEditingName(false);
-      setTempName(customName || "BOARD NAME");
+      setTempName(customName || "BOARD");
     }
   };
 
@@ -99,13 +96,13 @@ export default function Header({ isDefaultOnly = false }) {
   // ============================================================
   const handleDescClick = () => {
     setIsEditingDesc(true);
-    setTempDesc(customDesc || "add a description");
+    setTempDesc(customDesc || "Sub Title/Description");
   };
 
   const handleDescSave = () => {
     setIsEditingDesc(false);
     const newDesc = tempDesc.trim();
-    if (newDesc && newDesc !== "add a description") {
+    if (newDesc && newDesc !== "Sub Title/Description") {
       setCustomDesc(newDesc);
     } else {
       setCustomDesc("");
@@ -117,14 +114,19 @@ export default function Header({ isDefaultOnly = false }) {
       handleDescSave();
     } else if (e.key === "Escape") {
       setIsEditingDesc(false);
-      setTempDesc(customDesc || "add a description");
+      setTempDesc(customDesc || "Sub Title/Description");
     }
   };
 
+  // ============================================================
+  // RENDER
+  // ============================================================
   return (
     <div className="header-container" style={{ padding: "16px 24px" }}>
       <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-        {/* BOARD NAME - TANPA ICON ✎ */}
+        {/* ============================================================
+            BOARD NAME - TANPA ICON ✎
+            ============================================================ */}
         {isEditingName ? (
           <input
             type="text"
@@ -169,7 +171,9 @@ export default function Header({ isDefaultOnly = false }) {
           </h1>
         )}
 
-        {/* DESCRIPTION - TANPA ICON ✎ */}
+        {/* ============================================================
+            DESCRIPTION - TANPA ICON ✎
+            ============================================================ */}
         {isEditingDesc ? (
           <input
             type="text"
