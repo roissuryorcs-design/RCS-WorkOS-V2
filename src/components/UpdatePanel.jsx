@@ -8,7 +8,9 @@ const UpdatePanel = () => {
     selectedItem, 
     getItemUpdates, 
     addUpdate,
-    addReply 
+    addReply,
+    editUpdate,
+    deleteUpdate,
   } = useUpdates();
 
   const [newUpdate, setNewUpdate] = useState('');
@@ -103,36 +105,27 @@ const UpdatePanel = () => {
   };
 
   // ============================================================
-  // HANDLE EDIT UPDATE
+  // 🔥 HANDLE EDIT UPDATE (SUDAH BERFUNGSI)
   // ============================================================
   const startEdit = (update) => {
     setEditingUpdateId(update.id);
     setEditText(update.text);
   };
 
-  const saveEdit = (updateId) => {
-    const updates = JSON.parse(localStorage.getItem('forelUpdates') || '[]');
-    const updated = updates.map(u => {
-      if (u.id === updateId) {
-        return { ...u, text: editText };
-      }
-      return u;
-    });
-    localStorage.setItem('forelUpdates', JSON.stringify(updated));
-    setEditingUpdateId(null);
-    setEditText('');
-    window.dispatchEvent(new Event('storage'));
+  const handleSaveEdit = (updateId) => {
+    if (editText.trim()) {
+      editUpdate(updateId, editText.trim());
+      setEditingUpdateId(null);
+      setEditText('');
+    }
   };
 
   // ============================================================
-  // HANDLE DELETE UPDATE
+  // 🔥 HANDLE DELETE UPDATE (SUDAH BERFUNGSI)
   // ============================================================
-  const deleteUpdate = (updateId) => {
-    if (confirm('Delete this update?')) {
-      const updates = JSON.parse(localStorage.getItem('forelUpdates') || '[]');
-      const filtered = updates.filter(u => u.id !== updateId);
-      localStorage.setItem('forelUpdates', JSON.stringify(filtered));
-      window.dispatchEvent(new Event('storage'));
+  const handleDeleteUpdate = (updateId) => {
+    if (confirm('Delete this update and all replies?')) {
+      deleteUpdate(updateId);
     }
   };
 
@@ -227,11 +220,11 @@ const UpdatePanel = () => {
             ============================================================ */}
         <div style={{
           padding: '16px 20px',
-          borderBottom: '2px solid #e5e7eb',
+          borderBottom: '3px solid #d1d5db',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          background: '#fafafa',
+          background: '#f8f9fa',
           flexShrink: 0,
         }}>
           <div>
@@ -262,12 +255,12 @@ const UpdatePanel = () => {
         </div>
 
         {/* ============================================================
-            INPUT - DI ATAS (seperti Monday.com)
+            INPUT - DI ATAS
             ============================================================ */}
         <div style={{
           padding: '16px 20px',
-          borderBottom: '2px solid #e5e7eb',
-          background: '#fafafa',
+          borderBottom: '3px solid #d1d5db',
+          background: '#f8f9fa',
           flexShrink: 0,
         }}>
           {/* Preview uploaded files */}
@@ -281,7 +274,7 @@ const UpdatePanel = () => {
                   padding: '4px 10px',
                   background: '#ffffff',
                   borderRadius: '6px',
-                  border: '1px solid #e5e7eb',
+                  border: '2px solid #d1d5db',
                   fontSize: '12px',
                 }}>
                   {file.type && file.type.startsWith('image/') ? <span>🖼️</span> : <span>📄</span>}
@@ -397,7 +390,7 @@ const UpdatePanel = () => {
         </div>
 
         {/* ============================================================
-            UPDATE LIST - Dengan SCROLLBAR VERTIKAL
+            UPDATE LIST - Dengan SCROLLBAR
             ============================================================ */}
         <div
           ref={listContainerRef}
@@ -428,19 +421,19 @@ const UpdatePanel = () => {
               const isEditing = editingUpdateId === update.id;
               return (
                 /* ============================================================
-                   🔥 1 BORDER PER UPDATE (Update + semua reply dalam 1 card)
+                   🔥 BORDER PER UPDATE - JELAS & TEBAL
                    ============================================================ */
                 <div key={update.id} style={{
-                  border: '2px solid #e5e7eb',
-                  borderRadius: '10px',
-                  padding: '14px 16px',
+                  border: '3px solid #9ca3af',
+                  borderRadius: '12px',
+                  padding: '16px 18px',
                   backgroundColor: '#ffffff',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
                 }}>
                   {/* UPDATE */}
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '4px' }}>
-                      <strong style={{ fontSize: '14px', color: '#1f2937', fontWeight: 700 }}>
+                      <strong style={{ fontSize: '15px', color: '#1f2937', fontWeight: 700 }}>
                         {update.author || 'User'}
                       </strong>
                       <span style={{ fontSize: '12px', color: '#6b7280', fontWeight: 500 }}>
@@ -471,7 +464,7 @@ const UpdatePanel = () => {
                           onKeyDown={(e) => {
                             if (e.key === 'Enter' && e.shiftKey) {
                               e.preventDefault();
-                              saveEdit(update.id);
+                              handleSaveEdit(update.id);
                             }
                             if (e.key === 'Escape') {
                               setEditingUpdateId(null);
@@ -480,7 +473,7 @@ const UpdatePanel = () => {
                         />
                         <div style={{ marginTop: '6px', display: 'flex', gap: '8px' }}>
                           <button
-                            onClick={() => saveEdit(update.id)}
+                            onClick={() => handleSaveEdit(update.id)}
                             style={{
                               padding: '4px 16px',
                               background: '#4CAF50',
@@ -524,31 +517,31 @@ const UpdatePanel = () => {
                       </p>
                     )}
 
-                    {/* Files */}
+                    {/* 🔥 Files - Tampilan lebih jelas */}
                     {update.files && update.files.length > 0 && (
-                      <div style={{ marginTop: '6px', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                      <div style={{ marginTop: '8px', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                         {update.files.map((file, idx) => (
                           <div key={idx} style={{
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '6px',
-                            padding: '4px 10px',
+                            gap: '8px',
+                            padding: '6px 12px',
                             background: '#f3f4f6',
                             borderRadius: '6px',
-                            border: '1px solid #e5e7eb',
-                            fontSize: '12px',
+                            border: '2px solid #d1d5db',
+                            fontSize: '13px',
                           }}>
                             {file.type && file.type.startsWith('image/') ? (
-                              <div style={{ width: '40px', height: '40px', borderRadius: '4px', overflow: 'hidden' }}>
+                              <div style={{ width: '50px', height: '50px', borderRadius: '4px', overflow: 'hidden' }}>
                                 <img src={file.url} alt={file.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                               </div>
                             ) : (
-                              <span>📄</span>
+                              <span style={{ fontSize: '20px' }}>📄</span>
                             )}
-                            <span style={{ maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 500 }}>
+                            <span style={{ maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 500 }}>
                               {file.name}
                             </span>
-                            <span style={{ fontSize: '10px', color: '#6b7280' }}>
+                            <span style={{ fontSize: '11px', color: '#6b7280', fontWeight: 400 }}>
                               {formatFileSize(file.size)}
                             </span>
                           </div>
@@ -557,7 +550,7 @@ const UpdatePanel = () => {
                     )}
 
                     {/* Action buttons */}
-                    <div style={{ marginTop: '8px', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                    <div style={{ marginTop: '10px', display: 'flex', gap: '14px', flexWrap: 'wrap', borderTop: '2px solid #f3f4f6', paddingTop: '10px' }}>
                       <button
                         onClick={() => setReplyingTo(replyingTo === update.id ? null : update.id)}
                         style={{
@@ -566,7 +559,7 @@ const UpdatePanel = () => {
                           color: '#4B5563',
                           fontSize: '13px',
                           cursor: 'pointer',
-                          padding: '2px 8px',
+                          padding: '2px 10px',
                           borderRadius: '4px',
                           fontWeight: 600,
                           transition: 'background 0.2s',
@@ -584,7 +577,7 @@ const UpdatePanel = () => {
                           color: '#4B5563',
                           fontSize: '13px',
                           cursor: 'pointer',
-                          padding: '2px 8px',
+                          padding: '2px 10px',
                           borderRadius: '4px',
                           fontWeight: 600,
                           transition: 'background 0.2s',
@@ -595,14 +588,14 @@ const UpdatePanel = () => {
                         ✎ Edit
                       </button>
                       <button
-                        onClick={() => deleteUpdate(update.id)}
+                        onClick={() => handleDeleteUpdate(update.id)}
                         style={{
                           background: 'none',
                           border: 'none',
                           color: '#ef4444',
                           fontSize: '13px',
                           cursor: 'pointer',
-                          padding: '2px 8px',
+                          padding: '2px 10px',
                           borderRadius: '4px',
                           fontWeight: 600,
                           transition: 'background 0.2s',
@@ -665,7 +658,7 @@ const UpdatePanel = () => {
                     <div style={{
                       marginTop: '12px',
                       paddingTop: '12px',
-                      borderTop: '2px solid #e5e7eb',
+                      borderTop: '3px solid #e5e7eb',
                       display: 'flex',
                       flexDirection: 'column',
                       gap: '10px',
@@ -675,6 +668,7 @@ const UpdatePanel = () => {
                           padding: '10px 14px',
                           background: '#f3f4f6',
                           borderRadius: '6px',
+                          border: '1px solid #e5e7eb',
                         }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '4px' }}>
                             <strong style={{ fontSize: '13px', color: '#1f2937', fontWeight: 700 }}>
@@ -713,20 +707,19 @@ const UpdatePanel = () => {
           from { opacity: 0; }
           to { opacity: 1; }
         }
-        /* Scrollbar styling */
         ::-webkit-scrollbar {
-          width: 6px;
+          width: 8px;
         }
         ::-webkit-scrollbar-track {
           background: #f1f1f1;
-          border-radius: 3px;
+          border-radius: 4px;
         }
         ::-webkit-scrollbar-thumb {
           background: #c1c7cd;
-          border-radius: 3px;
+          border-radius: 4px;
         }
         ::-webkit-scrollbar-thumb:hover {
-          background: #a0a6ab;
+          background: #9ca3af;
         }
       `}</style>
     </>
