@@ -713,15 +713,21 @@ function AppContent() {
           onOpenAddColumn={() => setShowAddColumnPopup(true)}
         />
 
-        <div className="board-footer">
-          <div>Total: <strong>{totalItems}</strong> items</div>
-          <div>
-            Done: <strong style={{ color: "#22c55e" }}>{doneItems}</strong> | Pending:{" "}
-            <strong style={{ color: "#f59e0b" }}>{pendingItems}</strong>
-          </div>
-          <div><span style={{ color: "var(--text-light)" }}>💾</span> Saved</div>
-        </div>
-      </div>
+<div className="board-footer">
+  <div className="footer-stats">
+    <span>Total: <strong>{totalItems}</strong> items</span>
+    <span className="footer-divider">|</span>
+    <span>Done: <strong style={{ color: "#22c55e" }}>{doneItems}</strong></span>
+    <span className="footer-divider">|</span>
+    <span>Pending: <strong style={{ color: "#f59e0b" }}>{pendingItems}</strong></span>
+  </div>
+  <div className="footer-actions">
+    <span className="footer-status">
+      <span className="status-dot"></span>
+      Auto-saved
+    </span>
+  </div>
+</div>
 
       {showStatusManager && (
         <StatusManager
