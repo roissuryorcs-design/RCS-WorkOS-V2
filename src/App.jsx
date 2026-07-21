@@ -21,6 +21,8 @@ function AppContent() {
   const [groupColors, setGroupColors] = useState({});
   const [activeStatusColumnId, setActiveStatusColumnId] = useState(null);
   const [showAddColumnPopup, setShowAddColumnPopup] = useState(false);
+  const [boardTitle, setBoardTitle] = useState("BOARD TITLE");
+  const [boardSubtitle, setBoardSubtitle] = useState("Sub Title / Description");
   const [isInitialized, setIsInitialized] = useState(false);
   const [hasAutoAdded, setHasAutoAdded] = useState(false);
 
@@ -34,9 +36,29 @@ function AppContent() {
     const savedStatuses = localStorage.getItem("forelStatuses");
     const savedFavs = localStorage.getItem("forelFavorites");
     const savedGroupColors = localStorage.getItem("forelGroupColors");
+    const savedBoardTitle = localStorage.getItem("forelBoardTitle");
+    const savedBoardSubtitle = localStorage.getItem("forelBoardSubtitle");
 
     const defaultStatuses = { Default: "#9ca3af" };
 
+    // ============================================================
+    // 🔥 LOAD BOARD TITLE DARI LOCALSTORAGE
+    // ============================================================
+    if (savedBoardTitle && savedBoardTitle.trim() !== "") {
+      setBoardTitle(savedBoardTitle);
+    } else {
+      setBoardTitle("BOARD TITLE");
+      localStorage.setItem("forelBoardTitle", "BOARD TITLE");
+    }
+
+    if (savedBoardSubtitle && savedBoardSubtitle.trim() !== "") {
+      setBoardSubtitle(savedBoardSubtitle);
+    } else {
+      setBoardSubtitle("Sub Title / Description");
+      localStorage.setItem("forelBoardSubtitle", "Sub Title / Description");
+    }
+
+    // LOAD STATUSES
     if (savedStatuses) {
       const parsed = JSON.parse(savedStatuses);
       if (Object.keys(parsed).length === 0) {
@@ -48,6 +70,7 @@ function AppContent() {
       setStatuses(defaultStatuses);
     }
 
+    // LOAD ITEMS
     let loadedItems = [];
     let allGroups = [];
 
@@ -152,12 +175,14 @@ function AppContent() {
 
     setItems(finalItems);
 
+    // LOAD FAVORITES
     if (savedFavs) {
       setFavorites(JSON.parse(savedFavs));
     } else {
       setFavorites(["Workspace", "Administration"]);
     }
 
+    // LOAD GROUP COLORS
     if (savedGroupColors) {
       setGroupColors(JSON.parse(savedGroupColors));
     } else {
@@ -246,6 +271,21 @@ function AppContent() {
   useEffect(() => {
     localStorage.setItem("forelGroupColors", JSON.stringify(groupColors));
   }, [groupColors]);
+
+  // ============================================================
+  // 🔥 SAVE BOARD TITLE KE LOCALSTORAGE
+  // ============================================================
+  useEffect(() => {
+    if (isInitialized) {
+      localStorage.setItem("forelBoardTitle", boardTitle);
+    }
+  }, [boardTitle, isInitialized]);
+
+  useEffect(() => {
+    if (isInitialized) {
+      localStorage.setItem("forelBoardSubtitle", boardSubtitle);
+    }
+  }, [boardSubtitle, isInitialized]);
 
   // ============================================================
   // UNDO
@@ -681,10 +721,104 @@ function AppContent() {
       />
 
       <div className="main-content">
-        {/* ============================================================
-            HEADER - PAKAI COMPONENT HEADER (TANPA ICON ✎)
-            ============================================================ */}
-        <Header />
+        <div className="header-sticky">
+          {/* ============================================================
+              HEADER TITLE - DENGAN EVENT UNTUK SAVE KE LOCALSTORAGE
+              ============================================================ */}
+          <h1 
+            className="header-title" 
+            title="Click to edit board name"
+            contentEditable
+            suppressContentEditableWarning
+            onBlur={(e) => {
+              // Ambil teks tanpa span (firstChild)
+              const newTitle = e.currentTarget.firstChild?.textContent?.trim() || "BOARD TITLE";
+              if (newTitle) {
+                setBoardTitle(newTitle);
+                localStorage.setItem("forelBoardTitle", newTitle);
+                console.log("✅ Title saved:", newTitle);
+              }
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                e.target.blur();
+              }
+            }}
+            style={{
+              cursor: 'text',
+              outline: 'none',
+              padding: '2px 4px',
+              borderRadius: '4px',
+              position: 'relative',
+            }}
+          >
+            {boardTitle}
+            <span 
+              className="header-edit-icon"
+              style={{ 
+                fontSize: '14px', 
+                color: 'var(--text-muted)', 
+                marginLeft: '8px', 
+                fontWeight: 400,
+                opacity: 0.5,
+                transition: 'opacity 0.2s ease',
+                display: 'inline-block',
+              }}
+            >
+              ✎
+            </span>
+          </h1>
+          
+          {/* ============================================================
+              HEADER SUBTITLE - DENGAN EVENT UNTUK SAVE KE LOCALSTORAGE
+              ============================================================ */}
+          <p 
+            className="header-subtitle"
+            title="Click to edit subtitle"
+            contentEditable
+            suppressContentEditableWarning
+            onBlur={(e) => {
+              const newSubtitle = e.currentTarget.firstChild?.textContent?.trim() || "Sub Title / Description";
+              if (newSubtitle) {
+                setBoardSubtitle(newSubtitle);
+                localStorage.setItem("forelBoardSubtitle", newSubtitle);
+                console.log("✅ Subtitle saved:", newSubtitle);
+              }
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                e.target.blur();
+              }
+            }}
+            style={{
+              cursor: 'text',
+              outline: 'none',
+              padding: '2px 4px',
+              borderRadius: '4px',
+              position: 'relative',
+              display: 'inline-block',
+              margin: 0,
+            }}
+          >
+            {boardSubtitle}
+            <span 
+              className="header-edit-icon"
+              style={{ 
+                fontSize: '12px', 
+                color: 'var(--text-muted)', 
+                marginLeft: '6px', 
+                fontWeight: 400,
+                opacity: 0.5,
+                transition: 'opacity 0.2s ease',
+                display: 'inline-block',
+              }}
+            >
+              ✎
+            </span>
+          </p>
+        </div>
 
         <Toolbar
           search={search}
