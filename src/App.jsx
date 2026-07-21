@@ -78,11 +78,15 @@ function AppContent() {
       };
       setItems(ensureChildren(parsedItems));
     } else {
+      // ============================================================
+      // DEFAULT: 1 GROUP DENGAN 3 ITEM (TANPA NAMA GROUP TERTENTU)
+      // ============================================================
+      const defaultGroup = "Default Group";
       setItems([
         { 
           id: 1, 
-          group: "Target & PLANNING", 
-          item: "Scope of Work", 
+          group: defaultGroup, 
+          item: "Item 1", 
           document: "NO. DO", 
           people: "Done", 
           status: "Default", 
@@ -93,93 +97,22 @@ function AppContent() {
         },
         { 
           id: 2, 
-          group: "Target & PLANNING", 
-          item: "GA Drawings", 
+          group: defaultGroup, 
+          item: "Item 2", 
           document: "NO. DO", 
           people: "Done", 
           status: "Default", 
           dueDate: "dd/mm/ttt", 
           rev: "R0",
-          children: [
-            {
-              id: 6,
-              item: "General Arrangement",
-              document: "ID-F-FT-NN1-GAD-FP-0",
-              people: "RS",
-              status: "Default",
-              dueDate: "01/07/2026",
-              rev: "R1",
-              children: [
-                {
-                  id: 7,
-                  item: "HVAC Room Arrangement",
-                  document: "P2104-V-D-GSHD-ME-GA",
-                  people: "Done",
-                  status: "Default",
-                  dueDate: "dd/mm/ttt",
-                  rev: "R0",
-                  children: [
-                    {
-                      id: 8,
-                      item: "Drawing A",
-                      document: "DWG-A-001",
-                      people: "John",
-                      status: "Default",
-                      dueDate: "dd/mm/ttt",
-                      rev: "R1",
-                      children: [],
-                      isExpanded: false,
-                    },
-                    {
-                      id: 9,
-                      item: "Drawing B",
-                      document: "DWG-B-002",
-                      people: "Jane",
-                      status: "Default",
-                      dueDate: "dd/mm/ttt",
-                      rev: "R0",
-                      children: [],
-                      isExpanded: false,
-                    }
-                  ],
-                  isExpanded: true,
-                }
-              ],
-              isExpanded: true,
-            }
-          ],
-          isExpanded: true,
+          children: [],
+          isExpanded: false,
         },
         { 
           id: 3, 
-          group: "Target & PLANNING", 
-          item: "General Arrangement", 
-          document: "ID-F-FT-NN1-GAD-FP-0", 
-          people: "RS", 
-          status: "Default", 
-          dueDate: "01/07/2026", 
-          rev: "R1",
-          children: [],
-          isExpanded: false,
-        },
-        { 
-          id: 4, 
-          group: "Completed", 
-          item: "HVAC Room Arrangement DI", 
-          document: "P2104-V-D-GSHD-ME-GA", 
-          people: "Done", 
-          status: "Default", 
-          dueDate: "dd/mm/ttt", 
-          rev: "R0",
-          children: [],
-          isExpanded: false,
-        },
-        { 
-          id: 5, 
-          group: "Completed", 
-          item: "Layout Drawings", 
+          group: defaultGroup, 
+          item: "Item 3", 
           document: "NO. DO", 
-          people: "Done", 
+          people: "", 
           status: "Default", 
           dueDate: "dd/mm/ttt", 
           rev: "R0",
@@ -199,8 +132,14 @@ function AppContent() {
       setGroupColors(JSON.parse(savedGroupColors));
     } else {
       const defaultColors = {};
+      // Ambil semua group dari items (jika ada)
       const groups = [...new Set(JSON.parse(savedItems || "[]").map(item => item.group))];
-      groups.forEach(g => { defaultColors[g] = "#3b82f6"; });
+      if (groups.length === 0) {
+        // Jika tidak ada group, buat default color untuk "Default Group"
+        defaultColors["Default Group"] = "#3b82f6";
+      } else {
+        groups.forEach(g => { defaultColors[g] = "#3b82f6"; });
+      }
       setGroupColors(defaultColors);
     }
 
@@ -351,7 +290,7 @@ function AppContent() {
 
     const newItem = {
       id: Date.now(),
-      group: parent.group || "Target & PLANNING",
+      group: parent.group || "Default Group",
       item: finalTitle,
       document: "NO. DO",
       people: "",
@@ -390,7 +329,7 @@ function AppContent() {
     const firstStatus = "Default";
     const newItem = {
       id: Date.now(),
-      group: groupName || "Target & PLANNING",
+      group: groupName || "Default Group",
       item: "New Task",
       document: "NO. DO",
       people: "",
@@ -686,6 +625,7 @@ function AppContent() {
                 display: 'inline-block',
               }}
             >
+              ✎
             </span>
           </h1>
           
@@ -731,6 +671,7 @@ function AppContent() {
                 display: 'inline-block',
               }}
             >
+              ✎
             </span>
           </p>
         </div>
