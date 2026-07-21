@@ -279,15 +279,15 @@ function AppContent() {
   }, [boardSubtitle]);
 
   // ============================================================
-  // CEK: Jika semua group dihapus
+  // 🔥 FIX: HAPUS RESET TITLE SAAT GROUP KOSONG
   // ============================================================
-  useEffect(() => {
-    const allGroups = [...new Set(items.map((item) => item.group))];
-    if (allGroups.length === 0 && items.length === 0) {
-      setBoardTitle("BOARD TITLE");
-      setBoardSubtitle("Sub Title / Description");
-    }
-  }, [items]);
+  // useEffect(() => {
+  //   const allGroups = [...new Set(items.map((item) => item.group))];
+  //   if (allGroups.length === 0 && items.length === 0) {
+  //     setBoardTitle("BOARD TITLE");
+  //     setBoardSubtitle("Sub Title / Description");
+  //   }
+  // }, [items]);
 
   // ============================================================
   // HANDLER UNTUK HEADER
