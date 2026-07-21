@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
-const Header = () => {
-  // 1. Inisialisasi State dari LocalStorage agar data awet saat refresh
+const Header = ({ groups }) => {
+  // 1. Inisialisasi State dari LocalStorage
   const [title, setTitle] = useState(() => {
     return localStorage.getItem('forelBoardTitle') || 'BOARD TITLE';
   });
@@ -10,12 +10,31 @@ const Header = () => {
     return localStorage.getItem('forelBoardSubtitle') || 'Sub Title / Description';
   });
 
+  // ============================================================
+  // 🔥 RESET TITLE KE DEFAULT JIKA GROUP KOSONG
+  // ============================================================
+  useEffect(() => {
+    // Cek apakah groups ada dan tidak kosong
+    const hasGroups = groups && groups.length > 0;
+    
+    if (!hasGroups) {
+      // Reset ke default
+      const defaultTitle = 'BOARD TITLE';
+      const defaultSubtitle = 'Sub Title / Description';
+      
+      setTitle(defaultTitle);
+      setSubtitle(defaultSubtitle);
+      localStorage.setItem('forelBoardTitle', defaultTitle);
+      localStorage.setItem('forelBoardSubtitle', defaultSubtitle);
+      
+      console.log('🔄 No groups found, resetting header to default');
+    }
+  }, [groups]);
+
   // 2. Fungsi untuk menyimpan perubahan Title
   const handleTitleBlur = (e) => {
-    // Ambil teks dari element, exclude span ikon
     const textNode = e.currentTarget.firstChild;
     const newText = textNode ? textNode.textContent.trim() : e.currentTarget.textContent.trim();
-    // Bersihkan karakter pensil jika ikut terbawa
     const cleanText = newText.replace(/✎/g, '').trim();
     if (cleanText) {
       setTitle(cleanText);
