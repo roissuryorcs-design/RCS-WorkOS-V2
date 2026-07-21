@@ -23,11 +23,13 @@ export default function Header() {
   const saveTitle = (newTitle) => {
     setBoardTitle(newTitle);
     localStorage.setItem("forelBoardTitle", newTitle);
+    console.log("✅ Title saved:", newTitle);
   };
 
   const saveSubtitle = (newSubtitle) => {
     setBoardSubtitle(newSubtitle);
     localStorage.setItem("forelBoardSubtitle", newSubtitle);
+    console.log("✅ Subtitle saved:", newSubtitle);
   };
 
   // ============================================================
