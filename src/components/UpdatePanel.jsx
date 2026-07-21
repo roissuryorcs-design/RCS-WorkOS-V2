@@ -21,13 +21,11 @@ const UpdatePanel = () => {
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [replyFiles, setReplyFiles] = useState([]);
   
-  // 🔥 Edit Update dengan files
   const [editingUpdateId, setEditingUpdateId] = useState(null);
   const [editText, setEditText] = useState('');
   const [editFiles, setEditFiles] = useState([]);
   const [editNewFiles, setEditNewFiles] = useState([]);
   
-  // 🔥 Edit Reply dengan files
   const [editingReplyId, setEditingReplyId] = useState(null);
   const [editingReplyUpdateId, setEditingReplyUpdateId] = useState(null);
   const [editReplyText, setEditReplyText] = useState('');
@@ -41,9 +39,17 @@ const UpdatePanel = () => {
   const editFileInputRef = useRef(null);
   const editReplyFileInputRef = useRef(null);
   const listContainerRef = useRef(null);
+  const replyTextareaRef = useRef(null);
 
   const itemUpdates = selectedItem ? getItemUpdates(selectedItem) : [];
   const sortedUpdates = [...itemUpdates].reverse();
+
+  // Auto-focus reply textarea saat muncul
+  useEffect(() => {
+    if (replyingTo && replyTextareaRef.current) {
+      setTimeout(() => replyTextareaRef.current.focus(), 100);
+    }
+  }, [replyingTo]);
 
   useEffect(() => {
     if (listContainerRef.current) {
@@ -89,7 +95,7 @@ const UpdatePanel = () => {
   };
 
   // ============================================================
-  // HANDLE UPLOAD FILE UNTUK REPLY
+  // HANDLE UPLOAD FILE UNTUK REPLY (hanya list nama)
   // ============================================================
   const handleReplyFileUpload = (e) => {
     const files = Array.from(e.target.files);
@@ -112,7 +118,7 @@ const UpdatePanel = () => {
   };
 
   // ============================================================
-  // 🔥 HANDLE UPLOAD FILE UNTUK EDIT UPDATE
+  // HANDLE UPLOAD FILE UNTUK EDIT UPDATE
   // ============================================================
   const handleEditFileUpload = (e) => {
     const files = Array.from(e.target.files);
@@ -139,7 +145,7 @@ const UpdatePanel = () => {
   };
 
   // ============================================================
-  // 🔥 HANDLE UPLOAD FILE UNTUK EDIT REPLY
+  // HANDLE UPLOAD FILE UNTUK EDIT REPLY
   // ============================================================
   const handleEditReplyFileUpload = (e) => {
     const files = Array.from(e.target.files);
@@ -209,7 +215,7 @@ const UpdatePanel = () => {
   };
 
   // ============================================================
-  // 🔥 HANDLE EDIT UPDATE (dengan files)
+  // HANDLE EDIT UPDATE
   // ============================================================
   const startEditUpdate = (update) => {
     setEditingUpdateId(update.id);
@@ -220,9 +226,7 @@ const UpdatePanel = () => {
 
   const handleSaveEditUpdate = (updateId) => {
     if (editText.trim()) {
-      // Gabungkan files lama + files baru
       const allFiles = [...editFiles, ...editNewFiles];
-      // Update di context (perlu modify editUpdate)
       editUpdate(updateId, editText.trim(), allFiles);
       setEditingUpdateId(null);
       setEditText('');
@@ -245,7 +249,7 @@ const UpdatePanel = () => {
   };
 
   // ============================================================
-  // 🔥 HANDLE EDIT REPLY (dengan files)
+  // HANDLE EDIT REPLY
   // ============================================================
   const startEditReply = (updateId, reply) => {
     setEditingReplyId(reply.id);
@@ -342,7 +346,6 @@ const UpdatePanel = () => {
 
               {isEditingReply ? (
                 <div style={{ marginTop: '4px' }}>
-                  {/* 🔥 Edit Reply Files Preview */}
                   {([...editReplyFiles, ...editReplyNewFiles]).length > 0 && (
                     <div style={{ marginBottom: '4px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                       {editReplyFiles.map((file) => (
@@ -433,7 +436,6 @@ const UpdatePanel = () => {
                     }}
                   />
                   <div style={{ marginTop: '4px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                    {/* 🔥 Tombol Attachment untuk Edit Reply */}
                     <input
                       ref={editReplyFileInputRef}
                       type="file"
@@ -505,7 +507,6 @@ const UpdatePanel = () => {
                 </p>
               )}
 
-              {/* Reply files */}
               {!isEditingReply && reply.files && reply.files.length > 0 && (
                 <div style={{ marginTop: '4px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                   {reply.files.map((file, idx) => (
@@ -528,7 +529,6 @@ const UpdatePanel = () => {
                 </div>
               )}
 
-              {/* Reply actions */}
               <div style={{ marginTop: '4px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 <button
                   onClick={() => setReplyingTo({ updateId, parentReplyId: reply.id })}
@@ -586,7 +586,6 @@ const UpdatePanel = () => {
                 </button>
               </div>
 
-              {/* Nested replies */}
               {reply.replies && reply.replies.length > 0 && (
                 renderReplies(reply.replies, updateId, depth + 1)
               )}
@@ -703,7 +702,6 @@ const UpdatePanel = () => {
           background: '#f8f9fa',
           flexShrink: 0,
         }}>
-          {/* Preview uploaded files dengan tombol X */}
           {uploadedFiles.length > 0 && (
             <div style={{ marginBottom: '6px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
               {uploadedFiles.map((file) => (
@@ -717,7 +715,7 @@ const UpdatePanel = () => {
                   border: '1px solid #d1d5db',
                   fontSize: '11px',
                 }}>
-                  {file.type && file.type.startsWith('image/') ? <span>🖼️</span> : <span>📄</span>}
+                  <span>📄</span>
                   <span style={{ maxWidth: '80px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {file.name}
                   </span>
@@ -901,7 +899,6 @@ const UpdatePanel = () => {
 
                     {isEditingUpdate ? (
                       <div style={{ marginTop: '6px' }}>
-                        {/* 🔥 Edit Update Files Preview */}
                         {([...editFiles, ...editNewFiles]).length > 0 && (
                           <div style={{ marginBottom: '4px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                             {editFiles.map((file) => (
@@ -992,7 +989,6 @@ const UpdatePanel = () => {
                           }}
                         />
                         <div style={{ marginTop: '4px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                          {/* 🔥 Tombol Attachment untuk Edit Update */}
                           <input
                             ref={editFileInputRef}
                             type="file"
@@ -1065,7 +1061,6 @@ const UpdatePanel = () => {
                       </p>
                     )}
 
-                    {/* Update files - tampilan normal */}
                     {!isEditingUpdate && update.files && update.files.length > 0 && (
                       <div style={{ marginTop: '4px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                         {update.files.map((file, idx) => (
@@ -1079,13 +1074,7 @@ const UpdatePanel = () => {
                             border: '1px solid #d1d5db',
                             fontSize: '11px',
                           }}>
-                            {file.type && file.type.startsWith('image/') ? (
-                              <div style={{ width: '30px', height: '30px', borderRadius: '2px', overflow: 'hidden' }}>
-                                <img src={file.url} alt={file.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                              </div>
-                            ) : (
-                              <span>📄</span>
-                            )}
+                            <span>📄</span>
                             <span style={{ maxWidth: '80px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 500 }}>
                               {file.name}
                             </span>
@@ -1151,11 +1140,36 @@ const UpdatePanel = () => {
                       </button>
                     </div>
 
-                    {/* REPLY INPUT */}
+                    {/* ============================================================
+                        🔥 REPLY INPUT - DINAMIS DI BAWAH PESAN YANG DIBALAS
+                        ============================================================ */}
                     {replyingTo && replyingTo.updateId === update.id && (
-                      <div style={{ marginTop: '8px', padding: '8px 10px', background: '#f3f4f6', borderRadius: '6px' }}>
+                      <div style={{
+                        marginTop: '10px',
+                        padding: '10px 12px',
+                        background: '#f0f4f8',
+                        borderRadius: '8px',
+                        border: '2px solid #d1d5db',
+                      }}>
+                        {/* Menampilkan pesan yang akan dibalas */}
+                        <div style={{
+                          fontSize: '12px',
+                          color: '#6b7280',
+                          marginBottom: '8px',
+                          padding: '6px 10px',
+                          background: '#e5e7eb',
+                          borderRadius: '4px',
+                          fontStyle: 'italic',
+                          maxHeight: '60px',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        }}>
+                          <span style={{ fontWeight: 600, color: '#374151' }}>Replying to:</span>{' '}
+                          {replyingTo.parentReplyId ? 'Reply' : 'Update'}
+                        </div>
+
                         {replyFiles.length > 0 && (
-                          <div style={{ marginBottom: '4px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                          <div style={{ marginBottom: '6px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                             {replyFiles.map((file) => (
                               <div key={file.id} style={{
                                 display: 'flex',
@@ -1168,9 +1182,7 @@ const UpdatePanel = () => {
                                 fontSize: '10px',
                               }}>
                                 <span>📄</span>
-                                <span style={{ maxWidth: '60px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                  {file.name}
-                                </span>
+                                <span>{file.name}</span>
                                 <button
                                   onClick={() => removeReplyFile(file.id)}
                                   style={{
@@ -1179,14 +1191,9 @@ const UpdatePanel = () => {
                                     cursor: 'pointer',
                                     color: '#ef4444',
                                     fontSize: '12px',
-                                    padding: '0 4px',
                                     fontWeight: 700,
-                                    borderRadius: '4px',
-                                    transition: 'background 0.2s',
+                                    padding: '0 2px',
                                   }}
-                                  onMouseEnter={(e) => e.currentTarget.style.background = '#fee2e2'}
-                                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                                  title="Remove file"
                                 >
                                   ✕
                                 </button>
@@ -1195,13 +1202,14 @@ const UpdatePanel = () => {
                           </div>
                         )}
 
-                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                          <input
-                            type="text"
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          {/* 🔥 Textarea multi-line dengan warna hitam */}
+                          <textarea
+                            ref={replyTextareaRef}
                             value={replyText}
                             onChange={(e) => setReplyText(e.target.value)}
                             onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
+                              if (e.key === 'Enter' && !e.shiftKey) {
                                 e.preventDefault();
                                 handleReplySubmit();
                               }
@@ -1210,82 +1218,90 @@ const UpdatePanel = () => {
                               }
                             }}
                             placeholder={replyingTo.parentReplyId ? "Write a reply to this reply..." : "Write a reply..."}
+                            rows={2}
                             style={{
-                              flex: 1,
-                              minWidth: '120px',
-                              padding: '4px 10px',
-                              border: '1px solid #d1d5db',
-                              borderRadius: '4px',
-                              fontSize: '12px',
+                              width: '100%',
+                              padding: '8px 12px',
+                              border: '2px solid #d1d5db',
+                              borderRadius: '6px',
+                              fontSize: '13px',
                               outline: 'none',
                               fontFamily: 'inherit',
-                              color: '#1f2937',
+                              resize: 'vertical',
+                              minHeight: '44px',
+                              backgroundColor: '#ffffff',
+                              color: '#1f2937', // 🔥 WARNA TEKS HITAM
+                              transition: 'border-color 0.2s',
                             }}
-                            autoFocus
+                            onFocus={(e) => e.currentTarget.style.borderColor = '#4CAF50'}
+                            onBlur={(e) => e.currentTarget.style.borderColor = '#d1d5db'}
                           />
-                          <input
-                            ref={replyFileInputRef}
-                            type="file"
-                            multiple
-                            accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
-                            onChange={handleReplyFileUpload}
-                            style={{ display: 'none' }}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => replyFileInputRef.current?.click()}
-                            style={{
-                              background: 'none',
-                              border: 'none',
-                              fontSize: '14px',
-                              cursor: 'pointer',
-                              padding: '2px 6px',
-                              borderRadius: '4px',
-                              color: '#6b7280',
-                              transition: 'background 0.2s',
-                            }}
-                            onMouseEnter={(e) => e.currentTarget.style.background = '#e8e8e8'}
-                            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                            title="Upload file"
-                          >
-                            📎
-                          </button>
-                          <button
-                            onClick={handleReplySubmit}
-                            style={{
-                              padding: '2px 12px',
-                              background: '#4CAF50',
-                              color: 'white',
-                              border: 'none',
-                              borderRadius: '4px',
-                              fontSize: '11px',
-                              cursor: 'pointer',
-                              fontWeight: 600,
-                            }}
-                          >
-                            Reply
-                          </button>
-                          <button
-                            onClick={handleCancelReply}
-                            style={{
-                              padding: '2px 12px',
-                              background: '#e5e7eb',
-                              color: '#374151',
-                              border: 'none',
-                              borderRadius: '4px',
-                              fontSize: '11px',
-                              cursor: 'pointer',
-                              fontWeight: 500,
-                            }}
-                          >
-                            Cancel
-                          </button>
+
+                          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+                            <input
+                              ref={replyFileInputRef}
+                              type="file"
+                              multiple
+                              accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+                              onChange={handleReplyFileUpload}
+                              style={{ display: 'none' }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => replyFileInputRef.current?.click()}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                fontSize: '16px',
+                                cursor: 'pointer',
+                                padding: '2px 6px',
+                                borderRadius: '4px',
+                                color: '#6b7280',
+                                transition: 'background 0.2s',
+                              }}
+                              onMouseEnter={(e) => e.currentTarget.style.background = '#e8e8e8'}
+                              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                              title="Upload file"
+                            >
+                              📎
+                            </button>
+                            <button
+                              onClick={handleReplySubmit}
+                              style={{
+                                padding: '4px 16px',
+                                background: '#4CAF50',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '4px',
+                                fontSize: '12px',
+                                cursor: 'pointer',
+                                fontWeight: 600,
+                              }}
+                            >
+                              Reply
+                            </button>
+                            <button
+                              onClick={handleCancelReply}
+                              style={{
+                                padding: '4px 16px',
+                                background: '#e5e7eb',
+                                color: '#374151',
+                                border: 'none',
+                                borderRadius: '4px',
+                                fontSize: '12px',
+                                cursor: 'pointer',
+                                fontWeight: 500,
+                              }}
+                            >
+                              Cancel
+                            </button>
+                          </div>
                         </div>
                       </div>
                     )}
                   </div>
 
-                  {/* REPLIES LIST (Recursive) */}
+                  {/* REPLIES LIST */}
                   {update.replies && update.replies.length > 0 && (
                     renderReplies(update.replies, update.id, 0)
                   )}
@@ -1318,6 +1334,9 @@ const UpdatePanel = () => {
         }
         ::-webkit-scrollbar-thumb:hover {
           background: #9ca3af;
+        }
+        textarea {
+          color: #1f2937 !important;
         }
       `}</style>
     </>
