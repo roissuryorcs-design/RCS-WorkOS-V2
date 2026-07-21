@@ -449,7 +449,6 @@ const UpdatePanel = () => {
 
               {isEditingReply ? (
                 <div style={{ marginTop: '4px' }}>
-                  {/* 🔥 Preview file di Edit Reply */}
                   {renderEditFilesPreview(
                     editReplyFiles,
                     editReplyNewFiles,
@@ -623,7 +622,7 @@ const UpdatePanel = () => {
                 </button>
               </div>
 
-              {/* 🔥 Reply input dinamis di bawah reply ini */}
+              {/* 🔥 REPLY INPUT DINAMIS - dengan preview attachment */}
               {isReplyingToThis && (
                 <div style={{
                   marginTop: '8px',
@@ -644,21 +643,41 @@ const UpdatePanel = () => {
                     <span style={{ fontWeight: 600, color: '#374151' }}>Replying to reply:</span> {reply.text.substring(0, 50)}...
                   </div>
 
+                  {/* 🔥 PREVIEW FILE DI REPLY - DENGAN WARNA BIRU DAN NOMOR URUT */}
                   {replyFiles.length > 0 && (
-                    <div style={{ marginBottom: '6px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                    <div style={{ 
+                      marginBottom: '6px', 
+                      display: 'flex', 
+                      flexWrap: 'wrap', 
+                      gap: '4px 8px',
+                      maxWidth: '100%',
+                      padding: '4px 6px',
+                      background: '#ffffff',
+                      borderRadius: '4px',
+                      border: '1px solid #d1d5db',
+                    }}>
                       {replyFiles.map((file, idx) => (
                         <div key={file.id} style={{
                           display: 'flex',
                           alignItems: 'center',
                           gap: '4px',
                           padding: '2px 6px',
-                          background: '#ffffff',
+                          background: '#dbeafe',
                           borderRadius: '4px',
-                          border: '1px solid #d1d5db',
-                          fontSize: '10px',
+                          border: '1px solid #3b82f6',
+                          fontSize: '11px',
+                          maxWidth: '100%',
+                          flexWrap: 'wrap',
                         }}>
-                          <span style={{ color: '#1a73e8' }}>{idx + 1}.</span>
-                          <span>{file.name}</span>
+                          <span style={{ color: '#1a73e8', fontWeight: 500 }}>{idx + 1}.</span>
+                          <span style={{ 
+                            color: '#1a73e8', 
+                            textDecoration: 'underline',
+                            wordBreak: 'break-all',
+                            maxWidth: '200px',
+                          }}>
+                            {file.name}
+                          </span>
                           <button
                             onClick={() => removeReplyFile(file.id)}
                             style={{
@@ -669,7 +688,12 @@ const UpdatePanel = () => {
                               fontSize: '12px',
                               fontWeight: 700,
                               padding: '0 2px',
+                              borderRadius: '4px',
+                              transition: 'background 0.2s',
                             }}
+                            onMouseEnter={(e) => e.currentTarget.style.background = '#fee2e2'}
+                            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                            title="Remove file"
                           >
                             ✕
                           </button>
@@ -1079,7 +1103,6 @@ const UpdatePanel = () => {
 
                     {isEditingUpdate ? (
                       <div style={{ marginTop: '6px' }}>
-                        {/* 🔥 Preview file di Edit Update */}
                         {renderEditFilesPreview(
                           editFiles,
                           editNewFiles,
@@ -1275,21 +1298,41 @@ const UpdatePanel = () => {
                           <span style={{ fontWeight: 600, color: '#374151' }}>Replying to update:</span> {update.text.substring(0, 50)}...
                         </div>
 
+                        {/* 🔥 PREVIEW FILE DI REPLY - DENGAN WARNA BIRU DAN NOMOR URUT */}
                         {replyFiles.length > 0 && (
-                          <div style={{ marginBottom: '6px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                          <div style={{ 
+                            marginBottom: '6px', 
+                            display: 'flex', 
+                            flexWrap: 'wrap', 
+                            gap: '4px 8px',
+                            maxWidth: '100%',
+                            padding: '4px 6px',
+                            background: '#ffffff',
+                            borderRadius: '4px',
+                            border: '1px solid #d1d5db',
+                          }}>
                             {replyFiles.map((file, idx) => (
                               <div key={file.id} style={{
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '4px',
                                 padding: '2px 6px',
-                                background: '#ffffff',
+                                background: '#dbeafe',
                                 borderRadius: '4px',
-                                border: '1px solid #d1d5db',
-                                fontSize: '10px',
+                                border: '1px solid #3b82f6',
+                                fontSize: '11px',
+                                maxWidth: '100%',
+                                flexWrap: 'wrap',
                               }}>
-                                <span style={{ color: '#1a73e8' }}>{idx + 1}.</span>
-                                <span>{file.name}</span>
+                                <span style={{ color: '#1a73e8', fontWeight: 500 }}>{idx + 1}.</span>
+                                <span style={{ 
+                                  color: '#1a73e8', 
+                                  textDecoration: 'underline',
+                                  wordBreak: 'break-all',
+                                  maxWidth: '200px',
+                                }}>
+                                  {file.name}
+                                </span>
                                 <button
                                   onClick={() => removeReplyFile(file.id)}
                                   style={{
@@ -1300,7 +1343,12 @@ const UpdatePanel = () => {
                                     fontSize: '12px',
                                     fontWeight: 700,
                                     padding: '0 2px',
+                                    borderRadius: '4px',
+                                    transition: 'background 0.2s',
                                   }}
+                                  onMouseEnter={(e) => e.currentTarget.style.background = '#fee2e2'}
+                                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                  title="Remove file"
                                 >
                                   ✕
                                 </button>
