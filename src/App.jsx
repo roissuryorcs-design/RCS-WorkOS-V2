@@ -663,7 +663,6 @@ function AppContent() {
           >
             {boardTitle}
             <span style={{ fontSize: '14px', color: 'var(--text-muted)', marginLeft: '8px', fontWeight: 400 }}>
-              ✎
             </span>
           </h1>
           <p className="header-subtitle">Engineering</p>
