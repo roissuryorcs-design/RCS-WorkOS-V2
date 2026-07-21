@@ -151,7 +151,6 @@ export default function Header({ isDefaultOnly = false }) {
           >
             {displayName}
             <span style={{ fontSize: "14px", color: "var(--text-muted)", marginLeft: "8px", fontWeight: 400 }}>
-              ✎
             </span>
           </h1>
         )}
@@ -196,7 +195,6 @@ export default function Header({ isDefaultOnly = false }) {
           >
             {displayDesc}
             <span style={{ fontSize: "11px", color: "var(--text-muted)", marginLeft: "6px" }}>
-              ✎
             </span>
           </span>
         )}
