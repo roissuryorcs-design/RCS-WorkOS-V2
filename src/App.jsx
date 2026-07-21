@@ -21,7 +21,7 @@ function AppContent() {
   const [groupColors, setGroupColors] = useState({});
   const [activeStatusColumnId, setActiveStatusColumnId] = useState(null);
   const [showAddColumnPopup, setShowAddColumnPopup] = useState(false);
-  const [boardTitle, setBoardTitle] = useState("FOREL FPSO HVAC");
+  const [boardTitle, setBoardTitle] = useState("BOARD TITLE");
   const [boardSubtitle, setBoardSubtitle] = useState("Sub Title / Description");
   const [isInitialized, setIsInitialized] = useState(false);
   const [hasAutoAdded, setHasAutoAdded] = useState(false);
@@ -41,6 +41,22 @@ function AppContent() {
 
     const defaultStatuses = { Default: "#9ca3af" };
 
+    // ============================================================
+    // LOAD BOARD TITLE - PRIORITASKAN LOCALSTORAGE
+    // ============================================================
+    if (savedBoardTitle && savedBoardTitle.trim() !== "") {
+      setBoardTitle(savedBoardTitle);
+    } else {
+      setBoardTitle("BOARD TITLE");
+    }
+
+    if (savedBoardSubtitle && savedBoardSubtitle.trim() !== "") {
+      setBoardSubtitle(savedBoardSubtitle);
+    } else {
+      setBoardSubtitle("Sub Title / Description");
+    }
+
+    // LOAD STATUSES
     if (savedStatuses) {
       const parsed = JSON.parse(savedStatuses);
       if (Object.keys(parsed).length === 0) {
@@ -52,6 +68,7 @@ function AppContent() {
       setStatuses(defaultStatuses);
     }
 
+    // LOAD ITEMS
     let loadedItems = [];
     let allGroups = [];
 
@@ -83,7 +100,7 @@ function AppContent() {
           document: "DOC-001", 
           people: "Assign to...", 
           status: "Default", 
-          dueDate: "dd/mm/ttt", 
+          dueDate: "", 
           rev: "R0",
           children: [],
           isExpanded: false,
@@ -95,7 +112,7 @@ function AppContent() {
           document: "DOC-002", 
           people: "Assign to...", 
           status: "Default", 
-          dueDate: "dd/mm/ttt", 
+          dueDate: "", 
           rev: "R0",
           children: [],
           isExpanded: false,
@@ -107,7 +124,7 @@ function AppContent() {
           document: "DOC-003", 
           people: "Assign to...", 
           status: "Default", 
-          dueDate: "dd/mm/ttt", 
+          dueDate: "", 
           rev: "R0",
           children: [],
           isExpanded: false,
@@ -117,9 +134,7 @@ function AppContent() {
       localStorage.setItem("forelItems", JSON.stringify(loadedItems));
     }
 
-    // ============================================================
-    // AUTO-ADD 3 ITEMS KE GRUP KOSONG (LOAD)
-    // ============================================================
+    // AUTO-ADD 3 ITEMS
     let finalItems = loadedItems;
     let needsAutoAdd = false;
     
@@ -142,7 +157,7 @@ function AppContent() {
             document: `DOC-${String(startIndex + i + 1).padStart(3, '0')}`,
             people: "",
             status: "Default",
-            dueDate: "dd/mm/ttt",
+            dueDate: "",
             rev: "R0",
             children: [],
             isExpanded: false,
@@ -158,12 +173,14 @@ function AppContent() {
 
     setItems(finalItems);
 
+    // LOAD FAVORITES
     if (savedFavs) {
       setFavorites(JSON.parse(savedFavs));
     } else {
       setFavorites(["Workspace", "Administration"]);
     }
 
+    // LOAD GROUP COLORS
     if (savedGroupColors) {
       setGroupColors(JSON.parse(savedGroupColors));
     } else {
@@ -177,19 +194,11 @@ function AppContent() {
       setGroupColors(defaultColors);
     }
 
-    if (savedBoardTitle) {
-      setBoardTitle(savedBoardTitle);
-    }
-
-    if (savedBoardSubtitle) {
-      setBoardSubtitle(savedBoardSubtitle);
-    }
-
     setIsInitialized(true);
   }, []);
 
   // ============================================================
-  // AUTO-ADD 3 ITEMS KE GRUP KOSONG (REAL-TIME - TANPA REFRESH)
+  // AUTO-ADD 3 ITEMS (REAL-TIME)
   // ============================================================
   useEffect(() => {
     if (!isInitialized) return;
@@ -221,7 +230,7 @@ function AppContent() {
             document: `DOC-${String(startIndex + i + 1).padStart(3, '0')}`,
             people: "",
             status: "Default",
-            dueDate: "dd/mm/ttt",
+            dueDate: "",
             rev: "R0",
             children: [],
             isExpanded: false,
@@ -241,7 +250,7 @@ function AppContent() {
   }, [items, isInitialized]);
 
   // ============================================================
-  // AUTO-SAVE KE localStorage
+  // AUTO-SAVE
   // ============================================================
   useEffect(() => {
     if (isInitialized) {
@@ -270,7 +279,7 @@ function AppContent() {
   }, [boardSubtitle]);
 
   // ============================================================
-  // CEK: Jika semua group dihapus, reset board title & subtitle
+  // CEK: Jika semua group dihapus
   // ============================================================
   useEffect(() => {
     const allGroups = [...new Set(items.map((item) => item.group))];
@@ -279,6 +288,19 @@ function AppContent() {
       setBoardSubtitle("Sub Title / Description");
     }
   }, [items]);
+
+  // ============================================================
+  // HANDLER UNTUK HEADER
+  // ============================================================
+  const handleTitleChange = (newTitle) => {
+    setBoardTitle(newTitle);
+    localStorage.setItem("forelBoardTitle", newTitle);
+  };
+
+  const handleSubtitleChange = (newSubtitle) => {
+    setBoardSubtitle(newSubtitle);
+    localStorage.setItem("forelBoardSubtitle", newSubtitle);
+  };
 
   // ============================================================
   // UNDO
@@ -351,8 +373,6 @@ function AppContent() {
     }
     const newItems = deleteItemRecursive(items, id);
     saveHistory(newItems);
-    
-    // Reset auto-add flag agar bisa auto-add jika group kosong
     setHasAutoAdded(false);
   };
 
@@ -403,7 +423,7 @@ function AppContent() {
       document: "NO. DO",
       people: "",
       status: "Default",
-      dueDate: "dd/mm/ttt",
+      dueDate: "",
       rev: "R0",
       children: [],
       isExpanded: false,
@@ -446,21 +466,18 @@ function AppContent() {
       document: `DOC-${String(groupItems.length + 1).padStart(3, '0')}`,
       people: "",
       status: firstStatus,
-      dueDate: "dd/mm/ttt",
+      dueDate: "",
       rev: "R0",
       children: [],
       isExpanded: false,
     };
     saveHistory([...items, newItem]);
-    
-    // Reset auto-add flag
     setHasAutoAdded(false);
   };
 
   // ============================================================
   // GROUP CRUD
   // ============================================================
-
   const renameGroup = (oldName, newName) => {
     if (!newName || !newName.trim()) return;
     if (items.some((item) => item.group === newName.trim() && item.group !== oldName)) {
@@ -520,7 +537,7 @@ function AppContent() {
       document: `DOC-${String(i + 1).padStart(3, '0')}`,
       people: "",
       status: firstStatus,
-      dueDate: "dd/mm/ttt",
+      dueDate: "",
       rev: "R0",
       children: [],
       isExpanded: false,
@@ -707,6 +724,9 @@ function AppContent() {
   const pendingItems = totalItems - doneItems;
   const allGroups = [...new Set(items.map((item) => item.group))];
 
+  // ============================================================
+  // RENDER
+  // ============================================================
   return (
     <div className="app-container">
       <Sidebar
@@ -716,95 +736,15 @@ function AppContent() {
       />
 
       <div className="main-content">
-        <div className="header-sticky">
-          <h1 
-            className="header-title" 
-            title="Click to edit board name"
-            contentEditable
-            suppressContentEditableWarning
-            onBlur={(e) => {
-              const newTitle = e.target.textContent.trim();
-              if (newTitle) {
-                setBoardTitle(newTitle);
-              } else {
-                e.target.textContent = boardTitle;
-              }
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                e.target.blur();
-              }
-            }}
-            style={{
-              cursor: 'text',
-              outline: 'none',
-              padding: '2px 4px',
-              borderRadius: '4px',
-              position: 'relative',
-            }}
-          >
-            {boardTitle}
-            <span 
-              className="header-edit-icon"
-              style={{ 
-                fontSize: '14px', 
-                color: 'var(--text-muted)', 
-                marginLeft: '8px', 
-                fontWeight: 400,
-                opacity: 0,
-                transition: 'opacity 0.2s ease',
-                display: 'inline-block',
-              }}
-            >
-            </span>
-          </h1>
-          
-          <p 
-            className="header-subtitle"
-            title="Click to edit subtitle"
-            contentEditable
-            suppressContentEditableWarning
-            onBlur={(e) => {
-              const newSubtitle = e.target.textContent.trim();
-              if (newSubtitle) {
-                setBoardSubtitle(newSubtitle);
-              } else {
-                e.target.textContent = boardSubtitle;
-              }
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                e.target.blur();
-              }
-            }}
-            style={{
-              cursor: 'text',
-              outline: 'none',
-              padding: '2px 4px',
-              borderRadius: '4px',
-              position: 'relative',
-              display: 'inline-block',
-              margin: 0,
-            }}
-          >
-            {boardSubtitle}
-            <span 
-              className="header-edit-icon"
-              style={{ 
-                fontSize: '12px', 
-                color: 'var(--text-muted)', 
-                marginLeft: '6px', 
-                fontWeight: 400,
-                opacity: 0,
-                transition: 'opacity 0.2s ease',
-                display: 'inline-block',
-              }}
-            >
-            </span>
-          </p>
-        </div>
+        {/* ============================================================
+            HEADER - PAKAI COMPONENT HEADER (TANPA ICON ✎)
+            ============================================================ */}
+        <Header
+          boardTitle={boardTitle}
+          boardSubtitle={boardSubtitle}
+          onTitleChange={handleTitleChange}
+          onSubtitleChange={handleSubtitleChange}
+        />
 
         <Toolbar
           search={search}
@@ -843,6 +783,7 @@ function AppContent() {
         </div>
       </div>
 
+      {/* MODALS */}
       {showStatusManager && (
         <StatusManager
           columnId={activeStatusColumnId}
