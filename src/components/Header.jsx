@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 
-export default function Header({ isDefaultOnly = false }) {
-  // State untuk menyimpan nama custom
-  const [customName, setCustomName] = useState("");
-  const [customDesc, setCustomDesc] = useState("");
+export default function Header() {
+  // ============================================================
+  // STATE - LANGSUNG DARI LOCALSTORAGE
+  // ============================================================
+  const [boardTitle, setBoardTitle] = useState("BOARD TITLE");
+  const [boardSubtitle, setBoardSubtitle] = useState("Sub Title / Description");
   const [isLoaded, setIsLoaded] = useState(false);
 
   const [isEditingName, setIsEditingName] = useState(false);
@@ -12,68 +14,71 @@ export default function Header({ isDefaultOnly = false }) {
   const [tempDesc, setTempDesc] = useState("");
 
   // ============================================================
-  // LOAD DATA DARI LOCALSTORAGE
+  // 🔥 LOAD DARI LOCALSTORAGE
   // ============================================================
   useEffect(() => {
-    const savedName = localStorage.getItem("boardName");
-    const savedDesc = localStorage.getItem("boardDescription");
+    const savedTitle = localStorage.getItem("forelBoardTitle");
+    const savedSubtitle = localStorage.getItem("forelBoardSubtitle");
     
-    if (savedName && savedName.trim() !== "") {
-      setCustomName(savedName);
+    console.log("🔵 Loading Header from localStorage:");
+    console.log("  - forelBoardTitle:", savedTitle);
+    console.log("  - forelBoardSubtitle:", savedSubtitle);
+    
+    if (savedTitle && savedTitle.trim() !== "") {
+      setBoardTitle(savedTitle);
+    } else {
+      localStorage.setItem("forelBoardTitle", "BOARD TITLE");
+      setBoardTitle("BOARD TITLE");
     }
-    if (savedDesc && savedDesc.trim() !== "") {
-      setCustomDesc(savedDesc);
+    
+    if (savedSubtitle && savedSubtitle.trim() !== "") {
+      setBoardSubtitle(savedSubtitle);
+    } else {
+      localStorage.setItem("forelBoardSubtitle", "Sub Title / Description");
+      setBoardSubtitle("Sub Title / Description");
     }
+    
     setIsLoaded(true);
   }, []);
 
   // ============================================================
-  // SIMPAN KE LOCALSTORAGE
+  // 🔥 SIMPAN KE LOCALSTORAGE
   // ============================================================
-  useEffect(() => {
-    if (isLoaded) {
-      if (customName && customName.trim() !== "" && customName !== "BOARD") {
-        localStorage.setItem("boardName", customName);
-      } else {
-        localStorage.removeItem("boardName");
-      }
-    }
-  }, [customName, isLoaded]);
+  const saveTitle = (newTitle) => {
+    console.log("🔵 Saving title:", newTitle);
+    setBoardTitle(newTitle);
+    localStorage.setItem("forelBoardTitle", newTitle);
+    
+    // Verifikasi
+    const saved = localStorage.getItem("forelBoardTitle");
+    console.log("  - Verified saved:", saved);
+  };
 
-  useEffect(() => {
-    if (isLoaded) {
-      if (customDesc && customDesc.trim() !== "" && customDesc !== "Sub Title/Description") {
-        localStorage.setItem("boardDescription", customDesc);
-      } else {
-        localStorage.removeItem("boardDescription");
-      }
-    }
-  }, [customDesc, isLoaded]);
-
-  // ============================================================
-  // TAMPILKAN NAMA
-  // ============================================================
-  const hasCustomName = customName && customName.trim() !== "";
-  const hasCustomDesc = customDesc && customDesc.trim() !== "";
-
-  const displayName = hasCustomName ? customName : "BOARD";
-  const displayDesc = hasCustomDesc ? customDesc : "Sub Title/Description";
+  const saveSubtitle = (newSubtitle) => {
+    console.log("🔵 Saving subtitle:", newSubtitle);
+    setBoardSubtitle(newSubtitle);
+    localStorage.setItem("forelBoardSubtitle", newSubtitle);
+    
+    // Verifikasi
+    const saved = localStorage.getItem("forelBoardSubtitle");
+    console.log("  - Verified saved:", saved);
+  };
 
   // ============================================================
-  // HANDLE EDIT BOARD NAME
+  // HANDLE EDIT NAME
   // ============================================================
   const handleNameClick = () => {
     setIsEditingName(true);
-    setTempName(customName || "BOARD");
+    setTempName(boardTitle);
   };
 
   const handleNameSave = () => {
     setIsEditingName(false);
     const newName = tempName.trim();
-    if (newName && newName !== "BOARD") {
-      setCustomName(newName);
+    if (newName && newName !== "BOARD TITLE") {
+      saveTitle(newName);
     } else {
-      setCustomName("");
+      saveTitle("BOARD TITLE");
     }
   };
 
@@ -82,25 +87,25 @@ export default function Header({ isDefaultOnly = false }) {
       handleNameSave();
     } else if (e.key === "Escape") {
       setIsEditingName(false);
-      setTempName(customName || "BOARD");
+      setTempName(boardTitle);
     }
   };
 
   // ============================================================
-  // HANDLE EDIT DESCRIPTION
+  // HANDLE EDIT SUBTITLE
   // ============================================================
   const handleDescClick = () => {
     setIsEditingDesc(true);
-    setTempDesc(customDesc || "Sub Title/Description");
+    setTempDesc(boardSubtitle);
   };
 
   const handleDescSave = () => {
     setIsEditingDesc(false);
     const newDesc = tempDesc.trim();
-    if (newDesc && newDesc !== "Sub Title/Description") {
-      setCustomDesc(newDesc);
+    if (newDesc && newDesc !== "Sub Title / Description") {
+      saveSubtitle(newDesc);
     } else {
-      setCustomDesc("");
+      saveSubtitle("Sub Title / Description");
     }
   };
 
@@ -109,19 +114,21 @@ export default function Header({ isDefaultOnly = false }) {
       handleDescSave();
     } else if (e.key === "Escape") {
       setIsEditingDesc(false);
-      setTempDesc(customDesc || "Sub Title/Description");
+      setTempDesc(boardSubtitle);
     }
   };
 
   // ============================================================
-  // RENDER - TANPA ICON ✎
+  // RENDER
   // ============================================================
+  if (!isLoaded) {
+    return <div style={{ padding: "16px 24px" }}>Loading...</div>;
+  }
+
   return (
     <div className="header-container" style={{ padding: "16px 24px" }}>
       <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-        {/* ============================================================
-            BOARD NAME - TANPA ICON ✎
-            ============================================================ */}
+        {/* BOARD NAME */}
         {isEditingName ? (
           <input
             type="text"
@@ -162,13 +169,11 @@ export default function Header({ isDefaultOnly = false }) {
             onClick={handleNameClick}
             title="Click to edit board name"
           >
-            {displayName}
+            {boardTitle}
           </h1>
         )}
 
-        {/* ============================================================
-            DESCRIPTION - TANPA ICON ✎
-            ============================================================ */}
+        {/* SUBTITLE */}
         {isEditingDesc ? (
           <input
             type="text"
@@ -206,7 +211,7 @@ export default function Header({ isDefaultOnly = false }) {
             onClick={handleDescClick}
             title="Click to edit description"
           >
-            {displayDesc}
+            {boardSubtitle}
           </span>
         )}
       </div>
