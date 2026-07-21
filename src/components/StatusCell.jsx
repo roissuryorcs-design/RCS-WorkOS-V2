@@ -48,9 +48,8 @@ export default function StatusCell({
           fontSize: 12,
           minHeight: 28,
           outline: "none",
-          appearance: "none",
-          WebkitAppearance: "none",
-          MozAppearance: "none",
+          appearance: "auto",
+          WebkitAppearance: "auto",
           boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
         }}
       >
