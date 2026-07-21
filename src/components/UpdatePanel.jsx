@@ -16,7 +16,7 @@ const UpdatePanel = () => {
   } = useUpdates();
 
   const [newUpdate, setNewUpdate] = useState('');
-  const [replyingTo, setReplyingTo] = useState(null);
+  const [replyingTo, setReplyingTo] = useState(null); // { updateId, parentReplyId }
   const [replyText, setReplyText] = useState('');
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [replyFiles, setReplyFiles] = useState([]);
@@ -37,19 +37,12 @@ const UpdatePanel = () => {
   const itemUpdates = selectedItem ? getItemUpdates(selectedItem) : [];
   const sortedUpdates = [...itemUpdates].reverse();
 
-  // Debug: Log jumlah update
-  useEffect(() => {
-    console.log('📊 Updates loaded:', itemUpdates.length);
-  }, [itemUpdates]);
-
-  // Scroll ke atas saat update baru
   useEffect(() => {
     if (listContainerRef.current) {
       listContainerRef.current.scrollTop = 0;
     }
   }, [itemUpdates]);
 
-  // Close panel dengan ESC
   useEffect(() => {
     const handleEsc = (e) => {
       if (e.key === 'Escape') closePanel();
@@ -58,7 +51,6 @@ const UpdatePanel = () => {
     return () => document.removeEventListener('keydown', handleEsc);
   }, [closePanel]);
 
-  // Auto-focus input saat panel terbuka
   useEffect(() => {
     if (isPanelOpen && inputRef.current) {
       setTimeout(() => inputRef.current.focus(), 300);
@@ -112,22 +104,18 @@ const UpdatePanel = () => {
   };
 
   // ============================================================
-  // 🔥 HANDLE SUBMIT UPDATE
+  // HANDLE SUBMIT UPDATE
   // ============================================================
   const handleSubmit = (e) => {
     e.preventDefault();
     const text = newUpdate.trim();
     if (text || uploadedFiles.length > 0) {
-      console.log('📝 Submitting update:', text, uploadedFiles.length);
       addUpdate(selectedItem, text, uploadedFiles);
       setNewUpdate('');
       setUploadedFiles([]);
     }
   };
 
-  // ============================================================
-  // 🔥 CANCEL UPDATE
-  // ============================================================
   const handleCancelUpdate = () => {
     setNewUpdate('');
     setUploadedFiles([]);
@@ -137,25 +125,21 @@ const UpdatePanel = () => {
   };
 
   // ============================================================
-  // 🔥 HANDLE REPLY SUBMIT
+  // HANDLE REPLY SUBMIT (Support nested)
   // ============================================================
-  const handleReplySubmit = (updateId) => {
-    console.log('📝 Submitting reply:', replyText, replyFiles.length);
+  const handleReplySubmit = () => {
     if (replyText.trim() || replyFiles.length > 0) {
       const replyData = {
         text: replyText.trim(),
         files: replyFiles,
       };
-      addReply(updateId, replyData);
+      addReply(replyingTo.updateId, replyData, replyingTo.parentReplyId || null);
       setReplyText('');
       setReplyFiles([]);
       setReplyingTo(null);
     }
   };
 
-  // ============================================================
-  // 🔥 CANCEL REPLY
-  // ============================================================
   const handleCancelReply = () => {
     setReplyText('');
     setReplyFiles([]);
@@ -163,7 +147,7 @@ const UpdatePanel = () => {
   };
 
   // ============================================================
-  // 🔥 HANDLE EDIT UPDATE
+  // HANDLE EDIT UPDATE
   // ============================================================
   const startEditUpdate = (update) => {
     setEditingUpdateId(update.id);
@@ -172,7 +156,6 @@ const UpdatePanel = () => {
 
   const handleSaveEditUpdate = (updateId) => {
     if (editText.trim()) {
-      console.log('📝 Saving edit update:', editText);
       editUpdate(updateId, editText.trim());
       setEditingUpdateId(null);
       setEditText('');
@@ -184,18 +167,14 @@ const UpdatePanel = () => {
     setEditText('');
   };
 
-  // ============================================================
-  // 🔥 HANDLE DELETE UPDATE
-  // ============================================================
   const handleDeleteUpdate = (updateId) => {
     if (confirm('Delete this update and all replies?')) {
-      console.log('🗑️ Deleting update:', updateId);
       deleteUpdate(updateId);
     }
   };
 
   // ============================================================
-  // 🔥 HANDLE EDIT REPLY
+  // HANDLE EDIT REPLY
   // ============================================================
   const startEditReply = (updateId, reply) => {
     setEditingReplyId(reply.id);
@@ -205,7 +184,6 @@ const UpdatePanel = () => {
 
   const handleSaveEditReply = (updateId, replyId) => {
     if (editReplyText.trim()) {
-      console.log('📝 Saving edit reply:', editReplyText);
       editReply(updateId, replyId, editReplyText.trim());
       setEditingReplyId(null);
       setEditingReplyUpdateId(null);
@@ -219,12 +197,8 @@ const UpdatePanel = () => {
     setEditReplyText('');
   };
 
-  // ============================================================
-  // 🔥 HANDLE DELETE REPLY
-  // ============================================================
   const handleDeleteReply = (updateId, replyId) => {
     if (confirm('Delete this reply?')) {
-      console.log('🗑️ Deleting reply:', replyId);
       deleteReply(updateId, replyId);
     }
   };
@@ -251,6 +225,208 @@ const UpdatePanel = () => {
       }
       return <span key={index}>{part}</span>;
     });
+  };
+
+  // ============================================================
+  // RENDER REPLIES (Recursive untuk nested reply)
+  // ============================================================
+  const renderReplies = (replies, updateId, depth = 0) => {
+    if (!replies || replies.length === 0) return null;
+    
+    return (
+      <div style={{
+        marginTop: '8px',
+        paddingTop: '8px',
+        borderTop: '2px solid #e5e7eb',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '6px',
+        paddingLeft: depth > 0 ? '16px' : '0',
+        borderLeft: depth > 0 ? '2px solid #d1d5db' : 'none',
+      }}>
+        {replies.map((reply) => {
+          const isEditingReply = editingReplyId === reply.id && editingReplyUpdateId === updateId;
+          return (
+            <div key={reply.id} style={{
+              padding: '6px 10px',
+              background: depth > 0 ? '#f0f0f0' : '#f3f4f6',
+              borderRadius: '6px',
+              border: '1px solid #e5e7eb',
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '2px' }}>
+                <strong style={{ fontSize: '11px', color: '#1f2937', fontWeight: 700 }}>
+                  {reply.author || 'User'}
+                </strong>
+                <span style={{ fontSize: '9px', color: '#6b7280', fontWeight: 500 }}>
+                  {formatDate(reply.timestamp)}
+                </span>
+              </div>
+
+              {isEditingReply ? (
+                <div style={{ marginTop: '4px' }}>
+                  <textarea
+                    value={editReplyText}
+                    onChange={(e) => setEditReplyText(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '4px 8px',
+                      border: '2px solid #4CAF50',
+                      borderRadius: '4px',
+                      fontSize: '12px',
+                      outline: 'none',
+                      fontFamily: 'inherit',
+                      resize: 'vertical',
+                      minHeight: '30px',
+                      backgroundColor: '#ffffff',
+                      color: '#1f2937',
+                    }}
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && e.shiftKey) {
+                        e.preventDefault();
+                        handleSaveEditReply(updateId, reply.id);
+                      }
+                      if (e.key === 'Escape') {
+                        handleCancelEditReply();
+                      }
+                    }}
+                  />
+                  <div style={{ marginTop: '4px', display: 'flex', gap: '6px' }}>
+                    <button
+                      onClick={() => handleSaveEditReply(updateId, reply.id)}
+                      style={{
+                        padding: '2px 10px',
+                        background: '#4CAF50',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        fontSize: '10px',
+                        cursor: 'pointer',
+                        fontWeight: 600,
+                      }}
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={handleCancelEditReply}
+                      style={{
+                        padding: '2px 10px',
+                        background: '#e5e7eb',
+                        color: '#374151',
+                        border: 'none',
+                        borderRadius: '4px',
+                        fontSize: '10px',
+                        cursor: 'pointer',
+                        fontWeight: 500,
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <p style={{
+                  margin: '4px 0 0',
+                  fontSize: '13px',
+                  color: '#1f2937',
+                  fontWeight: 400,
+                  lineHeight: 1.4,
+                }}>
+                  {renderTextWithMentions(reply.text)}
+                </p>
+              )}
+
+              {/* Reply files */}
+              {reply.files && reply.files.length > 0 && (
+                <div style={{ marginTop: '4px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                  {reply.files.map((file, idx) => (
+                    <div key={idx} style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      padding: '1px 6px',
+                      background: '#ffffff',
+                      borderRadius: '4px',
+                      border: '1px solid #d1d5db',
+                      fontSize: '10px',
+                    }}>
+                      <span>📄</span>
+                      <span style={{ maxWidth: '60px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {file.name}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Reply actions */}
+              <div style={{ marginTop: '4px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {/* 🔥 Tombol Reply di level reply */}
+                <button
+                  onClick={() => setReplyingTo({ updateId, parentReplyId: reply.id })}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#4B5563',
+                    fontSize: '10px',
+                    cursor: 'pointer',
+                    padding: '0 4px',
+                    borderRadius: '4px',
+                    fontWeight: 600,
+                    transition: 'background 0.2s',
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = '#e8e8e8'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                >
+                  ↳ Reply
+                </button>
+                <button
+                  onClick={() => startEditReply(updateId, reply)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#4B5563',
+                    fontSize: '10px',
+                    cursor: 'pointer',
+                    padding: '0 4px',
+                    borderRadius: '4px',
+                    fontWeight: 600,
+                    transition: 'background 0.2s',
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = '#e8e8e8'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                >
+                  ✎ Edit
+                </button>
+                <button
+                  onClick={() => handleDeleteReply(updateId, reply.id)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#ef4444',
+                    fontSize: '10px',
+                    cursor: 'pointer',
+                    padding: '0 4px',
+                    borderRadius: '4px',
+                    fontWeight: 600,
+                    transition: 'background 0.2s',
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = '#fde8e8'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                >
+                  ✕ Delete
+                </button>
+              </div>
+
+              {/* Nested replies */}
+              {reply.replies && reply.replies.length > 0 && (
+                renderReplies(reply.replies, updateId, depth + 1)
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
   };
 
   // ============================================================
@@ -281,6 +457,7 @@ const UpdatePanel = () => {
 
   return (
     <>
+      {/* Overlay */}
       <div
         onClick={closePanel}
         style={{
@@ -295,6 +472,7 @@ const UpdatePanel = () => {
         }}
       />
 
+      {/* Panel */}
       <div
         ref={panelRef}
         style={{
@@ -313,9 +491,7 @@ const UpdatePanel = () => {
           fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
         }}
       >
-        {/* ============================================================
-            HEADER
-            ============================================================ */}
+        {/* HEADER */}
         <div style={{
           padding: '10px 16px',
           borderBottom: '2px solid #d1d5db',
@@ -352,15 +528,14 @@ const UpdatePanel = () => {
           </button>
         </div>
 
-        {/* ============================================================
-            INPUT UPDATE
-            ============================================================ */}
+        {/* INPUT UPDATE */}
         <div style={{
           padding: '10px 14px',
           borderBottom: '2px solid #d1d5db',
           background: '#f8f9fa',
           flexShrink: 0,
         }}>
+          {/* Preview uploaded files dengan tombol X */}
           {uploadedFiles.length > 0 && (
             <div style={{ marginBottom: '6px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
               {uploadedFiles.map((file) => (
@@ -384,10 +559,16 @@ const UpdatePanel = () => {
                       background: 'none',
                       border: 'none',
                       cursor: 'pointer',
-                      color: '#9ca3af',
-                      fontSize: '12px',
-                      padding: '0 2px',
+                      color: '#ef4444',
+                      fontSize: '14px',
+                      padding: '0 4px',
+                      fontWeight: 700,
+                      borderRadius: '4px',
+                      transition: 'background 0.2s',
                     }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = '#fee2e2'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                    title="Remove file"
                   >
                     ✕
                   </button>
@@ -506,9 +687,7 @@ const UpdatePanel = () => {
           </form>
         </div>
 
-        {/* ============================================================
-            UPDATE LIST
-            ============================================================ */}
+        {/* UPDATE LIST */}
         <div
           ref={listContainerRef}
           style={{
@@ -627,6 +806,7 @@ const UpdatePanel = () => {
                       </p>
                     )}
 
+                    {/* Update files dengan tombol X */}
                     {update.files && update.files.length > 0 && (
                       <div style={{ marginTop: '4px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                         {update.files.map((file, idx) => (
@@ -657,7 +837,7 @@ const UpdatePanel = () => {
 
                     <div style={{ marginTop: '6px', display: 'flex', gap: '10px', flexWrap: 'wrap', borderTop: '1px solid #f3f4f6', paddingTop: '6px' }}>
                       <button
-                        onClick={() => setReplyingTo(replyingTo === update.id ? null : update.id)}
+                        onClick={() => setReplyingTo({ updateId: update.id, parentReplyId: null })}
                         style={{
                           background: 'none',
                           border: 'none',
@@ -712,10 +892,8 @@ const UpdatePanel = () => {
                       </button>
                     </div>
 
-                    {/* ============================================================
-                        REPLY INPUT
-                        ============================================================ */}
-                    {replyingTo === update.id && (
+                    {/* REPLY INPUT (untuk update atau nested reply) */}
+                    {replyingTo && replyingTo.updateId === update.id && (
                       <div style={{ marginTop: '8px', padding: '8px 10px', background: '#f3f4f6', borderRadius: '6px' }}>
                         {replyFiles.length > 0 && (
                           <div style={{ marginBottom: '4px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
@@ -740,10 +918,16 @@ const UpdatePanel = () => {
                                     background: 'none',
                                     border: 'none',
                                     cursor: 'pointer',
-                                    color: '#9ca3af',
-                                    fontSize: '10px',
-                                    padding: '0 2px',
+                                    color: '#ef4444',
+                                    fontSize: '12px',
+                                    padding: '0 4px',
+                                    fontWeight: 700,
+                                    borderRadius: '4px',
+                                    transition: 'background 0.2s',
                                   }}
+                                  onMouseEnter={(e) => e.currentTarget.style.background = '#fee2e2'}
+                                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                  title="Remove file"
                                 >
                                   ✕
                                 </button>
@@ -760,13 +944,13 @@ const UpdatePanel = () => {
                             onKeyDown={(e) => {
                               if (e.key === 'Enter') {
                                 e.preventDefault();
-                                handleReplySubmit(update.id);
+                                handleReplySubmit();
                               }
                               if (e.key === 'Escape') {
                                 handleCancelReply();
                               }
                             }}
-                            placeholder="Write a reply..."
+                            placeholder={replyingTo.parentReplyId ? "Write a reply to this reply..." : "Write a reply..."}
                             style={{
                               flex: 1,
                               minWidth: '120px',
@@ -808,7 +992,7 @@ const UpdatePanel = () => {
                             📎
                           </button>
                           <button
-                            onClick={() => handleReplySubmit(update.id)}
+                            onClick={handleReplySubmit}
                             style={{
                               padding: '2px 12px',
                               background: '#4CAF50',
@@ -842,174 +1026,9 @@ const UpdatePanel = () => {
                     )}
                   </div>
 
-                  {/* ============================================================
-                      REPLIES LIST
-                      ============================================================ */}
+                  {/* REPLIES LIST (Recursive) */}
                   {update.replies && update.replies.length > 0 && (
-                    <div style={{
-                      marginTop: '8px',
-                      paddingTop: '8px',
-                      borderTop: '2px solid #e5e7eb',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '6px',
-                    }}>
-                      {update.replies.map((reply) => {
-                        const isEditingReply = editingReplyId === reply.id && editingReplyUpdateId === update.id;
-                        return (
-                          <div key={reply.id} style={{
-                            padding: '6px 10px',
-                            background: '#f3f4f6',
-                            borderRadius: '6px',
-                            border: '1px solid #e5e7eb',
-                          }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '2px' }}>
-                              <strong style={{ fontSize: '11px', color: '#1f2937', fontWeight: 700 }}>
-                                {reply.author || 'User'}
-                              </strong>
-                              <span style={{ fontSize: '9px', color: '#6b7280', fontWeight: 500 }}>
-                                {formatDate(reply.timestamp)}
-                              </span>
-                            </div>
-
-                            {isEditingReply ? (
-                              <div style={{ marginTop: '4px' }}>
-                                <textarea
-                                  value={editReplyText}
-                                  onChange={(e) => setEditReplyText(e.target.value)}
-                                  style={{
-                                    width: '100%',
-                                    padding: '4px 8px',
-                                    border: '2px solid #4CAF50',
-                                    borderRadius: '4px',
-                                    fontSize: '12px',
-                                    outline: 'none',
-                                    fontFamily: 'inherit',
-                                    resize: 'vertical',
-                                    minHeight: '30px',
-                                    backgroundColor: '#ffffff',
-                                    color: '#1f2937',
-                                  }}
-                                  autoFocus
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter' && e.shiftKey) {
-                                      e.preventDefault();
-                                      handleSaveEditReply(update.id, reply.id);
-                                    }
-                                    if (e.key === 'Escape') {
-                                      handleCancelEditReply();
-                                    }
-                                  }}
-                                />
-                                <div style={{ marginTop: '4px', display: 'flex', gap: '6px' }}>
-                                  <button
-                                    onClick={() => handleSaveEditReply(update.id, reply.id)}
-                                    style={{
-                                      padding: '2px 10px',
-                                      background: '#4CAF50',
-                                      color: 'white',
-                                      border: 'none',
-                                      borderRadius: '4px',
-                                      fontSize: '10px',
-                                      cursor: 'pointer',
-                                      fontWeight: 600,
-                                    }}
-                                  >
-                                    Save
-                                  </button>
-                                  <button
-                                    onClick={handleCancelEditReply}
-                                    style={{
-                                      padding: '2px 10px',
-                                      background: '#e5e7eb',
-                                      color: '#374151',
-                                      border: 'none',
-                                      borderRadius: '4px',
-                                      fontSize: '10px',
-                                      cursor: 'pointer',
-                                      fontWeight: 500,
-                                    }}
-                                  >
-                                    Cancel
-                                  </button>
-                                </div>
-                              </div>
-                            ) : (
-                              <p style={{
-                                margin: '4px 0 0',
-                                fontSize: '13px',
-                                color: '#1f2937',
-                                fontWeight: 400,
-                                lineHeight: 1.4,
-                              }}>
-                                {renderTextWithMentions(reply.text)}
-                              </p>
-                            )}
-
-                            {reply.files && reply.files.length > 0 && (
-                              <div style={{ marginTop: '4px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                                {reply.files.map((file, idx) => (
-                                  <div key={idx} style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '4px',
-                                    padding: '1px 6px',
-                                    background: '#ffffff',
-                                    borderRadius: '4px',
-                                    border: '1px solid #d1d5db',
-                                    fontSize: '10px',
-                                  }}>
-                                    <span>📄</span>
-                                    <span style={{ maxWidth: '60px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                      {file.name}
-                                    </span>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-
-                            <div style={{ marginTop: '4px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                              <button
-                                onClick={() => startEditReply(update.id, reply)}
-                                style={{
-                                  background: 'none',
-                                  border: 'none',
-                                  color: '#4B5563',
-                                  fontSize: '10px',
-                                  cursor: 'pointer',
-                                  padding: '0 4px',
-                                  borderRadius: '4px',
-                                  fontWeight: 600,
-                                  transition: 'background 0.2s',
-                                }}
-                                onMouseEnter={(e) => e.currentTarget.style.background = '#e8e8e8'}
-                                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                              >
-                                ✎ Edit
-                              </button>
-                              <button
-                                onClick={() => handleDeleteReply(update.id, reply.id)}
-                                style={{
-                                  background: 'none',
-                                  border: 'none',
-                                  color: '#ef4444',
-                                  fontSize: '10px',
-                                  cursor: 'pointer',
-                                  padding: '0 4px',
-                                  borderRadius: '4px',
-                                  fontWeight: 600,
-                                  transition: 'background 0.2s',
-                                }}
-                                onMouseEnter={(e) => e.currentTarget.style.background = '#fde8e8'}
-                                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                              >
-                                ✕ Delete
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+                    renderReplies(update.replies, update.id, 0)
                   )}
                 </div>
               );
