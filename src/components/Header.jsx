@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-const Header = ({ groups }) => {
+const Header = ({ groups = [] }) => {
   // 1. LOAD DARI LOCALSTORAGE
   const [title, setTitle] = useState(() => {
     const saved = localStorage.getItem('forelBoardTitle');
@@ -25,11 +25,10 @@ const Header = ({ groups }) => {
     localStorage.setItem('forelBoardSubtitle', subtitle);
   }, [subtitle]);
 
-  // 4. RESET JIKA GROUP KOSONG - DENGAN GUARD
+  // 4. RESET JIKA GROUP KOSONG
   useEffect(() => {
-    // 🔥 GUARD: Hanya reset jika groups SUDAH TERDEFINISI dan kosong
-    // Jangan reset jika groups undefined/null (belum load)
-    if (groups !== undefined && groups !== null && groups.length === 0) {
+    // 🔥 SEKARANG groups selalu array (bisa kosong)
+    if (groups.length === 0) {
       console.log('🔄 No groups found, resetting header to default');
       setTitle('BOARD TITLE');
       setSubtitle('Sub Title / Description');
@@ -38,16 +37,14 @@ const Header = ({ groups }) => {
     }
   }, [groups]);
 
-  // 5. HANDLE BLUR - VERSI AMAN
+  // 5. HANDLE BLUR
   const handleTitleBlur = (e) => {
     const element = e.currentTarget;
-    // Gunakan innerText untuk menghindari konflik DOM
     const cleanText = element.innerText.replace(/✎/g, '').trim();
     
     if (cleanText) {
       setTitle(cleanText);
     } else {
-      // Jika user menghapus semua teks, kembalikan ke default
       element.innerText = title;
     }
   };
