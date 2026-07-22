@@ -9,6 +9,8 @@ import StatusManager from "./components/StatusManager";
 import ColumnManager from "./components/ColumnManager";
 import AddColumnPopup from "./components/AddColumnPopup";
 import "./App.css";
+import { UpdateProvider } from './context/UpdateContext';
+import UpdatePanel from './components/UpdatePanel';
 
 function AppContent() {
   const [items, setItems] = useState([]);
@@ -21,85 +23,19 @@ function AppContent() {
   const [groupColors, setGroupColors] = useState({});
   const [activeStatusColumnId, setActiveStatusColumnId] = useState(null);
   const [showAddColumnPopup, setShowAddColumnPopup] = useState(false);
-  const [boardTitle, setBoardTitle] = useState("BOARD TITLE");
-  const [boardSubtitle, setBoardSubtitle] = useState("Sub Title / Description");
   const [isInitialized, setIsInitialized] = useState(false);
   const [hasAutoAdded, setHasAutoAdded] = useState(false);
 
   const { columns, addColumn, renameColumn, toggleColumn, deleteColumn, resetColumns, updateColumnStatuses, updateColumnStatusOrder } = useColumns();
 
   // ============================================================
-  // 🔥 INISIALISASI DATA DEFAULT
-  // ============================================================
-  const initializeDefaultData = () => {
-    const existingItems = localStorage.getItem("forelItems");
-    const existingTitle = localStorage.getItem("forelBoardTitle");
-    
-    if (!existingItems && !existingTitle) {
-      console.log("🔵 Initializing default data...");
-      
-      localStorage.setItem("forelBoardTitle", "BOARD TITLE");
-      localStorage.setItem("forelBoardSubtitle", "Sub Title / Description");
-      
-      const defaultItems = [
-        { 
-          id: 1, 
-          group: "Default Group", 
-          item: "Task 1", 
-          document: "DOC-001", 
-          people: "Assign to...", 
-          status: "Default", 
-          dueDate: "", 
-          rev: "R0",
-          children: [],
-          isExpanded: false,
-        },
-        { 
-          id: 2, 
-          group: "Default Group", 
-          item: "Task 2", 
-          document: "DOC-002", 
-          people: "Assign to...", 
-          status: "Default", 
-          dueDate: "", 
-          rev: "R0",
-          children: [],
-          isExpanded: false,
-        },
-        { 
-          id: 3, 
-          group: "Default Group", 
-          item: "Task 3", 
-          document: "DOC-003", 
-          people: "Assign to...", 
-          status: "Default", 
-          dueDate: "", 
-          rev: "R0",
-          children: [],
-          isExpanded: false,
-        },
-      ];
-      localStorage.setItem("forelItems", JSON.stringify(defaultItems));
-      localStorage.setItem("forelStatuses", JSON.stringify({ Default: "#9ca3af" }));
-      localStorage.setItem("forelFavorites", JSON.stringify(["Workspace", "Administration"]));
-      localStorage.setItem("forelGroupColors", JSON.stringify({ "Default Group": "#3b82f6" }));
-      
-      console.log("✅ Default data initialized!");
-    }
-  };
-
-  // ============================================================
   // LOAD DATA
   // ============================================================
   useEffect(() => {
-    initializeDefaultData();
-
     const savedItems = localStorage.getItem("forelItems");
     const savedStatuses = localStorage.getItem("forelStatuses");
     const savedFavs = localStorage.getItem("forelFavorites");
     const savedGroupColors = localStorage.getItem("forelGroupColors");
-    const savedBoardTitle = localStorage.getItem("forelBoardTitle");
-    const savedBoardSubtitle = localStorage.getItem("forelBoardSubtitle");
 
     const defaultStatuses = { Default: "#9ca3af" };
 
@@ -132,7 +68,6 @@ function AppContent() {
       setStatuses(defaultStatuses);
     }
 
-    // LOAD ITEMS
     let loadedItems = [];
     let allGroups = [];
 
@@ -237,14 +172,12 @@ function AppContent() {
 
     setItems(finalItems);
 
-    // LOAD FAVORITES
     if (savedFavs) {
       setFavorites(JSON.parse(savedFavs));
     } else {
       setFavorites(["Workspace", "Administration"]);
     }
 
-    // LOAD GROUP COLORS
     if (savedGroupColors) {
       setGroupColors(JSON.parse(savedGroupColors));
     } else {
@@ -314,7 +247,7 @@ function AppContent() {
   }, [items, isInitialized]);
 
   // ============================================================
-  // AUTO-SAVE (TANPA BOARD TITLE - HEADER SUDAH HANDLE)
+  // AUTO-SAVE KE localStorage
   // ============================================================
   useEffect(() => {
     if (isInitialized) {
@@ -753,7 +686,7 @@ function AppContent() {
   const countDoneItems = (items) => {
     let count = 0;
     items.forEach((item) => {
-      if (item.status === "Done") count++;
+      if (item.status && item.status.toLowerCase() === "done") count++;
       if (item.children && item.children.length > 0) {
         count += countDoneItems(item.children);
       }
@@ -766,8 +699,7 @@ function AppContent() {
     : filterItemsRecursive(items, search);
 
   const totalItems = countAllItems(filteredItems);
-  const hasDoneStatus = Object.keys(statuses).includes("Done");
-  const doneItems = hasDoneStatus ? countDoneItems(filteredItems) : 0;
+  const doneItems = countDoneItems(filteredItems);
   const pendingItems = totalItems - doneItems;
   const allGroups = [...new Set(items.map((item) => item.group))];
 
@@ -783,104 +715,10 @@ function AppContent() {
       />
 
       <div className="main-content">
-        <div className="header-sticky">
-          {/* ============================================================
-              HEADER TITLE - DENGAN EVENT UNTUK SAVE KE LOCALSTORAGE
-              ============================================================ */}
-          <h1 
-            className="header-title" 
-            title="Click to edit board name"
-            contentEditable
-            suppressContentEditableWarning
-            onBlur={(e) => {
-              // Ambil teks tanpa span (firstChild)
-              const newTitle = e.currentTarget.firstChild?.textContent?.trim() || "BOARD TITLE";
-              if (newTitle) {
-                setBoardTitle(newTitle);
-                localStorage.setItem("forelBoardTitle", newTitle);
-                console.log("✅ Title saved:", newTitle);
-              }
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                e.target.blur();
-              }
-            }}
-            style={{
-              cursor: 'text',
-              outline: 'none',
-              padding: '2px 4px',
-              borderRadius: '4px',
-              position: 'relative',
-            }}
-          >
-            {boardTitle}
-            <span 
-              className="header-edit-icon"
-              style={{ 
-                fontSize: '14px', 
-                color: 'var(--text-muted)', 
-                marginLeft: '8px', 
-                fontWeight: 400,
-                opacity: 0.5,
-                transition: 'opacity 0.2s ease',
-                display: 'inline-block',
-              }}
-            >
-              ✎
-            </span>
-          </h1>
-          
-          {/* ============================================================
-              HEADER SUBTITLE - DENGAN EVENT UNTUK SAVE KE LOCALSTORAGE
-              ============================================================ */}
-          <p 
-            className="header-subtitle"
-            title="Click to edit subtitle"
-            contentEditable
-            suppressContentEditableWarning
-            onBlur={(e) => {
-              const newSubtitle = e.currentTarget.firstChild?.textContent?.trim() || "Sub Title / Description";
-              if (newSubtitle) {
-                setBoardSubtitle(newSubtitle);
-                localStorage.setItem("forelBoardSubtitle", newSubtitle);
-                console.log("✅ Subtitle saved:", newSubtitle);
-              }
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                e.target.blur();
-              }
-            }}
-            style={{
-              cursor: 'text',
-              outline: 'none',
-              padding: '2px 4px',
-              borderRadius: '4px',
-              position: 'relative',
-              display: 'inline-block',
-              margin: 0,
-            }}
-          >
-            {boardSubtitle}
-            <span 
-              className="header-edit-icon"
-              style={{ 
-                fontSize: '12px', 
-                color: 'var(--text-muted)', 
-                marginLeft: '6px', 
-                fontWeight: 400,
-                opacity: 0.5,
-                transition: 'opacity 0.2s ease',
-                display: 'inline-block',
-              }}
-            >
-              ✎
-            </span>
-          </p>
-        </div>
+        {/* ============================================================
+            HEADER - PAKAI COMPONENT HEADER (dengan props groups)
+            ============================================================ */}
+        <Header groups={allGroups || []} />
 
         <Toolbar
           search={search}
@@ -892,9 +730,14 @@ function AppContent() {
           onOpenColumnManager={() => setShowColumnManager(true)}
         />
 
+        {/* ============================================================
+            🔥 BOARDTABLE - DENGAN PROPS setItems DAN setGroups
+            ============================================================ */}
         <BoardTable
           items={filteredItems}
+          setItems={setItems} // 🔥 TAMBAHKAN INI
           groups={allGroups}
+          setGroups={setGroups} // 🔥 TAMBAHKAN INI
           statuses={statuses}
           groupColors={groupColors}
           onUpdateGroupColor={updateGroupColor}
@@ -909,17 +752,26 @@ function AppContent() {
           onOpenAddColumn={() => setShowAddColumnPopup(true)}
         />
 
+        {/* ============================================================
+            FOOTER - DENGAN AUTO-SAVED INDICATOR
+            ============================================================ */}
         <div className="board-footer">
-          <div>Total: <strong>{totalItems}</strong> items</div>
-          <div>
-            Done: <strong style={{ color: "#22c55e" }}>{doneItems}</strong> | Pending:{" "}
-            <strong style={{ color: "#f59e0b" }}>{pendingItems}</strong>
+          <div className="footer-stats">
+            <span>Total: <strong>{totalItems}</strong> items</span>
+            <span className="footer-divider">|</span>
+            <span>Done: <strong style={{ color: "#22c55e" }}>{doneItems}</strong></span>
+            <span className="footer-divider">|</span>
+            <span>Pending: <strong style={{ color: "#f59e0b" }}>{pendingItems}</strong></span>
           </div>
-          <div><span style={{ color: "var(--text-light)" }}>💾</span> Saved</div>
+          <div className="footer-actions">
+            <span className="footer-status">
+              <span className="status-dot"></span>
+              Auto-saved
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* MODALS */}
       {showStatusManager && (
         <StatusManager
           columnId={activeStatusColumnId}
@@ -961,7 +813,10 @@ export default function App() {
   return (
     <ThemeProvider>
       <ColumnProvider>
-        <AppContent />
+        <UpdateProvider>
+          <AppContent />
+          <UpdatePanel />
+        </UpdateProvider>
       </ColumnProvider>
     </ThemeProvider>
   );

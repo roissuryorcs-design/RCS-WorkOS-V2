@@ -1,184 +1,137 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from 'react';
 
-export default function Header() {
-  // ============================================================
-  // STATE - LANGSUNG DARI LOCALSTORAGE
-  // ============================================================
-  const [boardTitle, setBoardTitle] = useState(() => {
-    return localStorage.getItem("forelBoardTitle") || "BOARD TITLE";
-  });
-  
-  const [boardSubtitle, setBoardSubtitle] = useState(() => {
-    return localStorage.getItem("forelBoardSubtitle") || "Sub Title / Description";
+const Header = ({ groups = [] }) => {
+  // 1. LOAD DARI LOCALSTORAGE
+  const [title, setTitle] = useState(() => {
+    const saved = localStorage.getItem('forelBoardTitle');
+    return saved && saved.trim() !== '' ? saved : 'BOARD TITLE';
   });
 
-  const [isEditingName, setIsEditingName] = useState(false);
-  const [isEditingDesc, setIsEditingDesc] = useState(false);
-  const [tempName, setTempName] = useState("");
-  const [tempDesc, setTempDesc] = useState("");
+  const [subtitle, setSubtitle] = useState(() => {
+    const saved = localStorage.getItem('forelBoardSubtitle');
+    return saved && saved.trim() !== '' ? saved : 'Sub Title / Description';
+  });
 
-  // ============================================================
-  // SIMPAN KE LOCALSTORAGE
-  // ============================================================
-  const saveTitle = (newTitle) => {
-    setBoardTitle(newTitle);
-    localStorage.setItem("forelBoardTitle", newTitle);
-    console.log("✅ Title saved:", newTitle);
-  };
+  // 🔥 FLAG UNTUK MENCEGAH RESET SAAT REFRESH
+  const isInitial = useRef(true);
 
-  const saveSubtitle = (newSubtitle) => {
-    setBoardSubtitle(newSubtitle);
-    localStorage.setItem("forelBoardSubtitle", newSubtitle);
-    console.log("✅ Subtitle saved:", newSubtitle);
-  };
+  // 2. SIMPAN KE LOCALSTORAGE
+  useEffect(() => {
+    localStorage.setItem('forelBoardTitle', title);
+  }, [title]);
 
-  // ============================================================
-  // HANDLE EDIT NAME
-  // ============================================================
-  const handleNameClick = () => {
-    setIsEditingName(true);
-    setTempName(boardTitle);
-  };
+  useEffect(() => {
+    localStorage.setItem('forelBoardSubtitle', subtitle);
+  }, [subtitle]);
 
-  const handleNameSave = () => {
-    setIsEditingName(false);
-    const newName = tempName.trim();
-    if (newName && newName !== "BOARD TITLE") {
-      saveTitle(newName);
+  // 3. LOGIKA RESET - HANYA JIKA USER MENGHAPUS SEMUA GROUP
+  useEffect(() => {
+    // Jika baru pertama kali render (refresh), skip reset
+    if (isInitial.current) {
+      isInitial.current = false;
+      console.log('🔄 Initial render, skipping reset');
+      return;
+    }
+    // Hanya reset jika groups benar-benar kosong setelah loading selesai
+    if (groups.length === 0) {
+      console.log('🔄 No groups found, resetting header to default');
+      setTitle('BOARD TITLE');
+      setSubtitle('Sub Title / Description');
+      localStorage.setItem('forelBoardTitle', 'BOARD TITLE');
+      localStorage.setItem('forelBoardSubtitle', 'Sub Title / Description');
+    }
+  }, [groups]);
+
+  // 4. HANDLE BLUR
+  const handleBlur = (e, setter, current) => {
+    const val = e.currentTarget.innerText.replace(/✎/g, '').trim();
+    if (val) {
+      setter(val);
     } else {
-      saveTitle("BOARD TITLE");
+      e.currentTarget.innerText = current;
     }
   };
 
-  const handleNameKeyDown = (e) => {
-    if (e.key === "Enter") {
-      handleNameSave();
-    } else if (e.key === "Escape") {
-      setIsEditingName(false);
-      setTempName(boardTitle);
+  // 5. HANDLE KEYDOWN
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      e.currentTarget.blur();
     }
   };
 
-  // ============================================================
-  // HANDLE EDIT SUBTITLE
-  // ============================================================
-  const handleDescClick = () => {
-    setIsEditingDesc(true);
-    setTempDesc(boardSubtitle);
+  // 6. STYLE
+  const style = {
+    cursor: 'text',
+    outline: 'none',
+    display: 'inline-block',
+    margin: 0,
   };
 
-  const handleDescSave = () => {
-    setIsEditingDesc(false);
-    const newDesc = tempDesc.trim();
-    if (newDesc && newDesc !== "Sub Title / Description") {
-      saveSubtitle(newDesc);
-    } else {
-      saveSubtitle("Sub Title / Description");
-    }
-  };
-
-  const handleDescKeyDown = (e) => {
-    if (e.key === "Enter") {
-      handleDescSave();
-    } else if (e.key === "Escape") {
-      setIsEditingDesc(false);
-      setTempDesc(boardSubtitle);
-    }
-  };
-
-  // ============================================================
-  // RENDER - TANPA ICON ✎
-  // ============================================================
   return (
-    <div className="header-container" style={{ padding: "16px 24px" }}>
-      <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-        {/* BOARD NAME */}
-        {isEditingName ? (
-          <input
-            type="text"
-            value={tempName}
-            onChange={(e) => setTempName(e.target.value)}
-            onBlur={handleNameSave}
-            onKeyDown={handleNameKeyDown}
-            autoFocus
-            style={{
-              fontSize: "24px",
-              fontWeight: 700,
-              color: "var(--text-primary)",
-              background: "var(--bg-input)",
-              border: "2px solid var(--btn-primary-bg)",
-              borderRadius: "4px",
-              padding: "2px 8px",
-              outline: "none",
-              fontFamily: "inherit",
-              maxWidth: "400px",
-            }}
-          />
-        ) : (
-          <h1
-            style={{
-              fontSize: "24px",
-              fontWeight: 700,
-              margin: 0,
-              color: "var(--text-primary)",
-              cursor: "pointer",
-              padding: "2px 4px",
-              borderRadius: "4px",
-              transition: "background 0.15s",
-              display: "inline-block",
-              maxWidth: "fit-content",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-hover)")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-            onClick={handleNameClick}
-            title="Click to edit board name"
-          >
-            {boardTitle}
-          </h1>
-        )}
+    <div className="header-sticky" style={{ padding: '16px 24px' }}>
+      {/* TITLE */}
+      <h1
+        contentEditable={true}
+        suppressContentEditableWarning={true}
+        spellCheck={false}
+        onBlur={(e) => handleBlur(e, setTitle, title)}
+        onKeyDown={handleKeyDown}
+        style={{
+          ...style,
+          fontSize: '24px',
+          fontWeight: 700,
+          color: 'var(--text-primary, #333)',
+        }}
+      >
+        {title}
+        <span
+          contentEditable={false}
+          style={{
+            fontSize: '14px',
+            color: '#8a94a6',
+            marginLeft: '8px',
+            fontWeight: 400,
+            opacity: 0.5,
+            display: 'inline-block',
+            pointerEvents: 'none',
+          }}
+        >
+          ✎
+        </span>
+      </h1>
 
-        {/* SUBTITLE */}
-        {isEditingDesc ? (
-          <input
-            type="text"
-            value={tempDesc}
-            onChange={(e) => setTempDesc(e.target.value)}
-            onBlur={handleDescSave}
-            onKeyDown={handleDescKeyDown}
-            autoFocus
-            style={{
-              fontSize: "14px",
-              color: "var(--text-secondary)",
-              background: "var(--bg-input)",
-              border: "2px solid var(--btn-primary-bg)",
-              borderRadius: "4px",
-              padding: "2px 8px",
-              outline: "none",
-              fontFamily: "inherit",
-              maxWidth: "300px",
-            }}
-          />
-        ) : (
+      {/* SUBTITLE */}
+      <div style={{ marginTop: '4px' }}>
+        <p
+          contentEditable={true}
+          suppressContentEditableWarning={true}
+          spellCheck={false}
+          onBlur={(e) => handleBlur(e, setSubtitle, subtitle)}
+          onKeyDown={handleKeyDown}
+          style={{
+            ...style,
+            fontSize: '14px',
+            color: 'var(--text-secondary, #8a94a6)',
+          }}
+        >
+          {subtitle}
           <span
+            contentEditable={false}
             style={{
-              fontSize: "14px",
-              color: "var(--text-secondary)",
-              cursor: "pointer",
-              padding: "2px 4px",
-              borderRadius: "4px",
-              transition: "background 0.15s",
-              display: "inline-block",
-              maxWidth: "fit-content",
+              fontSize: '12px',
+              marginLeft: '6px',
+              opacity: 0.5,
+              display: 'inline-block',
+              pointerEvents: 'none',
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-hover)")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-            onClick={handleDescClick}
-            title="Click to edit description"
           >
-            {boardSubtitle}
+            ✎
           </span>
-        )}
+        </p>
       </div>
     </div>
   );
-}
+};
+
+export default Header;
