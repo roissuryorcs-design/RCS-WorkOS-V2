@@ -697,9 +697,14 @@ function AppContent() {
           onOpenColumnManager={() => setShowColumnManager(true)}
         />
 
+        {/* ============================================================
+            🔥 BOARDTABLE - DENGAN PROPS setItems DAN setGroups
+            ============================================================ */}
         <BoardTable
           items={filteredItems}
+          setItems={setItems} // 🔥 TAMBAHKAN INI
           groups={allGroups}
+          setGroups={setGroups} // 🔥 TAMBAHKAN INI
           statuses={statuses}
           groupColors={groupColors}
           onUpdateGroupColor={updateGroupColor}
