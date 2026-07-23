@@ -11,10 +11,10 @@ import {
   ensureGroupExists,
   getDefaultItems
 } from "../data/treeData";
-import "../css/board.css"; // ✅ PASTIKAN CSS TERIMPORT
+import "../css/board.css";
 
 export default function BoardTable({
-  items,
+  items = [], // ✅ DEFAULT VALUE
   groups: externalGroups,
   groupColors: externalGroupColors,
   onUpdateGroupColor: externalOnUpdateGroupColor,
@@ -35,15 +35,22 @@ export default function BoardTable({
     toggleColumn,
     deleteColumn,
     reorderColumns,
-    visibleColumns,
+    visibleColumns = [], // ✅ DEFAULT VALUE
   } = useColumns();
 
-  // ============ STATE ============
+  // ============ STATE DENGAN GUARD ============
   const [groups, setGroups] = useState(() => {
-    if (externalGroups && externalGroups.length > 0) {
+    // Cek externalGroups
+    if (externalGroups && Array.isArray(externalGroups) && externalGroups.length > 0) {
       return externalGroups;
     }
-    return loadGroups();
+    // Load dari localStorage
+    const loaded = loadGroups();
+    if (loaded && Array.isArray(loaded) && loaded.length > 0) {
+      return loaded;
+    }
+    // FALLBACK: data default
+    return [defaultGroupName];
   });
 
   const [groupColors, setGroupColors] = useState(() => {
@@ -52,23 +59,27 @@ export default function BoardTable({
     }
     const defaultColors = {};
     const loaded = loadGroups();
-    loaded.forEach(g => {
-      if (g === DEFAULT_GROUP.title) {
-        defaultColors[g] = DEFAULT_GROUP.color || '#4CAF50';
-      } else {
-        defaultColors[g] = '#3b82f6';
-      }
-    });
+    if (loaded && Array.isArray(loaded)) {
+      loaded.forEach(g => {
+        if (g === DEFAULT_GROUP.title) {
+          defaultColors[g] = DEFAULT_GROUP.color || '#4CAF50';
+        } else {
+          defaultColors[g] = '#3b82f6';
+        }
+      });
+    }
     return defaultColors;
   });
 
   // ============ EFFECTS ============
   useEffect(() => {
-    saveGroups(groups);
+    if (groups && Array.isArray(groups) && groups.length > 0) {
+      saveGroups(groups);
+    }
   }, [groups]);
 
   useEffect(() => {
-    if (externalGroups && externalGroups.length > 0) {
+    if (externalGroups && Array.isArray(externalGroups) && externalGroups.length > 0) {
       setGroups(externalGroups);
     }
   }, [externalGroups]);
@@ -80,53 +91,42 @@ export default function BoardTable({
   }, [externalGroupColors]);
 
   // ============================================================
-  // 🔥 DRAG & DROP - DENGAN USE CALLBACK (STABIL)
+  // 🔥 DRAG & DROP
   // ============================================================
   const boardRef = useRef(null);
 
-  // Fungsi untuk menyimpan urutan baru
   const saveNewOrder = useCallback(() => {
     const container = boardRef.current;
     if (!container) return;
 
-    // Ambil semua ID dari DOM
     const currentOrderIds = [...container.querySelectorAll('.group-wrapper')]
       .map(group => group.dataset.groupId)
       .filter(id => id !== '');
 
-    console.log('📦 Urutan baru (ID):', currentOrderIds);
-
     if (currentOrderIds.length === 0) return;
 
     setGroups(prevGroups => {
-      // Buat Map untuk akses cepat: ID -> Nama Group
+      if (!prevGroups || !Array.isArray(prevGroups)) return [defaultGroupName];
+      
       const groupMap = new Map(prevGroups.map((g, idx) => [String(idx + 1), g]));
-
-      // Buat urutan baru berdasarkan ID
       const newOrder = currentOrderIds
         .map(id => groupMap.get(id) || null)
         .filter(Boolean);
 
-      console.log('📦 Urutan baru (nama):', newOrder);
-
-      // Validasi: pastikan jumlah sama
       if (newOrder.length === prevGroups.length && newOrder.length > 0) {
         localStorage.setItem('board-groups', JSON.stringify(newOrder));
         return newOrder;
       }
-
       return prevGroups;
     });
-  }, []);
+  }, [defaultGroupName]);
 
-  // Effect untuk event listener drag & drop
   useEffect(() => {
     const container = boardRef.current;
     if (!container) return;
 
     const getDragAfterElement = (container, y) => {
       const draggables = [...container.querySelectorAll('.group-wrapper:not(.dragging)')];
-      
       return draggables.reduce((closest, child) => {
         const box = child.getBoundingClientRect();
         const offset = y - box.top - box.height / 2;
@@ -143,7 +143,6 @@ export default function BoardTable({
         e.preventDefault();
         return;
       }
-      
       item.classList.add('dragging');
       e.dataTransfer.setData('text/plain', '');
       e.dataTransfer.effectAllowed = 'move';
@@ -153,20 +152,15 @@ export default function BoardTable({
     const handleDragEnd = (e) => {
       const item = e.target.closest('.group-wrapper');
       if (!item) return;
-      
       item.classList.remove('dragging');
       item.style.opacity = '1';
-      
-      // Simpan urutan baru setelah drag selesai
       saveNewOrder();
     };
 
     const handleDragOver = (e) => {
       e.preventDefault();
-      
       const draggingItem = container.querySelector('.group-wrapper.dragging');
       if (!draggingItem) return;
-
       const afterElement = getDragAfterElement(container, e.clientY);
       if (afterElement == null) {
         container.appendChild(draggingItem);
@@ -203,7 +197,6 @@ export default function BoardTable({
     if (externalOnRenameGroup) {
       externalOnRenameGroup(oldName, newName);
     }
-    
     setGroups(prev => prev.map(g => g === oldName ? newName : g));
     setGroupColors(prev => {
       const newColors = { ...prev };
@@ -217,7 +210,6 @@ export default function BoardTable({
     if (externalOnDeleteGroup) {
       externalOnDeleteGroup(groupName);
     }
-    
     setGroups(prev => prev.filter(g => g !== groupName));
     setGroupColors(prev => {
       const newColors = { ...prev };
@@ -277,6 +269,9 @@ export default function BoardTable({
   }, {});
 
   const safeColumns = (() => {
+    if (!visibleColumns || !Array.isArray(visibleColumns)) {
+      return [{ id: "item", label: "ITEM", type: "text", width: 250, visible: true }];
+    }
     const hasItem = visibleColumns.some((col) => col.id === "item");
     if (hasItem) return visibleColumns;
     return [
@@ -362,13 +357,42 @@ export default function BoardTable({
   const totalWidth = safeColumns.reduce((sum, col) => sum + col.width, 0) + CHECKBOX_WIDTH + ADD_COLUMN_WIDTH;
 
   // ============================================================
-  // RENDER
+  // 🛡️ GUARD: CEK GROUPS SEBELUM RENDER
   // ============================================================
-  if (groups.length === 0) {
-    setGroups([defaultGroupName]);
-    return null;
+  if (!groups || !Array.isArray(groups) || groups.length === 0) {
+    return (
+      <div className="board-table-wrapper">
+        <div className="board-scroll-content" style={{ 
+          padding: '60px 20px', 
+          textAlign: 'center',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '16px'
+        }}>
+          <p style={{ fontSize: '16px', color: 'var(--text-secondary, #666)' }}>
+            No groups available. Add a new group to get started.
+          </p>
+          <button onClick={handleAddGroup} className="add-group-btn" style={{
+            padding: '10px 24px',
+            border: '2px dashed #3b82f6',
+            background: 'transparent',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            color: '#3b82f6',
+            fontSize: '14px',
+            fontWeight: 500,
+          }}>
+            + Add new group
+          </button>
+        </div>
+      </div>
+    );
   }
 
+  // ============================================================
+  // RENDER UTAMA
+  // ============================================================
   const getDisplayTitle = (groupName) => {
     if (groupName === defaultGroupName) {
       return "Group Title";
@@ -416,7 +440,7 @@ export default function BoardTable({
                   '--group-color': groupColor,
                 }}
               >
-                {/* STRIP WARNA (STICKY) */}
+                {/* STRIP WARNA */}
                 <div 
                   className="ai-sticky-line"
                   style={{ 
@@ -436,7 +460,7 @@ export default function BoardTable({
                   }}
                 />
 
-                {/* HEADER GROUP */}
+                {/* HEADER */}
                 <div 
                   className="group-header"
                   style={{
@@ -498,7 +522,7 @@ export default function BoardTable({
                   </div>
                 </div>
 
-                {/* POPUP MENU */}
+                {/* POPUP */}
                 {popupGroup === groupName && (
                   <>
                     <div className="group-popup-overlay" onClick={closePopup} />
@@ -523,7 +547,7 @@ export default function BoardTable({
                   </>
                 )}
 
-                {/* KONTEN GROUP */}
+                {/* KONTEN */}
                 {!isCollapsed && (
                   <div className="group-content">
                     {tasks.length === 0 ? (
@@ -579,7 +603,6 @@ export default function BoardTable({
         </div>
       </div>
 
-      {/* ADD GROUP BUTTON */}
       <div className="add-group-container">
         <button onClick={handleAddGroup}>+ Add new group</button>
       </div>
