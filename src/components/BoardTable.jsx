@@ -2,32 +2,23 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import Row from "./Row";
 import ResizableHeader from "./ResizableHeader";
 import { useColumns } from "../context/ColumnContext";
-import { 
-  DEFAULT_GROUP,
-  loadGroups, 
-  saveGroups, 
-  deleteGroupSafe, 
-  addGroupSafe,
-  ensureGroupExists,
-  getDefaultItems
-} from "../data/treeData";
 import "../css/board.css";
 
 export default function BoardTable({
-  items = [], // ✅ DEFAULT VALUE
-  groups: externalGroups,
-  groupColors: externalGroupColors,
-  onUpdateGroupColor: externalOnUpdateGroupColor,
+  items = [],
+  groups: externalGroups = [],
+  statuses = {},
+  groupColors: externalGroupColors = {},
+  onUpdateGroupColor,
   onUpdateItem,
   onDeleteItem,
-  onAddGroup: externalOnAddGroup,
-  onDeleteGroup: externalOnDeleteGroup,
+  onAddGroup,
+  onDeleteGroup,
   onAddItem,
   onAddSubItem,
   onOpenStatusManager,
-  onRenameGroup: externalOnRenameGroup,
+  onRenameGroup,
   onOpenAddColumn,
-  defaultGroupName = DEFAULT_GROUP.title,
 }) {
   const {
     updateColumnWidth,
@@ -35,49 +26,25 @@ export default function BoardTable({
     toggleColumn,
     deleteColumn,
     reorderColumns,
-    visibleColumns = [], // ✅ DEFAULT VALUE
-  } = useColumns();
+    visibleColumns = [],
+  } = useColumns() || {};
 
-  // ============ STATE DENGAN GUARD ============
+  // ============ STATE ============
   const [groups, setGroups] = useState(() => {
-    // Cek externalGroups
     if (externalGroups && Array.isArray(externalGroups) && externalGroups.length > 0) {
       return externalGroups;
     }
-    // Load dari localStorage
-    const loaded = loadGroups();
-    if (loaded && Array.isArray(loaded) && loaded.length > 0) {
-      return loaded;
-    }
-    // FALLBACK: data default
-    return [defaultGroupName];
+    return ['Default Group'];
   });
 
   const [groupColors, setGroupColors] = useState(() => {
-    if (externalGroupColors && Object.keys(externalGroupColors).length > 0) {
+    if (externalGroupColors && typeof externalGroupColors === 'object' && Object.keys(externalGroupColors).length > 0) {
       return externalGroupColors;
     }
-    const defaultColors = {};
-    const loaded = loadGroups();
-    if (loaded && Array.isArray(loaded)) {
-      loaded.forEach(g => {
-        if (g === DEFAULT_GROUP.title) {
-          defaultColors[g] = DEFAULT_GROUP.color || '#4CAF50';
-        } else {
-          defaultColors[g] = '#3b82f6';
-        }
-      });
-    }
-    return defaultColors;
+    return {};
   });
 
-  // ============ EFFECTS ============
-  useEffect(() => {
-    if (groups && Array.isArray(groups) && groups.length > 0) {
-      saveGroups(groups);
-    }
-  }, [groups]);
-
+  // ============ SYNC DENGAN PROPS ============
   useEffect(() => {
     if (externalGroups && Array.isArray(externalGroups) && externalGroups.length > 0) {
       setGroups(externalGroups);
@@ -85,7 +52,7 @@ export default function BoardTable({
   }, [externalGroups]);
 
   useEffect(() => {
-    if (externalGroupColors && Object.keys(externalGroupColors).length > 0) {
+    if (externalGroupColors && typeof externalGroupColors === 'object' && Object.keys(externalGroupColors).length > 0) {
       setGroupColors(externalGroupColors);
     }
   }, [externalGroupColors]);
@@ -105,8 +72,9 @@ export default function BoardTable({
 
     if (currentOrderIds.length === 0) return;
 
+    // Update groups berdasarkan urutan baru
     setGroups(prevGroups => {
-      if (!prevGroups || !Array.isArray(prevGroups)) return [defaultGroupName];
+      if (!prevGroups || !Array.isArray(prevGroups)) return ['Default Group'];
       
       const groupMap = new Map(prevGroups.map((g, idx) => [String(idx + 1), g]));
       const newOrder = currentOrderIds
@@ -114,12 +82,11 @@ export default function BoardTable({
         .filter(Boolean);
 
       if (newOrder.length === prevGroups.length && newOrder.length > 0) {
-        localStorage.setItem('board-groups', JSON.stringify(newOrder));
         return newOrder;
       }
       return prevGroups;
     });
-  }, [defaultGroupName]);
+  }, []);
 
   useEffect(() => {
     const container = boardRef.current;
@@ -194,62 +161,26 @@ export default function BoardTable({
   const closePopup = () => setPopupGroup(null);
 
   const handleRenameGroup = (oldName, newName) => {
-    if (externalOnRenameGroup) {
-      externalOnRenameGroup(oldName, newName);
+    if (onRenameGroup) {
+      onRenameGroup(oldName, newName);
     }
-    setGroups(prev => prev.map(g => g === oldName ? newName : g));
-    setGroupColors(prev => {
-      const newColors = { ...prev };
-      newColors[newName] = prev[oldName];
-      delete newColors[oldName];
-      return newColors;
-    });
   };
 
   const handleDeleteGroup = (groupName) => {
-    if (externalOnDeleteGroup) {
-      externalOnDeleteGroup(groupName);
+    if (onDeleteGroup) {
+      onDeleteGroup(groupName);
     }
-    setGroups(prev => prev.filter(g => g !== groupName));
-    setGroupColors(prev => {
-      const newColors = { ...prev };
-      delete newColors[groupName];
-      return newColors;
-    });
   };
 
-  // ============================================================
-  // ADD GROUP
-  // ============================================================
   const handleAddGroup = () => {
-    const newTitle = prompt("Masukkan nama group baru:");
-    if (!newTitle || !newTitle.trim()) return;
-    
-    if (newTitle.trim() === defaultGroupName) {
-      alert(`"${defaultGroupName}" adalah nama group default!`);
-      return;
-    }
-    
-    if (groups.includes(newTitle.trim())) {
-      alert(`Group "${newTitle.trim()}" sudah ada!`);
-      return;
-    }
-
-    if (externalOnAddGroup) {
-      externalOnAddGroup(newTitle.trim());
-    }
-
-    setGroups(prev => [...prev, newTitle.trim()]);
-    setGroupColors(prev => ({ ...prev, [newTitle.trim()]: '#757575' }));
-
-    if (onAddItem) {
-      onAddItem(newTitle.trim());
+    if (onAddGroup) {
+      onAddGroup();
     }
   };
 
   const handleUpdateGroupColor = (groupName, color) => {
-    if (externalOnUpdateGroupColor) {
-      externalOnUpdateGroupColor(groupName, color);
+    if (onUpdateGroupColor) {
+      onUpdateGroupColor(groupName, color);
     }
     setGroupColors(prev => ({ ...prev, [groupName]: color }));
   };
@@ -264,15 +195,15 @@ export default function BoardTable({
   // HELPER FUNCTIONS
   // ============================================================
   const grouped = groups.reduce((acc, group) => {
-    acc[group] = items.filter((item) => item.group === group);
+    acc[group] = items.filter((item) => item?.group === group);
     return acc;
   }, {});
 
   const safeColumns = (() => {
-    if (!visibleColumns || !Array.isArray(visibleColumns)) {
+    if (!visibleColumns || !Array.isArray(visibleColumns) || visibleColumns.length === 0) {
       return [{ id: "item", label: "ITEM", type: "text", width: 250, visible: true }];
     }
-    const hasItem = visibleColumns.some((col) => col.id === "item");
+    const hasItem = visibleColumns.some((col) => col?.id === "item");
     if (hasItem) return visibleColumns;
     return [
       { id: "item", label: "ITEM", type: "text", width: 250, visible: true },
@@ -295,7 +226,8 @@ export default function BoardTable({
   };
 
   const selectAllInGroup = (groupId, tasks) => {
-    const allIds = tasks.map((item) => item.id);
+    if (!tasks || !Array.isArray(tasks)) return;
+    const allIds = tasks.map((item) => item?.id).filter(Boolean);
     const allSelected = allIds.every((id) => selectedItems.includes(id));
     if (allSelected) {
       setSelectedItems((prev) => prev.filter((id) => !allIds.includes(id)));
@@ -306,55 +238,15 @@ export default function BoardTable({
   };
 
   const handleAddSubItem = (parentId) => {
-    if (!onAddSubItem) return;
-    
-    const findParent = (items, id) => {
-      for (const item of items) {
-        if (item.id === id) return item;
-        if (item.children) {
-          const found = findParent(item.children, id);
-          if (found) return found;
-        }
-      }
-      return null;
-    };
-
-    const parent = findParent(items, parentId);
-    if (!parent) return;
-
-    const getDepth = (items, id, currentDepth = 0) => {
-      for (const item of items) {
-        if (item.id === id) return currentDepth;
-        if (item.children) {
-          const found = getDepth(item.children, id, currentDepth + 1);
-          if (found !== -1) return found;
-        }
-      }
-      return -1;
-    };
-
-    const currentDepth = getDepth(items, parentId, 0);
-    if (currentDepth >= 3) {
-      alert('Maximum 4 levels reached!');
-      return;
+    if (onAddSubItem) {
+      onAddSubItem(parentId);
     }
-
-    const getLevelName = (depth) => {
-      if (depth <= 0) return "New Task";
-      if (depth === 1) return "Sub Item";
-      if (depth === 2) return "Sub Sub Item";
-      if (depth === 3) return "Sub Sub Sub Item";
-      return "New Task";
-    };
-
-    const newTitle = getLevelName(currentDepth + 1);
-    onAddSubItem(parentId, newTitle);
   };
 
   const CHECKBOX_WIDTH = 36;
   const ADD_COLUMN_WIDTH = 50;
   
-  const totalWidth = safeColumns.reduce((sum, col) => sum + col.width, 0) + CHECKBOX_WIDTH + ADD_COLUMN_WIDTH;
+  const totalWidth = safeColumns.reduce((sum, col) => sum + (col?.width || 100), 0) + CHECKBOX_WIDTH + ADD_COLUMN_WIDTH;
 
   // ============================================================
   // 🛡️ GUARD: CEK GROUPS SEBELUM RENDER
@@ -393,13 +285,6 @@ export default function BoardTable({
   // ============================================================
   // RENDER UTAMA
   // ============================================================
-  const getDisplayTitle = (groupName) => {
-    if (groupName === defaultGroupName) {
-      return "Group Title";
-    }
-    return groupName;
-  };
-
   return (
     <div className="board-table-wrapper">
       {selectedItems.length > 0 && (
@@ -424,9 +309,7 @@ export default function BoardTable({
           {groups.map((groupName, index) => {
             const tasks = grouped[groupName] || [];
             const isCollapsed = collapsed[groupName] || false;
-            const isDefault = groupName === defaultGroupName;
-            const groupColor = groupColors[groupName] || (isDefault ? DEFAULT_GROUP.color || '#4CAF50' : "#3b82f6");
-            const displayTitle = getDisplayTitle(groupName);
+            const groupColor = groupColors[groupName] || "#3b82f6";
             const groupId = index + 1;
 
             return (
@@ -493,11 +376,8 @@ export default function BoardTable({
                       ▼
                     </span>
                     <span className="group-title" style={{ fontWeight: 600, fontSize: '14px' }}>
-                      {displayTitle}
+                      {groupName}
                     </span>
-                    {isDefault && (
-                      <span className="badge-default">DEFAULT</span>
-                    )}
                     <span style={{ fontSize: '12px', color: 'var(--text-muted, #999)' }}>
                       ({tasks.length})
                     </span>
@@ -527,19 +407,35 @@ export default function BoardTable({
                   <>
                     <div className="group-popup-overlay" onClick={closePopup} />
                     <div className="group-popup" style={{ position: 'absolute', top: '48px', left: '0', zIndex: 2000 }}>
-                      <button onClick={() => { handleRenameGroup(groupName, prompt('Nama baru:', groupName) || groupName); closePopup(); }}>
+                      <button onClick={() => { 
+                        const newName = prompt('Nama baru:', groupName);
+                        if (newName && newName.trim()) {
+                          handleRenameGroup(groupName, newName.trim());
+                        }
+                        closePopup(); 
+                      }}>
                         ✏️ Rename
                       </button>
-                      <button onClick={() => { handleUpdateGroupColor(groupName, prompt('Warna (hex):', groupColor) || groupColor); closePopup(); }}>
+                      <button onClick={() => { 
+                        const color = prompt('Warna (hex):', groupColor);
+                        if (color && color.trim()) {
+                          handleUpdateGroupColor(groupName, color.trim());
+                        }
+                        closePopup(); 
+                      }}>
                         🎨 Change Color
                       </button>
                       <button onClick={() => { handleAddItem(groupName); closePopup(); }}>
                         ➕ Add Item
                       </button>
                       <button 
-                        onClick={() => { handleDeleteGroup(groupName); closePopup(); }}
-                        disabled={isDefault}
-                        style={{ color: isDefault ? '#999' : '#f44336' }}
+                        onClick={() => { 
+                          if (confirm(`Delete group "${groupName}" and all its items?`)) {
+                            handleDeleteGroup(groupName);
+                          }
+                          closePopup(); 
+                        }}
+                        style={{ color: '#f44336' }}
                       >
                         🗑️ Delete Group
                       </button>
@@ -550,7 +446,7 @@ export default function BoardTable({
                 {/* KONTEN */}
                 {!isCollapsed && (
                   <div className="group-content">
-                    {tasks.length === 0 ? (
+                    {!tasks || tasks.length === 0 ? (
                       <div className="empty-group-message">
                         <span>No items in this group</span>
                         <button onClick={() => handleAddItem(groupName)}>+ Add Item</button>
@@ -562,16 +458,16 @@ export default function BoardTable({
                             <th style={{ width: CHECKBOX_WIDTH, padding: '4px 0' }}>
                               <input
                                 type="checkbox"
-                                checked={tasks.every(t => selectedItems.includes(t.id))}
+                                checked={tasks.every(t => selectedItems.includes(t?.id))}
                                 onChange={() => selectAllInGroup(groupName, tasks)}
                               />
                             </th>
                             <th style={{ padding: '4px 8px', textAlign: 'left', fontSize: '11px', color: 'var(--text-muted, #999)', fontWeight: 600 }}>
                               ITEM
                             </th>
-                            {safeColumns.filter(c => c.id !== 'item').map(col => (
-                              <th key={col.id} style={{ padding: '4px 8px', textAlign: 'left', fontSize: '11px', color: 'var(--text-muted, #999)', fontWeight: 600 }}>
-                                {col.label}
+                            {safeColumns.filter(c => c?.id !== 'item').map(col => (
+                              <th key={col?.id || Math.random()} style={{ padding: '4px 8px', textAlign: 'left', fontSize: '11px', color: 'var(--text-muted, #999)', fontWeight: 600 }}>
+                                {col?.label || col?.id || 'Column'}
                               </th>
                             ))}
                           </tr>
@@ -579,11 +475,12 @@ export default function BoardTable({
                         <tbody>
                           {tasks.map((item) => (
                             <Row
-                              key={item.id}
+                              key={item?.id || Math.random()}
                               item={item}
                               columns={safeColumns}
                               groupColor={groupColor}
-                              isSelected={selectedItems.includes(item.id)}
+                              statuses={statuses}
+                              isSelected={selectedItems.includes(item?.id)}
                               onToggleSelect={toggleSelectItem}
                               onUpdateItem={onUpdateItem}
                               onDeleteItem={onDeleteItem}
