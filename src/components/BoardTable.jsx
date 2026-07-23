@@ -86,7 +86,6 @@ export default function BoardTable({
     const container = boardRef.current;
     if (!container) return;
 
-    // 1. Saat drag mulai
     const handleDragStart = (e) => {
       const target = e.target.closest('.group-wrapper');
       if (!target) return;
@@ -94,22 +93,18 @@ export default function BoardTable({
       dragItemRef.current = target;
       target.classList.add('dragging');
       
-      // Simpan data-id untuk referensi
       e.dataTransfer.effectAllowed = 'move';
       e.dataTransfer.setData('text/plain', target.dataset.groupId || '');
     };
 
-    // 2. Saat drag berakhir
     const handleDragEnd = (e) => {
       const target = e.target.closest('.group-wrapper');
       if (target) {
         target.classList.remove('dragging');
       }
-      // Simpan urutan baru
       saveNewOrder();
     };
 
-    // 3. Saat drag di atas container
     const handleDragOver = (e) => {
       e.preventDefault();
       const afterElement = getDragAfterElement(container, e.clientY);
@@ -124,7 +119,6 @@ export default function BoardTable({
       }
     };
 
-    // 4. Fungsi mencari elemen di bawah mouse
     const getDragAfterElement = (container, y) => {
       const draggableElements = [
         ...container.querySelectorAll('.group-wrapper:not(.dragging)')
@@ -142,18 +136,14 @@ export default function BoardTable({
       }, { offset: Number.NEGATIVE_INFINITY }).element;
     };
 
-    // 5. Simpan urutan baru
     const saveNewOrder = () => {
       const currentOrder = [...container.querySelectorAll('.group-wrapper')]
         .map(group => group.dataset.groupId || '');
       
       console.log('📦 Urutan baru:', currentOrder);
       
-      // Update state groups
       if (currentOrder.length > 0) {
-        // Cari nama group berdasarkan ID (menggunakan indeks)
         const newGroups = currentOrder.map(id => {
-          // Ambil dari groups berdasarkan indeks
           const index = parseInt(id) - 1;
           return groups[index] || id;
         });
@@ -165,7 +155,6 @@ export default function BoardTable({
       }
     };
 
-    // Event listener
     container.addEventListener('dragstart', handleDragStart);
     container.addEventListener('dragend', handleDragEnd);
     container.addEventListener('dragover', handleDragOver);
@@ -489,6 +478,7 @@ export default function BoardTable({
                     </button>
 
                     <div
+                      className="group-header"
                       style={{
                         flex: 1,
                         display: 'flex',
