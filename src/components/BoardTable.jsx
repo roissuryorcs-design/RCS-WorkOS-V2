@@ -76,6 +76,110 @@ export default function BoardTable({
     }
   }, [externalGroupColors]);
 
+  // ============================================================
+  // 🔥 DRAG & DROP - VANILLA JAVASCRIPT
+  // ============================================================
+  const boardRef = useRef(null);
+  const dragItemRef = useRef(null);
+
+  useEffect(() => {
+    const container = boardRef.current;
+    if (!container) return;
+
+    // 1. Saat drag mulai
+    const handleDragStart = (e) => {
+      const target = e.target.closest('.group-wrapper');
+      if (!target) return;
+      
+      dragItemRef.current = target;
+      target.classList.add('dragging');
+      
+      // Simpan data-id untuk referensi
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', target.dataset.groupId || '');
+    };
+
+    // 2. Saat drag berakhir
+    const handleDragEnd = (e) => {
+      const target = e.target.closest('.group-wrapper');
+      if (target) {
+        target.classList.remove('dragging');
+      }
+      // Simpan urutan baru
+      saveNewOrder();
+    };
+
+    // 3. Saat drag di atas container
+    const handleDragOver = (e) => {
+      e.preventDefault();
+      const afterElement = getDragAfterElement(container, e.clientY);
+      const draggable = document.querySelector('.group-wrapper.dragging');
+      
+      if (!draggable) return;
+      
+      if (afterElement == null) {
+        container.appendChild(draggable);
+      } else {
+        container.insertBefore(draggable, afterElement);
+      }
+    };
+
+    // 4. Fungsi mencari elemen di bawah mouse
+    const getDragAfterElement = (container, y) => {
+      const draggableElements = [
+        ...container.querySelectorAll('.group-wrapper:not(.dragging)')
+      ];
+
+      return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+        
+        if (offset < 0 && offset > closest.offset) {
+          return { offset: offset, element: child };
+        } else {
+          return closest;
+        }
+      }, { offset: Number.NEGATIVE_INFINITY }).element;
+    };
+
+    // 5. Simpan urutan baru
+    const saveNewOrder = () => {
+      const currentOrder = [...container.querySelectorAll('.group-wrapper')]
+        .map(group => group.dataset.groupId || '');
+      
+      console.log('📦 Urutan baru:', currentOrder);
+      
+      // Update state groups
+      if (currentOrder.length > 0) {
+        // Cari nama group berdasarkan ID (menggunakan indeks)
+        const newGroups = currentOrder.map(id => {
+          // Ambil dari groups berdasarkan indeks
+          const index = parseInt(id) - 1;
+          return groups[index] || id;
+        });
+        
+        if (newGroups.length > 0) {
+          setGroups(newGroups);
+          localStorage.setItem('board-groups', JSON.stringify(newGroups));
+        }
+      }
+    };
+
+    // Event listener
+    container.addEventListener('dragstart', handleDragStart);
+    container.addEventListener('dragend', handleDragEnd);
+    container.addEventListener('dragover', handleDragOver);
+
+    return () => {
+      container.removeEventListener('dragstart', handleDragStart);
+      container.removeEventListener('dragend', handleDragEnd);
+      container.removeEventListener('dragover', handleDragOver);
+    };
+  }, [groups]);
+
+  // ============================================================
+  // STATE LAINNYA
+  // ============================================================
   const [collapsed, setCollapsed] = useState({});
   const [popupGroup, setPopupGroup] = useState(null);
   const [selectedItems, setSelectedItems] = useState([]);
@@ -114,7 +218,7 @@ export default function BoardTable({
   };
 
   // ============================================================
-  // ADD GROUP - LANGSUNG DENGAN 1 ITEM
+  // ADD GROUP
   // ============================================================
   const handleAddGroup = () => {
     const newTitle = prompt("Masukkan nama group baru:");
@@ -137,7 +241,6 @@ export default function BoardTable({
     setGroups(prev => [...prev, newTitle.trim()]);
     setGroupColors(prev => ({ ...prev, [newTitle.trim()]: '#757575' }));
 
-    // TAMBAHKAN 1 ITEM DI GROUP BARU
     if (onAddItem) {
       onAddItem(newTitle.trim());
     }
@@ -275,18 +378,25 @@ export default function BoardTable({
       )}
 
       <div className="board-scroll-container">
-        <div className="board-scroll-content">
-          {groups.map((groupName) => {
+        <div 
+          className="board-scroll-content"
+          ref={boardRef}
+        >
+          {groups.map((groupName, index) => {
             const tasks = grouped[groupName] || [];
             const isCollapsed = collapsed[groupName] || false;
             const isDefault = groupName === defaultGroupName;
             const groupColor = groupColors[groupName] || (isDefault ? DEFAULT_GROUP.color || '#4CAF50' : "#3b82f6");
             const displayTitle = getDisplayTitle(groupName);
+            const groupId = index + 1;
 
             return (
               <div 
                 key={groupName} 
                 className="group-wrapper"
+                draggable="true"
+                data-group-id={groupId}
+                data-group-name={groupName}
                 style={{ 
                   '--group-color': groupColor,
                   marginBottom: '24px',
