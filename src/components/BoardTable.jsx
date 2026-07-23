@@ -1,3 +1,4 @@
+import "../css/board.css";
 import { useState, useRef, useEffect, useCallback } from "react";
 import Row from "./Row";
 import ResizableHeader from "./ResizableHeader";
