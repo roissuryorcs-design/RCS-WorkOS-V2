@@ -1,4 +1,3 @@
-import "../css/board.css";
 import { useState, useRef, useEffect, useCallback } from "react";
 import Row from "./Row";
 import ResizableHeader from "./ResizableHeader";
@@ -12,6 +11,7 @@ import {
   ensureGroupExists,
   getDefaultItems
 } from "../data/treeData";
+import "../css/board.css"; // ✅ PASTIKAN CSS TERIMPORT
 
 export default function BoardTable({
   items,
@@ -80,8 +80,11 @@ export default function BoardTable({
   }, [externalGroupColors]);
 
   // ============================================================
-  // 🔥 FIX 1: FUNGSI SAVE NEW ORDER DENGAN USE CALLBACK
+  // 🔥 DRAG & DROP - DENGAN USE CALLBACK (STABIL)
   // ============================================================
+  const boardRef = useRef(null);
+
+  // Fungsi untuk menyimpan urutan baru
   const saveNewOrder = useCallback(() => {
     const container = boardRef.current;
     if (!container) return;
@@ -95,9 +98,8 @@ export default function BoardTable({
 
     if (currentOrderIds.length === 0) return;
 
-    // 🔥 FIX: Gunakan ID unik (bukan index)
     setGroups(prevGroups => {
-      // Buat Map untuk akses cepat
+      // Buat Map untuk akses cepat: ID -> Nama Group
       const groupMap = new Map(prevGroups.map((g, idx) => [String(idx + 1), g]));
 
       // Buat urutan baru berdasarkan ID
@@ -117,11 +119,7 @@ export default function BoardTable({
     });
   }, []);
 
-  // ============================================================
-  // 🔥 FIX 2: DRAG & DROP - TANPA DEPENDENCY groups
-  // ============================================================
-  const boardRef = useRef(null);
-
+  // Effect untuk event listener drag & drop
   useEffect(() => {
     const container = boardRef.current;
     if (!container) return;
@@ -159,12 +157,12 @@ export default function BoardTable({
       item.classList.remove('dragging');
       item.style.opacity = '1';
       
-      // 🔥 FIX: Panggil saveNewOrder setelah drag selesai
+      // Simpan urutan baru setelah drag selesai
       saveNewOrder();
     };
 
     const handleDragOver = (e) => {
-      e.preventDefault(); // Wajib agar bisa drop
+      e.preventDefault();
       
       const draggingItem = container.querySelector('.group-wrapper.dragging');
       if (!draggingItem) return;
@@ -186,7 +184,7 @@ export default function BoardTable({
       container.removeEventListener('dragend', handleDragEnd);
       container.removeEventListener('dragover', handleDragOver);
     };
-  }, [saveNewOrder]); // ✅ HANYA bergantung pada saveNewOrder yang stabil
+  }, [saveNewOrder]);
 
   // ============================================================
   // STATE LAINNYA
@@ -416,11 +414,6 @@ export default function BoardTable({
                 data-group-name={groupName}
                 style={{ 
                   '--group-color': groupColor,
-                  marginBottom: '24px',
-                  position: 'relative',
-                  width: 'max-content',
-                  minWidth: '100%',
-                  overflow: 'visible',
                 }}
               >
                 {/* STRIP WARNA (STICKY) */}
@@ -431,14 +424,15 @@ export default function BoardTable({
                     position: 'sticky',
                     left: 0,
                     top: 0,
-                    width: '3.33px',
+                    width: '4px',
                     height: '100%',
                     zIndex: 10000,
                     float: 'left',
-                    marginRight: '-3.33px',
+                    marginRight: '-4px',
                     flexShrink: 0,
                     pointerEvents: 'none',
                     minHeight: '48px',
+                    borderRadius: '4px 0 0 4px',
                   }}
                 />
 
@@ -448,50 +442,144 @@ export default function BoardTable({
                   style={{
                     position: 'sticky',
                     top: 0,
-                    left: 0,
-                    zIndex: 999,
-                    background: 'var(--bg-secondary)',
-                    width: 'fit-content',
-                    minWidth: '100%',
+                    zIndex: 10,
+                    background: 'var(--bg-secondary, #fafafa)',
+                    borderRadius: '6px 6px 0 0',
+                    padding: '8px 12px',
+                    margin: '-12px -12px 12px -12px',
                     borderBottom: `2px solid ${groupColor}`,
-                    padding: 0,
-                    marginBottom: 0,
-                    minHeight: 48,
-                    overflow: 'visible',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    cursor: 'grab',
                   }}
                 >
-                  <div 
-                    className="group-header-inner"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      maxWidth: '1244px',
-                      width: '100%',
-                      height: '48px',
-                      position: 'sticky',
-                      left: 0,
-                      zIndex: 1000,
-                      backgroundColor: 'var(--bg-secondary)',
-                      padding: 0,
-                      margin: 0,
-                      boxSizing: 'border-box',
-                      overflow: 'hidden',
-                      borderLeft: `4px solid ${groupColor}`,
-                    }}
-                  >
-                    {/* 🔥 ISI HEADER DI SINI (sesuai kode asli Anda) */}
-                    {/* Saya singkatkan karena terlalu panjang, tapi struktur tetap sama */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span 
+                      className="collapse-btn"
+                      onClick={() => toggleCollapse(groupName)}
+                      style={{
+                        cursor: 'pointer',
+                        transform: isCollapsed ? 'rotate(-90deg)' : 'rotate(0)',
+                        transition: 'transform 0.2s',
+                        display: 'inline-block',
+                        fontSize: '12px',
+                      }}
+                    >
+                      ▼
+                    </span>
+                    <span className="group-title" style={{ fontWeight: 600, fontSize: '14px' }}>
+                      {displayTitle}
+                    </span>
+                    {isDefault && (
+                      <span className="badge-default">DEFAULT</span>
+                    )}
+                    <span style={{ fontSize: '12px', color: 'var(--text-muted, #999)' }}>
+                      ({tasks.length})
+                    </span>
+                  </div>
+                  
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <button
+                      className="group-menu-btn"
+                      onClick={() => setPopupGroup(popupGroup === groupName ? null : groupName)}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        fontSize: '16px',
+                        color: 'var(--text-secondary, #666)',
+                        padding: '4px 8px',
+                        borderRadius: '4px',
+                      }}
+                    >
+                      ⋮
+                    </button>
                   </div>
                 </div>
 
-                {/* 🔥 ISI ROW DI SINI (sesuai kode asli Anda) */}
-                {/* Saya singkatkan karena terlalu panjang, tapi struktur tetap sama */}
+                {/* POPUP MENU */}
+                {popupGroup === groupName && (
+                  <>
+                    <div className="group-popup-overlay" onClick={closePopup} />
+                    <div className="group-popup" style={{ position: 'absolute', top: '48px', left: '0', zIndex: 2000 }}>
+                      <button onClick={() => { handleRenameGroup(groupName, prompt('Nama baru:', groupName) || groupName); closePopup(); }}>
+                        ✏️ Rename
+                      </button>
+                      <button onClick={() => { handleUpdateGroupColor(groupName, prompt('Warna (hex):', groupColor) || groupColor); closePopup(); }}>
+                        🎨 Change Color
+                      </button>
+                      <button onClick={() => { handleAddItem(groupName); closePopup(); }}>
+                        ➕ Add Item
+                      </button>
+                      <button 
+                        onClick={() => { handleDeleteGroup(groupName); closePopup(); }}
+                        disabled={isDefault}
+                        style={{ color: isDefault ? '#999' : '#f44336' }}
+                      >
+                        🗑️ Delete Group
+                      </button>
+                    </div>
+                  </>
+                )}
+
+                {/* KONTEN GROUP */}
+                {!isCollapsed && (
+                  <div className="group-content">
+                    {tasks.length === 0 ? (
+                      <div className="empty-group-message">
+                        <span>No items in this group</span>
+                        <button onClick={() => handleAddItem(groupName)}>+ Add Item</button>
+                      </div>
+                    ) : (
+                      <table className="board-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                        <thead>
+                          <tr>
+                            <th style={{ width: CHECKBOX_WIDTH, padding: '4px 0' }}>
+                              <input
+                                type="checkbox"
+                                checked={tasks.every(t => selectedItems.includes(t.id))}
+                                onChange={() => selectAllInGroup(groupName, tasks)}
+                              />
+                            </th>
+                            <th style={{ padding: '4px 8px', textAlign: 'left', fontSize: '11px', color: 'var(--text-muted, #999)', fontWeight: 600 }}>
+                              ITEM
+                            </th>
+                            {safeColumns.filter(c => c.id !== 'item').map(col => (
+                              <th key={col.id} style={{ padding: '4px 8px', textAlign: 'left', fontSize: '11px', color: 'var(--text-muted, #999)', fontWeight: 600 }}>
+                                {col.label}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {tasks.map((item) => (
+                            <Row
+                              key={item.id}
+                              item={item}
+                              columns={safeColumns}
+                              groupColor={groupColor}
+                              isSelected={selectedItems.includes(item.id)}
+                              onToggleSelect={toggleSelectItem}
+                              onUpdateItem={onUpdateItem}
+                              onDeleteItem={onDeleteItem}
+                              onAddSubItem={handleAddSubItem}
+                              onOpenStatusManager={onOpenStatusManager}
+                              level={0}
+                            />
+                          ))}
+                        </tbody>
+                      </table>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })}
         </div>
       </div>
 
+      {/* ADD GROUP BUTTON */}
       <div className="add-group-container">
         <button onClick={handleAddGroup}>+ Add new group</button>
       </div>
