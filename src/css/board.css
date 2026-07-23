@@ -67,15 +67,16 @@
   transition: transform 0.2s;
   border: 2px dashed #4a90e2 !important;
   z-index: 9999 !important;
+  pointer-events: none !important;
 }
 
 /* Mengubah kursor saat diarahkan ke header group */
 .group-header {
-  cursor: grab;
+  cursor: grab !important;
 }
 
 .group-header:active {
-  cursor: grabbing;
+  cursor: grabbing !important;
 }
 
 /* Animasi halus saat elemen bergeser */
@@ -86,6 +87,34 @@
 /* Area drop */
 .board-scroll-content {
   min-height: 400px;
+}
+
+/* Highlight area saat drag di atas group */
+.group-wrapper.drag-over {
+  border: 2px solid #4a90e2 !important;
+  background: rgba(74, 144, 226, 0.05) !important;
+}
+
+/* Drop zone indicator */
+.group-wrapper .drop-indicator {
+  display: none;
+  height: 3px;
+  background: #4a90e2;
+  margin: -2px 0;
+}
+
+.group-wrapper.drag-over .drop-indicator {
+  display: block;
+}
+
+/* ============================================================
+   RESPONSIVE DRAG & DROP
+   ============================================================ */
+
+@media (max-width: 768px) {
+  .group-wrapper.dragging {
+    transform: scale(0.95);
+  }
 }
 
 /* ============================================================
@@ -563,48 +592,4 @@ input[type="date"]::-moz-calendar-picker-indicator {
     background-color: white !important;
     filter: invert(0) !important;
     opacity: 1 !important;
-}
-
-/* ============================================================
-   🔥 DRAG & DROP - HOVER & DROP TARGET
-   ============================================================ */
-
-/* Highlight area saat drag di atas group */
-.group-wrapper.drag-over {
-  border: 2px solid #4a90e2 !important;
-  background: rgba(74, 144, 226, 0.05) !important;
-}
-
-/* Drop zone indicator */
-.group-wrapper .drop-indicator {
-  display: none;
-  height: 3px;
-  background: #4a90e2;
-  margin: -2px 0;
-}
-
-.group-wrapper.drag-over .drop-indicator {
-  display: block;
-}
-
-/* ============================================================
-   DRAG GHOST (Preview saat drag)
-   ============================================================ */
-
-.group-wrapper.dragging {
-  opacity: 0.4 !important;
-  transform: scale(0.98);
-  transition: transform 0.2s;
-  border: 2px dashed #4a90e2 !important;
-  z-index: 9999 !important;
-}
-
-/* ============================================================
-   DRAG & DROP - RESPONSIVE
-   ============================================================ */
-
-@media (max-width: 768px) {
-  .group-wrapper.dragging {
-    transform: scale(0.95);
-  }
 }
