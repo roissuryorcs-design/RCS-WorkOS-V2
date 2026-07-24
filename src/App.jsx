@@ -20,13 +20,57 @@ function AppContent() {
   const [history, setHistory] = useState([]);
   const [showStatusManager, setShowStatusManager] = useState(false);
   const [showColumnManager, setShowColumnManager] = useState(false);
-  const [groupColors, setGroupColors] = useState({});
   const [activeStatusColumnId, setActiveStatusColumnId] = useState(null);
   const [showAddColumnPopup, setShowAddColumnPopup] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const [hasAutoAdded, setHasAutoAdded] = useState(false);
 
   const { columns, addColumn, renameColumn, toggleColumn, deleteColumn, resetColumns, updateColumnStatuses, updateColumnStatusOrder } = useColumns();
+
+  // ============================================================
+  // 🔥 STATE GROUPS - LANGSUNG DARI LOCALSTORAGE
+  // ============================================================
+  const [groups, setGroups] = useState(() => {
+    const saved = localStorage.getItem('board-groups');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // ✅ NORMALISASI: "Default" → "Default Group"
+          const normalized = parsed.map(g => 
+            g === 'Default' ? 'Default Group' : g
+          );
+          // ✅ SIMPAN KEMBALI KE LOCALSTORAGE
+          localStorage.setItem('board-groups', JSON.stringify(normalized));
+          return normalized;
+        }
+      } catch (e) {
+        console.error('Error parsing board-groups:', e);
+      }
+    }
+    return ['Default Group'];
+  });
+
+  // ============================================================
+  // 🔥 STATE GROUP COLORS - DARI LOCALSTORAGE, DEFAULT BIRU
+  // ============================================================
+  const [groupColors, setGroupColors] = useState(() => {
+    const saved = localStorage.getItem('forelGroupColors');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (typeof parsed === 'object' && Object.keys(parsed).length > 0) {
+          return parsed;
+        }
+      } catch (e) {
+        console.error('Error loading groupColors:', e);
+      }
+    }
+    // ✅ Default: Default Group warna biru (#3b82f6)
+    return {
+      'Default Group': '#3b82f6'
+    };
+  });
 
   // ============================================================
   // LOAD DATA
@@ -51,7 +95,7 @@ function AppContent() {
     }
 
     let loadedItems = [];
-    let allGroups = [];
+    let groupsFromItems = [];
 
     if (savedItems) {
       const parsedItems = JSON.parse(savedItems);
@@ -64,14 +108,19 @@ function AppContent() {
         }));
       };
       loadedItems = ensureChildren(parsedItems);
-      allGroups = [...new Set(loadedItems.map(item => item.group))];
+      groupsFromItems = [...new Set(loadedItems.map(item => item.group))];
       
-      if (allGroups.length === 0) {
-        allGroups = ["Default Group"];
+      // ✅ NORMALISASI: "Default" → "Default Group"
+      groupsFromItems = groupsFromItems.map(g => 
+        g === 'Default' ? 'Default Group' : g
+      );
+      
+      if (groupsFromItems.length === 0) {
+        groupsFromItems = ["Default Group"];
       }
     } else {
       const defaultGroup = "Default Group";
-      allGroups = [defaultGroup];
+      groupsFromItems = [defaultGroup];
       
       loadedItems = [
         { 
@@ -119,15 +168,15 @@ function AppContent() {
     let finalItems = loadedItems;
     let needsAutoAdd = false;
     
-    allGroups.forEach(group => {
+    groupsFromItems.forEach(group => {
       const groupItems = finalItems.filter(item => item.group === group);
       if (groupItems.length === 0) {
         needsAutoAdd = true;
       }
     });
     
-    if (needsAutoAdd && allGroups.length > 0) {
-      allGroups.forEach(group => {
+    if (needsAutoAdd && groupsFromItems.length > 0) {
+      groupsFromItems.forEach(group => {
         const groupItems = finalItems.filter(item => item.group === group);
         if (groupItems.length === 0) {
           const startIndex = finalItems.filter(item => item.group === group).length;
@@ -154,24 +203,59 @@ function AppContent() {
 
     setItems(finalItems);
 
+    // ✅ UPDATE groups dari localStorage (jika ada) - DENGAN SIMPAN KEMBALI
+    const savedGroups = localStorage.getItem('board-groups');
+    if (savedGroups) {
+      try {
+        const parsed = JSON.parse(savedGroups);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // ✅ NORMALISASI
+          const normalized = parsed.map(g => 
+            g === 'Default' ? 'Default Group' : g
+          );
+          setGroups(normalized);
+          // ✅ SIMPAN KEMBALI KE LOCALSTORAGE
+          localStorage.setItem('board-groups', JSON.stringify(normalized));
+        } else {
+          setGroups(groupsFromItems);
+          localStorage.setItem('board-groups', JSON.stringify(groupsFromItems));
+        }
+      } catch (e) {
+        setGroups(groupsFromItems);
+        localStorage.setItem('board-groups', JSON.stringify(groupsFromItems));
+      }
+    } else {
+      setGroups(groupsFromItems);
+      localStorage.setItem('board-groups', JSON.stringify(groupsFromItems));
+    }
+
     if (savedFavs) {
       setFavorites(JSON.parse(savedFavs));
     } else {
       setFavorites(["Workspace", "Administration"]);
     }
 
+    // ✅ LOAD GROUP COLORS
     if (savedGroupColors) {
-      setGroupColors(JSON.parse(savedGroupColors));
-    } else {
-      const defaultColors = {};
-      const groups = [...new Set(finalItems.map(item => item.group))];
-      if (groups.length === 0) {
-        defaultColors["Default Group"] = "#3b82f6";
-      } else {
-        groups.forEach(g => { defaultColors[g] = "#3b82f6"; });
+      try {
+        const parsed = JSON.parse(savedGroupColors);
+        if (typeof parsed === 'object' && Object.keys(parsed).length > 0) {
+          setGroupColors(parsed);
+        }
+      } catch (e) {
+        console.error('Error parsing groupColors:', e);
       }
-      setGroupColors(defaultColors);
     }
+
+    // ✅ PASTIKAN DEFAULT GROUP PUNYA WARNA DAN SIMPAN
+    setGroupColors(prev => {
+      const updated = { ...prev };
+      if (!updated['Default Group']) {
+        updated['Default Group'] = '#3b82f6';
+      }
+      localStorage.setItem('forelGroupColors', JSON.stringify(updated));
+      return updated;
+    });
 
     setIsInitialized(true);
   }, []);
@@ -183,9 +267,9 @@ function AppContent() {
     if (!isInitialized) return;
     if (hasAutoAdded) return;
     
-    const allGroups = [...new Set(items.map(item => item.group))];
+    const groupsFromItems = [...new Set(items.map(item => item.group))];
     let needsAutoAdd = false;
-    const groupsToCheck = allGroups.length > 0 ? allGroups : ['Default Group'];
+    const groupsToCheck = groupsFromItems.length > 0 ? groupsFromItems : ['Default Group'];
     
     groupsToCheck.forEach(group => {
       const groupItems = items.filter(item => item.group === group);
@@ -227,6 +311,44 @@ function AppContent() {
       }, 1000);
     }
   }, [items, isInitialized]);
+
+  // ============================================================
+  // 🔥 FORCE AUTO-ADD 3 ITEMS KE DEFAULT GROUP
+  // ============================================================
+  useEffect(() => {
+    if (!isInitialized) return;
+    
+    // Cek apakah Default Group ada di groups
+    const hasDefaultGroup = groups && Array.isArray(groups) && groups.includes('Default Group');
+    if (!hasDefaultGroup) return;
+    
+    // Cek items di Default Group
+    const defaultItems = items.filter(item => item && item.group === 'Default Group');
+    
+    // Jika kurang dari 3 item, tambahkan
+    if (defaultItems.length < 3) {
+      const startIndex = defaultItems.length;
+      const newItems = Array.from({ length: 3 - defaultItems.length }, (_, i) => ({
+        id: Date.now() + i + Math.random() * 1000,
+        group: 'Default Group',
+        item: `Task ${startIndex + i + 1}`,
+        document: `DOC-${String(startIndex + i + 1).padStart(3, '0')}`,
+        people: "",
+        status: "Default",
+        dueDate: "",
+        rev: "R0",
+        children: [],
+        isExpanded: false,
+      }));
+      
+      if (newItems.length > 0) {
+        const updatedItems = [...items, ...newItems];
+        setItems(updatedItems);
+        localStorage.setItem("forelItems", JSON.stringify(updatedItems));
+        console.log(`✅ Auto-added ${newItems.length} items to Default Group (total: ${defaultItems.length + newItems.length})`);
+      }
+    }
+  }, [items, groups, isInitialized]);
 
   // ============================================================
   // AUTO-SAVE KE localStorage
@@ -451,6 +573,9 @@ function AppContent() {
       delete newColors[oldName];
       setGroupColors(newColors);
     }
+    
+    setGroups(prev => prev.map(g => g === oldName ? newName.trim() : g));
+    localStorage.setItem('board-groups', JSON.stringify(groups));
   };
 
   const deleteGroup = (groupName) => {
@@ -461,6 +586,8 @@ function AppContent() {
     delete newColors[groupName];
     setGroupColors(newColors);
     setHasAutoAdded(false);
+    setGroups(prev => prev.filter(g => g !== groupName));
+    localStorage.setItem('board-groups', JSON.stringify(groups));
   };
 
   // ============================================================
@@ -494,6 +621,8 @@ function AppContent() {
     saveHistory(updatedItems);
     setGroupColors((prev) => ({ ...prev, [groupName]: "#3b82f6" }));
     setHasAutoAdded(false);
+    setGroups(prev => [...prev, groupName]);
+    localStorage.setItem('board-groups', JSON.stringify(groups));
     
     console.log(`✅ Added new group "${groupName}" with 3 items`);
   };
@@ -668,7 +797,11 @@ function AppContent() {
   const totalItems = countAllItems(filteredItems);
   const doneItems = countDoneItems(filteredItems);
   const pendingItems = totalItems - doneItems;
-  const allGroups = [...new Set(items.map((item) => item.group))];
+
+  // ============================================================
+  // 🔥 GROUPS DARI STATE, BUKAN DARI ITEMS
+  // ============================================================
+  const allGroups = groups;
 
   // ============================================================
   // RENDER
@@ -682,9 +815,6 @@ function AppContent() {
       />
 
       <div className="main-content">
-        {/* ============================================================
-            HEADER - PAKAI COMPONENT HEADER (dengan props groups)
-            ============================================================ */}
         <Header groups={allGroups || []} />
 
         <Toolbar
@@ -714,9 +844,6 @@ function AppContent() {
           onOpenAddColumn={() => setShowAddColumnPopup(true)}
         />
 
-        {/* ============================================================
-            FOOTER - DENGAN AUTO-SAVED INDICATOR
-            ============================================================ */}
         <div className="board-footer">
           <div className="footer-stats">
             <span>Total: <strong>{totalItems}</strong> items</span>

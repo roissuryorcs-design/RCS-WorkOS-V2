@@ -1020,3 +1020,40 @@ tr:hover .btn-arrow-hover {
     font-size: 12px;
   }
 }
+
+/* ============================================================
+   🔥 DRAG & DROP FORCE OVERRIDE
+   ============================================================ */
+
+.group-wrapper,
+.group-header {
+  cursor: grab !important;
+  user-select: none !important;
+  -webkit-user-drag: element !important;
+  touch-action: none !important;
+}
+
+.group-wrapper:active,
+.group-header:active {
+  cursor: grabbing !important;
+}
+
+.group-wrapper.dragging {
+  opacity: 0.5 !important;
+  transform: scale(0.95) !important;
+  border: 2px dashed #3b82f6 !important;
+  z-index: 99999 !important;
+  box-shadow: 0 4px 20px rgba(59, 130, 246, 0.3) !important;
+}
+
+/* Pastikan semua elemen di group-wrapper bisa di-drag */
+.group-wrapper * {
+  pointer-events: auto !important;
+}
+
+/* Kecuali yang memang harus pointer-events: none */
+.ai-sticky-line,
+.add-item-checkbox input,
+.add-item-checkbox {
+  pointer-events: none !important;
+}

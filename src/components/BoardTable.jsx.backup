@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 import Row from "./Row";
 import ResizableHeader from "./ResizableHeader";
 import { useColumns } from "../context/ColumnContext";
@@ -51,8 +51,11 @@ export default function BoardTable({
     const defaultColors = {};
     const loaded = loadGroups();
     loaded.forEach(g => {
-      // ✅ TIDAK PAKAI DEFAULT_GROUP.color LAGI
-      defaultColors[g] = '#3b82f6';
+      if (g === DEFAULT_GROUP.title) {
+        defaultColors[g] = DEFAULT_GROUP.color || '#4CAF50';
+      } else {
+        defaultColors[g] = '#3b82f6';
+      }
     });
     return defaultColors;
   });
@@ -73,91 +76,6 @@ export default function BoardTable({
     }
   }, [externalGroupColors]);
 
-  // ============================================================
-  // 🔥 DRAG & DROP - SIMPAN LANGSUNG NAMA GROUP
-  // ============================================================
-  const boardRef = useRef(null);
-
-  const saveNewOrder = useCallback(() => {
-    const container = boardRef.current;
-    if (!container) return;
-
-    // ✅ Ambil nama group langsung dari dataset, BUKAN ID
-    const currentOrder = [...container.querySelectorAll('.group-wrapper')]
-      .map(group => group.dataset.groupName)
-      .filter(name => name !== '');
-
-    console.log('📦 Urutan baru (nama):', currentOrder);
-
-    if (currentOrder.length === 0) return;
-
-    // ✅ LANGSUNG SIMPAN NAMA GROUP
-    setGroups(currentOrder);
-    localStorage.setItem('board-groups', JSON.stringify(currentOrder));
-  }, []);
-
-  useEffect(() => {
-    const container = boardRef.current;
-    if (!container) return;
-
-    const getDragAfterElement = (container, y) => {
-      const draggables = [...container.querySelectorAll('.group-wrapper:not(.dragging)')];
-      return draggables.reduce((closest, child) => {
-        const box = child.getBoundingClientRect();
-        const offset = y - box.top - box.height / 2;
-        if (offset < 0 && offset > closest.offset) {
-          return { offset, element: child };
-        }
-        return closest;
-      }, { offset: Number.NEGATIVE_INFINITY }).element;
-    };
-
-    const handleDragStart = (e) => {
-      const item = e.target.closest('.group-wrapper');
-      if (!item) {
-        e.preventDefault();
-        return;
-      }
-      item.classList.add('dragging');
-      e.dataTransfer.setData('text/plain', '');
-      e.dataTransfer.effectAllowed = 'move';
-      item.style.opacity = '0.5';
-    };
-
-    const handleDragEnd = (e) => {
-      const item = e.target.closest('.group-wrapper');
-      if (!item) return;
-      item.classList.remove('dragging');
-      item.style.opacity = '1';
-      saveNewOrder();
-    };
-
-    const handleDragOver = (e) => {
-      e.preventDefault();
-      const draggingItem = container.querySelector('.group-wrapper.dragging');
-      if (!draggingItem) return;
-      const afterElement = getDragAfterElement(container, e.clientY);
-      if (afterElement == null) {
-        container.appendChild(draggingItem);
-      } else {
-        container.insertBefore(draggingItem, afterElement);
-      }
-    };
-
-    container.addEventListener('dragstart', handleDragStart);
-    container.addEventListener('dragend', handleDragEnd);
-    container.addEventListener('dragover', handleDragOver);
-
-    return () => {
-      container.removeEventListener('dragstart', handleDragStart);
-      container.removeEventListener('dragend', handleDragEnd);
-      container.removeEventListener('dragover', handleDragOver);
-    };
-  }, [saveNewOrder]);
-
-  // ============================================================
-  // STATE LAINNYA
-  // ============================================================
   const [collapsed, setCollapsed] = useState({});
   const [popupGroup, setPopupGroup] = useState(null);
   const [selectedItems, setSelectedItems] = useState([]);
@@ -219,6 +137,7 @@ export default function BoardTable({
     setGroups(prev => [...prev, newTitle.trim()]);
     setGroupColors(prev => ({ ...prev, [newTitle.trim()]: '#757575' }));
 
+    // TAMBAHKAN 1 ITEM DI GROUP BARU
     if (onAddItem) {
       onAddItem(newTitle.trim());
     }
@@ -339,9 +258,6 @@ export default function BoardTable({
     return groupName;
   };
 
-  // ============================================================
-  // RENDER
-  // ============================================================
   return (
     <div className="board-table-wrapper">
       {selectedItems.length > 0 && (
@@ -359,27 +275,18 @@ export default function BoardTable({
       )}
 
       <div className="board-scroll-container">
-        <div 
-          className="board-scroll-content"
-          ref={boardRef}
-        >
-          {/* ✅ LANGSUNG MAP groups, TANPA SORTIR */}
-          {groups.map((groupName, index) => {
+        <div className="board-scroll-content">
+          {groups.map((groupName) => {
             const tasks = grouped[groupName] || [];
             const isCollapsed = collapsed[groupName] || false;
             const isDefault = groupName === defaultGroupName;
-            // ✅ groupColor hanya dari groupColors, fallback #3b82f6
-            const groupColor = groupColors[groupName] || '#3b82f6';
+            const groupColor = groupColors[groupName] || (isDefault ? DEFAULT_GROUP.color || '#4CAF50' : "#3b82f6");
             const displayTitle = getDisplayTitle(groupName);
-            const groupId = index + 1;
 
             return (
               <div 
                 key={groupName} 
                 className="group-wrapper"
-                draggable="true"
-                data-group-id={String(groupId)}
-                data-group-name={groupName}
                 style={{ 
                   '--group-color': groupColor,
                   marginBottom: '24px',
@@ -387,12 +294,8 @@ export default function BoardTable({
                   width: 'max-content',
                   minWidth: '100%',
                   overflow: 'visible',
-                  cursor: 'grab',
-                  userSelect: 'none',
-                  touchAction: 'none',
                 }}
               >
-                {/* STRIP WARNA */}
                 <div 
                   className="ai-sticky-line"
                   style={{ 
@@ -411,7 +314,6 @@ export default function BoardTable({
                   }}
                 />
 
-                {/* HEADER GROUP */}
                 <div 
                   className="group-header"
                   style={{
@@ -427,8 +329,6 @@ export default function BoardTable({
                     marginBottom: 0,
                     minHeight: 48,
                     overflow: 'visible',
-                    cursor: 'grab',
-                    userSelect: 'none',
                   }}
                 >
                   <div 
@@ -490,7 +390,7 @@ export default function BoardTable({
                     >
                       <button 
                         className="group-menu-btn"
-                        onClick={() => setPopupGroup(popupGroup === groupName ? null : groupName)}
+                        onClick={() => setPopupGroup(groupName)}
                         style={{
                           flexShrink: 0,
                           padding: '4px',
@@ -551,38 +451,35 @@ export default function BoardTable({
                   </div>
                 </div>
 
-                {/* POPUP MENU */}
                 {popupGroup === groupName && (
                   <>
-                    <div className="group-popup-overlay" onClick={closePopup} />
-                    <div className="group-popup" style={{ position: 'absolute', top: '48px', left: '0', zIndex: 2000 }}>
+                    <div className="group-popup">
                       <button 
                         onClick={() => { 
+                          closePopup(); 
                           const newName = prompt("Masukkan nama baru:", groupName);
                           if (newName && newName.trim()) {
                             handleRenameGroup(groupName, newName.trim());
                           }
-                          closePopup();
                         }}
                       >
                         ✏️ Rename Group
                       </button>
                       <button 
                         onClick={() => { 
-                          if (confirm(`Hapus group "${groupName}" dan semua item di dalamnya?`)) {
+                          closePopup(); 
+                          if (confirm(`Hapus group "${groupName}"?`)) {
                             handleDeleteGroup(groupName);
                           }
-                          closePopup();
                         }}
-                        style={{ color: '#f44336' }}
                       >
                         🗑️ Delete Group
                       </button>
                     </div>
+                    <div className="group-popup-overlay" onClick={closePopup} />
                   </>
                 )}
 
-                {/* KONTEN GROUP */}
                 {!isCollapsed && (
                   <div className="group-content">
                     {tasks.length > 0 ? (

@@ -9,7 +9,7 @@ export default function Row({
   groupColor,
   groupName,
   isDefaultGroup = false,
-  visibleColumns,
+  visibleColumns = [],
   isSelected,
   onToggleSelect,
   onUpdate,
@@ -20,10 +20,18 @@ export default function Row({
   maxDepth = 4,
   selectedItems = [],
 }) {
+  // ✅ GUARD: Jika item undefined
+  if (!item) {
+    return null;
+  }
+
   const [expanded, setExpanded] = useState(item.isExpanded !== false);
   const [isEditing, setIsEditing] = useState(false);
-  const [tempName, setTempName] = useState(item.item);
-  const hasChildren = item.children && item.children.length > 0;
+  const [tempName, setTempName] = useState(item.item || '');
+  
+  // ✅ GUARD: Pastikan children adalah array
+  const children = item.children && Array.isArray(item.children) ? item.children : [];
+  const hasChildren = children.length > 0;
   const canHaveChildren = depth < maxDepth;
   const indentSize = 14;
 
@@ -47,6 +55,8 @@ export default function Row({
   };
 
   const renderCell = (col) => {
+    if (!col) return null;
+    
     const value = item[col.id] !== undefined ? item[col.id] : "";
     const type = col.type || "text";
 
@@ -156,7 +166,7 @@ export default function Row({
   const handleStartEdit = (e) => {
     e.stopPropagation();
     setIsEditing(true);
-    setTempName(item.item);
+    setTempName(item.item || '');
   };
 
   const handleEditChange = (e) => {
@@ -176,7 +186,7 @@ export default function Row({
       handleEditSave();
     } else if (e.key === 'Escape') {
       setIsEditing(false);
-      setTempName(item.item);
+      setTempName(item.item || '');
     }
   };
 
@@ -224,6 +234,9 @@ export default function Row({
     width: '100%',
   };
 
+  // ✅ GUARD: Pastikan visibleColumns adalah array
+  const safeColumns = visibleColumns && Array.isArray(visibleColumns) ? visibleColumns : [];
+
   return (
     <>
       <tr className={isSelected ? "row-selected" : ""}>
@@ -254,8 +267,10 @@ export default function Row({
           />
         </td>
 
-        {visibleColumns.map((col, idx) => {
-          const isLast = idx === visibleColumns.length - 1;
+        {safeColumns.map((col, idx) => {
+          if (!col) return null;
+          
+          const isLast = idx === safeColumns.length - 1;
           const isItem = col.id === "item";
 
           if (isItem) {
@@ -397,7 +412,6 @@ export default function Row({
                     </button>
                   )}
 
-                  {/* ✅ UPDATE BUBBLE - TAMBAHKAN DI SINI */}
                   <UpdateBubble itemId={item.id} />
                 </div>
               </td>
@@ -445,25 +459,28 @@ export default function Row({
         />
       </tr>
 
-      {hasChildren && expanded && item.children.map((child) => (
-        <Row
-          key={child.id}
-          item={child}
-          depth={depth + 1}
-          groupColor={groupColor}
-          groupName={groupName}
-          isDefaultGroup={isDefaultGroup}
-          visibleColumns={visibleColumns}
-          isSelected={selectedItems.includes(child.id)}
-          onToggleSelect={onToggleSelect}
-          onUpdate={onUpdate}
-          onDelete={onDelete}
-          onOpenStatusManager={onOpenStatusManager}
-          onAddSubItem={onAddSubItem}
-          maxDepth={maxDepth}
-          selectedItems={selectedItems}
-        />
-      ))}
+      {/* ✅ PERBAIKAN UTAMA: Guard untuk children.map */}
+      {hasChildren && expanded && children.length > 0 && (
+        children.map((child) => (
+          <Row
+            key={child.id || Math.random()}
+            item={child}
+            depth={depth + 1}
+            groupColor={groupColor}
+            groupName={groupName}
+            isDefaultGroup={isDefaultGroup}
+            visibleColumns={safeColumns}
+            isSelected={selectedItems.includes(child.id)}
+            onToggleSelect={onToggleSelect}
+            onUpdate={onUpdate}
+            onDelete={onDelete}
+            onOpenStatusManager={onOpenStatusManager}
+            onAddSubItem={onAddSubItem}
+            maxDepth={maxDepth}
+            selectedItems={selectedItems}
+          />
+        ))
+      )}
     </>
   );
 }

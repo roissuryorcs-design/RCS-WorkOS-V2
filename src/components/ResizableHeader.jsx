@@ -17,7 +17,12 @@ export default function ResizableHeader({
   align = "center",
   showMenuButton = true,
 }) {
-  const [width, setWidth] = useState(column.width);
+  // ✅ GUARD: Jika column undefined
+  if (!column) {
+    return null;
+  }
+
+  const [width, setWidth] = useState(column.width || 100);
   const [isResizing, setIsResizing] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const thRef = useRef(null);
@@ -120,9 +125,9 @@ export default function ResizableHeader({
   };
 
   useEffect(() => {
-    setWidth(column.width);
+    setWidth(column.width || 100);
     if (thRef.current) {
-      thRef.current.style.width = column.width + "px";
+      thRef.current.style.width = (column.width || 100) + "px";
     }
   }, [column.width]);
 
@@ -171,9 +176,7 @@ export default function ResizableHeader({
           width: "100%",
         }}
       >
-        {/* ============================================================
-            TOMBOL ⋮ DI SEBELAH KIRI TEKS - DIPERBAIKI VISIBILITASNYA
-            ============================================================ */}
+        {/* TOMBOL ⋮ DI SEBELAH KIRI TEKS */}
         {showMenuButton && (
           <button
             onClick={(e) => {
@@ -184,11 +187,11 @@ export default function ResizableHeader({
               background: "none",
               border: "none",
               cursor: "pointer",
-              fontSize: 20, // ← DIPERBESAR (dari 14 → 20)
-              fontWeight: 700, // ← DITAMBAH (lebih tebal)
-              color: "var(--text-secondary)", // ← WARNA LEBIH TERANG
-              padding: "0 6px", // ← DIPERBESAR
-              opacity: 0.8, // ← DIPERBESAR (dari 0.4 → 0.8)
+              fontSize: 20,
+              fontWeight: 700,
+              color: "var(--text-secondary)",
+              padding: "0 6px",
+              opacity: 0.8,
               transition: "opacity 0.2s, background 0.2s",
               pointerEvents: isResizingRef.current ? "none" : "auto",
               flexShrink: 0,
@@ -209,9 +212,7 @@ export default function ResizableHeader({
           </button>
         )}
 
-        {/* ============================================================
-            TEKS HEADER (DI-CENTER)
-            ============================================================ */}
+        {/* TEKS HEADER */}
         <span
           style={{
             flex: 1,
@@ -221,14 +222,10 @@ export default function ResizableHeader({
           {children}
         </span>
 
-        {/* ============================================================
-            SPACER KOSONG UNTUK KOLOM TANPA ⋮
-            ============================================================ */}
+        {/* SPACER KOSONG UNTUK KOLOM TANPA ⋮ */}
         {!showMenuButton && <span style={{ width: 28, flexShrink: 0 }} />}
 
-        {/* ============================================================
-            RESIZE HANDLE - TETAP DI KANAN
-            ============================================================ */}
+        {/* RESIZE HANDLE */}
         <div
           onMouseDown={handleResizeStart}
           style={{
