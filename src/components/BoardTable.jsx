@@ -51,7 +51,6 @@ export default function BoardTable({
     const defaultColors = {};
     const loaded = loadGroups();
     loaded.forEach(g => {
-      // ✅ TIDAK PAKAI DEFAULT_GROUP.color LAGI
       defaultColors[g] = '#3b82f6';
     });
     return defaultColors;
@@ -82,7 +81,6 @@ export default function BoardTable({
     const container = boardRef.current;
     if (!container) return;
 
-    // ✅ Ambil nama group langsung dari dataset, BUKAN ID
     const currentOrder = [...container.querySelectorAll('.group-wrapper')]
       .map(group => group.dataset.groupName)
       .filter(name => name !== '');
@@ -91,7 +89,6 @@ export default function BoardTable({
 
     if (currentOrder.length === 0) return;
 
-    // ✅ LANGSUNG SIMPAN NAMA GROUP
     setGroups(currentOrder);
     localStorage.setItem('board-groups', JSON.stringify(currentOrder));
   }, []);
@@ -242,13 +239,29 @@ export default function BoardTable({
     return acc;
   }, {});
 
+  // ============================================================
+  // 🔥 PERBAIKAN: TAMBAHKAN KOLOM "+" KE safeColumns
+  // ============================================================
   const safeColumns = (() => {
     const hasItem = visibleColumns.some((col) => col.id === "item");
-    if (hasItem) return visibleColumns;
-    return [
+    let cols = hasItem ? [...visibleColumns] : [
       { id: "item", label: "ITEM", type: "text", width: 250, visible: true },
       ...visibleColumns,
     ];
+    
+    // ✅ HAPUS KOLOM "+" JIKA SUDAH ADA
+    cols = cols.filter(c => c.id !== 'add-column');
+    
+    // ✅ TAMBAHKAN KOLOM "+" DI AKHIR
+    cols.push({
+      id: 'add-column',
+      label: '+',
+      type: 'text',
+      width: 'auto',
+      visible: true,
+    });
+    
+    return cols;
   })();
 
   const toggleSelectItem = (itemId) => {
@@ -325,7 +338,8 @@ export default function BoardTable({
   const CHECKBOX_WIDTH = 36;
   const ADD_COLUMN_WIDTH = 50;
   
-  const totalWidth = safeColumns.reduce((sum, col) => sum + col.width, 0) + CHECKBOX_WIDTH + ADD_COLUMN_WIDTH;
+  // ✅ totalWidth = '100%' AGAR TABEL MENGIKUTI LAYAR
+  const totalWidth = '100%';
 
   if (groups.length === 0) {
     setGroups([defaultGroupName]);
@@ -363,12 +377,10 @@ export default function BoardTable({
           className="board-scroll-content"
           ref={boardRef}
         >
-          {/* ✅ LANGSUNG MAP groups, TANPA SORTIR */}
           {groups.map((groupName, index) => {
             const tasks = grouped[groupName] || [];
             const isCollapsed = collapsed[groupName] || false;
             const isDefault = groupName === defaultGroupName;
-            // ✅ groupColor hanya dari groupColors, fallback #3b82f6
             const groupColor = groupColors[groupName] || '#3b82f6';
             const displayTitle = getDisplayTitle(groupName);
             const groupId = index + 1;
@@ -586,209 +598,216 @@ export default function BoardTable({
                 {!isCollapsed && (
                   <div className="group-content">
                     {tasks.length > 0 ? (
-                      <>
-                        <div className="table-wrapper">
-                          <table className="board-table" style={{ width: totalWidth }}>
-                            <thead>
-                              <tr className="table-header-row">
-                                <th 
-                                  className="checkbox-header" 
-                                  style={{ 
-                                    position: 'sticky',
-                                    left: 0,
-                                    zIndex: 101,
-                                    background: 'var(--bg-secondary)',
-                                    width: '36px',
-                                    minWidth: '36px',
-                                    maxWidth: '36px',
-                                    padding: '8px 8px',
-                                    textAlign: 'center',
-                                    verticalAlign: 'middle',
-                                    borderRight: '2px solid var(--border-color)',
-                                    borderLeft: `4px solid ${groupColor}`,
+                      <div className="table-wrapper">
+                        <table className="board-table" style={{ width: '100%', tableLayout: 'auto' }}>
+                          <thead>
+                            <tr className="table-header-row">
+                              {/* CHECKBOX - CENTER */}
+                              <th 
+                                className="checkbox-header" 
+                                style={{
+                                  position: 'sticky',
+                                  left: 0,
+                                  zIndex: 101,
+                                  background: 'var(--bg-secondary)',
+                                  width: '36px',
+                                  minWidth: '36px',
+                                  maxWidth: '36px',
+                                  padding: '8px 8px',
+                                  textAlign: 'center',
+                                  verticalAlign: 'middle',
+                                  borderRight: '2px solid var(--border-color)',
+                                  borderLeft: `4px solid ${groupColor}`,
+                                  borderBottom: '2px solid var(--border-color)',
+                                }}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={tasks.length > 0 && tasks.every((t) => selectedItems.includes(t.id))}
+                                  onChange={() => selectAllInGroup(groupName, tasks)}
+                                  style={{
+                                    cursor: 'pointer',
+                                    width: '16px',
+                                    height: '16px',
+                                    margin: '0 auto',
+                                    padding: 0,
+                                    display: 'block',
+                                    accentColor: groupColor,
                                   }}
-                                >
-                                  <input
-                                    type="checkbox"
-                                    checked={
-                                      tasks.length > 0 &&
-                                      tasks.every((t) => selectedItems.includes(t.id))
-                                    }
-                                    onChange={() => selectAllInGroup(groupName, tasks)}
-                                    style={{
-                                      cursor: 'pointer',
-                                      width: '16px',
-                                      height: '16px',
-                                      margin: '0 auto',
-                                      padding: 0,
-                                      display: 'block',
-                                      accentColor: groupColor,
-                                    }}
-                                  />
-                                </th>
+                                />
+                              </th>
 
-                                {safeColumns.map((col, idx) => {
-                                  const isItem = col.id === "item";
-                                  const isLast = idx === safeColumns.length - 1;
+                              {safeColumns.map((col, idx) => {
+                                const isItem = col.id === "item";
+                                const isAddColumn = col.id === 'add-column';
+                                const isLast = idx === safeColumns.length - 1;
+                                
+                                // ✅ JIKA KOLOM "+", RENDER MANUAL
+                                if (isAddColumn) {
                                   return (
-                                    <ResizableHeader
+                                    <th
                                       key={col.id}
-                                      column={col}
-                                      index={idx}
-                                      totalColumns={safeColumns.length}
-                                      onResize={updateColumnWidth}
-                                      onRename={renameColumn}
-                                      onToggle={toggleColumn}
-                                      onDelete={deleteColumn}
-                                      onReorder={reorderColumns}
-                                      isSticky={isItem}
-                                      isLast={isLast}
-                                      align="center"
-                                      showMenuButton={!isItem}
+                                      onClick={onOpenAddColumn}
+                                      style={{
+                                        width: 'auto',
+                                        minWidth: '50px',
+                                        maxWidth: 'none',
+                                        padding: '8px 4px',
+                                        textAlign: 'left',
+                                        cursor: 'pointer',
+                                        position: 'sticky',
+                                        right: 0,
+                                        zIndex: 20,
+                                        background: 'var(--bg-secondary)',
+                                        borderLeft: '2px solid var(--border-color)',
+                                        borderBottom: '2px solid var(--border-color)',
+                                        whiteSpace: 'nowrap',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                      }}
                                     >
-                                      {col.label}
-                                    </ResizableHeader>
+                                      <span style={{ fontSize: '18px', fontWeight: 300 }}>+</span>
+                                    </th>
                                   );
-                                })}
-
-                                <th className="add-column-header" onClick={onOpenAddColumn}>
-                                  <span>+</span>
-                                </th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {tasks.map((item) => {
-                                const handleUpdate = (id, field, value) => {
-                                  console.log('🟢 BoardTable handleUpdate - id:', id, 'field:', field, 'value:', value);
-                                  onUpdateItem(id, field, value);
-                                };
-
+                                }
+                                
                                 return (
-                                  <Row
-                                    key={item.id}
-                                    item={item}
-                                    groupColor={groupColor}
-                                    visibleColumns={safeColumns}
-                                    isSelected={selectedItems.includes(item.id)}
-                                    onToggleSelect={toggleSelectItem}
-                                    onUpdate={handleUpdate}
-                                    onDelete={() => {
-                                      console.log('🟢 BoardTable onDelete - item.id:', item.id);
-                                      onDeleteItem(item.id);
-                                    }}
-                                    onOpenStatusManager={onOpenStatusManager}
-                                    onAddSubItem={handleAddSubItem}
-                                    selectedItems={selectedItems}
-                                    groupName={groupName}
-                                    isDefaultGroup={isDefault}
-                                  />
+                                  <ResizableHeader
+                                    key={col.id}
+                                    column={col}
+                                    index={idx}
+                                    totalColumns={safeColumns.length}
+                                    onResize={updateColumnWidth}
+                                    onRename={renameColumn}
+                                    onToggle={toggleColumn}
+                                    onDelete={deleteColumn}
+                                    onReorder={reorderColumns}
+                                    isSticky={isItem}
+                                    isLast={isLast}
+                                    align="center"
+                                    showMenuButton={!isItem}
+                                  >
+                                    {col.label}
+                                  </ResizableHeader>
                                 );
                               })}
-                            </tbody>
-                          </table>
-                        </div>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {tasks.map((item) => {
+                              const handleUpdate = (id, field, value) => {
+                                console.log('🟢 BoardTable handleUpdate - id:', id, 'field:', field, 'value:', value);
+                                onUpdateItem(id, field, value);
+                              };
 
-                        <div 
-                          className="add-item-container"
-                          style={{ 
-                            width: totalWidth,
-                            display: 'flex',
-                            alignItems: 'center',
-                            background: 'var(--bg-secondary)',
-                            border: '2px solid var(--border-color)',
-                            borderTop: 'none',
-                            borderBottomLeftRadius: 4,
-                            borderBottomRightRadius: 4,
-                            minHeight: 40,
-                            borderLeft: 'none',
-                            borderRight: '2px solid var(--border-color)',
-                            marginTop: '-2px',
-                          }}
-                        >
-                          <div
-                            className="add-item-checkbox"
-                            style={{
-                              width: '36px',
-                              minWidth: '36px',
-                              maxWidth: '36px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              padding: '6px 8px',
-                              borderRight: '2px solid var(--border-color)',
-                              background: 'var(--bg-secondary)',
-                              position: 'sticky',
-                              left: 0,
-                              zIndex: 15,
-                              boxSizing: 'border-box',
-                              borderLeft: `4px solid ${groupColor}`,
-                              borderTop: 'none',
-                              borderBottom: 'none',
-                              height: '100%',
-                              minHeight: '40px',
-                            }}
-                          >
-                            <input
-                              type="checkbox"
-                              disabled
-                              style={{
-                                width: '16px',
-                                height: '16px',
-                                margin: 0,
-                                padding: 0,
-                                display: 'block',
-                                opacity: 0.5,
-                                cursor: 'default',
-                                pointerEvents: 'none',
-                                flexShrink: 0,
-                              }}
-                            />
-                          </div>
+                              return (
+                                <Row
+                                  key={item.id}
+                                  item={item}
+                                  groupColor={groupColor}
+                                  visibleColumns={safeColumns}
+                                  isSelected={selectedItems.includes(item.id)}
+                                  onToggleSelect={toggleSelectItem}
+                                  onUpdate={handleUpdate}
+                                  onDelete={() => {
+                                    console.log('🟢 BoardTable onDelete - item.id:', item.id);
+                                    onDeleteItem(item.id);
+                                  }}
+                                  onOpenStatusManager={onOpenStatusManager}
+                                  onAddSubItem={handleAddSubItem}
+                                  selectedItems={selectedItems}
+                                  groupName={groupName}
+                                  isDefaultGroup={isDefault}
+                                />
+                              );
+                            })}
 
-                          <div
-                            className="add-item-sticky"
-                            style={{
-                              position: 'sticky',
-                              left: '36px',
-                              zIndex: 15,
-                              background: 'var(--bg-secondary)',
-                              padding: '6px 8px',
-                              flex: 1,
-                              borderLeft: 'none',
-                              borderRight: 'none',
-                              minHeight: '40px',
-                            }}
-                          >
-                            <button
-                              onClick={() => handleAddItem(groupName)}
-                              style={{
-                                border: 'none',
-                                background: 'transparent',
-                                color: '#3b82f6',
-                                cursor: 'pointer',
-                                fontSize: 13,
-                                padding: '4px 0',
-                                textAlign: 'left',
-                                width: '100%',
-                                transition: 'background 0.15s',
-                              }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.background = 'var(--bg-hover)';
-                                e.currentTarget.style.paddingLeft = '8px';
-                                e.currentTarget.style.borderRadius = '4px';
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.background = 'transparent';
-                                e.currentTarget.style.paddingLeft = '0';
-                              }}
-                            >
-                              + Add item
-                            </button>
-                          </div>
+                            {/* BARIS ADD ITEM */}
+                            <tr className="add-item-row">
+                              <td style={{
+                                width: '36px',
+                                minWidth: '36px',
+                                maxWidth: '36px',
+                                padding: '6px 8px',
+                                textAlign: 'center',
+                                verticalAlign: 'middle',
+                                borderBottom: '2px solid var(--border-color)',
+                                background: 'var(--bg-secondary)',
+                                position: 'sticky',
+                                left: 0,
+                                zIndex: 10,
+                                borderRight: '2px solid var(--border-color)',
+                                borderLeft: `4px solid ${groupColor}`,
+                              }} />
 
-                          <div style={{ flex: 1, minWidth: '50px' }} />
-                        </div>
-                      </>
+                              <td style={{
+                                position: 'sticky',
+                                left: '36px',
+                                zIndex: 9,
+                                background: 'var(--bg-secondary)',
+                                boxShadow: 'inset -2px 0 0 0 var(--border-color)',
+                                padding: '6px 8px',
+                                minWidth: '200px',
+                                borderBottom: '2px solid var(--border-color)',
+                              }}>
+                                <button
+                                  onClick={() => handleAddItem(groupName)}
+                                  style={{
+                                    border: 'none',
+                                    background: 'transparent',
+                                    color: '#3b82f6',
+                                    cursor: 'pointer',
+                                    fontSize: 13,
+                                    padding: '4px 0',
+                                    textAlign: 'left',
+                                    width: '100%',
+                                    transition: 'background 0.15s, padding-left 0.15s',
+                                    borderRadius: '4px',
+                                    fontFamily: 'inherit',
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.background = 'var(--bg-hover)';
+                                    e.currentTarget.style.paddingLeft = '8px';
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.background = 'transparent';
+                                    e.currentTarget.style.paddingLeft = '0';
+                                  }}
+                                >
+                                  + Add item
+                                </button>
+                              </td>
+
+                              {safeColumns.filter(c => c.id !== 'item' && c.id !== 'add-column').map((col, idx) => {
+                                const filteredCols = safeColumns.filter(c => c.id !== 'item' && c.id !== 'add-column');
+                                const isLast = idx === filteredCols.length - 1;
+                                return (
+                                  <td key={col.id} style={{
+                                    padding: '6px 8px',
+                                    borderBottom: '2px solid var(--border-color)',
+                                    background: 'var(--bg-secondary)',
+                                    width: col.width || 120,
+                                    minWidth: col.width || 120,
+                                    maxWidth: col.width || 120,
+                                    borderRight: isLast ? 'none' : '2px solid var(--border-color)',
+                                  }} />
+                                );
+                              })}
+
+                              {/* ✅ KOLOM + - KOSONG TAPI FLEKSIBEL */}
+                              <td style={{
+                                width: 'auto',
+                                minWidth: '50px',
+                                maxWidth: 'none',
+                                padding: '6px 4px',
+                                borderBottom: '2px solid var(--border-color)',
+                                background: 'var(--bg-secondary)',
+                                borderLeft: '2px solid var(--border-color)',
+                              }} />
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
                     ) : (
                       <div 
                         className="empty-group-message" 

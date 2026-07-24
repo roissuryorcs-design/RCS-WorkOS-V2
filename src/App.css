@@ -1008,6 +1008,25 @@ tr:hover .btn-arrow-hover {
   50% { opacity: 0.3; }
 }
 
+/* ============================================================
+   🔥 FORCE KOLOM + FLEKSIBEL (TANPA MENGANGGU RESIZE)
+   ============================================================ */
+
+/* ✅ HANYA KOLOM "+" YANG DIPAKSA */
+.board-table thead th:last-child,
+.board-table tbody td:last-child {
+  width: 100% !important;
+  min-width: 50px !important;
+  max-width: none !important;
+  flex: 1 1 auto !important;
+}
+
+/* Pastikan tabel menggunakan auto layout */
+.board-table {
+  table-layout: auto !important;
+  width: 100% !important;
+}
+
 /* Responsive */
 @media (max-width: 600px) {
   .board-footer {
@@ -1020,40 +1039,102 @@ tr:hover .btn-arrow-hover {
     font-size: 12px;
   }
 }
-
 /* ============================================================
-   🔥 DRAG & DROP FORCE OVERRIDE
+   🔥 KOLOM + FLEKSIBEL DENGAN table-layout: auto
    ============================================================ */
 
-.group-wrapper,
-.group-header {
-  cursor: grab !important;
-  user-select: none !important;
-  -webkit-user-drag: element !important;
-  touch-action: none !important;
+/* ✅ PAKAI table-layout: auto */
+.board-table {
+  table-layout: auto !important;
+  width: 100% !important;
+  min-width: 100% !important;
 }
 
-.group-wrapper:active,
-.group-header:active {
-  cursor: grabbing !important;
+/* ✅ KOLOM "+" - FLEKSIBEL (width: auto) */
+.board-table thead th:last-child,
+.board-table tbody td:last-child {
+  width: auto !important;
+  min-width: 50px !important;
+  max-width: none !important;
 }
 
-.group-wrapper.dragging {
-  opacity: 0.5 !important;
-  transform: scale(0.95) !important;
-  border: 2px dashed #3b82f6 !important;
-  z-index: 99999 !important;
-  box-shadow: 0 4px 20px rgba(59, 130, 246, 0.3) !important;
+/* ✅ KOLOM ITEM - FIXED 250px */
+.board-table thead th:nth-child(2),
+.board-table tbody td:nth-child(2) {
+  width: 250px !important;
+  min-width: 250px !important;
+  max-width: 250px !important;
 }
 
-/* Pastikan semua elemen di group-wrapper bisa di-drag */
-.group-wrapper * {
+/* ✅ KOLOM NO. DOCUMENT - FIXED 200px */
+.board-table thead th:nth-child(3),
+.board-table tbody td:nth-child(3) {
+  width: 200px !important;
+  min-width: 200px !important;
+  max-width: 200px !important;
+}
+
+/* ✅ KOLOM PEOPLE - FIXED 120px */
+.board-table thead th:nth-child(4),
+.board-table tbody td:nth-child(4) {
+  width: 120px !important;
+  min-width: 120px !important;
+  max-width: 120px !important;
+}
+
+/* ✅ KOLOM STATUS - FIXED 140px */
+.board-table thead th:nth-child(5),
+.board-table tbody td:nth-child(5) {
+  width: 140px !important;
+  min-width: 140px !important;
+  max-width: 140px !important;
+}
+
+/* ✅ KOLOM DUE DATE - FIXED 140px */
+.board-table thead th:nth-child(6),
+.board-table tbody td:nth-child(6) {
+  width: 140px !important;
+  min-width: 140px !important;
+  max-width: 140px !important;
+}
+
+/* ✅ KOLOM REV - FIXED 80px */
+.board-table thead th:nth-child(7),
+.board-table tbody td:nth-child(7) {
+  width: 80px !important;
+  min-width: 80px !important;
+  max-width: 80px !important;
+}
+
+/* ✅ SEMBUNYIKAN KOLOM "W" */
+.board-table thead th:nth-child(8),
+.board-table tbody td:nth-child(8) {
+  display: none !important;
+}
+/* ============================================================
+   🔥 PASTIKAN RESIZE BISA BEKERJA
+   ============================================================ */
+
+/* Hapus semua batasan resize */
+.board-table th {
+  user-select: auto !important;
+  -webkit-user-select: auto !important;
+  -moz-user-select: auto !important;
+  -ms-user-select: auto !important;
+  max-width: none !important;
+}
+
+/* Pastikan resize handle terlihat dan bisa di-click */
+.board-table th .resize-handle,
+.board-table th .resize-handle * {
   pointer-events: auto !important;
+  cursor: col-resize !important;
+  opacity: 0.6 !important;
 }
 
-/* Kecuali yang memang harus pointer-events: none */
-.ai-sticky-line,
-.add-item-checkbox input,
-.add-item-checkbox {
-  pointer-events: none !important;
+/* Kolom "+" tetap tidak bisa di-resize */
+.board-table th:last-child {
+  user-select: none !important;
+  cursor: pointer !important;
+  max-width: none !important;
 }

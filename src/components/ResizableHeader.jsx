@@ -22,7 +22,14 @@ export default function ResizableHeader({
     return null;
   }
 
-  const [width, setWidth] = useState(column.width || 100);
+  // ✅ PERBAIKAN: Gunakan 'auto' untuk kolom "+"
+  const [width, setWidth] = useState(() => {
+    if (column.id === 'add-column') {
+      return 'auto';
+    }
+    return column.width || 100;
+  });
+
   const [isResizing, setIsResizing] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const thRef = useRef(null);
@@ -30,7 +37,15 @@ export default function ResizableHeader({
   const startWidth = useRef(0);
   const isResizingRef = useRef(false);
 
+  const isAddColumn = column.id === 'add-column';
+
   const handleResizeStart = (e) => {
+    // ❌ JANGAN IJIN RESIZE UNTUK KOLOM "+"
+    if (isAddColumn) {
+      e.preventDefault();
+      return;
+    }
+
     e.preventDefault();
     e.stopPropagation();
 
@@ -56,7 +71,9 @@ export default function ResizableHeader({
       const newWidth = Math.max(40, startWidth.current + diff);
 
       if (th) {
-        th.style.width = newWidth + "px";
+        th.style.setProperty('width', newWidth + 'px', 'important');
+        th.style.setProperty('min-width', newWidth + 'px', 'important');
+        th.style.setProperty('max-width', newWidth + 'px', 'important');
       }
 
       onResize(column.id, newWidth);
@@ -82,7 +99,7 @@ export default function ResizableHeader({
   };
 
   const handleDragStart = (e) => {
-    if (isResizingRef.current || column.id === "item") {
+    if (isResizingRef.current || column.id === "item" || isAddColumn) {
       e.preventDefault();
       return;
     }
@@ -98,7 +115,7 @@ export default function ResizableHeader({
 
   const handleDragOver = (e) => {
     e.preventDefault();
-    if (column.id !== "item" && !isResizingRef.current) {
+    if (column.id !== "item" && !isResizingRef.current && !isAddColumn) {
       e.currentTarget.style.borderLeft = "3px solid var(--btn-primary-bg)";
       e.currentTarget.style.background = "var(--bg-hover)";
     }
@@ -125,11 +142,15 @@ export default function ResizableHeader({
   };
 
   useEffect(() => {
-    setWidth(column.width || 100);
-    if (thRef.current) {
-      thRef.current.style.width = (column.width || 100) + "px";
+    if (!isAddColumn) {
+      setWidth(column.width || 100);
+      if (thRef.current) {
+        thRef.current.style.setProperty('width', (column.width || 100) + 'px', 'important');
+        thRef.current.style.setProperty('min-width', (column.width || 100) + 'px', 'important');
+        thRef.current.style.setProperty('max-width', (column.width || 100) + 'px', 'important');
+      }
     }
-  }, [column.width]);
+  }, [column.width, isAddColumn]);
 
   const stickyStyle = isSticky
     ? {
@@ -141,6 +162,36 @@ export default function ResizableHeader({
       }
     : {};
 
+  // 🔥 JIKA KOLOM "+", RENDER KHUSUS
+  if (isAddColumn) {
+    return (
+      <th
+        ref={thRef}
+        draggable={false}
+        style={{
+          width: 'auto',
+          minWidth: '50px',
+          maxWidth: 'none',
+          padding: "8px 4px",
+          textAlign: "left",
+          cursor: "pointer",
+          position: "sticky",
+          right: 0,
+          zIndex: 20,
+          background: "var(--bg-secondary)",
+          borderLeft: "2px solid var(--border-color)",
+          borderBottom: "2px solid var(--border-color)",
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        }}
+        onClick={onResize} // Trigger add column
+      >
+        <span style={{ fontSize: '18px', fontWeight: 300 }}>+</span>
+      </th>
+    );
+  }
+
   return (
     <th
       ref={thRef}
@@ -151,13 +202,13 @@ export default function ResizableHeader({
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       style={{
-        width: `${width}px`,
+        width: typeof width === 'string' ? width : `${width}px`,
         minWidth: 40,
-        maxWidth: `${width}px`,
+        maxWidth: typeof width === 'string' ? 'none' : `${width}px`,
         padding: "8px 8px",
         borderRight: isLast ? "none" : "2px solid var(--border-color)",
         position: "relative",
-        userSelect: "none",
+        userSelect: "auto",
         cursor: isResizingRef.current ? "col-resize" : "default",
         background: "transparent",
         transition: "background 0.15s",
@@ -225,8 +276,9 @@ export default function ResizableHeader({
         {/* SPACER KOSONG UNTUK KOLOM TANPA ⋮ */}
         {!showMenuButton && <span style={{ width: 28, flexShrink: 0 }} />}
 
-        {/* RESIZE HANDLE */}
+        {/* ✅ RESIZE HANDLE - PAKAI CLASS DAN setProperty */}
         <div
+          className="resize-handle"
           onMouseDown={handleResizeStart}
           style={{
             position: "absolute",
