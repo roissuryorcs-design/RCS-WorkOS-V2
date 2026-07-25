@@ -5,6 +5,65 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>workos-v2</title>
+
+    <style>
+      /**
+       * MONDAY.COM DARK MODE STYLE FIX
+       * Menyeragamkan warna tabel pada dark mode tanpa merusak light mode.
+       */
+
+      /* 1. ATURAN MODE GELAP (Aktif saat body memiliki class "dark") */
+      body.dark, 
+      body.dark #root, 
+      body.dark main, 
+      body.dark .board-scroll-container, 
+      body.dark .board-scroll-content {
+        background-color: #0f1117 !important;
+      }
+
+      body.dark .table-wrapper,
+      body.dark .group-wrapper,
+      body.dark .group-header,
+      body.dark .group-content,
+      body.dark .table-header-row,
+      body.dark tr.table-row,
+      body.dark td, 
+      body.dark th,
+      body.dark .row-cell,
+      body.dark .add-item-row,
+      body.dark .group-footer {
+        background-color: #252837 !important;
+        color: #e8edf5 !important;
+        --bg-secondary: #252837 !important; /* Timpa variabel internal */
+      }
+
+      /* Border dan Shadow khusus Dark Mode */
+      body.dark td, body.dark th, body.dark .cell {
+        border-bottom: 1px solid #323546 !important;
+        border-right: 1px solid #323546 !important;
+      }
+      body.dark [style*="position: sticky"] {
+        box-shadow: inset -2px 0 0 0 #323546 !important;
+      }
+      body.dark .group-title, body.dark .badge-default {
+        background-color: transparent !important;
+      }
+
+      /* 2. ATURAN MODE TERANG (Memastikan kembali ke putih bersih) */
+      body:not(.dark) .table-wrapper,
+      body:not(.dark) .group-wrapper,
+      body:not(.dark) .group-header,
+      body:not(.dark) .table-header-row,
+      body:not(.dark) tr.table-row,
+      body:not(.dark) td, 
+      body:not(.dark) th,
+      body:not(.dark) .add-item-row,
+      body:not(.dark) .group-footer {
+        background-color: #ffffff !important;
+        color: #333333 !important;
+        --bg-secondary: #ffffff !important;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
