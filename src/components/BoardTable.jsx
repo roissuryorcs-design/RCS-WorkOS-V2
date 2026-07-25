@@ -93,6 +93,36 @@ export default function BoardTable({
     localStorage.setItem('board-groups', JSON.stringify(currentOrder));
   }, []);
 
+  // ============================================================
+  // 🔥 DRAG & DROP HANDLER - (DILUAR useEffect)
+  // ============================================================
+  const handleDragStart = useCallback((e) => {
+    // HANYA jika yang di-drag adalah group-header
+    if (!e.target.closest('.group-header')) {
+      e.preventDefault();
+      return;
+    }
+    
+    const item = e.target.closest('.group-wrapper');
+    if (!item) {
+      e.preventDefault();
+      return;
+    }
+    item.classList.add('dragging');
+    e.dataTransfer.setData('text/plain', '');
+    e.dataTransfer.effectAllowed = 'move';
+    item.style.opacity = '0.5';
+  }, []);
+
+  const handleDragEnd = useCallback((e) => {
+    if (!e.target.closest('.group-header')) return;
+    const item = e.target.closest('.group-wrapper');
+    if (!item) return;
+    item.classList.remove('dragging');
+    item.style.opacity = '1';
+    saveNewOrder();
+  }, [saveNewOrder]);
+
   useEffect(() => {
     const container = boardRef.current;
     if (!container) return;
@@ -107,26 +137,6 @@ export default function BoardTable({
         }
         return closest;
       }, { offset: Number.NEGATIVE_INFINITY }).element;
-    };
-
-    const handleDragStart = (e) => {
-      const item = e.target.closest('.group-wrapper');
-      if (!item) {
-        e.preventDefault();
-        return;
-      }
-      item.classList.add('dragging');
-      e.dataTransfer.setData('text/plain', '');
-      e.dataTransfer.effectAllowed = 'move';
-      item.style.opacity = '0.5';
-    };
-
-    const handleDragEnd = (e) => {
-      const item = e.target.closest('.group-wrapper');
-      if (!item) return;
-      item.classList.remove('dragging');
-      item.style.opacity = '1';
-      saveNewOrder();
     };
 
     const handleDragOver = (e) => {
@@ -150,7 +160,7 @@ export default function BoardTable({
       container.removeEventListener('dragend', handleDragEnd);
       container.removeEventListener('dragover', handleDragOver);
     };
-  }, [saveNewOrder]);
+  }, [handleDragStart, handleDragEnd, saveNewOrder]);
 
   // ============================================================
   // STATE LAINNYA
@@ -240,7 +250,7 @@ export default function BoardTable({
   }, {});
 
   // ============================================================
-  // 🔥 PERBAIKAN: TAMBAHKAN KOLOM "+" KE safeColumns
+  // 🔥 KOLOM YANG DITAMPILKAN (TANPA kolom "+")
   // ============================================================
   const safeColumns = (() => {
     const hasItem = visibleColumns.some((col) => col.id === "item");
@@ -252,14 +262,8 @@ export default function BoardTable({
     // ✅ HAPUS KOLOM "+" JIKA SUDAH ADA
     cols = cols.filter(c => c.id !== 'add-column');
     
-    // ✅ TAMBAHKAN KOLOM "+" DI AKHIR
-    cols.push({
-      id: 'add-column',
-      label: '+',
-      type: 'text',
-      width: 'auto',
-      visible: true,
-    });
+    // ❌ TIDAK MENAMBAHKAN KOLOM "+" DI SINI
+    // Kolom "+" hanya akan di-render manual di header
     
     return cols;
   })();
@@ -338,7 +342,6 @@ export default function BoardTable({
   const CHECKBOX_WIDTH = 36;
   const ADD_COLUMN_WIDTH = 50;
   
-  // ✅ totalWidth = '100%' AGAR TABEL MENGIKUTI LAYAR
   const totalWidth = '100%';
 
   if (groups.length === 0) {
@@ -389,7 +392,6 @@ export default function BoardTable({
               <div 
                 key={groupName} 
                 className="group-wrapper"
-                draggable="true"
                 data-group-id={String(groupId)}
                 data-group-name={groupName}
                 style={{ 
@@ -399,7 +401,7 @@ export default function BoardTable({
                   width: 'max-content',
                   minWidth: '100%',
                   overflow: 'visible',
-                  cursor: 'grab',
+                  cursor: 'default',
                   userSelect: 'none',
                   touchAction: 'none',
                 }}
@@ -423,9 +425,10 @@ export default function BoardTable({
                   }}
                 />
 
-                {/* HEADER GROUP */}
+                {/* HEADER GROUP - BISA DRAG */}
                 <div 
                   className="group-header"
+                  draggable="true"
                   style={{
                     position: 'sticky',
                     top: 0,
@@ -550,6 +553,7 @@ export default function BoardTable({
                           position: 'sticky',
                           left: '35px',
                           zIndex: 1002,
+                          cursor: 'default',
                         }}
                       >
                         {displayTitle}
@@ -639,37 +643,7 @@ export default function BoardTable({
 
                               {safeColumns.map((col, idx) => {
                                 const isItem = col.id === "item";
-                                const isAddColumn = col.id === 'add-column';
                                 const isLast = idx === safeColumns.length - 1;
-                                
-                                // ✅ JIKA KOLOM "+", RENDER MANUAL
-                                if (isAddColumn) {
-                                  return (
-                                    <th
-                                      key={col.id}
-                                      onClick={onOpenAddColumn}
-                                      style={{
-                                        width: 'auto',
-                                        minWidth: '50px',
-                                        maxWidth: 'none',
-                                        padding: '8px 4px',
-                                        textAlign: 'left',
-                                        cursor: 'pointer',
-                                        position: 'sticky',
-                                        right: 0,
-                                        zIndex: 20,
-                                        background: 'var(--bg-secondary)',
-                                        borderLeft: '2px solid var(--border-color)',
-                                        borderBottom: '2px solid var(--border-color)',
-                                        whiteSpace: 'nowrap',
-                                        overflow: 'hidden',
-                                        textOverflow: 'ellipsis',
-                                      }}
-                                    >
-                                      <span style={{ fontSize: '18px', fontWeight: 300 }}>+</span>
-                                    </th>
-                                  );
-                                }
                                 
                                 return (
                                   <ResizableHeader
@@ -691,6 +665,27 @@ export default function BoardTable({
                                   </ResizableHeader>
                                 );
                               })}
+
+                              {/* ✅ KOLOM "+" DI HEADER - MANUAL (HANYA UNTUK ADD COLUMN) */}
+                              <th
+                                key="add-column"
+                                onClick={onOpenAddColumn}
+                                style={{
+                                  width: 'auto',
+                                  minWidth: '50px',
+                                  maxWidth: 'none',
+                                  padding: '8px 4px',
+                                  textAlign: 'left',
+                                  background: 'var(--bg-secondary)',
+                                  borderLeft: '2px solid var(--border-color)',
+                                  borderBottom: '2px solid var(--border-color)',
+                                  whiteSpace: 'nowrap',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                }}
+                              >
+                                <span style={{ fontSize: '18px', fontWeight: 300 }}>+</span>
+                              </th>
                             </tr>
                           </thead>
                           <tbody>
@@ -778,8 +773,8 @@ export default function BoardTable({
                                 </button>
                               </td>
 
-                              {safeColumns.filter(c => c.id !== 'item' && c.id !== 'add-column').map((col, idx) => {
-                                const filteredCols = safeColumns.filter(c => c.id !== 'item' && c.id !== 'add-column');
+                              {safeColumns.filter(c => c.id !== 'item').map((col, idx) => {
+                                const filteredCols = safeColumns.filter(c => c.id !== 'item');
                                 const isLast = idx === filteredCols.length - 1;
                                 return (
                                   <td key={col.id} style={{
@@ -794,16 +789,7 @@ export default function BoardTable({
                                 );
                               })}
 
-                              {/* ✅ KOLOM + - KOSONG TAPI FLEKSIBEL */}
-                              <td style={{
-                                width: 'auto',
-                                minWidth: '50px',
-                                maxWidth: 'none',
-                                padding: '6px 4px',
-                                borderBottom: '2px solid var(--border-color)',
-                                background: 'var(--bg-secondary)',
-                                borderLeft: '2px solid var(--border-color)',
-                              }} />
+                              {/* ❌ KOLOM "+" TIDAK ADA DI BARIS ADD ITEM */}
                             </tr>
                           </tbody>
                         </table>
