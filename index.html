@@ -9,10 +9,10 @@
     <style>
       /**
        * MONDAY.COM DARK MODE STYLE FIX
-       * Menyeragamkan warna tabel pada dark mode tanpa merusak light mode.
+       * Warna garis mengikuti warna group
        */
 
-      /* 1. ATURAN MODE GELAP (Aktif saat body memiliki class "dark") */
+      /* 1. ATURAN MODE GELAP */
       body.dark, 
       body.dark #root, 
       body.dark main, 
@@ -34,22 +34,39 @@
       body.dark .group-footer {
         background-color: #252837 !important;
         color: #e8edf5 !important;
-        --bg-secondary: #252837 !important; /* Timpa variabel internal */
+        --bg-secondary: #252837 !important;
       }
 
-      /* Border dan Shadow khusus Dark Mode */
+      /* Border dan Shadow Dark Mode */
       body.dark td, body.dark th, body.dark .cell {
         border-bottom: 1px solid #323546 !important;
         border-right: 1px solid #323546 !important;
       }
-      body.dark [style*="position: sticky"] {
+
+      /* ✅ GARIS KIRI MENGIKUTI WARNA GROUP */
+      body.dark .group-header-inner,
+      body.dark .group-header-inner[style*="position: sticky"] {
+        box-shadow: none !important;
+        border-left: 4px solid var(--group-color, #3b82f6) !important;
+        background-clip: padding-box !important;
+      }
+
+      /* Hilangkan elemen garis tambahan */
+      body.dark .ai-sticky-line {
+        display: none !important;
+      }
+
+      /* Shadow untuk sticky lain */
+      body.dark [style*="position: sticky"]:not(.group-header-inner) {
         box-shadow: inset -2px 0 0 0 #323546 !important;
       }
-      body.dark .group-title, body.dark .badge-default {
+
+      body.dark .group-title, 
+      body.dark .badge-default {
         background-color: transparent !important;
       }
 
-      /* 2. ATURAN MODE TERANG (Memastikan kembali ke putih bersih) */
+      /* 2. ATURAN MODE TERANG */
       body:not(.dark) .table-wrapper,
       body:not(.dark) .group-wrapper,
       body:not(.dark) .group-header,
@@ -62,6 +79,12 @@
         background-color: #ffffff !important;
         color: #333333 !important;
         --bg-secondary: #ffffff !important;
+      }
+
+      /* ✅ LIGHT MODE - WARNA MENGIKUTI GROUP */
+      body:not(.dark) .group-header-inner {
+        border-left: 4px solid var(--group-color, #3b82f6) !important;
+        box-shadow: inset -2px 0 0 0 #e8edf5 !important;
       }
     </style>
   </head>
