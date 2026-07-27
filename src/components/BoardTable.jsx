@@ -29,6 +29,7 @@ export default function BoardTable({
   defaultGroupName = DEFAULT_GROUP.title,
 }) {
   const {
+    columns,
     updateColumnWidth,
     renameColumn,
     toggleColumn,
@@ -73,7 +74,7 @@ export default function BoardTable({
   }, [externalGroupColors]);
 
   // ============================================================
-  // 🔥 DRAG & DROP - SIMPAN LANGSUNG NAMA GROUP
+  // 🔥 DRAG & DROP GROUP - SIMPAN LANGSUNG NAMA GROUP
   // ============================================================
   const boardRef = useRef(null);
 
@@ -94,20 +95,18 @@ export default function BoardTable({
   }, []);
 
   // ============================================================
-  // 🔥 DRAG & DROP HANDLER - (DILUAR useEffect)
+  // 🔥 DRAG & DROP HANDLER GROUP
+  // ✅ FIX: JANGAN preventDefault drag yang bukan milik group,
+  //    karena itu membatalkan drag kolom secara total.
   // ============================================================
   const handleDragStart = useCallback((e) => {
-    // HANYA jika yang di-drag adalah group-header
-    if (!e.target.closest('.group-header')) {
-      e.preventDefault();
-      return;
-    }
-    
+    // Jika yang di-drag BUKAN group-header, biarkan event lanjut
+    // (misalnya drag header kolom di ResizableHeader).
+    if (!e.target.closest('.group-header')) return;
+
     const item = e.target.closest('.group-wrapper');
-    if (!item) {
-      e.preventDefault();
-      return;
-    }
+    if (!item) return;
+
     item.classList.add('dragging');
     e.dataTransfer.setData('text/plain', '');
     e.dataTransfer.effectAllowed = 'move';
@@ -161,6 +160,23 @@ export default function BoardTable({
       container.removeEventListener('dragover', handleDragOver);
     };
   }, [handleDragStart, handleDragEnd, saveNewOrder]);
+
+  // ============================================================
+  // 🔥 REORDER KOLOM - MAPPING INDEX VISIBLE → INDEX FULL
+  // ✅ FIX: index dari header berbasis visibleColumns,
+  //    sedangkan reorderColumns bekerja di array columns penuh.
+  // ============================================================
+  const handleReorderColumns = useCallback((fromIdx, toIdx) => {
+    const fromCol = visibleColumns[fromIdx];
+    const toCol = visibleColumns[toIdx];
+    if (!fromCol || !toCol) return;
+
+    const realFrom = columns.findIndex((c) => c.id === fromCol.id);
+    const realTo = columns.findIndex((c) => c.id === toCol.id);
+    if (realFrom === -1 || realTo === -1) return;
+
+    reorderColumns(realFrom, realTo);
+  }, [columns, visibleColumns, reorderColumns]);
 
   // ============================================================
   // STATE LAINNYA
@@ -261,9 +277,6 @@ export default function BoardTable({
     
     // ✅ HAPUS KOLOM "+" JIKA SUDAH ADA
     cols = cols.filter(c => c.id !== 'add-column');
-    
-    // ❌ TIDAK MENAMBAHKAN KOLOM "+" DI SINI
-    // Kolom "+" hanya akan di-render manual di header
     
     return cols;
   })();
@@ -655,11 +668,12 @@ export default function BoardTable({
                                     onRename={renameColumn}
                                     onToggle={toggleColumn}
                                     onDelete={deleteColumn}
-                                    onReorder={reorderColumns}
+                                    onReorder={handleReorderColumns}
                                     isSticky={isItem}
                                     isLast={isLast}
                                     align="center"
                                     showMenuButton={!isItem}
+                                    headerColor={groupColor}
                                   >
                                     {col.label}
                                   </ResizableHeader>
@@ -788,8 +802,6 @@ export default function BoardTable({
                                   }} />
                                 );
                               })}
-
-                              {/* ❌ KOLOM "+" TIDAK ADA DI BARIS ADD ITEM */}
                             </tr>
                           </tbody>
                         </table>

@@ -1,6 +1,8 @@
 import { useRef, useState, useEffect } from "react";
 import ColumnMenu from "./ColumnMenu";
 
+let draggedColumn = null;
+
 export default function ResizableHeader({
   column,
   index,
@@ -16,20 +18,11 @@ export default function ResizableHeader({
   isLast = false,
   align = "center",
   showMenuButton = true,
+  headerColor, // ✅ PROP BARU
 }) {
-  // ✅ GUARD: Jika column undefined
-  if (!column) {
-    return null;
-  }
+  if (!column) return null;
 
-  // ✅ PERBAIKAN: Gunakan 'auto' untuk kolom "+"
-  const [width, setWidth] = useState(() => {
-    if (column.id === 'add-column') {
-      return 'auto';
-    }
-    return column.width || 100;
-  });
-
+  const [width, setWidth] = useState(column.width || 100);
   const [isResizing, setIsResizing] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const thRef = useRef(null);
@@ -37,15 +30,19 @@ export default function ResizableHeader({
   const startWidth = useRef(0);
   const isResizingRef = useRef(false);
 
-  const isAddColumn = column.id === 'add-column';
+  const isItemColumn = column.id === "item";
+  const isDraggable = !isResizing && !isItemColumn;
+
+  const applyWidth = (th, newWidth) => {
+    if (!th) return;
+    // ✅ setProperty(..., 'important') supaya menang melawan rule CSS
+    // lain yang juga pakai !important (mis. width kolom di board-table).
+    th.style.setProperty("width", `${newWidth}px`, "important");
+    th.style.setProperty("min-width", `${newWidth}px`, "important");
+    th.style.setProperty("max-width", `${newWidth}px`, "important");
+  };
 
   const handleResizeStart = (e) => {
-    // ❌ JANGAN IJIN RESIZE UNTUK KOLOM "+"
-    if (isAddColumn) {
-      e.preventDefault();
-      return;
-    }
-
     e.preventDefault();
     e.stopPropagation();
 
@@ -61,23 +58,18 @@ export default function ResizableHeader({
 
     const rect = th?.getBoundingClientRect();
     startX.current = e.clientX;
-    startWidth.current = rect?.width || 60;
+    startWidth.current = rect?.width || width;
 
     const onMove = (ev) => {
       if (!isResizingRef.current) return;
       ev.preventDefault();
 
       const diff = ev.clientX - startX.current;
-      const newWidth = Math.max(40, startWidth.current + diff);
+      const newWidth = Math.max(40, Math.round(startWidth.current + diff));
 
-      if (th) {
-        th.style.setProperty('width', newWidth + 'px', 'important');
-        th.style.setProperty('min-width', newWidth + 'px', 'important');
-        th.style.setProperty('max-width', newWidth + 'px', 'important');
-      }
-
-      onResize(column.id, newWidth);
+      applyWidth(th, newWidth);
       setWidth(newWidth);
+      onResize(column.id, newWidth);
     };
 
     const onUp = () => {
@@ -85,7 +77,7 @@ export default function ResizableHeader({
       setIsResizing(false);
 
       if (th) {
-        th.draggable = true;
+        th.draggable = isDraggable;
         th.style.userSelect = "";
         th.style.cursor = "";
       }
@@ -98,123 +90,53 @@ export default function ResizableHeader({
     document.addEventListener("mouseup", onUp);
   };
 
+  useEffect(() => {
+    setWidth(column.width || 100);
+    applyWidth(thRef.current, column.width || 100);
+  }, [column.width]);
+
   const handleDragStart = (e) => {
-    if (isResizingRef.current || column.id === "item" || isAddColumn) {
-      e.preventDefault();
-      return;
-    }
-    e.dataTransfer.effectAllowed = "move";
-    e.dataTransfer.setData("text/plain", JSON.stringify({ from: index }));
+    if (!isDraggable) return;
+    e.dataTransfer.setData("text/plain", column.id);
+    draggedColumn = { id: column.id, index };
     e.currentTarget.style.opacity = "0.4";
   };
 
   const handleDragEnd = (e) => {
     e.currentTarget.style.opacity = "1";
-    e.currentTarget.style.borderLeft = "none";
+    draggedColumn = null;
   };
 
   const handleDragOver = (e) => {
+    if (!draggedColumn || isItemColumn) return;
     e.preventDefault();
-    if (column.id !== "item" && !isResizingRef.current && !isAddColumn) {
-      e.currentTarget.style.borderLeft = "3px solid var(--btn-primary-bg)";
-      e.currentTarget.style.background = "var(--bg-hover)";
-    }
-  };
-
-  const handleDragLeave = (e) => {
-    e.currentTarget.style.borderLeft = "none";
-    e.currentTarget.style.background = "transparent";
   };
 
   const handleDrop = (e) => {
+    if (isItemColumn) return;
     e.preventDefault();
-    e.currentTarget.style.borderLeft = "none";
-    e.currentTarget.style.background = "transparent";
-    e.currentTarget.style.opacity = "1";
-    try {
-      const data = JSON.parse(e.dataTransfer.getData("text/plain"));
-      if (data.from !== undefined && data.from !== index) {
-        onReorder(data.from, index);
-      }
-    } catch {
-      // fallback
-    }
+    if (!draggedColumn || draggedColumn.id === column.id) return;
+    onReorder(draggedColumn.index, index);
+    draggedColumn = null;
   };
-
-  useEffect(() => {
-    if (!isAddColumn) {
-      setWidth(column.width || 100);
-      if (thRef.current) {
-        thRef.current.style.setProperty('width', (column.width || 100) + 'px', 'important');
-        thRef.current.style.setProperty('min-width', (column.width || 100) + 'px', 'important');
-        thRef.current.style.setProperty('max-width', (column.width || 100) + 'px', 'important');
-      }
-    }
-  }, [column.width, isAddColumn]);
-
-  const stickyStyle = isSticky
-    ? {
-        position: "sticky",
-        left: stickyLeft || 0,
-        zIndex: 20,
-        background: "var(--bg-secondary)",
-        boxShadow: "inset -2px 0 0 0 var(--border-color)",
-      }
-    : {};
-
-  // 🔥 JIKA KOLOM "+", RENDER KHUSUS
-  if (isAddColumn) {
-    return (
-      <th
-        ref={thRef}
-        draggable={false}
-        style={{
-          width: 'auto',
-          minWidth: '50px',
-          maxWidth: 'none',
-          padding: "8px 4px",
-          textAlign: "left",
-          cursor: "pointer",
-          position: "sticky",
-          right: 0,
-          zIndex: 20,
-          background: "var(--bg-secondary)",
-          borderLeft: "2px solid var(--border-color)",
-          borderBottom: "2px solid var(--border-color)",
-          whiteSpace: "nowrap",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-        }}
-        onClick={onResize} // Trigger add column
-      >
-        <span style={{ fontSize: '18px', fontWeight: 300 }}>+</span>
-      </th>
-    );
-  }
 
   return (
     <th
       ref={thRef}
-      draggable={!isResizingRef.current && column.id !== "item"}
+      draggable={isDraggable}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
       onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       style={{
-        width: typeof width === 'string' ? width : `${width}px`,
-        minWidth: 40,
-        maxWidth: typeof width === 'string' ? 'none' : `${width}px`,
-        padding: "8px 8px",
-        borderRight: isLast ? "none" : "2px solid var(--border-color)",
+        width: `${width}px`,
+        minWidth: `${width}px`,
+        maxWidth: `${width}px`,
+        padding: "8px",
+        textAlign: align,
+        cursor: isDraggable ? "grab" : "default",
         position: "relative",
-        userSelect: "auto",
-        cursor: isResizingRef.current ? "col-resize" : "default",
-        background: "transparent",
-        transition: "background 0.15s",
-        pointerEvents: "auto",
-        textAlign: align || "center",
-        ...stickyStyle,
+        boxSizing: "border-box",
       }}
     >
       <div
@@ -223,91 +145,39 @@ export default function ResizableHeader({
           alignItems: "center",
           justifyContent: "center",
           gap: 4,
-          pointerEvents: isResizingRef.current ? "none" : "auto",
-          width: "100%",
         }}
       >
-        {/* TOMBOL ⋮ DI SEBELAH KIRI TEKS */}
         {showMenuButton && (
           <button
             onClick={(e) => {
               e.stopPropagation();
               setShowMenu(!showMenu);
             }}
+            onMouseDown={(e) => e.stopPropagation()}
             style={{
               background: "none",
               border: "none",
               cursor: "pointer",
-              fontSize: 20,
-              fontWeight: 700,
-              color: "var(--text-secondary)",
-              padding: "0 6px",
-              opacity: 0.8,
-              transition: "opacity 0.2s, background 0.2s",
-              pointerEvents: isResizingRef.current ? "none" : "auto",
-              flexShrink: 0,
-              borderRadius: "4px",
-              lineHeight: 1,
+              fontSize: 18,
+              color: headerColor || "var(--text-secondary)", // ✅ WARNA IKUT GROUP
             }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.opacity = 1;
-              e.currentTarget.style.background = "var(--bg-hover)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.opacity = 0.8;
-              e.currentTarget.style.background = "transparent";
-            }}
-            title="Column menu"
           >
             ⋮
           </button>
         )}
 
-        {/* TEKS HEADER */}
         <span
           style={{
             flex: 1,
-            textAlign: align || "center",
+            fontWeight: 600,
+            color: headerColor || "inherit", // ✅ WARNA IKUT GROUP
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
           }}
         >
           {children}
         </span>
-
-        {/* SPACER KOSONG UNTUK KOLOM TANPA ⋮ */}
-        {!showMenuButton && <span style={{ width: 28, flexShrink: 0 }} />}
-
-        {/* ✅ RESIZE HANDLE - PAKAI CLASS DAN setProperty */}
-        <div
-          className="resize-handle"
-          onMouseDown={handleResizeStart}
-          style={{
-            position: "absolute",
-            right: -6,
-            top: 0,
-            width: 14,
-            height: "100%",
-            cursor: "col-resize",
-            background: isResizingRef.current ? "var(--btn-primary-bg)" : "transparent",
-            opacity: isResizingRef.current ? 0.8 : 0,
-            transition: "opacity 0.2s, background 0.2s",
-            borderRadius: 2,
-            zIndex: 20,
-            borderLeft: isResizingRef.current ? "2px solid var(--btn-primary-bg)" : "none",
-            pointerEvents: "auto",
-          }}
-          onMouseEnter={(e) => {
-            if (!isResizingRef.current) {
-              e.currentTarget.style.opacity = 0.6;
-              e.currentTarget.style.background = "var(--btn-primary-bg)";
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!isResizingRef.current) {
-              e.currentTarget.style.opacity = 0;
-              e.currentTarget.style.background = "transparent";
-            }
-          }}
-        />
       </div>
 
       {showMenu && (
@@ -319,6 +189,23 @@ export default function ResizableHeader({
           onClose={() => setShowMenu(false)}
         />
       )}
+
+      {/* RESIZE HANDLE */}
+      <div
+        className="resize-handle"
+        onMouseDown={handleResizeStart}
+        onDragStart={(e) => e.preventDefault()}
+        style={{
+          position: "absolute",
+          top: 0,
+          right: 0,
+          width: 8,
+          height: "100%",
+          cursor: "col-resize",
+          userSelect: "none",
+          zIndex: 30,
+        }}
+      />
     </th>
   );
 }

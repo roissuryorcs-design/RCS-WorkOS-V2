@@ -1058,59 +1058,11 @@ tr:hover .btn-arrow-hover {
   max-width: none !important;
 }
 
-/* ✅ KOLOM ITEM - FIXED 250px */
-.board-table thead th:nth-child(2),
-.board-table tbody td:nth-child(2) {
-  width: 250px !important;
-  min-width: 250px !important;
-  max-width: 250px !important;
-}
-
-/* ✅ KOLOM NO. DOCUMENT - FIXED 200px */
-.board-table thead th:nth-child(3),
-.board-table tbody td:nth-child(3) {
-  width: 200px !important;
-  min-width: 200px !important;
-  max-width: 200px !important;
-}
-
-/* ✅ KOLOM PEOPLE - FIXED 120px */
-.board-table thead th:nth-child(4),
-.board-table tbody td:nth-child(4) {
-  width: 120px !important;
-  min-width: 120px !important;
-  max-width: 120px !important;
-}
-
-/* ✅ KOLOM STATUS - FIXED 140px */
-.board-table thead th:nth-child(5),
-.board-table tbody td:nth-child(5) {
-  width: 140px !important;
-  min-width: 140px !important;
-  max-width: 140px !important;
-}
-
-/* ✅ KOLOM DUE DATE - FIXED 140px */
-.board-table thead th:nth-child(6),
-.board-table tbody td:nth-child(6) {
-  width: 140px !important;
-  min-width: 140px !important;
-  max-width: 140px !important;
-}
-
-/* ✅ KOLOM REV - FIXED 80px */
-.board-table thead th:nth-child(7),
-.board-table tbody td:nth-child(7) {
-  width: 80px !important;
-  min-width: 80px !important;
-  max-width: 80px !important;
-}
-
-/* ✅ SEMBUNYIKAN KOLOM "W" */
-.board-table thead th:nth-child(8),
-.board-table tbody td:nth-child(8) {
-  display: none !important;
-}
+/* ⚠️ Lebar kolom item/document/people/status/dueDate/rev TIDAK di-hardcode
+   per posisi (nth-child) di sini. Kolom bisa di-reorder, ditambah, atau
+   disembunyikan, sehingga index posisi tidak selalu cocok dengan kolom yang
+   sama. Lebar aktual dikontrol lewat inline style dari width kolom
+   (lihat ResizableHeader.jsx & Row.jsx) supaya resize kolom berfungsi. */
 /* ============================================================
    🔥 PASTIKAN RESIZE BISA BEKERJA
    ============================================================ */
@@ -1137,4 +1089,116 @@ tr:hover .btn-arrow-hover {
   user-select: none !important;
   cursor: pointer !important;
   max-width: none !important;
+}
+/* ============================================================
+   ✅ FORCE STICKY TABLE HEADER (WORKING VERSION)
+   ============================================================ */
+
+.board-table thead {
+  position: relative;
+  z-index: 500;
+}
+
+.board-table thead th {
+  position: sticky !important;
+  top: 48px !important; /* tinggi group header */
+  z-index: 600 !important;
+  background: var(--bg-secondary) !important;
+  border-bottom: 2px solid var(--border-dark) !important;
+}
+
+/* supaya tidak ketutup sticky column */
+.board-table thead th.checkbox-header {
+  z-index: 700 !important;
+}
+
+.board-table thead th:nth-child(2) {
+  z-index: 650 !important;
+}
+
+/* shadow halus modern */
+.board-table thead th::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: linear-gradient(
+    to bottom,
+    rgba(0,0,0,0.15),
+    rgba(0,0,0,0)
+  );
+  pointer-events: none;
+  opacity: 0.15;
+}
+/* ============================================================
+   🔥 STRONGER TABLE GRID (TEGAS & CLEAN)
+   ============================================================ */
+
+/* Border luar tabel */
+.board-table {
+  border: 2px solid var(--border-dark) !important;
+}
+
+/* Vertical lines */
+.board-table th,
+.board-table td {
+  border-right: 2px solid var(--border-color) !important;
+}
+
+/* Horizontal lines */
+.board-table tbody td {
+  border-bottom: 1.5px solid var(--border-color) !important;
+}
+
+/* Header bottom line lebih tebal */
+.board-table thead th {
+  border-bottom: 3px solid var(--border-dark) !important;
+}
+
+/* Hilangkan border kanan terakhir */
+.board-table th:last-child,
+.board-table td:last-child {
+  border-right: none !important;
+}
+
+/* Garis bawah terakhir lebih tegas */
+.board-table tbody tr:last-child td {
+  border-bottom: 2px solid var(--border-dark) !important;
+}
+/* ============================================================
+   🔥 STRONG HORIZONTAL LINES (FIX DARK MODE)
+   ============================================================ */
+
+.board-table tbody td {
+  border-bottom: 2px solid var(--border-dark) !important;
+}
+
+/* Lebih tegas lagi di dark mode */
+body.dark .board-table tbody td {
+  border-bottom: 2px solid #3a3f52 !important;
+}
+
+/* Garis header lebih bold */
+.board-table thead th {
+  border-bottom: 3px solid var(--border-dark) !important;
+}
+/* ============================================================
+   🔧 FIX: RESIZE HANDLE TERTUTUP STICKY HEADER
+   ============================================================ */
+
+/* Tarik handle ke dalam sel sendiri, jangan menjorok ke th sebelah */
+.board-table thead th .resize-handle {
+  right: 0 !important;
+  width: 10px !important;
+  z-index: 999 !important;
+  pointer-events: auto !important;
+  cursor: col-resize !important;
+}
+
+/* Pastikan handle muncul saat hover */
+.board-table thead th:hover .resize-handle {
+  opacity: 0.6 !important;
+  background: var(--btn-primary-bg) !important;
 }
