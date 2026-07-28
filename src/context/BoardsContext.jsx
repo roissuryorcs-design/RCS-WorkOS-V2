@@ -4,6 +4,8 @@ import { generateId, boardKey } from "../utils/boardStorage";
 const BoardsContext = createContext();
 
 const REGISTRY_KEY = "rcs-boards-registry";
+const DEFAULT_WORKSPACE_NAME = "FOREL FPSO";
+const MAX_RECENT_WORKSPACES = 5;
 
 const LEGACY_KEYS = [
   "forelItems",
@@ -16,23 +18,54 @@ const LEGACY_KEYS = [
   "forelUpdates",
 ];
 
-// Bootstraps the registry the first time this runs (fresh install or
-// migrating a pre-multi-board install), or returns the existing one
-// unchanged. Must be safe to call twice under React StrictMode's
-// lazy-initializer double-invocation, hence the synchronous re-read at
-// the top rather than any "always write" logic.
+// Bootstraps the registry the first time this runs (fresh install, an old
+// single-workspace v1 registry, or migrating a pre-multi-board install), or
+// returns the existing v2 registry unchanged. Must be safe to call twice
+// under React StrictMode's lazy-initializer double-invocation, hence the
+// synchronous re-read at the top rather than any "always write" logic.
 function loadOrMigrateRegistry() {
   try {
     const saved = localStorage.getItem(REGISTRY_KEY);
     if (saved) {
       const parsed = JSON.parse(saved);
+
+      // Already v2 — validate and repair any orphaned active ids.
       if (
         parsed &&
-        Array.isArray(parsed.nodes) &&
-        parsed.nodes.length > 0 &&
-        parsed.nodes.some((n) => n.id === parsed.activeBoardId)
+        parsed.version === 2 &&
+        Array.isArray(parsed.workspaces) &&
+        parsed.workspaces.length > 0 &&
+        Array.isArray(parsed.nodes)
       ) {
-        return parsed;
+        const activeWorkspaceId = parsed.workspaces.some((w) => w.id === parsed.activeWorkspaceId)
+          ? parsed.activeWorkspaceId
+          : parsed.workspaces[0].id;
+        const boardsInWorkspace = parsed.nodes.filter(
+          (n) => n.type === "board" && n.workspaceId === activeWorkspaceId
+        );
+        const activeBoardId = boardsInWorkspace.some((b) => b.id === parsed.activeBoardId)
+          ? parsed.activeBoardId
+          : boardsInWorkspace[0]?.id ?? null;
+        const recentWorkspaceIds = Array.isArray(parsed.recentWorkspaceIds)
+          ? parsed.recentWorkspaceIds.filter((id) => parsed.workspaces.some((w) => w.id === id))
+          : [activeWorkspaceId];
+
+        return { ...parsed, activeWorkspaceId, activeBoardId, recentWorkspaceIds };
+      }
+
+      // v1 (single implicit workspace) — wrap everything into one real workspace.
+      if (parsed && parsed.version === 1 && Array.isArray(parsed.nodes) && parsed.nodes.length > 0) {
+        const workspaceId = generateId("w");
+        const registry = {
+          version: 2,
+          activeWorkspaceId: workspaceId,
+          activeBoardId: parsed.activeBoardId ?? null,
+          recentWorkspaceIds: [workspaceId],
+          workspaces: [{ id: workspaceId, name: DEFAULT_WORKSPACE_NAME }],
+          nodes: parsed.nodes.map((n) => ({ ...n, workspaceId })),
+        };
+        localStorage.setItem(REGISTRY_KEY, JSON.stringify(registry));
+        return registry;
       }
     }
   } catch (e) {
@@ -41,6 +74,7 @@ function loadOrMigrateRegistry() {
 
   // No valid registry — migrate any existing single-board data (or start
   // fresh if there isn't any; both cases produce the same shape).
+  const workspaceId = generateId("w");
   const boardId = generateId("b");
   const engineeringId = generateId("f");
   const commissioningId = generateId("f");
@@ -56,12 +90,15 @@ function loadOrMigrateRegistry() {
   });
 
   const registry = {
-    version: 1,
+    version: 2,
+    activeWorkspaceId: workspaceId,
     activeBoardId: boardId,
+    recentWorkspaceIds: [workspaceId],
+    workspaces: [{ id: workspaceId, name: DEFAULT_WORKSPACE_NAME }],
     nodes: [
-      { id: engineeringId, type: "folder", name: "Engineering", parentId: null, collapsed: false },
-      { id: boardId, type: "board", name: boardName, parentId: engineeringId },
-      { id: commissioningId, type: "folder", name: "Commissioning", parentId: null, collapsed: false },
+      { id: engineeringId, type: "folder", name: "Engineering", parentId: null, workspaceId, collapsed: false },
+      { id: boardId, type: "board", name: boardName, parentId: engineeringId, workspaceId },
+      { id: commissioningId, type: "folder", name: "Commissioning", parentId: null, workspaceId, collapsed: false },
     ],
   };
 
@@ -85,10 +122,11 @@ export function BoardsProvider({ children }) {
     }
   }, [state]);
 
-  const { nodes, activeBoardId } = state;
+  const { nodes: allNodes, activeBoardId, workspaces, activeWorkspaceId, recentWorkspaceIds } = state;
+  const nodes = allNodes.filter((n) => n.workspaceId === activeWorkspaceId);
 
   const switchBoard = (id) => {
-    if (!nodes.some((n) => n.id === id && n.type === "board")) return;
+    if (!allNodes.some((n) => n.id === id && n.type === "board" && n.workspaceId === activeWorkspaceId)) return;
     setState((prev) => ({ ...prev, activeBoardId: id }));
   };
 
@@ -96,7 +134,7 @@ export function BoardsProvider({ children }) {
     const trimmed = (name || "").trim();
     if (!trimmed) return;
     if (parentFolderId) {
-      const parent = nodes.find((n) => n.id === parentFolderId);
+      const parent = allNodes.find((n) => n.id === parentFolderId);
       if (!parent || parent.type !== "folder" || parent.parentId) {
         alert("Folders can only be nested one level deep.");
         return;
@@ -105,7 +143,10 @@ export function BoardsProvider({ children }) {
     const id = generateId("f");
     setState((prev) => ({
       ...prev,
-      nodes: [...prev.nodes, { id, type: "folder", name: trimmed, parentId: parentFolderId, collapsed: false }],
+      nodes: [
+        ...prev.nodes,
+        { id, type: "folder", name: trimmed, parentId: parentFolderId, workspaceId: prev.activeWorkspaceId, collapsed: false },
+      ],
     }));
   };
 
@@ -121,7 +162,10 @@ export function BoardsProvider({ children }) {
     setState((prev) => ({
       ...prev,
       activeBoardId: id,
-      nodes: [...prev.nodes, { id, type: "board", name: trimmed, parentId: parentFolderId }],
+      nodes: [
+        ...prev.nodes,
+        { id, type: "board", name: trimmed, parentId: parentFolderId, workspaceId: prev.activeWorkspaceId },
+      ],
     }));
   };
 
@@ -135,11 +179,11 @@ export function BoardsProvider({ children }) {
   };
 
   const deleteNode = (id) => {
-    const node = nodes.find((n) => n.id === id);
+    const node = allNodes.find((n) => n.id === id);
     if (!node) return;
 
     if (node.type === "folder") {
-      const hasChildren = nodes.some((n) => n.parentId === id);
+      const hasChildren = allNodes.some((n) => n.parentId === id);
       if (hasChildren) {
         alert("This folder isn't empty. Move or delete its boards first.");
         return;
@@ -148,24 +192,22 @@ export function BoardsProvider({ children }) {
       return;
     }
 
-    // node.type === "board"
-    const totalBoards = nodes.filter((n) => n.type === "board").length;
-    if (totalBoards <= 1) {
-      alert("You must have at least one board.");
-      return;
-    }
-
+    // node.type === "board" — a workspace is allowed to end up with zero
+    // boards (mirrors real Monday.com); the empty state lives in AppShellInner.
     LEGACY_KEYS.forEach((key) => {
       localStorage.removeItem(boardKey(key, id));
     });
 
     setState((prev) => {
       const remainingNodes = prev.nodes.filter((n) => n.id !== id);
-      const nextActive =
-        prev.activeBoardId === id
-          ? remainingNodes.find((n) => n.type === "board")?.id ?? null
-          : prev.activeBoardId;
-      return { ...prev, nodes: remainingNodes, activeBoardId: nextActive };
+      let nextActiveBoardId = prev.activeBoardId;
+      if (prev.activeBoardId === id) {
+        const remainingInWorkspace = remainingNodes.filter(
+          (n) => n.type === "board" && n.workspaceId === prev.activeWorkspaceId
+        );
+        nextActiveBoardId = remainingInWorkspace[0]?.id ?? null;
+      }
+      return { ...prev, nodes: remainingNodes, activeBoardId: nextActiveBoardId };
     });
   };
 
@@ -175,6 +217,90 @@ export function BoardsProvider({ children }) {
       nodes: prev.nodes.map((n) => (n.id === id ? { ...n, collapsed: !n.collapsed } : n)),
     }));
   };
+
+  // ============================================================
+  // WORKSPACES
+  // ============================================================
+  const switchWorkspace = (id) => {
+    if (id === activeWorkspaceId) return;
+    if (!workspaces.some((w) => w.id === id)) return;
+    setState((prev) => {
+      const boardsInWorkspace = prev.nodes.filter((n) => n.type === "board" && n.workspaceId === id);
+      return {
+        ...prev,
+        activeWorkspaceId: id,
+        activeBoardId: boardsInWorkspace[0]?.id ?? null,
+        recentWorkspaceIds: [id, ...prev.recentWorkspaceIds.filter((w) => w !== id)].slice(0, MAX_RECENT_WORKSPACES),
+      };
+    });
+  };
+
+  const createWorkspace = (name) => {
+    const trimmed = (name || "").trim();
+    if (!trimmed) return;
+    const id = generateId("w");
+    setState((prev) => ({
+      ...prev,
+      activeWorkspaceId: id,
+      activeBoardId: null,
+      workspaces: [...prev.workspaces, { id, name: trimmed }],
+      recentWorkspaceIds: [id, ...prev.recentWorkspaceIds.filter((w) => w !== id)].slice(0, MAX_RECENT_WORKSPACES),
+    }));
+  };
+
+  const renameWorkspace = (id, name) => {
+    const trimmed = (name || "").trim();
+    if (!trimmed) return;
+    setState((prev) => ({
+      ...prev,
+      workspaces: prev.workspaces.map((w) => (w.id === id ? { ...w, name: trimmed } : w)),
+    }));
+  };
+
+  const deleteWorkspace = (id) => {
+    if (workspaces.length <= 1) {
+      alert("You must have at least one workspace.");
+      return;
+    }
+    const target = workspaces.find((w) => w.id === id);
+    if (!target) return;
+    if (!confirm(`Delete workspace "${target.name}" and everything inside it? This cannot be undone.`)) return;
+
+    allNodes
+      .filter((n) => n.workspaceId === id && n.type === "board")
+      .forEach((b) => {
+        LEGACY_KEYS.forEach((key) => localStorage.removeItem(boardKey(key, b.id)));
+      });
+
+    setState((prev) => {
+      const remainingWorkspaces = prev.workspaces.filter((w) => w.id !== id);
+      const remainingNodes = prev.nodes.filter((n) => n.workspaceId !== id);
+      const remainingRecent = prev.recentWorkspaceIds.filter((w) => w !== id);
+
+      let nextActiveWorkspaceId = prev.activeWorkspaceId;
+      let nextActiveBoardId = prev.activeBoardId;
+      if (prev.activeWorkspaceId === id) {
+        nextActiveWorkspaceId = remainingRecent[0] || remainingWorkspaces[0].id;
+        const boardsInNext = remainingNodes.filter(
+          (n) => n.type === "board" && n.workspaceId === nextActiveWorkspaceId
+        );
+        nextActiveBoardId = boardsInNext[0]?.id ?? null;
+      }
+
+      return {
+        ...prev,
+        workspaces: remainingWorkspaces,
+        nodes: remainingNodes,
+        activeWorkspaceId: nextActiveWorkspaceId,
+        activeBoardId: nextActiveBoardId,
+        recentWorkspaceIds: remainingRecent.length ? remainingRecent : [nextActiveWorkspaceId],
+      };
+    });
+  };
+
+  const recentWorkspaces = recentWorkspaceIds
+    .map((id) => workspaces.find((w) => w.id === id))
+    .filter(Boolean);
 
   return (
     <BoardsContext.Provider
@@ -187,6 +313,13 @@ export function BoardsProvider({ children }) {
         renameNode,
         deleteNode,
         toggleFolderCollapsed,
+        workspaces,
+        activeWorkspaceId,
+        recentWorkspaces,
+        switchWorkspace,
+        createWorkspace,
+        renameWorkspace,
+        deleteWorkspace,
       }}
     >
       {children}

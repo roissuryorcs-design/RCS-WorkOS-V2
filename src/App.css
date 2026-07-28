@@ -44,15 +44,16 @@ body.light {
   --bg-secondary: #f5f6f8;
   --bg-sidebar: #e7e9ed;
   --bg-hover: #e5e7eb;
-  --bg-active: #dde0e5;
+  --bg-active: #c7ccd6;
+  --bg-sidebar-hover: #d5d9e0;
   --bg-input: #f5f6f8;
   --bg-modal: #f5f6f8;
   --bg-card: #f5f6f8;
 
   --text-primary: #1a1a2e;
   --text-secondary: #4b5563;
-  --text-muted: #6b7280;
-  --text-light: #9ca3af;
+  --text-muted: #5b6472;
+  --text-light: #78808f;
 
   /* Border digelapkan lagi karena bg-secondary sekarang lebih gelap
      dari sebelumnya, supaya garis tabel/kartu tetap jelas kontras. */
@@ -68,9 +69,9 @@ body.light {
   --btn-primary-hover: #2563eb;
   --btn-primary-text: #ffffff;
 
-  --btn-secondary-bg: transparent;
-  --btn-secondary-border: #d1d5db;
-  --btn-secondary-text: #4b5563;
+  --btn-secondary-bg: #ffffff;
+  --btn-secondary-border: #adb4c0;
+  --btn-secondary-text: #1f2937;
 
   --status-todo: #9ca3af;
   --status-working: #3b82f6;
@@ -94,6 +95,7 @@ body.dark {
   --bg-sidebar: #1a1d27;
   --bg-hover: #2a2d3a;
   --bg-active: #363c50;
+  --bg-sidebar-hover: #2a2d3a;
   --bg-input: #252837;
   --bg-modal: #1a1d27;
   --bg-card: #1a1d27;
@@ -179,8 +181,8 @@ body.dark {
    SIDEBAR - FIXED WIDTH
    ============================================================ */
 .sidebar {
-  width: 280px;
-  min-width: 280px;
+  width: 300px;
+  min-width: 300px;
   height: 100vh;
   background: var(--bg-sidebar);
   border-right: 1px solid var(--border-color);

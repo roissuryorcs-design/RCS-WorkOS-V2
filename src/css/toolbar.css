@@ -17,12 +17,13 @@
 
 .toolbar-search {
   padding: 6px 12px;
-  border: 1px solid var(--border-dark);
+  border: 1px solid var(--btn-secondary-border);
   border-radius: 4px;
   font-size: 13px;
   width: 200px;
-  background: var(--bg-input);
+  background: var(--btn-secondary-bg);
   color: var(--text-primary);
+  box-shadow: var(--shadow-sm);
 }
 
 .toolbar-add-btn {
@@ -49,6 +50,8 @@
   border-radius: 4px;
   cursor: pointer;
   font-size: 13px;
+  font-weight: 500;
+  box-shadow: var(--shadow-sm);
   transition: 0.2s;
 }
 
@@ -57,6 +60,7 @@
 .toolbar-theme-btn:hover,
 .toolbar-column-btn:hover {
   background: var(--bg-hover);
+  border-color: var(--border-dark);
 }
 
 .toolbar-theme-btn {

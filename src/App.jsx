@@ -875,6 +875,24 @@ function BoardWorkspace({ boardId }) {
   );
 }
 
+function EmptyWorkspaceState() {
+  const { createBoard } = useBoards();
+
+  const handleCreateBoard = () => {
+    const name = prompt("New board name:");
+    if (name && name.trim()) createBoard(name.trim(), null);
+  };
+
+  return (
+    <div className="main-content" style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh" }}>
+      <div style={{ textAlign: "center", color: "var(--text-secondary)" }}>
+        <p style={{ fontSize: "16px", marginBottom: "16px" }}>This workspace doesn't have any boards yet.</p>
+        <button className="tree-add-btn" onClick={handleCreateBoard}>+ Create board</button>
+      </div>
+    </div>
+  );
+}
+
 function AppShellInner() {
   const { activeBoardId } = useBoards();
 
@@ -914,12 +932,16 @@ function AppShellInner() {
         onRemoveFavorite={removeFavorite}
       />
 
-      <ColumnProvider key={activeBoardId} boardId={activeBoardId}>
-        <UpdateProvider boardId={activeBoardId}>
-          <BoardWorkspace boardId={activeBoardId} />
-          <UpdatePanel />
-        </UpdateProvider>
-      </ColumnProvider>
+      {activeBoardId ? (
+        <ColumnProvider key={activeBoardId} boardId={activeBoardId}>
+          <UpdateProvider boardId={activeBoardId}>
+            <BoardWorkspace boardId={activeBoardId} />
+            <UpdatePanel />
+          </UpdateProvider>
+        </ColumnProvider>
+      ) : (
+        <EmptyWorkspaceState />
+      )}
     </div>
   );
 }

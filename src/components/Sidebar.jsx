@@ -2,6 +2,7 @@ import { useState } from "react";
 import "../css/sidebar.css";
 import Logo from "./Logo";
 import { useBoards } from "../context/BoardsContext";
+import WorkspaceSwitcher from "./WorkspaceSwitcher";
 
 export default function Sidebar({ favorites, onAddFavorite, onRemoveFavorite }) {
   const {
@@ -148,7 +149,7 @@ export default function Sidebar({ favorites, onAddFavorite, onRemoveFavorite }) 
       </div>
 
       <div className="sidebar-section">
-        <div className="section-title">FOREL FPSO</div>
+        <WorkspaceSwitcher />
         {topLevelNodes.map((node) => (node.type === "folder" ? renderFolder(node) : renderBoard(node)))}
         <div className="tree-add-btn" onClick={() => handleAddBoard(null)}>+ Add board</div>
         <div className="tree-add-btn" onClick={() => handleAddFolder(null)}>+ Add folder</div>
