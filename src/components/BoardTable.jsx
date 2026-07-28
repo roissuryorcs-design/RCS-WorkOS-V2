@@ -2,30 +2,23 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import Row from "./Row";
 import ResizableHeader from "./ResizableHeader";
 import { useColumns } from "../context/ColumnContext";
-import { 
-  DEFAULT_GROUP,
-  loadGroups, 
-  saveGroups, 
-  deleteGroupSafe, 
-  addGroupSafe,
-  ensureGroupExists,
-  getDefaultItems
-} from "../data/treeData";
+import { DEFAULT_GROUP } from "../data/treeData";
 
 export default function BoardTable({
   items,
-  groups: externalGroups,
-  groupColors: externalGroupColors,
-  onUpdateGroupColor: externalOnUpdateGroupColor,
+  groups,
+  groupColors,
+  onUpdateGroupColor,
   onUpdateItem,
   onDeleteItem,
-  onAddGroup: externalOnAddGroup,
-  onDeleteGroup: externalOnDeleteGroup,
+  onAddGroup,
+  onDeleteGroup,
   onAddItem,
   onAddSubItem,
   onOpenStatusManager,
   onOpenFormula,
-  onRenameGroup: externalOnRenameGroup,
+  onRenameGroup,
+  onReorderGroups,
   onOpenAddColumn,
   defaultGroupName = DEFAULT_GROUP.title,
 }) {
@@ -38,41 +31,6 @@ export default function BoardTable({
     reorderColumns,
     visibleColumns,
   } = useColumns();
-
-  const [groups, setGroups] = useState(() => {
-    if (externalGroups && externalGroups.length > 0) {
-      return externalGroups;
-    }
-    return loadGroups();
-  });
-
-  const [groupColors, setGroupColors] = useState(() => {
-    if (externalGroupColors && Object.keys(externalGroupColors).length > 0) {
-      return externalGroupColors;
-    }
-    const defaultColors = {};
-    const loaded = loadGroups();
-    loaded.forEach(g => {
-      defaultColors[g] = '#3b82f6';
-    });
-    return defaultColors;
-  });
-
-  useEffect(() => {
-    saveGroups(groups);
-  }, [groups]);
-
-  useEffect(() => {
-    if (externalGroups && externalGroups.length > 0) {
-      setGroups(externalGroups);
-    }
-  }, [externalGroups]);
-
-  useEffect(() => {
-    if (externalGroupColors && Object.keys(externalGroupColors).length > 0) {
-      setGroupColors(externalGroupColors);
-    }
-  }, [externalGroupColors]);
 
   // ============================================================
   // 🔥 DRAG & DROP GROUP - SIMPAN LANGSUNG NAMA GROUP
@@ -91,9 +49,10 @@ export default function BoardTable({
 
     if (currentOrder.length === 0) return;
 
-    setGroups(currentOrder);
-    localStorage.setItem('board-groups', JSON.stringify(currentOrder));
-  }, []);
+    if (onReorderGroups) {
+      onReorderGroups(currentOrder);
+    }
+  }, [onReorderGroups]);
 
   // ============================================================
   // 🔥 DRAG & DROP HANDLER GROUP
@@ -193,30 +152,15 @@ export default function BoardTable({
   const closePopup = () => setPopupGroup(null);
 
   const handleRenameGroup = (oldName, newName) => {
-    if (externalOnRenameGroup) {
-      externalOnRenameGroup(oldName, newName);
+    if (onRenameGroup) {
+      onRenameGroup(oldName, newName);
     }
-    
-    setGroups(prev => prev.map(g => g === oldName ? newName : g));
-    setGroupColors(prev => {
-      const newColors = { ...prev };
-      newColors[newName] = prev[oldName];
-      delete newColors[oldName];
-      return newColors;
-    });
   };
 
   const handleDeleteGroup = (groupName) => {
-    if (externalOnDeleteGroup) {
-      externalOnDeleteGroup(groupName);
+    if (onDeleteGroup) {
+      onDeleteGroup(groupName);
     }
-    
-    setGroups(prev => prev.filter(g => g !== groupName));
-    setGroupColors(prev => {
-      const newColors = { ...prev };
-      delete newColors[groupName];
-      return newColors;
-    });
   };
 
   // ============================================================
@@ -236,12 +180,9 @@ export default function BoardTable({
       return;
     }
 
-    if (externalOnAddGroup) {
-      externalOnAddGroup(newTitle.trim());
+    if (onAddGroup) {
+      onAddGroup(newTitle.trim());
     }
-
-    setGroups(prev => [...prev, newTitle.trim()]);
-    setGroupColors(prev => ({ ...prev, [newTitle.trim()]: '#757575' }));
 
     if (onAddItem) {
       onAddItem(newTitle.trim());
@@ -249,10 +190,9 @@ export default function BoardTable({
   };
 
   const handleUpdateGroupColor = (groupName, color) => {
-    if (externalOnUpdateGroupColor) {
-      externalOnUpdateGroupColor(groupName, color);
+    if (onUpdateGroupColor) {
+      onUpdateGroupColor(groupName, color);
     }
-    setGroupColors(prev => ({ ...prev, [groupName]: color }));
   };
 
   const handleAddItem = (groupName) => {
@@ -359,8 +299,17 @@ export default function BoardTable({
   const totalWidth = '100%';
 
   if (groups.length === 0) {
-    setGroups([defaultGroupName]);
-    return null;
+    return (
+      <div
+        className="board-empty-state"
+        style={{ padding: '60px 20px', textAlign: 'center', color: 'var(--text-secondary, #8a94a6)' }}
+      >
+        <p style={{ marginBottom: '12px' }}>No groups yet.</p>
+        <button className="add-group-btn" onClick={handleAddGroup}>
+          + Add group
+        </button>
+      </div>
+    );
   }
 
   const getDisplayTitle = (groupName) => {

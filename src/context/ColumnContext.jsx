@@ -1,4 +1,5 @@
 import { createContext, useState, useContext, useEffect } from "react";
+import { boardKey } from "../utils/boardStorage";
 
 const ColumnContext = createContext();
 
@@ -28,10 +29,10 @@ const defaultColumns = [
   { id: "rev", label: "REV", type: "text", width: 80, visible: true },
 ];
 
-export function ColumnProvider({ children }) {
+export function ColumnProvider({ children, boardId }) {
   const [columns, setColumns] = useState(() => {
     try {
-      const saved = localStorage.getItem("forelColumns");
+      const saved = localStorage.getItem(boardKey("forelColumns", boardId));
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
@@ -64,11 +65,11 @@ export function ColumnProvider({ children }) {
 
   useEffect(() => {
     try {
-      localStorage.setItem("forelColumns", JSON.stringify(columns));
+      localStorage.setItem(boardKey("forelColumns", boardId), JSON.stringify(columns));
     } catch (e) {
       console.error('Error saving columns to localStorage:', e);
     }
-  }, [columns]);
+  }, [columns, boardId]);
 
   const updateColumnWidth = (id, width) => {
     if (!id) return;

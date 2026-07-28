@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { ThemeProvider } from "./context/ThemeContext";
 import { ColumnProvider, useColumns } from "./context/ColumnContext";
+import { BoardsProvider, useBoards } from "./context/BoardsContext";
+import { boardKey } from "./utils/boardStorage";
 import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
 import Toolbar from "./components/Toolbar";
@@ -13,11 +15,10 @@ import "./App.css";
 import { UpdateProvider } from './context/UpdateContext';
 import UpdatePanel from './components/UpdatePanel';
 
-function AppContent() {
+function BoardWorkspace({ boardId }) {
   const [items, setItems] = useState([]);
   const [statuses, setStatuses] = useState({});
   const [search, setSearch] = useState("");
-  const [favorites, setFavorites] = useState([]);
   const [history, setHistory] = useState([]);
   const [showStatusManager, setShowStatusManager] = useState(false);
   const [showColumnManager, setShowColumnManager] = useState(false);
@@ -34,17 +35,17 @@ function AppContent() {
   // 🔥 STATE GROUPS - LANGSUNG DARI LOCALSTORAGE
   // ============================================================
   const [groups, setGroups] = useState(() => {
-    const saved = localStorage.getItem('board-groups');
+    const saved = localStorage.getItem(boardKey('board-groups', boardId));
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
           // ✅ NORMALISASI: "Default" → "Default Group"
-          const normalized = parsed.map(g => 
+          const normalized = parsed.map(g =>
             g === 'Default' ? 'Default Group' : g
           );
           // ✅ SIMPAN KEMBALI KE LOCALSTORAGE
-          localStorage.setItem('board-groups', JSON.stringify(normalized));
+          localStorage.setItem(boardKey('board-groups', boardId), JSON.stringify(normalized));
           return normalized;
         }
       } catch (e) {
@@ -58,7 +59,7 @@ function AppContent() {
   // 🔥 STATE GROUP COLORS - DARI LOCALSTORAGE, DEFAULT BIRU
   // ============================================================
   const [groupColors, setGroupColors] = useState(() => {
-    const saved = localStorage.getItem('forelGroupColors');
+    const saved = localStorage.getItem(boardKey('forelGroupColors', boardId));
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -79,10 +80,9 @@ function AppContent() {
   // LOAD DATA
   // ============================================================
   useEffect(() => {
-    const savedItems = localStorage.getItem("forelItems");
-    const savedStatuses = localStorage.getItem("forelStatuses");
-    const savedFavs = localStorage.getItem("forelFavorites");
-    const savedGroupColors = localStorage.getItem("forelGroupColors");
+    const savedItems = localStorage.getItem(boardKey("forelItems", boardId));
+    const savedStatuses = localStorage.getItem(boardKey("forelStatuses", boardId));
+    const savedGroupColors = localStorage.getItem(boardKey("forelGroupColors", boardId));
 
     const defaultStatuses = { Default: "#9ca3af" };
 
@@ -112,72 +112,46 @@ function AppContent() {
       };
       loadedItems = ensureChildren(parsedItems);
       groupsFromItems = [...new Set(loadedItems.map(item => item.group))];
-      
+
       // ✅ NORMALISASI: "Default" → "Default Group"
-      groupsFromItems = groupsFromItems.map(g => 
+      groupsFromItems = groupsFromItems.map(g =>
         g === 'Default' ? 'Default Group' : g
       );
-      
+
       if (groupsFromItems.length === 0) {
         groupsFromItems = ["Default Group"];
       }
     } else {
       const defaultGroup = "Default Group";
       groupsFromItems = [defaultGroup];
-      
-      loadedItems = [
-        { 
-          id: 1, 
-          group: defaultGroup, 
-          item: "Task 1", 
-          document: "DOC-001", 
-          people: "Assign to...", 
-          status: "Default", 
-          dueDate: "", 
-          rev: "R0",
-          children: [],
-          isExpanded: false,
-        },
-        { 
-          id: 2, 
-          group: defaultGroup, 
-          item: "Task 2", 
-          document: "DOC-002", 
-          people: "Assign to...", 
-          status: "Default", 
-          dueDate: "", 
-          rev: "R0",
-          children: [],
-          isExpanded: false,
-        },
-        { 
-          id: 3, 
-          group: defaultGroup, 
-          item: "Task 3", 
-          document: "DOC-003", 
-          people: "Assign to...", 
-          status: "Default", 
-          dueDate: "", 
-          rev: "R0",
-          children: [],
-          isExpanded: false,
-        },
-      ];
-      
-      localStorage.setItem("forelItems", JSON.stringify(loadedItems));
+
+      loadedItems = Array.from({ length: 3 }, (_, i) => ({
+        id: Date.now() + i + Math.random() * 1000,
+        group: defaultGroup,
+        item: `Task ${i + 1}`,
+        document: `DOC-${String(i + 1).padStart(3, '0')}`,
+        people: "Assign to...",
+        status: "Default",
+        dueDate: "",
+        rev: "R0",
+        children: [],
+        isExpanded: false,
+      }));
+
+      localStorage.setItem(boardKey("forelItems", boardId), JSON.stringify(loadedItems));
     }
 
     // AUTO-ADD 3 ITEMS
     let finalItems = loadedItems;
     let needsAutoAdd = false;
-    
+
     groupsFromItems.forEach(group => {
       const groupItems = finalItems.filter(item => item.group === group);
       if (groupItems.length === 0) {
         needsAutoAdd = true;
       }
     });
-    
+
     if (needsAutoAdd && groupsFromItems.length > 0) {
       groupsFromItems.forEach(group => {
         const groupItems = finalItems.filter(item => item.group === group);
@@ -199,43 +173,37 @@ function AppContent() {
           console.log(`✅ Auto-added 3 items to group "${group}"`);
         }
       });
-      
-      localStorage.setItem("forelItems", JSON.stringify(finalItems));
+
+      localStorage.setItem(boardKey("forelItems", boardId), JSON.stringify(finalItems));
       setHasAutoAdded(true);
     }
 
     setItems(finalItems);
 
     // ✅ UPDATE groups dari localStorage (jika ada) - DENGAN SIMPAN KEMBALI
-    const savedGroups = localStorage.getItem('board-groups');
+    const savedGroups = localStorage.getItem(boardKey('board-groups', boardId));
     if (savedGroups) {
       try {
         const parsed = JSON.parse(savedGroups);
         if (Array.isArray(parsed) && parsed.length > 0) {
           // ✅ NORMALISASI
-          const normalized = parsed.map(g => 
+          const normalized = parsed.map(g =>
             g === 'Default' ? 'Default Group' : g
           );
           setGroups(normalized);
           // ✅ SIMPAN KEMBALI KE LOCALSTORAGE
-          localStorage.setItem('board-groups', JSON.stringify(normalized));
+          localStorage.setItem(boardKey('board-groups', boardId), JSON.stringify(normalized));
         } else {
           setGroups(groupsFromItems);
-          localStorage.setItem('board-groups', JSON.stringify(groupsFromItems));
+          localStorage.setItem(boardKey('board-groups', boardId), JSON.stringify(groupsFromItems));
         }
       } catch (e) {
         setGroups(groupsFromItems);
-        localStorage.setItem('board-groups', JSON.stringify(groupsFromItems));
+        localStorage.setItem(boardKey('board-groups', boardId), JSON.stringify(groupsFromItems));
       }
     } else {
       setGroups(groupsFromItems);
-      localStorage.setItem('board-groups', JSON.stringify(groupsFromItems));
-    }
-
-    if (savedFavs) {
-      setFavorites(JSON.parse(savedFavs));
-    } else {
-      setFavorites(["Workspace", "Administration"]);
+      localStorage.setItem(boardKey('board-groups', boardId), JSON.stringify(groupsFromItems));
     }
 
     // ✅ LOAD GROUP COLORS
@@ -256,12 +224,12 @@ function AppContent() {
       if (!updated['Default Group']) {
         updated['Default Group'] = '#3b82f6';
       }
-      localStorage.setItem('forelGroupColors', JSON.stringify(updated));
+      localStorage.setItem(boardKey('forelGroupColors', boardId), JSON.stringify(updated));
       return updated;
     });
 
     setIsInitialized(true);
-  }, []);
+  }, [boardId]);
 
   // ============================================================
   // AUTO-ADD 3 ITEMS (REAL-TIME)
@@ -269,22 +237,22 @@ function AppContent() {
   useEffect(() => {
     if (!isInitialized) return;
     if (hasAutoAdded) return;
-    
+
     const groupsFromItems = [...new Set(items.map(item => item.group))];
     let needsAutoAdd = false;
     const groupsToCheck = groupsFromItems.length > 0 ? groupsFromItems : ['Default Group'];
-    
+
     groupsToCheck.forEach(group => {
       const groupItems = items.filter(item => item.group === group);
       if (groupItems.length === 0) {
         needsAutoAdd = true;
       }
     });
-    
+
     if (needsAutoAdd && groupsToCheck.length > 0) {
       setHasAutoAdded(true);
       let updatedItems = [...items];
-      
+
       groupsToCheck.forEach(group => {
         const groupItems = updatedItems.filter(item => item.group === group);
         if (groupItems.length === 0) {
@@ -305,29 +273,29 @@ function AppContent() {
           console.log(`✅ Auto-added 3 items to group "${group}" (real-time)`);
         }
       });
-      
+
       setItems(updatedItems);
-      localStorage.setItem("forelItems", JSON.stringify(updatedItems));
-      
+      localStorage.setItem(boardKey("forelItems", boardId), JSON.stringify(updatedItems));
+
       setTimeout(() => {
         setHasAutoAdded(false);
       }, 1000);
     }
-  }, [items, isInitialized]);
+  }, [items, isInitialized, boardId]);
 
   // ============================================================
   // 🔥 FORCE AUTO-ADD 3 ITEMS KE DEFAULT GROUP
   // ============================================================
   useEffect(() => {
     if (!isInitialized) return;
-    
+
     // Cek apakah Default Group ada di groups
     const hasDefaultGroup = groups && Array.isArray(groups) && groups.includes('Default Group');
     if (!hasDefaultGroup) return;
-    
+
     // Cek items di Default Group
     const defaultItems = items.filter(item => item && item.group === 'Default Group');
-    
+
     // Jika kurang dari 3 item, tambahkan
     if (defaultItems.length < 3) {
       const startIndex = defaultItems.length;
@@ -343,36 +311,40 @@ function AppContent() {
         children: [],
         isExpanded: false,
       }));
-      
+
       if (newItems.length > 0) {
         const updatedItems = [...items, ...newItems];
         setItems(updatedItems);
-        localStorage.setItem("forelItems", JSON.stringify(updatedItems));
+        localStorage.setItem(boardKey("forelItems", boardId), JSON.stringify(updatedItems));
         console.log(`✅ Auto-added ${newItems.length} items to Default Group (total: ${defaultItems.length + newItems.length})`);
       }
     }
-  }, [items, groups, isInitialized]);
+  }, [items, groups, isInitialized, boardId]);
 
   // ============================================================
   // AUTO-SAVE KE localStorage
   // ============================================================
   useEffect(() => {
     if (isInitialized) {
-      localStorage.setItem("forelItems", JSON.stringify(items));
+      localStorage.setItem(boardKey("forelItems", boardId), JSON.stringify(items));
     }
-  }, [items, isInitialized]);
+  }, [items, isInitialized, boardId]);
 
   useEffect(() => {
-    localStorage.setItem("forelStatuses", JSON.stringify(statuses));
-  }, [statuses]);
+    localStorage.setItem(boardKey("forelStatuses", boardId), JSON.stringify(statuses));
+  }, [statuses, boardId]);
 
   useEffect(() => {
-    localStorage.setItem("forelFavorites", JSON.stringify(favorites));
-  }, [favorites]);
+    localStorage.setItem(boardKey("forelGroupColors", boardId), JSON.stringify(groupColors));
+  }, [groupColors, boardId]);
 
+  // ✅ Persist groups whenever they change (single source of truth —
+  // renameGroup/deleteGroup/addGroup only ever call setGroups now).
   useEffect(() => {
-    localStorage.setItem("forelGroupColors", JSON.stringify(groupColors));
-  }, [groupColors]);
+    if (isInitialized) {
+      localStorage.setItem(boardKey('board-groups', boardId), JSON.stringify(groups));
+    }
+  }, [groups, isInitialized, boardId]);
 
   // ============================================================
   // UNDO
@@ -530,7 +502,7 @@ function AppContent() {
   const addItem = (groupName) => {
     const firstStatus = "Default";
     const groupItems = items.filter(item => item.group === groupName);
-    
+
     const newItem = {
       id: Date.now(),
       group: groupName || "Default Group",
@@ -556,7 +528,7 @@ function AppContent() {
       alert(`Group "${newName.trim()}" already exists!`);
       return;
     }
-    
+
     const renameGroupRecursive = (items) => {
       return items.map((it) => {
         const updated = it.group === oldName ? { ...it, group: newName.trim() } : it;
@@ -569,19 +541,22 @@ function AppContent() {
 
     const newItems = renameGroupRecursive(items);
     saveHistory(newItems);
-    
+
     const newColors = { ...groupColors };
     if (newColors[oldName] !== undefined) {
       newColors[newName.trim()] = newColors[oldName];
       delete newColors[oldName];
       setGroupColors(newColors);
     }
-    
+
     setGroups(prev => prev.map(g => g === oldName ? newName.trim() : g));
-    localStorage.setItem('board-groups', JSON.stringify(groups));
   };
 
   const deleteGroup = (groupName) => {
+    if (groups.length <= 1) {
+      alert("Cannot delete the last group. At least one group must remain.");
+      return;
+    }
     if (!confirm(`Delete entire group "${groupName}" and all its items?`)) return;
     const newItems = items.filter((it) => it.group !== groupName);
     saveHistory(newItems);
@@ -590,7 +565,6 @@ function AppContent() {
     setGroupColors(newColors);
     setHasAutoAdded(false);
     setGroups(prev => prev.filter(g => g !== groupName));
-    localStorage.setItem('board-groups', JSON.stringify(groups));
   };
 
   // ============================================================
@@ -603,10 +577,10 @@ function AppContent() {
       alert(`Group "${name.trim()}" already exists!`);
       return;
     }
-    
+
     const groupName = name.trim();
     const firstStatus = "Default";
-    
+
     const newItems = Array.from({ length: 3 }, (_, i) => ({
       id: Date.now() + i + Math.random() * 1000,
       group: groupName,
@@ -619,19 +593,23 @@ function AppContent() {
       children: [],
       isExpanded: false,
     }));
-    
+
     const updatedItems = [...items, ...newItems];
     saveHistory(updatedItems);
     setGroupColors((prev) => ({ ...prev, [groupName]: "#3b82f6" }));
     setHasAutoAdded(false);
     setGroups(prev => [...prev, groupName]);
-    localStorage.setItem('board-groups', JSON.stringify(groups));
-    
+
     console.log(`✅ Added new group "${groupName}" with 3 items`);
   };
 
   const updateGroupColor = (groupName, color) => {
     setGroupColors((prev) => ({ ...prev, [groupName]: color }));
+  };
+
+  const reorderGroups = (newOrder) => {
+    if (!Array.isArray(newOrder) || newOrder.length === 0) return;
+    setGroups(newOrder);
   };
 
   // ============================================================
@@ -657,7 +635,7 @@ function AppContent() {
       return;
     }
     const remainingStatus = currentKeys.find((k) => k !== name) || "Default";
-    
+
     const updateStatusRecursive = (items) => {
       return items.map((it) => {
         const updated = it.status === name ? { ...it, status: remainingStatus } : it;
@@ -686,7 +664,7 @@ function AppContent() {
     delete newStatuses[oldName];
     newStatuses[newName.trim()] = color;
     setStatuses(newStatuses);
-    
+
     const renameStatusRecursive = (items) => {
       return items.map((it) => {
         const updated = it.status === oldName ? { ...it, status: newName.trim() } : it;
@@ -716,21 +694,6 @@ function AppContent() {
   };
 
   // ============================================================
-  // FAVORITES
-  // ============================================================
-  const addFavorite = () => {
-    const name = prompt("Enter favorite name:");
-    if (name && name.trim()) {
-      setFavorites([...favorites, name.trim()]);
-    }
-  };
-
-  const removeFavorite = (index) => {
-    const newFavs = favorites.filter((_, i) => i !== index);
-    setFavorites(newFavs);
-  };
-
-  // ============================================================
   // EXPORT
   // ============================================================
   const exportData = () => {
@@ -751,7 +714,7 @@ function AppContent() {
     const lowerSearch = searchTerm.toLowerCase();
     return items
       .map((item) => {
-        const matches = 
+        const matches =
           item.item.toLowerCase().includes(lowerSearch) ||
           (item.document && item.document.toLowerCase().includes(lowerSearch)) ||
           (item.people && item.people.toLowerCase().includes(lowerSearch));
@@ -798,8 +761,8 @@ function AppContent() {
     return count;
   };
 
-  const filteredItems = search.trim() === "" 
-    ? items 
+  const filteredItems = search.trim() === ""
+    ? items
     : filterItemsRecursive(items, search);
 
   const totalItems = countAllItems(filteredItems);
@@ -815,15 +778,9 @@ function AppContent() {
   // RENDER
   // ============================================================
   return (
-    <div className="app-container">
-      <Sidebar
-        favorites={favorites}
-        onAddFavorite={addFavorite}
-        onRemoveFavorite={removeFavorite}
-      />
-
+    <>
       <div className="main-content">
-        <Header groups={allGroups || []} />
+        <Header groups={allGroups || []} boardId={boardId} isReady={isInitialized} />
 
         <Toolbar
           search={search}
@@ -850,6 +807,7 @@ function AppContent() {
           onOpenStatusManager={openStatusManager}
           onOpenFormula={openFormulaEditor}
           onRenameGroup={renameGroup}
+          onReorderGroups={reorderGroups}
           onOpenAddColumn={() => setShowAddColumnPopup(true)}
         />
 
@@ -913,6 +871,55 @@ function AppContent() {
           onClose={() => setShowFormulaEditor(false)}
         />
       )}
+    </>
+  );
+}
+
+function AppShellInner() {
+  const { activeBoardId } = useBoards();
+
+  const [favorites, setFavorites] = useState(() => {
+    const saved = localStorage.getItem("forelFavorites");
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error('Error parsing favorites:', e);
+      }
+    }
+    return ["Workspace", "Administration"];
+  });
+
+  useEffect(() => {
+    localStorage.setItem("forelFavorites", JSON.stringify(favorites));
+  }, [favorites]);
+
+  const addFavorite = () => {
+    const name = prompt("Enter favorite name:");
+    if (name && name.trim()) {
+      setFavorites([...favorites, name.trim()]);
+    }
+  };
+
+  const removeFavorite = (index) => {
+    const newFavs = favorites.filter((_, i) => i !== index);
+    setFavorites(newFavs);
+  };
+
+  return (
+    <div className="app-container">
+      <Sidebar
+        favorites={favorites}
+        onAddFavorite={addFavorite}
+        onRemoveFavorite={removeFavorite}
+      />
+
+      <ColumnProvider key={activeBoardId} boardId={activeBoardId}>
+        <UpdateProvider boardId={activeBoardId}>
+          <BoardWorkspace boardId={activeBoardId} />
+          <UpdatePanel />
+        </UpdateProvider>
+      </ColumnProvider>
     </div>
   );
 }
@@ -920,12 +927,9 @@ function AppContent() {
 export default function App() {
   return (
     <ThemeProvider>
-      <ColumnProvider>
-        <UpdateProvider>
-          <AppContent />
-          <UpdatePanel />
-        </UpdateProvider>
-      </ColumnProvider>
+      <BoardsProvider>
+        <AppShellInner />
+      </BoardsProvider>
     </ThemeProvider>
   );
 }

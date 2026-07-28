@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { boardKey } from '../utils/boardStorage';
 
-const Header = ({ groups = [] }) => {
+const Header = ({ groups = [], boardId, isReady = true }) => {
   // 1. LOAD DARI LOCALSTORAGE
   const [title, setTitle] = useState(() => {
-    const saved = localStorage.getItem('forelBoardTitle');
+    const saved = localStorage.getItem(boardKey('forelBoardTitle', boardId));
     return saved && saved.trim() !== '' ? saved : 'BOARD TITLE';
   });
 
   const [subtitle, setSubtitle] = useState(() => {
-    const saved = localStorage.getItem('forelBoardSubtitle');
+    const saved = localStorage.getItem(boardKey('forelBoardSubtitle', boardId));
     return saved && saved.trim() !== '' ? saved : 'Sub Title / Description';
   });
 
@@ -17,15 +18,17 @@ const Header = ({ groups = [] }) => {
 
   // 2. SIMPAN KE LOCALSTORAGE
   useEffect(() => {
-    localStorage.setItem('forelBoardTitle', title);
-  }, [title]);
+    localStorage.setItem(boardKey('forelBoardTitle', boardId), title);
+  }, [title, boardId]);
 
   useEffect(() => {
-    localStorage.setItem('forelBoardSubtitle', subtitle);
-  }, [subtitle]);
+    localStorage.setItem(boardKey('forelBoardSubtitle', boardId), subtitle);
+  }, [subtitle, boardId]);
 
   // 3. LOGIKA RESET - HANYA JIKA USER MENGHAPUS SEMUA GROUP
   useEffect(() => {
+    // Belum siap (board masih loading) - jangan sentuh apa pun
+    if (!isReady) return;
     // Jika baru pertama kali render (refresh), skip reset
     if (isInitial.current) {
       isInitial.current = false;
@@ -37,10 +40,10 @@ const Header = ({ groups = [] }) => {
       console.log('🔄 No groups found, resetting header to default');
       setTitle('BOARD TITLE');
       setSubtitle('Sub Title / Description');
-      localStorage.setItem('forelBoardTitle', 'BOARD TITLE');
-      localStorage.setItem('forelBoardSubtitle', 'Sub Title / Description');
+      localStorage.setItem(boardKey('forelBoardTitle', boardId), 'BOARD TITLE');
+      localStorage.setItem(boardKey('forelBoardSubtitle', boardId), 'Sub Title / Description');
     }
-  }, [groups]);
+  }, [groups, isReady, boardId]);
 
   // 4. HANDLE BLUR
   const handleBlur = (e, setter, current) => {

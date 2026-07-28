@@ -1,12 +1,13 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { boardKey } from '../utils/boardStorage';
 
 const UpdateContext = createContext();
 
 export const useUpdates = () => useContext(UpdateContext);
 
-export const UpdateProvider = ({ children }) => {
+export const UpdateProvider = ({ children, boardId }) => {
   const [updates, setUpdates] = useState(() => {
-    const saved = localStorage.getItem('forelUpdates');
+    const saved = localStorage.getItem(boardKey('forelUpdates', boardId));
     return saved ? JSON.parse(saved) : [];
   });
 
@@ -14,8 +15,8 @@ export const UpdateProvider = ({ children }) => {
   const [isPanelOpen, setIsPanelOpen] = useState(false);
 
   useEffect(() => {
-    localStorage.setItem('forelUpdates', JSON.stringify(updates));
-  }, [updates]);
+    localStorage.setItem(boardKey('forelUpdates', boardId), JSON.stringify(updates));
+  }, [updates, boardId]);
 
   // ============================================================
   // ADD UPDATE
