@@ -616,7 +616,7 @@ export default function BoardTable({
                   <div className="group-content">
                     {tasks.length > 0 ? (
                       <div className="table-wrapper">
-                        <table className="board-table" style={{ width: '100%', tableLayout: 'auto' }}>
+                        <table className="board-table" style={{ width: '100%', tableLayout: 'fixed' }}>
                           <thead>
                             <tr className="table-header-row">
                               {/* CHECKBOX - CENTER */}

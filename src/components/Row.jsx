@@ -222,8 +222,6 @@ export default function Row({
     backgroundColor: isSelected ? 'var(--bg-hover)' : 'var(--bg-secondary)',
     boxShadow: 'inset -2px 0 0 0 var(--border-color)',
     height: 'auto',
-    minWidth: '200px',
-    width: '100%',
   };
 
   const contentWrapperStyle = {
@@ -280,6 +278,9 @@ export default function Row({
                 className="row-cell row-item-cell"
                 style={{
                   ...itemCellStyle,
+                  width: `${col.width}px`,
+                  minWidth: `${col.width}px`,
+                  maxWidth: `${col.width}px`,
                   borderRight: isLast ? "none" : "2px solid var(--border-color)",
                 }}
               >

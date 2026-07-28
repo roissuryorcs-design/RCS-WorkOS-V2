@@ -1008,25 +1008,6 @@ tr:hover .btn-arrow-hover {
   50% { opacity: 0.3; }
 }
 
-/* ============================================================
-   🔥 FORCE KOLOM + FLEKSIBEL (TANPA MENGANGGU RESIZE)
-   ============================================================ */
-
-/* ✅ HANYA KOLOM "+" YANG DIPAKSA */
-.board-table thead th:last-child,
-.board-table tbody td:last-child {
-  width: 100% !important;
-  min-width: 50px !important;
-  max-width: none !important;
-  flex: 1 1 auto !important;
-}
-
-/* Pastikan tabel menggunakan auto layout */
-.board-table {
-  table-layout: auto !important;
-  width: 100% !important;
-}
-
 /* Responsive */
 @media (max-width: 600px) {
   .board-footer {
@@ -1043,10 +1024,22 @@ tr:hover .btn-arrow-hover {
    🔥 KOLOM + FLEKSIBEL DENGAN table-layout: auto
    ============================================================ */
 
-/* ✅ PAKAI table-layout: auto */
+/* ✅ PAKAI table-layout: fixed.
+   Dengan table-layout: auto, browser mendistribusikan sisa/kekurangan
+   lebar berdasarkan "slack" konten tiap kolom — kolom ITEM punya slack
+   terbesar (isinya pendek dibanding lebar kolomnya) sehingga browser
+   selalu menyusutkan/melebarkan ITEM duluan, bukan kolom "+".
+   table-layout: fixed membuat lebar tiap kolom murni mengikuti width
+   yang di-set di <th> baris pertama (lihat ResizableHeader.jsx & inline
+   style "+" di BoardTable.jsx) — kolom "+" adalah satu-satunya kolom
+   tanpa width tetap (width: auto), jadi hanya kolom itu yang menyerap
+   sisa/kekurangan ruang. Kolom lain (termasuk ITEM) tetap pada lebar
+   yang di-set/resize. width TIDAK dipatok 100% supaya saat total lebar
+   kolom > lebar container, tabel overflow dan men-scroll horizontal
+   (.board-scroll-container) alih-alih memaksa kolom menyusut. */
 .board-table {
-  table-layout: auto !important;
-  width: 100% !important;
+  table-layout: fixed !important;
+  width: auto !important;
   min-width: 100% !important;
 }
 
