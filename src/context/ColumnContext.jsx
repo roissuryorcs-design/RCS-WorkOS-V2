@@ -91,7 +91,20 @@ export function ColumnProvider({ children }) {
       newCol.statuses = { ...defaultStatuses };
       newCol.statusOrder = [...defaultStatusOrder];
     }
+    if (type === "formula") {
+      newCol.formula = "";
+    }
+    if (type === "timeline") {
+      newCol.width = 200;
+    }
     setColumns((prev) => [...prev, newCol]);
+  };
+
+  const updateColumnFormula = (id, formula) => {
+    if (!id) return;
+    setColumns((prev) =>
+      prev.map((col) => (col && col.id === id ? { ...col, formula } : col))
+    );
   };
 
   const deleteColumn = (id) => {
@@ -176,6 +189,7 @@ export function ColumnProvider({ children }) {
         resetColumns,
         updateColumnStatuses,
         updateColumnStatusOrder,
+        updateColumnFormula,
       }}
     >
       {children}

@@ -2,7 +2,13 @@ import { useState } from "react";
 import StatusCell from "./StatusCell";
 import FileAttachment from "./FileAttachment";
 import DateCell from "./DateCell";
+import PriorityCell from "./PriorityCell";
+import TimelineCell from "./TimelineCell";
+import PhoneCell from "./PhoneCell";
+import FormulaCell from "./FormulaCell";
+import ProgressCell from "./ProgressCell";
 import UpdateBubble from './UpdateBubble';
+import { evaluateFormula } from "../utils/formulaEngine";
 
 export default function Row({
   item,
@@ -19,6 +25,7 @@ export default function Row({
   depth = 0,
   maxDepth = 4,
   selectedItems = [],
+  numberPath = "",
 }) {
   // ✅ GUARD: Jika item undefined
   if (!item) {
@@ -82,6 +89,45 @@ export default function Row({
           />
         );
 
+      case "timeline":
+        return (
+          <TimelineCell
+            value={value}
+            onChange={(val) => onUpdate(item.id, col.id, val)}
+          />
+        );
+
+      case "priority":
+        return (
+          <PriorityCell
+            priority={value}
+            onChange={(val) => onUpdate(item.id, col.id, val)}
+          />
+        );
+
+      case "phone":
+        return (
+          <PhoneCell
+            value={value}
+            onChange={(val) => onUpdate(item.id, col.id, val)}
+          />
+        );
+
+      case "numbering":
+        return (
+          <span style={{ fontSize: 13, color: "var(--text-secondary)", fontWeight: 500 }}>
+            {numberPath}
+          </span>
+        );
+
+      case "formula":
+        return (
+          <FormulaCell
+            result={evaluateFormula(col.formula, item, visibleColumns)}
+            hasFormula={!!(col.formula && col.formula.trim())}
+          />
+        );
+
       case "number":
         return (
           <input
@@ -114,27 +160,11 @@ export default function Row({
         );
 
       case "progress":
-        const progress = parseInt(value) || 0;
         return (
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <div style={{
-              flex: 1,
-              height: 6,
-              background: "var(--border-color)",
-              borderRadius: 3,
-              overflow: "hidden",
-            }}>
-              <div style={{
-                width: `${Math.min(100, Math.max(0, progress))}%`,
-                height: "100%",
-                background: progress >= 100 ? "#22c55e" : "#3b82f6",
-                borderRadius: 3,
-              }} />
-            </div>
-            <span style={{ fontSize: 11, color: "var(--text-muted)", minWidth: 30 }}>
-              {progress}%
-            </span>
-          </div>
+          <ProgressCell
+            value={value}
+            onChange={(val) => onUpdate(item.id, col.id, val)}
+          />
         );
 
       case "files":
@@ -462,7 +492,7 @@ export default function Row({
 
       {/* ✅ PERBAIKAN UTAMA: Guard untuk children.map */}
       {hasChildren && expanded && children.length > 0 && (
-        children.map((child) => (
+        children.map((child, childIndex) => (
           <Row
             key={child.id || Math.random()}
             item={child}
@@ -479,6 +509,7 @@ export default function Row({
             onAddSubItem={onAddSubItem}
             maxDepth={maxDepth}
             selectedItems={selectedItems}
+            numberPath={`${numberPath}.${childIndex + 1}`}
           />
         ))
       )}

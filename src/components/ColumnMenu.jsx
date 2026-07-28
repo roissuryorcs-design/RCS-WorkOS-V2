@@ -5,6 +5,7 @@ export default function ColumnMenu({
   onRename,
   onToggle,
   onDelete,
+  onOpenFormula,
   onClose,
 }) {
   const [isRenaming, setIsRenaming] = useState(false);
@@ -127,6 +128,19 @@ export default function ColumnMenu({
             <button onClick={() => setIsRenaming(true)} style={menuStyle}>
               ✏️ Rename
             </button>
+
+            {/* Edit Formula - hanya untuk kolom formula */}
+            {column.type === "formula" && (
+              <button
+                onClick={() => {
+                  onOpenFormula(column.id);
+                  onClose();
+                }}
+                style={menuStyle}
+              >
+                🧮 Edit Formula
+              </button>
+            )}
 
             {/* Hide/Show - hanya untuk non-proteksi */}
             {!isProtected && (

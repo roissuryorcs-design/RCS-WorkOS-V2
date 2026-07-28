@@ -8,6 +8,7 @@ import BoardTable from "./components/BoardTable";
 import StatusManager from "./components/StatusManager";
 import ColumnManager from "./components/ColumnManager";
 import AddColumnPopup from "./components/AddColumnPopup";
+import FormulaEditor from "./components/FormulaEditor";
 import "./App.css";
 import { UpdateProvider } from './context/UpdateContext';
 import UpdatePanel from './components/UpdatePanel';
@@ -22,10 +23,12 @@ function AppContent() {
   const [showColumnManager, setShowColumnManager] = useState(false);
   const [activeStatusColumnId, setActiveStatusColumnId] = useState(null);
   const [showAddColumnPopup, setShowAddColumnPopup] = useState(false);
+  const [showFormulaEditor, setShowFormulaEditor] = useState(false);
+  const [activeFormulaColumnId, setActiveFormulaColumnId] = useState(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const [hasAutoAdded, setHasAutoAdded] = useState(false);
 
-  const { columns, addColumn, renameColumn, toggleColumn, deleteColumn, resetColumns, updateColumnStatuses, updateColumnStatusOrder } = useColumns();
+  const { columns, addColumn, renameColumn, toggleColumn, deleteColumn, resetColumns, updateColumnStatuses, updateColumnStatusOrder, updateColumnFormula } = useColumns();
 
   // ============================================================
   // 🔥 STATE GROUPS - LANGSUNG DARI LOCALSTORAGE
@@ -703,6 +706,11 @@ function AppContent() {
     setShowStatusManager(true);
   };
 
+  const openFormulaEditor = (columnId) => {
+    setActiveFormulaColumnId(columnId);
+    setShowFormulaEditor(true);
+  };
+
   const handleAddColumn = (name, type) => {
     addColumn(name, type);
   };
@@ -840,6 +848,7 @@ function AppContent() {
           onAddItem={addItem}
           onAddSubItem={addSubItem}
           onOpenStatusManager={openStatusManager}
+          onOpenFormula={openFormulaEditor}
           onRenameGroup={renameGroup}
           onOpenAddColumn={() => setShowAddColumnPopup(true)}
         />
@@ -892,6 +901,16 @@ function AppContent() {
         <AddColumnPopup
           onAdd={handleAddColumn}
           onClose={() => setShowAddColumnPopup(false)}
+        />
+      )}
+
+      {showFormulaEditor && (
+        <FormulaEditor
+          column={columns.find((c) => c.id === activeFormulaColumnId)}
+          columns={columns}
+          sampleItem={filteredItems[0]}
+          onSave={(formula) => updateColumnFormula(activeFormulaColumnId, formula)}
+          onClose={() => setShowFormulaEditor(false)}
         />
       )}
     </div>

@@ -16,17 +16,17 @@ const UpdateBubble = ({ itemId }) => {
         padding: '2px 8px',
         borderRadius: '12px',
         border: 'none',
-        background: count > 0 ? '#e8f5e9' : 'transparent',
-        color: count > 0 ? '#2e7d32' : '#999',
+        background: count > 0 ? 'rgba(34,197,94,0.15)' : 'transparent',
+        color: count > 0 ? 'var(--status-done)' : 'var(--text-muted)',
         cursor: 'pointer',
         fontSize: '12px',
         transition: 'all 0.2s',
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.background = '#f0f0f0';
+        e.currentTarget.style.background = 'var(--bg-active)';
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.background = count > 0 ? '#e8f5e9' : 'transparent';
+        e.currentTarget.style.background = count > 0 ? 'rgba(34,197,94,0.15)' : 'transparent';
       }}
     >
       💬 {count > 0 && <span>{count}</span>}

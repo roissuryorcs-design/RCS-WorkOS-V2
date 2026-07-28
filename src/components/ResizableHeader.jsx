@@ -12,6 +12,7 @@ export default function ResizableHeader({
   onToggle,
   onDelete,
   onReorder,
+  onOpenFormula,
   children,
   isSticky = false,
   stickyLeft = 0,
@@ -186,6 +187,7 @@ export default function ResizableHeader({
           onRename={onRename}
           onToggle={onToggle}
           onDelete={onDelete}
+          onOpenFormula={onOpenFormula}
           onClose={() => setShowMenu(false)}
         />
       )}

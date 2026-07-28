@@ -37,23 +37,28 @@ select:focus {
    ============================================================ */
 :root,
 body.light {
-  --bg-primary: #f5f6f8;
-  --bg-secondary: #ffffff;
-  --bg-sidebar: #f5f6f8;
+  /* Di-tone-down dari putih murni supaya layar tidak silau — kanvas
+     jadi abu-abu lembut, kartu/tabel pakai warna yang dulu jadi kanvas
+     (bukan putih 100%), jadi ada 2 lapisan yang jelas tapi tidak silau. */
+  --bg-primary: #e7e9ed;
+  --bg-secondary: #f5f6f8;
+  --bg-sidebar: #e7e9ed;
   --bg-hover: #e5e7eb;
-  --bg-active: #e5e7eb;
-  --bg-input: #ffffff;
-  --bg-modal: #ffffff;
-  --bg-card: #ffffff;
+  --bg-active: #dde0e5;
+  --bg-input: #f5f6f8;
+  --bg-modal: #f5f6f8;
+  --bg-card: #f5f6f8;
 
   --text-primary: #1a1a2e;
   --text-secondary: #4b5563;
   --text-muted: #6b7280;
   --text-light: #9ca3af;
 
-  --border-color: #e5e7eb;
-  --border-light: #f3f4f6;
-  --border-dark: #d1d5db;
+  /* Border digelapkan lagi karena bg-secondary sekarang lebih gelap
+     dari sebelumnya, supaya garis tabel/kartu tetap jelas kontras. */
+  --border-color: #d3d7de;
+  --border-light: #e2e5ea;
+  --border-dark: #bcc2cc;
 
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -88,7 +93,7 @@ body.dark {
   --bg-secondary: #1a1d27;
   --bg-sidebar: #1a1d27;
   --bg-hover: #2a2d3a;
-  --bg-active: #2a2d3a;
+  --bg-active: #363c50;
   --bg-input: #252837;
   --bg-modal: #1a1d27;
   --bg-card: #1a1d27;
@@ -98,9 +103,11 @@ body.dark {
   --text-muted: #8a94a6;
   --text-light: #6b7488;
 
-  --border-color: #2a2d3a;
+  /* Border digelapkan dari bg-secondary supaya garis tabel lebih
+     kontras/jelas (sebelumnya #2a2d3a terlalu mirip dgn #1a1d27). */
+  --border-color: #3a3f52;
   --border-light: #1e212b;
-  --border-dark: #3a3d4a;
+  --border-dark: #4a5068;
 
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
@@ -361,7 +368,7 @@ body.dark {
   background-clip: padding-box !important;
 }
 
-.board-table th:nth-child(2), 
+.board-table th:nth-child(2),
 .board-table td:nth-child(2) {
   position: sticky !important;
   left: 36px !important;
@@ -369,6 +376,10 @@ body.dark {
   background-color: var(--bg-secondary, #1a1d27) !important;
   box-shadow: inset -2px 0 0 0 var(--border-color) !important;
   background-clip: padding-box !important;
+  /* box-shadow di atas SUDAH menggambar garis kanan kolom sticky ini —
+     matikan border-right biasa (dari rule ".board-table th, td" umum)
+     supaya tidak dobel/tumpuk dengan garis dari box-shadow tsb. */
+  border-right: none !important;
 }
 
 /* ============================================================
@@ -475,24 +486,6 @@ body.dark {
 .add-item-spacer {
   flex: 1;
   min-width: 50px;
-}
-
-/* ============================================================
-   GARIS VERTIKAL STICKY
-   ============================================================ */
-.ai-sticky-line {
-  position: sticky !important;
-  left: 0px !important;
-  top: 0px !important;
-  width: 3.33px !important;
-  height: 100% !important;
-  z-index: 10000 !important;
-  float: left !important;
-  margin-right: -3.33px !important;
-  flex-shrink: 0 !important;
-  pointer-events: none !important;
-  min-height: 48px !important;
-  background-color: var(--group-color, #3b82f6) !important;
 }
 
 /* ============================================================
@@ -827,11 +820,6 @@ th:hover .resize-handle {
   .add-item-sticky {
     left: 30px !important;
   }
-  
-  .ai-sticky-line {
-    width: 3px !important;
-    margin-right: -3px !important;
-  }
 }
 
 /* ============================================================
@@ -1129,9 +1117,17 @@ tr:hover .btn-arrow-hover {
    🔥 STRONGER TABLE GRID (TEGAS & CLEAN)
    ============================================================ */
 
-/* Border luar tabel */
+/* Border luar tabel — HANYA kanan & bawah.
+   ⚠️ JANGAN pakai border-left/top di sini: border kiri tabel mendorong
+   kolom checkbox (dan aksen warna group-nya) 2px ke kanan dibanding
+   strip warna di .group-header-inner (yang tidak dibungkus border
+   tabel), sehingga garis vertikal warna group terlihat "patah"/tidak
+   lurus persis di sambungan antara judul group dan tabel. Sisi kanan
+   & bawah aman karena kolom terakhir/baris terakhir sengaja tidak
+   punya border sendiri (lihat rule border-right/bottom di bawah). */
 .board-table {
-  border: 2px solid var(--border-dark) !important;
+  border-right: 2px solid var(--border-dark) !important;
+  border-bottom: 2px solid var(--border-dark) !important;
 }
 
 /* Vertical lines */

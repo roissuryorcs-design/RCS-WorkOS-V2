@@ -7,12 +7,17 @@ export default function AddColumnPopup({ onAdd, onClose }) {
   const columnTypes = [
     { value: "text", label: "📝 Text" },
     { value: "status", label: "🏷️ Status" },
+    { value: "priority", label: "🚩 Priority" },
     { value: "date", label: "📅 Date" },
+    { value: "timeline", label: "📆 Timeline" },
     { value: "people", label: "👤 People" },
+    { value: "phone", label: "📞 Phone" },
     { value: "number", label: "🔢 Number" },
+    { value: "numbering", label: "🔠 No. (multi-level)" },
     { value: "files", label: "📎 Files" },
     { value: "checkbox", label: "☑️ Checkbox" },
     { value: "progress", label: "📊 Progress" },
+    { value: "formula", label: "🧮 Formula" },
   ];
 
   const handleAdd = () => {

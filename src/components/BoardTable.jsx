@@ -24,6 +24,7 @@ export default function BoardTable({
   onAddItem,
   onAddSubItem,
   onOpenStatusManager,
+  onOpenFormula,
   onRenameGroup: externalOnRenameGroup,
   onOpenAddColumn,
   defaultGroupName = DEFAULT_GROUP.title,
@@ -419,25 +420,6 @@ export default function BoardTable({
                   touchAction: 'none',
                 }}
               >
-                {/* STRIP WARNA */}
-                <div 
-                  className="ai-sticky-line"
-                  style={{ 
-                    backgroundColor: groupColor,
-                    position: 'sticky',
-                    left: 0,
-                    top: 0,
-                    width: '3.33px',
-                    height: '100%',
-                    zIndex: 10000,
-                    float: 'left',
-                    marginRight: '-3.33px',
-                    flexShrink: 0,
-                    pointerEvents: 'none',
-                    minHeight: '48px',
-                  }}
-                />
-
                 {/* HEADER GROUP - BISA DRAG */}
                 <div 
                   className="group-header"
@@ -669,6 +651,7 @@ export default function BoardTable({
                                     onToggle={toggleColumn}
                                     onDelete={deleteColumn}
                                     onReorder={handleReorderColumns}
+                                    onOpenFormula={onOpenFormula}
                                     isSticky={isItem}
                                     isLast={isLast}
                                     align="center"
@@ -703,7 +686,7 @@ export default function BoardTable({
                             </tr>
                           </thead>
                           <tbody>
-                            {tasks.map((item) => {
+                            {tasks.map((item, taskIndex) => {
                               const handleUpdate = (id, field, value) => {
                                 console.log('🟢 BoardTable handleUpdate - id:', id, 'field:', field, 'value:', value);
                                 onUpdateItem(id, field, value);
@@ -727,6 +710,7 @@ export default function BoardTable({
                                   selectedItems={selectedItems}
                                   groupName={groupName}
                                   isDefaultGroup={isDefault}
+                                  numberPath={String(taskIndex + 1)}
                                 />
                               );
                             })}

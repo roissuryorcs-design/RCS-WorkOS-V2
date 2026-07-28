@@ -1,0 +1,141 @@
+const MONTHS_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+export function parseDateValue(val) {
+  if (!val) return null;
+  if (val instanceof Date) return isNaN(val.getTime()) ? null : val;
+  const s = String(val).trim();
+
+  let m = s.match(/^(\d{2})\s*-\s*([A-Za-z]{3})\s*-\s*(\d{4})$/);
+  if (m) {
+    const mi = MONTHS_SHORT.findIndex((x) => x.toLowerCase() === m[2].toLowerCase());
+    if (mi !== -1) return new Date(Number(m[3]), mi, Number(m[1]));
+  }
+
+  m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+
+  m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (m) return new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
+
+  const d = new Date(s);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+export function formatDateValue(d) {
+  const day = String(d.getDate()).padStart(2, "0");
+  const month = MONTHS_SHORT[d.getMonth()];
+  const year = d.getFullYear();
+  return `${day} - ${month} - ${year}`;
+}
+
+function coerce(value) {
+  if (value === undefined || value === null || value === "") return "";
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value;
+  const s = String(value).trim();
+  if (s !== "" && !isNaN(Number(s))) return Number(s);
+  return s;
+}
+
+const FUNCS = {
+  IF: (cond, a, b) => (cond ? a : b),
+  ROUND: (n, d = 0) => {
+    const f = Math.pow(10, d);
+    return Math.round((Number(n) || 0) * f) / f;
+  },
+  ABS: (n) => Math.abs(Number(n) || 0),
+  SUM: (...nums) => nums.flat().reduce((acc, n) => acc + (Number(n) || 0), 0),
+  AVG: (...nums) => {
+    const flat = nums.flat();
+    return flat.length ? FUNCS.SUM(...flat) / flat.length : 0;
+  },
+  MIN: (...nums) => Math.min(...nums.flat().map((n) => Number(n) || 0)),
+  MAX: (...nums) => Math.max(...nums.flat().map((n) => Number(n) || 0)),
+  CONCAT: (...strs) => strs.flat().map((s) => (s === null || s === undefined ? "" : String(s))).join(""),
+  LEN: (s) => String(s || "").length,
+  UPPER: (s) => String(s || "").toUpperCase(),
+  LOWER: (s) => String(s || "").toLowerCase(),
+  AND: (...vals) => vals.flat().every(Boolean),
+  OR: (...vals) => vals.flat().some(Boolean),
+  NOT: (v) => !v,
+  TODAY: () => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  },
+  DATEDIFF: (a, b) => {
+    const da = parseDateValue(a);
+    const db = parseDateValue(b);
+    if (!da || !db) return NaN;
+    return Math.round((da.getTime() - db.getTime()) / 86400000);
+  },
+};
+
+const FUNC_NAMES = Object.keys(FUNCS);
+
+export const FORMULA_FUNCTION_HELP = [
+  { name: "IF(cond, a, b)", desc: "a jika cond benar, kalau tidak b" },
+  { name: "ROUND(n, d)", desc: "Bulatkan n ke d angka desimal" },
+  { name: "ABS(n)", desc: "Nilai absolut" },
+  { name: "SUM(a, b, ...)", desc: "Jumlah semua angka" },
+  { name: "AVG(a, b, ...)", desc: "Rata-rata" },
+  { name: "MIN(a, b, ...) / MAX(a, b, ...)", desc: "Nilai minimum / maksimum" },
+  { name: "CONCAT(a, b, ...)", desc: "Gabungkan teks" },
+  { name: "LEN(text)", desc: "Panjang teks" },
+  { name: "UPPER(text) / LOWER(text)", desc: "Ubah ke huruf besar / kecil" },
+  { name: "AND(...) / OR(...) / NOT(x)", desc: "Logika boolean" },
+  { name: "TODAY()", desc: "Tanggal hari ini" },
+  { name: "DATEDIFF(a, b)", desc: "Selisih hari antara dua tanggal (a - b)" },
+];
+
+// Ganti "=" tunggal (bukan bagian dari ==, !=, <=, >=) jadi "==" supaya
+// formula bisa ditulis dengan gaya spreadsheet ({Status} = "Done").
+function normalizeEquals(expr) {
+  let out = "";
+  for (let i = 0; i < expr.length; i++) {
+    const ch = expr[i];
+    if (ch === "=" && expr[i - 1] !== "=" && expr[i - 1] !== "!" && expr[i - 1] !== "<" && expr[i - 1] !== ">" && expr[i + 1] !== "=") {
+      out += "==";
+    } else {
+      out += ch;
+    }
+  }
+  return out;
+}
+
+export function evaluateFormula(formula, item, columns) {
+  if (!formula || !formula.trim()) return "";
+  try {
+    let expr = formula;
+
+    expr = expr.replace(/\{([^}]+)\}/g, (_, ref) => {
+      const name = ref.trim();
+      const col = (columns || []).find((c) => c && (c.label === name || c.id === name));
+      const raw = col ? item?.[col.id] : item?.[name];
+      return JSON.stringify(coerce(raw));
+    });
+
+    expr = normalizeEquals(expr);
+
+    FUNC_NAMES.forEach((name) => {
+      const re = new RegExp(`\\b${name}\\s*\\(`, "g");
+      expr = expr.replace(re, `FUNCS.${name}(`);
+    });
+
+    // eslint-disable-next-line no-new-func
+    const fn = new Function("FUNCS", `"use strict"; return (${expr});`);
+    const result = fn(FUNCS);
+
+    if (result instanceof Date) {
+      return isNaN(result.getTime()) ? "#ERROR" : formatDateValue(result);
+    }
+    if (typeof result === "number") {
+      if (!isFinite(result)) return "#ERROR";
+      return Math.round(result * 1e6) / 1e6;
+    }
+    if (result === undefined || result === null) return "";
+    return result;
+  } catch (e) {
+    return "#ERROR";
+  }
+}

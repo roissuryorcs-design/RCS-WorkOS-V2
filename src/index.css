@@ -8,23 +8,28 @@
 /* LIGHT THEME (default) */
 :root,
 body.light {
-  --bg-primary: #f5f6f8;
-  --bg-secondary: #ffffff;
-  --bg-sidebar: #f5f6f8;
+  /* Di-tone-down dari putih murni supaya layar tidak silau — kanvas
+     jadi abu-abu lembut, kartu/tabel pakai warna yang dulu jadi kanvas
+     (bukan putih 100%), jadi ada 2 lapisan yang jelas tapi tidak silau. */
+  --bg-primary: #e7e9ed;
+  --bg-secondary: #f5f6f8;
+  --bg-sidebar: #e7e9ed;
   --bg-hover: #e5e7eb;
-  --bg-active: #e5e7eb;
-  --bg-input: #ffffff;
-  --bg-modal: #ffffff;
-  --bg-card: #ffffff;
+  --bg-active: #dde0e5;
+  --bg-input: #f5f6f8;
+  --bg-modal: #f5f6f8;
+  --bg-card: #f5f6f8;
 
   --text-primary: #1a1a2e;
   --text-secondary: #4b5563;
   --text-muted: #6b7280;
   --text-light: #9ca3af;
 
-  --border-color: #e5e7eb;
-  --border-light: #f3f4f6;
-  --border-dark: #d1d5db;
+  /* Border digelapkan lagi karena bg-secondary sekarang lebih gelap
+     dari sebelumnya, supaya garis tabel/kartu tetap jelas kontras. */
+  --border-color: #d3d7de;
+  --border-light: #e2e5ea;
+  --border-dark: #bcc2cc;
 
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -53,7 +58,7 @@ body.dark {
   --bg-secondary: #1a1d27;
   --bg-sidebar: #1a1d27;
   --bg-hover: #2a2d3a;
-  --bg-active: #2a2d3a;
+  --bg-active: #363c50;
   --bg-input: #252837;
   --bg-modal: #1a1d27;
   --bg-card: #1a1d27;
@@ -63,9 +68,11 @@ body.dark {
   --text-muted: #8a94a6;
   --text-light: #6b7488;
 
-  --border-color: #2a2d3a;
+  /* Border digelapkan dari bg-secondary supaya garis tabel lebih
+     kontras/jelas (sebelumnya #2a2d3a terlalu mirip dgn #1a1d27). */
+  --border-color: #3a3f52;
   --border-light: #1e212b;
-  --border-dark: #3a3d4a;
+  --border-dark: #4a5068;
 
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
@@ -111,6 +118,16 @@ input:focus,
 select:focus {
   outline: 2px solid var(--btn-primary-bg);
   outline-offset: 1px;
+}
+
+/* Ikon kalender bawaan browser default-nya gelap — tak kelihatan di
+   atas background dark mode. Invert supaya jadi terang/kontras. */
+body.dark input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  opacity: 0.8;
+}
+body.dark input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
 }
 
 /* Scrollbar untuk dark mode */
