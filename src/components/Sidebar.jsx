@@ -1,10 +1,11 @@
 import "../css/sidebar.css";
+import Logo from "./Logo";
 
 export default function Sidebar({ favorites, onAddFavorite, onRemoveFavorite }) {
   return (
     <div className="sidebar">
       <div className="sidebar-header">
-        <span className="sidebar-logo">📊 RCS WorkOS</span>
+        <Logo width={150} />
       </div>
 
       <div className="nav-section">
