@@ -66,9 +66,16 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
     formData.append("file", file);
     formData.append("upload_preset", "rcs_upload");
 
+    // Cloudinary serves PDFs/ZIPs uploaded as "image" resource type with a
+    // 401 by default (a security restriction on that account's Cloudinary
+    // plan) — routing non-image/video files through "raw" instead avoids
+    // that restriction entirely, since it doesn't apply to raw delivery.
+    const isImageOrVideo = file.type.startsWith("image/") || file.type.startsWith("video/");
+    const resourceType = isImageOrVideo ? "auto" : "raw";
+
     try {
       const res = await fetch(
-        `https://api.cloudinary.com/v1_1/lawjar8t/upload`,
+        `https://api.cloudinary.com/v1_1/lawjar8t/${resourceType}/upload`,
         { method: "POST", body: formData }
       );
       const data = await res.json();
@@ -120,9 +127,19 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
     if (files.length <= 1) setShowFileList(false);
   };
 
+  // `fl_attachment` forces a Content-Disposition: attachment response —
+  // only used for the explicit "Download" action, since cross-origin URLs
+  // ignore the <a download> attribute otherwise and just navigate instead
+  // of downloading. "Open"/"View" actions use the plain URL so PDFs open
+  // inline in the browser's own viewer.
+  const withDownloadFlag = (url) => {
+    if (!url || !url.includes("/raw/upload/") || url.includes("/fl_attachment")) return url;
+    return url.replace("/raw/upload/", "/raw/upload/fl_attachment/");
+  };
+
   const downloadFile = (url, name) => {
     const a = document.createElement("a");
-    a.href = url;
+    a.href = withDownloadFlag(url);
     a.download = name || "file";
     document.body.appendChild(a);
     a.click();
