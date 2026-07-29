@@ -8,6 +8,7 @@ import Header from "./components/Header";
 import Toolbar from "./components/Toolbar";
 import BoardTable from "./components/BoardTable";
 import StatusManager from "./components/StatusManager";
+import ProgressStageManager from "./components/ProgressStageManager";
 import ColumnManager from "./components/ColumnManager";
 import AddColumnPopup from "./components/AddColumnPopup";
 import FormulaEditor from "./components/FormulaEditor";
@@ -23,13 +24,15 @@ function BoardWorkspace({ boardId }) {
   const [showStatusManager, setShowStatusManager] = useState(false);
   const [showColumnManager, setShowColumnManager] = useState(false);
   const [activeStatusColumnId, setActiveStatusColumnId] = useState(null);
+  const [showProgressStageManager, setShowProgressStageManager] = useState(false);
+  const [activeProgressColumnId, setActiveProgressColumnId] = useState(null);
   const [showAddColumnPopup, setShowAddColumnPopup] = useState(false);
   const [showFormulaEditor, setShowFormulaEditor] = useState(false);
   const [activeFormulaColumnId, setActiveFormulaColumnId] = useState(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const [hasAutoAdded, setHasAutoAdded] = useState(false);
 
-  const { columns, addColumn, renameColumn, toggleColumn, deleteColumn, resetColumns, updateColumnStatuses, updateColumnStatusOrder, updateColumnFormula } = useColumns();
+  const { columns, addColumn, renameColumn, toggleColumn, deleteColumn, resetColumns, updateColumnStatuses, updateColumnStatusOrder, updateColumnFormula, updateColumnProgressStages } = useColumns();
 
   // ============================================================
   // 🔥 STATE GROUPS - LANGSUNG DARI LOCALSTORAGE
@@ -684,6 +687,11 @@ function BoardWorkspace({ boardId }) {
     setShowStatusManager(true);
   };
 
+  const openProgressManager = (columnId) => {
+    setActiveProgressColumnId(columnId);
+    setShowProgressStageManager(true);
+  };
+
   const openFormulaEditor = (columnId) => {
     setActiveFormulaColumnId(columnId);
     setShowFormulaEditor(true);
@@ -805,6 +813,7 @@ function BoardWorkspace({ boardId }) {
           onAddItem={addItem}
           onAddSubItem={addSubItem}
           onOpenStatusManager={openStatusManager}
+          onOpenProgressManager={openProgressManager}
           onOpenFormula={openFormulaEditor}
           onRenameGroup={renameGroup}
           onReorderGroups={reorderGroups}
@@ -840,6 +849,17 @@ function BoardWorkspace({ boardId }) {
             updateColumnStatusOrder(activeStatusColumnId, newOrder);
           }}
           onClose={() => setShowStatusManager(false)}
+        />
+      )}
+
+      {showProgressStageManager && (
+        <ProgressStageManager
+          columnId={activeProgressColumnId}
+          stages={columns.find((c) => c.id === activeProgressColumnId)?.progressStages || []}
+          onUpdateStages={(newStages) => {
+            updateColumnProgressStages(activeProgressColumnId, newStages);
+          }}
+          onClose={() => setShowProgressStageManager(false)}
         />
       )}
 

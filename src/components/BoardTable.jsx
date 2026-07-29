@@ -17,6 +17,7 @@ export default function BoardTable({
   onAddItem,
   onAddSubItem,
   onOpenStatusManager,
+  onOpenProgressManager,
   onOpenFormula,
   onRenameGroup,
   onReorderGroups,
@@ -668,6 +669,7 @@ export default function BoardTable({
                                     onDeleteItem(item.id);
                                   }}
                                   onOpenStatusManager={onOpenStatusManager}
+                                  onOpenProgressManager={onOpenProgressManager}
                                   onAddSubItem={handleAddSubItem}
                                   selectedItems={selectedItems}
                                   groupName={groupName}

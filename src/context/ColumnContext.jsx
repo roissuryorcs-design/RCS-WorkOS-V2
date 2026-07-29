@@ -12,6 +12,14 @@ const defaultStatuses = {
 
 const defaultStatusOrder = ["Default", "Working on it", "Stuck", "Done"];
 
+const defaultProgressStages = [
+  { value: 0, label: "Not Started", icon: "🔘", color: "#9E9E9E" },
+  { value: 25, label: "Preparation", icon: "🟡", color: "#FFEB3B" },
+  { value: 50, label: "Execution", icon: "🟠", color: "#FF9800" },
+  { value: 80, label: "Review", icon: "🔵", color: "#2196F3" },
+  { value: 100, label: "Completed", icon: "🟢", color: "#4CAF50" },
+];
+
 const defaultColumns = [
   { id: "item", label: "ITEM", type: "text", width: 150, visible: true },
   { id: "document", label: "NO. DOCUMENT", type: "text", width: 200, visible: true },
@@ -44,6 +52,12 @@ export function ColumnProvider({ children, boardId }) {
                 ...col,
                 statuses: { ...defaultStatuses },
                 statusOrder: [...defaultStatusOrder],
+              };
+            }
+            if (col.type === "progress" && !col.progressStages) {
+              return {
+                ...col,
+                progressStages: defaultProgressStages.map(s => ({ ...s })),
               };
             }
             return col;
@@ -98,7 +112,17 @@ export function ColumnProvider({ children, boardId }) {
     if (type === "timeline") {
       newCol.width = 200;
     }
+    if (type === "progress") {
+      newCol.progressStages = defaultProgressStages.map(s => ({ ...s }));
+    }
     setColumns((prev) => [...prev, newCol]);
+  };
+
+  const updateColumnProgressStages = (columnId, newStages) => {
+    if (!columnId || !Array.isArray(newStages)) return;
+    setColumns((prev) =>
+      prev.map((col) => (col && col.id === columnId ? { ...col, progressStages: newStages } : col))
+    );
   };
 
   const updateColumnFormula = (id, formula) => {
@@ -191,6 +215,7 @@ export function ColumnProvider({ children, boardId }) {
         updateColumnStatuses,
         updateColumnStatusOrder,
         updateColumnFormula,
+        updateColumnProgressStages,
       }}
     >
       {children}

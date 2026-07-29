@@ -9,6 +9,7 @@ import FormulaCell from "./FormulaCell";
 import ProgressCell from "./ProgressCell";
 import UpdateBubble from './UpdateBubble';
 import { evaluateFormula } from "../utils/formulaEngine";
+import { resolveSelfWeight, weightKeyFor, computeOwnProgress, computeCascadedDisplayPercent } from "../utils/progressWeights";
 
 export default function Row({
   item,
@@ -21,11 +22,16 @@ export default function Row({
   onUpdate,
   onDelete,
   onOpenStatusManager,
+  onOpenProgressManager,
   onAddSubItem,
   depth = 0,
   maxDepth = 4,
   selectedItems = [],
   numberPath = "",
+  isLastChild = false,
+  ancestorLines = [],
+  siblings = [],
+  parentDisplayPercents = {},
 }) {
   // ✅ GUARD: Jika item undefined
   if (!item) {
@@ -40,7 +46,6 @@ export default function Row({
   const children = item.children && Array.isArray(item.children) ? item.children : [];
   const hasChildren = children.length > 0;
   const canHaveChildren = depth < maxDepth;
-  const indentSize = 14;
 
   const placeholders = ["", "New Task", "Sub Item", "Sub Sub Item", "Sub Sub Sub Item"];
   const placeholder = placeholders[depth] || "New Task";
@@ -75,6 +80,7 @@ export default function Row({
             status={item[col.id]}
             statuses={col.statuses || {}}
             statusOrder={col.statusOrder || []}
+            itemChildren={children}
             onChange={(val) => onUpdate(item.id, col.id, val)}
             onOpenStatusManager={onOpenStatusManager}
           />
@@ -159,13 +165,29 @@ export default function Row({
           />
         );
 
-      case "progress":
+      case "progress": {
+        const weightInfo = depth > 0
+          ? resolveSelfWeight(siblings, item.id, col.id)
+          : null;
         return (
           <ProgressCell
             value={value}
+            columnId={col.id}
+            stages={col.progressStages}
+            itemChildren={children}
+            depth={depth}
+            isLastChild={isLastChild}
+            ancestorLines={ancestorLines}
+            explicitWeight={weightInfo?.explicitWeight}
+            resolvedWeight={weightInfo?.resolvedWeight}
+            explicitSiblingSum={weightInfo?.explicitSiblingSum}
+            displayPercent={myProgressDisplayPercents[col.id]}
             onChange={(val) => onUpdate(item.id, col.id, val)}
+            onChangeWeight={weightInfo ? (val) => onUpdate(item.id, weightKeyFor(col.id), val) : undefined}
+            onOpenProgressManager={onOpenProgressManager}
           />
         );
+      }
 
       case "files":
         return (
@@ -237,8 +259,8 @@ export default function Row({
     }
   };
 
-  const paddingLeft = depth * indentSize + 8;
   const defaultGroupBorderColor = groupColor;
+  const paddingLeft = depth * 14 + 8;
 
   const itemCellStyle = {
     display: 'table-cell',
@@ -264,6 +286,24 @@ export default function Row({
 
   // ✅ GUARD: Pastikan visibleColumns adalah array
   const safeColumns = visibleColumns && Array.isArray(visibleColumns) ? visibleColumns : [];
+
+  // Cascading "progress terhadap total" for every Progress column on this
+  // row — own progress × own weight × parent's *already-cascaded* %. Kept
+  // here (not inside ProgressCell) since a child needs its parent's
+  // already-computed value, which only this top-down render pass has.
+  const myProgressDisplayPercents = {};
+  safeColumns.forEach((col) => {
+    if (!col || col.type !== "progress") return;
+    const ownProgress = computeOwnProgress(item, col.id);
+    const weightInfo = depth > 0 ? resolveSelfWeight(siblings, item.id, col.id) : null;
+    const parentPercent = parentDisplayPercents[col.id] ?? 100;
+    myProgressDisplayPercents[col.id] = computeCascadedDisplayPercent(
+      ownProgress,
+      weightInfo ? weightInfo.resolvedWeight : null,
+      parentPercent,
+      depth
+    );
+  });
 
   return (
     <>
@@ -492,26 +532,38 @@ export default function Row({
 
       {/* ✅ PERBAIKAN UTAMA: Guard untuk children.map */}
       {hasChildren && expanded && children.length > 0 && (
-        children.map((child, childIndex) => (
-          <Row
-            key={child.id || Math.random()}
-            item={child}
-            depth={depth + 1}
-            groupColor={groupColor}
-            groupName={groupName}
-            isDefaultGroup={isDefaultGroup}
-            visibleColumns={safeColumns}
-            isSelected={selectedItems.includes(child.id)}
-            onToggleSelect={onToggleSelect}
-            onUpdate={onUpdate}
-            onDelete={onDelete}
-            onOpenStatusManager={onOpenStatusManager}
-            onAddSubItem={onAddSubItem}
-            maxDepth={maxDepth}
-            selectedItems={selectedItems}
-            numberPath={`${numberPath}.${childIndex + 1}`}
-          />
-        ))
+        children.map((child, childIndex) => {
+          const childIsLastChild = childIndex === children.length - 1;
+          // Depth-0 rows aren't part of the connector system (flat list,
+          // no lines) — their children start a fresh ancestor chain rather
+          // than inheriting one.
+          const childAncestorLines = depth === 0 ? [] : [...ancestorLines, !isLastChild];
+          return (
+            <Row
+              key={child.id || Math.random()}
+              item={child}
+              depth={depth + 1}
+              groupColor={groupColor}
+              groupName={groupName}
+              isDefaultGroup={isDefaultGroup}
+              visibleColumns={safeColumns}
+              isSelected={selectedItems.includes(child.id)}
+              onToggleSelect={onToggleSelect}
+              onUpdate={onUpdate}
+              onDelete={onDelete}
+              onOpenStatusManager={onOpenStatusManager}
+              onOpenProgressManager={onOpenProgressManager}
+              onAddSubItem={onAddSubItem}
+              maxDepth={maxDepth}
+              selectedItems={selectedItems}
+              numberPath={`${numberPath}.${childIndex + 1}`}
+              isLastChild={childIsLastChild}
+              ancestorLines={childAncestorLines}
+              siblings={children}
+              parentDisplayPercents={myProgressDisplayPercents}
+            />
+          );
+        })
       )}
     </>
   );
