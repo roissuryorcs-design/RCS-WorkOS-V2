@@ -896,41 +896,9 @@ function EmptyWorkspaceState() {
 function AppShellInner() {
   const { activeBoardId } = useBoards();
 
-  const [favorites, setFavorites] = useState(() => {
-    const saved = localStorage.getItem("forelFavorites");
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error('Error parsing favorites:', e);
-      }
-    }
-    return ["Workspace", "Administration"];
-  });
-
-  useEffect(() => {
-    localStorage.setItem("forelFavorites", JSON.stringify(favorites));
-  }, [favorites]);
-
-  const addFavorite = () => {
-    const name = prompt("Enter favorite name:");
-    if (name && name.trim()) {
-      setFavorites([...favorites, name.trim()]);
-    }
-  };
-
-  const removeFavorite = (index) => {
-    const newFavs = favorites.filter((_, i) => i !== index);
-    setFavorites(newFavs);
-  };
-
   return (
     <div className="app-container">
-      <Sidebar
-        favorites={favorites}
-        onAddFavorite={addFavorite}
-        onRemoveFavorite={removeFavorite}
-      />
+      <Sidebar />
 
       {activeBoardId ? (
         <ColumnProvider key={activeBoardId} boardId={activeBoardId}>

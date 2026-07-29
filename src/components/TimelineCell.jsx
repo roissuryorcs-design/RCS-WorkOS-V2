@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import { createPortal } from "react-dom";
 import { parseDateValue } from "../utils/formulaEngine";
+import Popover from "./Popover";
 
 const MONTHS_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -30,37 +30,16 @@ function shortLabel(dateStr) {
 export default function TimelineCell({ value, onChange }) {
   const timeline = value && typeof value === "object" ? value : {};
   const [open, setOpen] = useState(false);
-  const [popupPos, setPopupPos] = useState({ top: 0, left: 0 });
   const triggerRef = useRef(null);
-  const popupRef = useRef(null);
 
-  // Popup di-render lewat portal ke document.body — kalau tidak, dia
-  // kepotong (clipped) oleh overflow:hidden milik <td> pembungkusnya.
-  const openPopup = () => {
-    const rect = triggerRef.current.getBoundingClientRect();
-    setPopupPos({ top: rect.bottom + 4, left: rect.left });
-    setOpen(true);
-  };
-
+  // Closes on scroll (of the table's scroll container or the page) rather
+  // than trying to track the trigger's moving position — simplest way to
+  // avoid the popup drifting away from the cell it was opened from.
   useEffect(() => {
     if (!open) return;
-    const handleClickOutside = (e) => {
-      if (
-        triggerRef.current && !triggerRef.current.contains(e.target) &&
-        popupRef.current && !popupRef.current.contains(e.target)
-      ) {
-        setOpen(false);
-      }
-    };
-    const handleScrollOrResize = () => setOpen(false);
-    document.addEventListener("mousedown", handleClickOutside);
-    window.addEventListener("scroll", handleScrollOrResize, true);
-    window.addEventListener("resize", handleScrollOrResize);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      window.removeEventListener("scroll", handleScrollOrResize, true);
-      window.removeEventListener("resize", handleScrollOrResize);
-    };
+    const handleScroll = () => setOpen(false);
+    window.addEventListener("scroll", handleScroll, true);
+    return () => window.removeEventListener("scroll", handleScroll, true);
   }, [open]);
 
   const start = parseDateValue(timeline.start);
@@ -93,7 +72,7 @@ export default function TimelineCell({ value, onChange }) {
     <div style={{ position: "relative", width: "100%" }}>
       <div
         ref={triggerRef}
-        onClick={() => (open ? setOpen(false) : openPopup())}
+        onClick={() => setOpen((prev) => !prev)}
         style={{
           display: "flex",
           flexDirection: "column",
@@ -132,24 +111,21 @@ export default function TimelineCell({ value, onChange }) {
         )}
       </div>
 
-      {open &&
-        createPortal(
-          <div
-            ref={popupRef}
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              position: "fixed",
-              top: popupPos.top,
-              left: popupPos.left,
-              zIndex: 3000,
-              background: "var(--bg-modal)",
-              borderRadius: 8,
-              boxShadow: "var(--shadow-lg)",
-              padding: 12,
-              border: "1px solid var(--border-color)",
-              minWidth: 240,
-            }}
-          >
+      <Popover
+        anchorRef={triggerRef}
+        isOpen={open}
+        onClose={() => setOpen(false)}
+        placement="bottom-start"
+        style={{
+          background: "var(--bg-modal)",
+          borderRadius: 8,
+          boxShadow: "var(--shadow-lg)",
+          padding: 12,
+          border: "1px solid var(--border-color)",
+          minWidth: 240,
+        }}
+      >
+        <div onClick={(e) => e.stopPropagation()}>
             <label style={{ display: "block", fontSize: 11, color: "var(--text-muted)", marginBottom: 2 }}>
               Start
             </label>
@@ -215,9 +191,8 @@ export default function TimelineCell({ value, onChange }) {
                 ✕ Clear timeline
               </button>
             )}
-          </div>,
-          document.body
-        )}
+        </div>
+      </Popover>
     </div>
   );
 }

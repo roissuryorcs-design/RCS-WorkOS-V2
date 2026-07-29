@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
+import Popover from "./Popover";
 
 export default function DateCell({ date, onChange, placeholder = "dd - mm - yy" }) {
   const [inputValue, setInputValue] = useState(date || "");
@@ -149,21 +150,10 @@ export default function DateCell({ date, onChange, placeholder = "dd - mm - yy" 
     }
   };
 
-  // ============================================================
-  // CLOSE DATE PICKER SAAT KLIK DI LUAR
-  // ============================================================
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
-        setShowDatePicker(false);
-        setIsFocused(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
+  const closeDatePicker = () => {
+    setShowDatePicker(false);
+    setIsFocused(false);
+  };
 
   // ============================================================
   // RENDER
@@ -252,23 +242,21 @@ export default function DateCell({ date, onChange, placeholder = "dd - mm - yy" 
       {/* ============================================================
           DATE PICKER POPUP
           ============================================================ */}
-      {showDatePicker && (
-        <div
-          style={{
-            position: "absolute",
-            top: "100%",
-            left: 0,
-            zIndex: 1000,
-            marginTop: "4px",
-            background: "white",
-            borderRadius: "8px",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-            padding: "12px",
-            border: "1px solid #e0e0e0",
-            minWidth: "260px",
-          }}
-          onClick={(e) => e.stopPropagation()}
-        >
+      <Popover
+        anchorRef={wrapperRef}
+        isOpen={showDatePicker}
+        onClose={closeDatePicker}
+        placement="bottom-start"
+        style={{
+          background: "white",
+          borderRadius: "8px",
+          boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+          padding: "12px",
+          border: "1px solid #e0e0e0",
+          minWidth: "260px",
+        }}
+      >
+        <div onClick={(e) => e.stopPropagation()}>
           {/* Input Date */}
           <input
             ref={inputRef}
@@ -339,7 +327,7 @@ export default function DateCell({ date, onChange, placeholder = "dd - mm - yy" 
             </button>
           )}
         </div>
-      )}
+      </Popover>
     </div>
   );
 }

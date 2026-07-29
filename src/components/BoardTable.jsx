@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import Row from "./Row";
 import ResizableHeader from "./ResizableHeader";
+import Popover from "./Popover";
 import { useColumns } from "../context/ColumnContext";
 import { DEFAULT_GROUP } from "../data/treeData";
 
@@ -143,13 +144,17 @@ export default function BoardTable({
   // ============================================================
   const [collapsed, setCollapsed] = useState({});
   const [popupGroup, setPopupGroup] = useState(null);
+  const [groupPopupAnchorEl, setGroupPopupAnchorEl] = useState(null);
   const [selectedItems, setSelectedItems] = useState([]);
 
   const toggleCollapse = (groupName) => {
     setCollapsed((prev) => ({ ...prev, [groupName]: !prev[groupName] }));
   };
 
-  const closePopup = () => setPopupGroup(null);
+  const closePopup = () => {
+    setPopupGroup(null);
+    setGroupPopupAnchorEl(null);
+  };
 
   const handleRenameGroup = (oldName, newName) => {
     if (onRenameGroup) {
@@ -447,14 +452,21 @@ export default function BoardTable({
                         overflow: 'hidden',
                       }}
                     >
-                      <button 
+                      <button
                         className="group-menu-btn"
-                        onClick={() => setPopupGroup(popupGroup === groupName ? null : groupName)}
+                        onClick={(e) => {
+                          if (popupGroup === groupName) {
+                            closePopup();
+                          } else {
+                            setPopupGroup(groupName);
+                            setGroupPopupAnchorEl(e.currentTarget);
+                          }
+                        }}
                         style={{
                           flexShrink: 0,
                           padding: '4px',
                           marginRight: '4px',
-                          color: 'var(--text-secondary)',
+                          color: groupColor,
                           background: 'transparent',
                           border: 'none',
                           cursor: 'pointer',
@@ -512,35 +524,36 @@ export default function BoardTable({
                 </div>
 
                 {/* POPUP MENU */}
-                {popupGroup === groupName && (
-                  <>
-                    <div className="group-popup-overlay" onClick={closePopup} />
-                    <div className="group-popup" style={{ position: 'absolute', top: '48px', left: '0', zIndex: 2000 }}>
-                      <button 
-                        onClick={() => { 
-                          const newName = prompt("Masukkan nama baru:", groupName);
-                          if (newName && newName.trim()) {
-                            handleRenameGroup(groupName, newName.trim());
-                          }
-                          closePopup();
-                        }}
-                      >
-                        ✏️ Rename Group
-                      </button>
-                      <button 
-                        onClick={() => { 
-                          if (confirm(`Hapus group "${groupName}" dan semua item di dalamnya?`)) {
-                            handleDeleteGroup(groupName);
-                          }
-                          closePopup();
-                        }}
-                        style={{ color: '#f44336' }}
-                      >
-                        🗑️ Delete Group
-                      </button>
-                    </div>
-                  </>
-                )}
+                <Popover
+                  anchorRef={{ current: groupPopupAnchorEl }}
+                  isOpen={popupGroup === groupName}
+                  onClose={closePopup}
+                  placement="bottom-start"
+                  className="group-popup"
+                >
+                  <button
+                    onClick={() => {
+                      const newName = prompt("Masukkan nama baru:", groupName);
+                      if (newName && newName.trim()) {
+                        handleRenameGroup(groupName, newName.trim());
+                      }
+                      closePopup();
+                    }}
+                  >
+                    ✏️ Rename Group
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (confirm(`Hapus group "${groupName}" dan semua item di dalamnya?`)) {
+                        handleDeleteGroup(groupName);
+                      }
+                      closePopup();
+                    }}
+                    style={{ color: '#f44336' }}
+                  >
+                    🗑️ Delete Group
+                  </button>
+                </Popover>
 
                 {/* KONTEN GROUP */}
                 {!isCollapsed && (

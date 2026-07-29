@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useBoards } from "../context/BoardsContext";
+import Popover from "./Popover";
 
 const AVATAR_COLORS = ["#3b82f6", "#8b5cf6", "#ec4899", "#f59e0b", "#10b981", "#ef4444", "#06b6d4", "#6366f1"];
 
@@ -36,6 +37,8 @@ export default function WorkspaceSwitcher() {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [openMenuId, setOpenMenuId] = useState(null);
+  const [itemMenuAnchorEl, setItemMenuAnchorEl] = useState(null);
+  const switcherBtnRef = useRef(null);
 
   const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId) || workspaces[0];
 
@@ -43,6 +46,7 @@ export default function WorkspaceSwitcher() {
     setIsOpen(false);
     setSearch("");
     setOpenMenuId(null);
+    setItemMenuAnchorEl(null);
   };
 
   const filteredWorkspaces = workspaces.filter((w) =>
@@ -88,21 +92,28 @@ export default function WorkspaceSwitcher() {
         className="tree-node-menu-btn"
         onClick={(e) => {
           e.stopPropagation();
-          setOpenMenuId(openMenuId === menuKey ? null : menuKey);
+          if (openMenuId === menuKey) {
+            setOpenMenuId(null);
+            setItemMenuAnchorEl(null);
+          } else {
+            setOpenMenuId(menuKey);
+            setItemMenuAnchorEl(e.currentTarget);
+          }
         }}
       >
         ⋮
       </button>
 
-      {openMenuId === menuKey && (
-        <>
-          <div className="tree-node-popup-overlay" onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); }} />
-          <div className="tree-node-popup workspace-item-popup">
-            <button onClick={(e) => { e.stopPropagation(); handleRename(workspace); }}>✏️ Rename workspace</button>
-            <button onClick={(e) => { e.stopPropagation(); handleDelete(workspace); }}>🗑️ Delete workspace</button>
-          </div>
-        </>
-      )}
+      <Popover
+        anchorRef={{ current: itemMenuAnchorEl }}
+        isOpen={openMenuId === menuKey}
+        onClose={(e) => { e?.stopPropagation?.(); setOpenMenuId(null); setItemMenuAnchorEl(null); }}
+        placement="bottom-end"
+        className="tree-node-popup workspace-item-popup"
+      >
+        <button onClick={(e) => { e.stopPropagation(); handleRename(workspace); }}>✏️ Rename workspace</button>
+        <button onClick={(e) => { e.stopPropagation(); handleDelete(workspace); }}>🗑️ Delete workspace</button>
+      </Popover>
     </div>
     );
   };
@@ -111,46 +122,41 @@ export default function WorkspaceSwitcher() {
 
   return (
     <div className="workspace-switcher">
-      <button className="workspace-switcher-btn" onClick={() => setIsOpen((prev) => !prev)}>
+      <button ref={switcherBtnRef} className="workspace-switcher-btn" onClick={() => setIsOpen((prev) => !prev)}>
         <WorkspaceAvatar workspace={activeWorkspace} />
         <span className="workspace-switcher-name">{activeWorkspace.name}</span>
         <span className="workspace-switcher-chevron">{isOpen ? "▲" : "▼"}</span>
       </button>
 
-      {isOpen && (
-        <>
-          <div className="workspace-switcher-overlay" onClick={close} />
-          <div className="workspace-switcher-popup">
-            <input
-              type="text"
-              className="workspace-search-input"
-              placeholder="Search for a workspace"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              autoFocus
-            />
+      <Popover anchorRef={switcherBtnRef} isOpen={isOpen} onClose={close} placement="bottom-start" className="workspace-switcher-popup">
+        <input
+          type="text"
+          className="workspace-search-input"
+          placeholder="Search for a workspace"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          autoFocus
+        />
 
-            {filteredRecent.length > 0 && (
-              <>
-                <div className="workspace-list-section-title">Recent workspaces</div>
-                {filteredRecent.map((w) => renderWorkspaceItem(w, "recent"))}
-              </>
-            )}
+        {filteredRecent.length > 0 && (
+          <>
+            <div className="workspace-list-section-title">Recent workspaces</div>
+            {filteredRecent.map((w) => renderWorkspaceItem(w, "recent"))}
+          </>
+        )}
 
-            <div className="workspace-list-section-title">My workspaces</div>
-            {filteredWorkspaces.length > 0 ? (
-              filteredWorkspaces.map((w) => renderWorkspaceItem(w, "my"))
-            ) : (
-              <div className="workspace-empty-search">No workspaces found</div>
-            )}
+        <div className="workspace-list-section-title">My workspaces</div>
+        {filteredWorkspaces.length > 0 ? (
+          filteredWorkspaces.map((w) => renderWorkspaceItem(w, "my"))
+        ) : (
+          <div className="workspace-empty-search">No workspaces found</div>
+        )}
 
-            <div className="workspace-switcher-footer">
-              <button className="workspace-footer-btn" onClick={handleAddWorkspace}>+ Add workspace</button>
-              <button className="workspace-footer-btn" onClick={() => setSearch("")}>▦ Browse all</button>
-            </div>
-          </div>
-        </>
-      )}
+        <div className="workspace-switcher-footer">
+          <button className="workspace-footer-btn" onClick={handleAddWorkspace}>+ Add workspace</button>
+          <button className="workspace-footer-btn" onClick={() => setSearch("")}>▦ Browse all</button>
+        </div>
+      </Popover>
     </div>
   );
 }

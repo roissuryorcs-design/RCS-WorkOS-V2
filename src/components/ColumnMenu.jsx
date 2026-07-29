@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect } from "react";
+import Popover from "./Popover";
 
 export default function ColumnMenu({
   column,
+  anchorRef,
   onRename,
   onToggle,
   onDelete,
@@ -38,37 +40,22 @@ export default function ColumnMenu({
   };
 
   return (
-    <>
-      {/* Overlay */}
-      <div
-        style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          zIndex: 999,
-        }}
-        onClick={onClose}
-      />
-
-      <div
-        style={{
-          position: "absolute",
-          top: "100%",
-          right: 0,
-          marginTop: 4,
-          background: "var(--bg-modal)",
-          border: "1px solid var(--border-color)",
-          borderRadius: 6,
-          boxShadow: "var(--shadow-md)",
-          padding: "4px 0",
-          zIndex: 1000,
-          minWidth: 160,
-          color: "var(--text-primary)",
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
+    <Popover
+      anchorRef={anchorRef}
+      isOpen={true}
+      onClose={onClose}
+      placement="bottom-end"
+      style={{
+        background: "var(--bg-modal)",
+        border: "1px solid var(--border-color)",
+        borderRadius: 6,
+        boxShadow: "var(--shadow-md)",
+        padding: "4px 0",
+        minWidth: 160,
+        color: "var(--text-primary)",
+      }}
+    >
+      <div onClick={(e) => e.stopPropagation()}>
         {isRenaming ? (
           <div style={{ padding: "6px 12px" }}>
             <input
@@ -190,7 +177,7 @@ export default function ColumnMenu({
           </>
         )}
       </div>
-    </>
+    </Popover>
   );
 }
 

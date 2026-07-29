@@ -49,8 +49,11 @@ function loadOrMigrateRegistry() {
         const recentWorkspaceIds = Array.isArray(parsed.recentWorkspaceIds)
           ? parsed.recentWorkspaceIds.filter((id) => parsed.workspaces.some((w) => w.id === id))
           : [activeWorkspaceId];
+        const favoriteBoardIds = Array.isArray(parsed.favoriteBoardIds)
+          ? parsed.favoriteBoardIds.filter((id) => parsed.nodes.some((n) => n.id === id && n.type === "board"))
+          : [];
 
-        return { ...parsed, activeWorkspaceId, activeBoardId, recentWorkspaceIds };
+        return { ...parsed, activeWorkspaceId, activeBoardId, recentWorkspaceIds, favoriteBoardIds };
       }
 
       // v1 (single implicit workspace) — wrap everything into one real workspace.
@@ -61,6 +64,7 @@ function loadOrMigrateRegistry() {
           activeWorkspaceId: workspaceId,
           activeBoardId: parsed.activeBoardId ?? null,
           recentWorkspaceIds: [workspaceId],
+          favoriteBoardIds: [],
           workspaces: [{ id: workspaceId, name: DEFAULT_WORKSPACE_NAME }],
           nodes: parsed.nodes.map((n) => ({ ...n, workspaceId })),
         };
@@ -94,6 +98,7 @@ function loadOrMigrateRegistry() {
     activeWorkspaceId: workspaceId,
     activeBoardId: boardId,
     recentWorkspaceIds: [workspaceId],
+    favoriteBoardIds: [],
     workspaces: [{ id: workspaceId, name: DEFAULT_WORKSPACE_NAME }],
     nodes: [
       { id: engineeringId, type: "folder", name: "Engineering", parentId: null, workspaceId, collapsed: false },
@@ -122,12 +127,38 @@ export function BoardsProvider({ children }) {
     }
   }, [state]);
 
-  const { nodes: allNodes, activeBoardId, workspaces, activeWorkspaceId, recentWorkspaceIds } = state;
+  const { nodes: allNodes, activeBoardId, workspaces, activeWorkspaceId, recentWorkspaceIds, favoriteBoardIds } = state;
   const nodes = allNodes.filter((n) => n.workspaceId === activeWorkspaceId);
 
   const switchBoard = (id) => {
     if (!allNodes.some((n) => n.id === id && n.type === "board" && n.workspaceId === activeWorkspaceId)) return;
     setState((prev) => ({ ...prev, activeBoardId: id }));
+  };
+
+  // Switches workspace (if needed) and board in one go — used by Favorites,
+  // which can point at a board outside the currently active workspace.
+  const goToBoard = (id) => {
+    const node = allNodes.find((n) => n.id === id && n.type === "board");
+    if (!node) return;
+    setState((prev) => ({
+      ...prev,
+      activeWorkspaceId: node.workspaceId,
+      activeBoardId: id,
+      recentWorkspaceIds: [node.workspaceId, ...prev.recentWorkspaceIds.filter((w) => w !== node.workspaceId)].slice(
+        0,
+        MAX_RECENT_WORKSPACES
+      ),
+    }));
+  };
+
+  const toggleFavorite = (id) => {
+    if (!allNodes.some((n) => n.id === id && n.type === "board")) return;
+    setState((prev) => ({
+      ...prev,
+      favoriteBoardIds: prev.favoriteBoardIds.includes(id)
+        ? prev.favoriteBoardIds.filter((f) => f !== id)
+        : [...prev.favoriteBoardIds, id],
+    }));
   };
 
   const createFolder = (name, parentFolderId = null) => {
@@ -178,6 +209,26 @@ export function BoardsProvider({ children }) {
     }));
   };
 
+  // Drag-reorder: moves draggedId to sit just before targetId. Only takes
+  // effect when both share the same parent (including two top-level nodes,
+  // where parentId is null on both) — reordering across parents/levels is
+  // a no-op here, by design.
+  const reorderNode = (draggedId, targetId) => {
+    if (draggedId === targetId) return;
+    setState((prev) => {
+      const dragged = prev.nodes.find((n) => n.id === draggedId);
+      const target = prev.nodes.find((n) => n.id === targetId);
+      if (!dragged || !target || dragged.parentId !== target.parentId) return prev;
+
+      const withoutDragged = prev.nodes.filter((n) => n.id !== draggedId);
+      const targetIndex = withoutDragged.findIndex((n) => n.id === targetId);
+      if (targetIndex === -1) return prev;
+
+      const nodes = [...withoutDragged.slice(0, targetIndex), dragged, ...withoutDragged.slice(targetIndex)];
+      return { ...prev, nodes };
+    });
+  };
+
   const deleteNode = (id) => {
     const node = allNodes.find((n) => n.id === id);
     if (!node) return;
@@ -207,7 +258,12 @@ export function BoardsProvider({ children }) {
         );
         nextActiveBoardId = remainingInWorkspace[0]?.id ?? null;
       }
-      return { ...prev, nodes: remainingNodes, activeBoardId: nextActiveBoardId };
+      return {
+        ...prev,
+        nodes: remainingNodes,
+        activeBoardId: nextActiveBoardId,
+        favoriteBoardIds: prev.favoriteBoardIds.filter((f) => f !== id),
+      };
     });
   };
 
@@ -276,6 +332,7 @@ export function BoardsProvider({ children }) {
       const remainingWorkspaces = prev.workspaces.filter((w) => w.id !== id);
       const remainingNodes = prev.nodes.filter((n) => n.workspaceId !== id);
       const remainingRecent = prev.recentWorkspaceIds.filter((w) => w !== id);
+      const remainingFavorites = prev.favoriteBoardIds.filter((f) => remainingNodes.some((n) => n.id === f));
 
       let nextActiveWorkspaceId = prev.activeWorkspaceId;
       let nextActiveBoardId = prev.activeBoardId;
@@ -294,6 +351,7 @@ export function BoardsProvider({ children }) {
         activeWorkspaceId: nextActiveWorkspaceId,
         activeBoardId: nextActiveBoardId,
         recentWorkspaceIds: remainingRecent.length ? remainingRecent : [nextActiveWorkspaceId],
+        favoriteBoardIds: remainingFavorites,
       };
     });
   };
@@ -302,15 +360,21 @@ export function BoardsProvider({ children }) {
     .map((id) => workspaces.find((w) => w.id === id))
     .filter(Boolean);
 
+  const favoriteBoards = favoriteBoardIds
+    .map((id) => allNodes.find((n) => n.id === id && n.type === "board"))
+    .filter(Boolean);
+
   return (
     <BoardsContext.Provider
       value={{
         nodes,
         activeBoardId,
         switchBoard,
+        goToBoard,
         createFolder,
         createBoard,
         renameNode,
+        reorderNode,
         deleteNode,
         toggleFolderCollapsed,
         workspaces,
@@ -320,6 +384,9 @@ export function BoardsProvider({ children }) {
         createWorkspace,
         renameWorkspace,
         deleteWorkspace,
+        favoriteBoardIds,
+        favoriteBoards,
+        toggleFavorite,
       }}
     >
       {children}

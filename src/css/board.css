@@ -126,9 +126,6 @@
    ============================================================ */
 
 .group-popup {
-  position: absolute;
-  top: 48px;
-  left: 0;
   background: var(--bg-primary, #fff);
   border: 1px solid var(--border-color, #e0e0e0);
   border-radius: 8px;
@@ -160,16 +157,6 @@
 .group-popup button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-}
-
-.group-popup-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 1999;
-  background: transparent;
 }
 
 /* ============================================================

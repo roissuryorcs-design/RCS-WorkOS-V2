@@ -1,5 +1,7 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
+import { createPortal } from "react-dom";
 import FileIcon from "./FileIcon";
+import { usePopoverPosition } from "../hooks/usePopoverPosition";
 
 export default function FileAttachment({ value, onUpdate, columnId }) {
   const [files, setFiles] = useState(() => {
@@ -16,13 +18,36 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
   const [showFileList, setShowFileList] = useState(false);
   const [hoveredFileIndex, setHoveredFileIndex] = useState(null);
   const [showActionsIndex, setShowActionsIndex] = useState(null);
-  const [popupPosition, setPopupPosition] = useState({ top: 0, left: 0 });
   const [visibleThumbnails, setVisibleThumbnails] = useState(3);
   const containerRef = useRef(null);
   const fileInputRef = useRef(null);
   const hoverTimeoutRef = useRef(null);
-  const fileListRef = useRef(null);
   const previewTimeoutRef = useRef(null);
+
+  // Anchors + portaled positions for the hover/click popups below — all
+  // four are portaled to document.body and clamped to stay on-screen
+  // (they'd otherwise get clipped by the table's overflow:auto scroll
+  // container, or run off the right/bottom edge of the viewport).
+  const [previewAnchorEl, setPreviewAnchorEl] = useState(null);
+  const previewAnchorRef = useMemo(() => ({ current: previewAnchorEl }), [previewAnchorEl]);
+  const previewPopupRef = useRef(null);
+  const previewStyle = usePopoverPosition(previewAnchorRef, previewPopupRef, hoveredFileIndex !== null, {
+    placement: "right-start",
+  });
+
+  const [badgeAnchorEl, setBadgeAnchorEl] = useState(null);
+  const badgeAnchorRef = useMemo(() => ({ current: badgeAnchorEl }), [badgeAnchorEl]);
+  const badgePopupRef = useRef(null);
+  const badgeStyle = usePopoverPosition(badgeAnchorRef, badgePopupRef, showFileList, {
+    placement: "right-start",
+  });
+
+  const [actionsAnchorEl, setActionsAnchorEl] = useState(null);
+  const actionsAnchorRef = useMemo(() => ({ current: actionsAnchorEl }), [actionsAnchorEl]);
+  const actionsPopupRef = useRef(null);
+  const actionsStyle = usePopoverPosition(actionsAnchorRef, actionsPopupRef, showActionsIndex !== null, {
+    placement: "bottom-end",
+  });
 
   const saveFiles = (newFiles) => {
     setFiles(newFiles);
@@ -216,20 +241,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
   const handleBadgeMouseEnter = (e) => {
     if (files.length <= 1) return;
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
-    
-    const rect = e.currentTarget.getBoundingClientRect();
-    let left = rect.right + 8;
-    let top = rect.top;
-    
-    const popupWidth = 280;
-    if (left + popupWidth > window.innerWidth) {
-      left = rect.left - popupWidth - 8;
-    }
-    if (top + 350 > window.innerHeight) {
-      top = window.innerHeight - 350 - 10;
-    }
-    
-    setPopupPosition({ top, left });
+    setBadgeAnchorEl(e.currentTarget);
     setShowFileList(true);
   };
 
@@ -257,19 +269,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
   // ============================================================
   const handleThumbnailHover = (e, index) => {
     if (previewTimeoutRef.current) clearTimeout(previewTimeoutRef.current);
-    const rect = e.currentTarget.getBoundingClientRect();
-    let left = rect.right + 8;
-    let top = rect.top;
-    
-    const popupWidth = 220;
-    if (left + popupWidth > window.innerWidth) {
-      left = rect.left - popupWidth - 8;
-    }
-    if (top + 250 > window.innerHeight) {
-      top = window.innerHeight - 250 - 10;
-    }
-    
-    setPopupPosition({ top, left });
+    setPreviewAnchorEl(e.currentTarget);
     setHoveredFileIndex(index);
   };
 
@@ -292,8 +292,9 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
   // ============================================================
   // PREVIEW DI DALAM DAFTAR FILE – DELAY 1 DETIK
   // ============================================================
-  const handleListHover = (index) => {
+  const handleListHover = (e, index) => {
     if (previewTimeoutRef.current) clearTimeout(previewTimeoutRef.current);
+    setPreviewAnchorEl(e.currentTarget);
     setHoveredFileIndex(index);
   };
 
@@ -379,35 +380,6 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
                   )}
                 </div>
 
-                {hoveredFileIndex === index && !showFileList && (
-                  <div
-                    onMouseEnter={handlePreviewMouseEnter}
-                    onMouseLeave={handlePreviewMouseLeave}
-                    style={{
-                      position: "fixed",
-                      top: popupPosition.top,
-                      left: popupPosition.left,
-                      background: "#ffffff",
-                      border: "1px solid #d1d5db",
-                      borderRadius: 8,
-                      boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
-                      zIndex: 99999,
-                      pointerEvents: "auto",
-                    }}
-                  >
-                    <PreviewContent
-                      file={file}
-                      onDownload={() => {
-                        downloadFile(file.url, file.name);
-                        setHoveredFileIndex(null);
-                      }}
-                      onDelete={() => {
-                        removeFile(index);
-                        setHoveredFileIndex(null);
-                      }}
-                    />
-                  </div>
-                )}
               </div>
             ))}
 
@@ -448,15 +420,13 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
       </div>
 
       {/* Popup daftar file (+N) */}
-      {showFileList && files.length > visibleThumbnails && (
+      {showFileList && files.length > visibleThumbnails && createPortal(
         <div
-          ref={fileListRef}
+          ref={badgePopupRef}
           onMouseEnter={handleFileListMouseEnter}
           onMouseLeave={handleFileListMouseLeave}
           style={{
-            position: "fixed",
-            top: popupPosition.top,
-            left: popupPosition.left,
+            ...badgeStyle,
             background: "#ffffff",
             border: "1px solid #d1d5db",
             borderRadius: 8,
@@ -486,7 +456,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
                 background: hoveredFileIndex === index ? "#f3f4f6" : "transparent",
                 cursor: "pointer",
               }}
-              onMouseEnter={() => handleListHover(index)}
+              onMouseEnter={(e) => handleListHover(e, index)}
               onMouseLeave={handleListLeave}
             >
               <div
@@ -535,7 +505,13 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  setShowActionsIndex(showActionsIndex === index ? null : index);
+                  if (showActionsIndex === index) {
+                    setShowActionsIndex(null);
+                    setActionsAnchorEl(null);
+                  } else {
+                    setShowActionsIndex(index);
+                    setActionsAnchorEl(e.currentTarget);
+                  }
                 }}
                 style={{
                   background: "none",
@@ -549,13 +525,11 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
                 ⋮
               </button>
 
-              {showActionsIndex === index && (
+              {showActionsIndex === index && createPortal(
                 <div
+                  ref={actionsPopupRef}
                   style={{
-                    position: "absolute",
-                    right: 0,
-                    top: "100%",
-                    marginTop: 4,
+                    ...actionsStyle,
                     background: "#ffffff",
                     border: "1px solid #d1d5db",
                     borderRadius: 6,
@@ -567,58 +541,62 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
                   onClick={(e) => e.stopPropagation()}
                 >
                   <button
-                    onClick={() => { window.open(file.url, "_blank"); setShowActionsIndex(null); }}
+                    onClick={() => { window.open(file.url, "_blank"); setShowActionsIndex(null); setActionsAnchorEl(null); }}
                     style={{ display: "block", width: "100%", padding: "6px 14px", background: "none", border: "none", textAlign: "left", cursor: "pointer", fontSize: 13, color: "#1a1a2e" }}
                   >
                     Open File
                   </button>
                   <button
-                    onClick={() => { downloadFile(file.url, file.name); setShowActionsIndex(null); }}
+                    onClick={() => { downloadFile(file.url, file.name); setShowActionsIndex(null); setActionsAnchorEl(null); }}
                     style={{ display: "block", width: "100%", padding: "6px 14px", background: "none", border: "none", textAlign: "left", cursor: "pointer", fontSize: 13, color: "#1a1a2e" }}
                   >
                     Download
                   </button>
                   <button
-                    onClick={() => { if (confirm(`Delete "${file.name}"?`)) { removeFile(index); } setShowActionsIndex(null); }}
+                    onClick={() => { if (confirm(`Delete "${file.name}"?`)) { removeFile(index); } setShowActionsIndex(null); setActionsAnchorEl(null); }}
                     style={{ display: "block", width: "100%", padding: "6px 14px", background: "none", border: "none", textAlign: "left", cursor: "pointer", fontSize: 13, color: "#ef4444", borderTop: "1px solid #f3f4f6" }}
                   >
                     Delete
                   </button>
-                </div>
-              )}
-
-              {hoveredFileIndex === index && (
-                <div
-                  onMouseEnter={handlePreviewMouseEnter}
-                  onMouseLeave={handlePreviewMouseLeave}
-                  style={{
-                    position: "fixed",
-                    left: (fileListRef.current?.getBoundingClientRect().right || 0) + 8,
-                    top: (fileListRef.current?.getBoundingClientRect().top || 0) + 20,
-                    background: "#ffffff",
-                    border: "1px solid #d1d5db",
-                    borderRadius: 8,
-                    boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
-                    zIndex: 100000,
-                    pointerEvents: "auto",
-                  }}
-                >
-                  <PreviewContent
-                    file={file}
-                    onDownload={() => {
-                      downloadFile(file.url, file.name);
-                      setHoveredFileIndex(null);
-                    }}
-                    onDelete={() => {
-                      removeFile(index);
-                      setHoveredFileIndex(null);
-                    }}
-                  />
-                </div>
+                </div>,
+                document.body
               )}
             </div>
           ))}
-        </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Shared file preview popup — used by both the thumbnail row and the
+          +N file list above; whichever last set previewAnchorEl wins. */}
+      {hoveredFileIndex !== null && files[hoveredFileIndex] && createPortal(
+        <div
+          ref={previewPopupRef}
+          onMouseEnter={handlePreviewMouseEnter}
+          onMouseLeave={handlePreviewMouseLeave}
+          style={{
+            ...previewStyle,
+            background: "#ffffff",
+            border: "1px solid #d1d5db",
+            borderRadius: 8,
+            boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
+            zIndex: 99999,
+            pointerEvents: "auto",
+          }}
+        >
+          <PreviewContent
+            file={files[hoveredFileIndex]}
+            onDownload={() => {
+              downloadFile(files[hoveredFileIndex].url, files[hoveredFileIndex].name);
+              setHoveredFileIndex(null);
+            }}
+            onDelete={() => {
+              removeFile(hoveredFileIndex);
+              setHoveredFileIndex(null);
+            }}
+          />
+        </div>,
+        document.body
       )}
 
       {/* Popup Add File (modal) */}

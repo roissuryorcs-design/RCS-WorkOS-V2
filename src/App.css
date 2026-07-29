@@ -682,15 +682,12 @@ th:hover .resize-handle {
    GROUP POPUP
    ============================================================ */
 .group-popup {
-  position: absolute;
-  top: 40px;
-  left: 4px;
   background: var(--bg-modal);
   border: 1px solid var(--border-color);
   border-radius: 6px;
   box-shadow: var(--shadow-md);
   padding: 4px 0;
-  z-index: 100;
+  z-index: 2000;
   min-width: 160px;
 }
 
@@ -709,15 +706,6 @@ th:hover .resize-handle {
 .group-popup button:last-child {
   border-top: 1px solid var(--border-color);
   color: #ef4444;
-}
-
-.group-popup-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 99;
 }
 
 /* ============================================================

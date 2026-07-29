@@ -184,6 +184,7 @@ export default function ResizableHeader({
       {showMenu && (
         <ColumnMenu
           column={column}
+          anchorRef={thRef}
           onRename={onRename}
           onToggle={onToggle}
           onDelete={onDelete}
