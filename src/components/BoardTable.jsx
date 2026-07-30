@@ -6,11 +6,29 @@ import { useColumns } from "../context/ColumnContext";
 import { useLanguage } from "../context/LanguageContext";
 import { getSubItemLabel } from "../i18n/defaults";
 
+// Picks black or white text for a given background hex, whichever reads
+// better — used for the column-header row's text since its background is
+// now user-pickable per group (unlike the fixed group accent color, an
+// arbitrary background can't be assumed to contrast with any one fixed
+// text color).
+function getHeaderTextColor(hex) {
+  const clean = (hex || "").replace("#", "");
+  if (clean.length !== 3 && clean.length !== 6) return "#ffffff";
+  const full = clean.length === 3 ? clean.split("").map((c) => c + c).join("") : clean;
+  const r = parseInt(full.substring(0, 2), 16);
+  const g = parseInt(full.substring(2, 4), 16);
+  const b = parseInt(full.substring(4, 6), 16);
+  const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+  return yiq >= 150 ? "#1a1a2e" : "#ffffff";
+}
+
 export default function BoardTable({
   items,
   groups,
   groupColors,
   onUpdateGroupColor,
+  groupHeaderColors,
+  onUpdateGroupHeaderColor,
   onUpdateItem,
   onDeleteItem,
   onAddGroup,
@@ -206,6 +224,12 @@ export default function BoardTable({
     }
   };
 
+  const handleUpdateGroupHeaderColor = (groupName, color) => {
+    if (onUpdateGroupHeaderColor) {
+      onUpdateGroupHeaderColor(groupName, color);
+    }
+  };
+
   const handleAddItem = (groupName) => {
     if (onAddItem) {
       onAddItem(groupName);
@@ -351,6 +375,8 @@ export default function BoardTable({
             const isCollapsed = collapsed[groupName] || false;
             const isDefault = groupName === defaultGroupName;
             const groupColor = groupColors[groupName] || '#3b82f6';
+            const headerBgColor = (groupHeaderColors && groupHeaderColors[groupName]) || null;
+            const headerTextColor = getHeaderTextColor(headerBgColor || '#6b7280');
             const displayTitle = getDisplayTitle(groupName);
             const groupId = index + 1;
 
@@ -479,6 +505,7 @@ export default function BoardTable({
                         value={groupColor}
                         onChange={(e) => handleUpdateGroupColor(groupName, e.target.value)}
                         className="group-color-picker"
+                        title={t("boardTable.groupColorPickerTitle")}
                         style={{
                           flexShrink: 0,
                           width: '24px',
@@ -491,7 +518,26 @@ export default function BoardTable({
                         }}
                       />
 
-                      <h3 
+                      <input
+                        type="color"
+                        value={headerBgColor || '#6b7280'}
+                        onChange={(e) => handleUpdateGroupHeaderColor(groupName, e.target.value)}
+                        className="group-header-color-picker"
+                        title={t("boardTable.headerColorPickerTitle")}
+                        style={{
+                          flexShrink: 0,
+                          width: '24px',
+                          height: '24px',
+                          marginRight: '6px',
+                          border: '1px solid var(--border-dark)',
+                          borderRadius: '4px',
+                          background: 'transparent',
+                          cursor: 'pointer',
+                          padding: 0,
+                        }}
+                      />
+
+                      <h3
                         className="group-title"
                         style={{
                           flex: '1 1 auto',
@@ -558,7 +604,19 @@ export default function BoardTable({
                   <div className="group-content">
                     {tasks.length > 0 ? (
                       <div className="table-wrapper">
-                        <table className="board-table" style={{ width: '100%', tableLayout: 'fixed' }}>
+                        <table
+                          className="board-table"
+                          style={{
+                            width: '100%',
+                            tableLayout: 'fixed',
+                            // Override lokal — hanya berlaku untuk <thead> milik
+                            // grup ini, bukan grup lain (CSS var di-scope ke
+                            // subtree elemen ini). Kalau grup belum punya warna
+                            // header sendiri, biarkan undefined supaya tetap
+                            // ikut nilai default global di :root.
+                            ...(headerBgColor ? { '--bg-table-header': headerBgColor } : {}),
+                          }}
+                        >
                           <thead>
                             <tr className="table-header-row">
                               {/* CHECKBOX - CENTER */}
@@ -616,7 +674,7 @@ export default function BoardTable({
                                     isLast={isLast}
                                     align="center"
                                     showMenuButton={!isItem}
-                                    headerColor={groupColor}
+                                    headerColor={headerTextColor}
                                     tooltip={
                                       col.type === "progress"
                                         ? t("boardTable.progressTooltip")

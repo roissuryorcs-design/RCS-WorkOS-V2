@@ -171,11 +171,13 @@ export default function ResizableHeader({
         <span
           style={{
             flex: 1,
-            fontWeight: 600,
-            color: headerColor || "inherit", // ✅ WARNA IKUT GROUP
+            minWidth: 0,
+            fontWeight: 700,
+            color: headerColor || "#ffffff",
             whiteSpace: "nowrap",
             overflow: "hidden",
             textOverflow: "ellipsis",
+            textAlign: align === "left" ? "left" : "center",
           }}
         >
           {children}

@@ -37,16 +37,22 @@ select:focus {
    ============================================================ */
 :root,
 body.light {
-  /* Di-tone-down dari putih murni supaya layar tidak silau — kanvas
-     jadi abu-abu lembut, kartu/tabel pakai warna yang dulu jadi kanvas
-     (bukan putih 100%), jadi ada 2 lapisan yang jelas tapi tidak silau. */
-  --bg-primary: #e7e9ed;
-  --bg-secondary: #f5f6f8;
-  --bg-sidebar: #e7e9ed;
-  --bg-hover: #e5e7eb;
+  /* 3 lapisan dengan kecerahan yang jelas beda satu sama lain — sidebar
+     paling gelap (anchor navigasi), kanvas (di belakang/sekitar tabel)
+     paling terang, tabel di tengah dan sengaja diredupkan (bukan hampir
+     putih lagi) supaya ketiganya tidak menyatu. */
+  --bg-primary: #eef0f3;
+  --bg-secondary: #e4e6ea;
+  --bg-sidebar: #d6dae0;
+  --bg-hover: #d7dae0;
   --bg-active: #c7ccd6;
-  --bg-sidebar-hover: #d5d9e0;
+  --bg-sidebar-hover: #c9cdd6;
   --bg-input: #f5f6f8;
+  /* Baris header kolom (ITEM/STATUS/dst) sengaja lebih gelap dari
+     bg-secondary supaya jadi pita gelap yang jelas terpisah dari baris
+     Group Title tepat di atasnya — warna/teks group title jadi lebih
+     menonjol karena kontras dengan pita header di bawahnya. */
+  --bg-table-header: #6b7280;
   /* Popover/modal sedikit lebih terang dari bg-secondary supaya
      kelihatan "mengambang" di atas tabel, bukan menyatu. */
   --bg-modal: #ffffff;
@@ -99,6 +105,10 @@ body.dark {
   --bg-active: #363c50;
   --bg-sidebar-hover: #2a2d3a;
   --bg-input: #252837;
+  /* Sedikit lebih terang dari bg-secondary — di dark theme, elevasi
+     biasanya dibaca lewat permukaan yang lebih terang, bukan lebih
+     gelap (kebalikan dari light theme). */
+  --bg-table-header: #232635;
   /* Popover/modal sedikit lebih terang dari bg-secondary supaya
      kelihatan "mengambang" di atas tabel, bukan menyatu. */
   --bg-modal: #242838;
@@ -393,7 +403,7 @@ body.dark {
   left: 36px !important;
   z-index: 21 !important;
   background-color: var(--bg-secondary, #1a1d27) !important;
-  box-shadow: inset -2px 0 0 0 var(--border-color) !important;
+  box-shadow: inset -2px 0 0 0 var(--border-dark) !important;
   background-clip: padding-box !important;
   /* box-shadow di atas SUDAH menggambar garis kanan kolom sticky ini —
      matikan border-right biasa (dari rule ".board-table th, td" umum)
@@ -1091,7 +1101,7 @@ tr:hover .btn-arrow-hover {
   position: sticky !important;
   top: 48px !important; /* tinggi group header */
   z-index: 600 !important;
-  background: var(--bg-secondary) !important;
+  background: var(--bg-table-header) !important;
   border-bottom: 2px solid var(--border-dark) !important;
 }
 
@@ -1102,6 +1112,13 @@ tr:hover .btn-arrow-hover {
 
 .board-table thead th:nth-child(2) {
   z-index: 650 !important;
+  /* Kolom ITEM sticky punya rule background tersendiri (lihat
+     ".board-table th:nth-child(2), td:nth-child(2)" di atas) yang
+     spesifisitasnya lebih tinggi dari ".board-table thead th" biasa —
+     tanpa override ini, header ITEM tetap kepakai bg-secondary (sama
+     terangnya dengan baris Group Title) alih-alih ikut memakai
+     bg-table-header yang lebih gelap seperti header kolom lain. */
+  background-color: var(--bg-table-header) !important;
 }
 
 /* shadow halus modern */
@@ -1140,7 +1157,7 @@ tr:hover .btn-arrow-hover {
 /* Vertical lines */
 .board-table th,
 .board-table td {
-  border-right: 2px solid var(--border-color) !important;
+  border-right: 2px solid var(--border-dark) !important;
 }
 
 /* Horizontal lines */

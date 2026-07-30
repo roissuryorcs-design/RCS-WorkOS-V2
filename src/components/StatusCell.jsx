@@ -3,29 +3,14 @@ import Popover from "./Popover";
 import { useLanguage } from "../context/LanguageContext";
 import { getDefaultStatusKey } from "../i18n/defaults";
 
-// Walks the subtree collecting the status value of every leaf item (an
-// item with no children of its own) — intermediate parents don't have a
-// "real" manually-set status (they're rollups too), so only leaves count
-// toward a parent's cumulative color breakdown.
-function collectLeafStatuses(items, columnId) {
-  let result = [];
-  for (const child of items) {
-    const grandchildren = child.children && Array.isArray(child.children) ? child.children : [];
-    if (grandchildren.length > 0) {
-      result = result.concat(collectLeafStatuses(grandchildren, columnId));
-    } else {
-      result.push(child[columnId] || null);
-    }
-  }
-  return result;
-}
-
+// Status is independent per item — unlike Progress, it never rolls up from
+// or cascades to parent/child items. Every row, regardless of its position
+// in the tree, gets its own directly-settable status.
 export default function StatusCell({
   columnId,
   status,
   statuses,
   statusOrder,
-  itemChildren,
   onChange,
   onOpenStatusManager,
 }) {
@@ -49,8 +34,6 @@ export default function StatusCell({
   const [isOpen, setIsOpen] = useState(false);
   const triggerRef = useRef(null);
 
-  const hasChildren = itemChildren && itemChildren.length > 0;
-
   const handleSelect = (s) => {
     onChange(s);
     setIsOpen(false);
@@ -60,55 +43,6 @@ export default function StatusCell({
     onOpenStatusManager(columnId);
     setIsOpen(false);
   };
-
-  // ============================================================
-  // PARENT DENGAN CHILDREN — read-only, warna kumulatif dari leaf children
-  // ============================================================
-  if (hasChildren) {
-    const leafStatuses = collectLeafStatuses(itemChildren, columnId);
-    const total = leafStatuses.length;
-
-    const counts = {};
-    leafStatuses.forEach((s) => {
-      const key = s || finalStatuses[0] || defaultStatusKey;
-      counts[key] = (counts[key] || 0) + 1;
-    });
-
-    const segments = finalStatuses
-      .filter((s) => counts[s] > 0)
-      .map((s) => ({ status: s, count: counts[s], color: getColor(s) }));
-
-    const summary = segments.map((seg) => `${seg.status}: ${seg.count}`).join(", ");
-
-    return (
-      <div
-        title={total > 0 ? summary : t("statusCell.noSubItemStatus")}
-        style={{
-          display: "flex",
-          width: "100%",
-          minHeight: 28,
-          borderRadius: 4,
-          overflow: "hidden",
-          border: "1px solid var(--border-color)",
-          cursor: "default",
-        }}
-      >
-        {total > 0 ? (
-          segments.map((seg) => (
-            <div
-              key={seg.status}
-              style={{
-                width: `${(seg.count / total) * 100}%`,
-                background: seg.color,
-              }}
-            />
-          ))
-        ) : (
-          <div style={{ width: "100%", background: "var(--bg-hover)" }} />
-        )}
-      </div>
-    );
-  }
 
   return (
     <div style={{ position: "relative", width: "100%" }}>

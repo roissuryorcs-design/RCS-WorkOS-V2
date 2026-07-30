@@ -3,7 +3,7 @@
 // these MUST go through the helper here rather than re-deriving the string
 // — e.g. `item.status` is written as literal data in 6+ places across
 // App.jsx and read back by ColumnContext.jsx's default status map; if those
-// ever drifted to call t("defaults.statusDefault") independently instead of
+// ever drifted to call t("defaults.statusNone") independently instead of
 // sharing one helper, a language whose translated word differs between the
 // two call sites would silently create items with a status key that
 // doesn't exist in the status map. Called at creation time (never cached
@@ -15,7 +15,7 @@ export function getDefaultGroupName(t) {
 }
 
 export function getDefaultStatusKey(t) {
-  return t("defaults.statusDefault");
+  return t("defaults.statusNone");
 }
 
 export function getTaskName(t, n) {

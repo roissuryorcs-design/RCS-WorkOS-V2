@@ -87,7 +87,6 @@ export default function Row({
             status={item[col.id]}
             statuses={col.statuses || {}}
             statusOrder={col.statusOrder || []}
-            itemChildren={children}
             onChange={(val) => onUpdate(item.id, col.id, val)}
             onOpenStatusManager={onOpenStatusManager}
           />

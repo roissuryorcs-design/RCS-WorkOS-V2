@@ -8,16 +8,21 @@
 /* LIGHT THEME (default) */
 :root,
 body.light {
-  /* Di-tone-down dari putih murni supaya layar tidak silau — kanvas
-     jadi abu-abu lembut, kartu/tabel pakai warna yang dulu jadi kanvas
-     (bukan putih 100%), jadi ada 2 lapisan yang jelas tapi tidak silau. */
-  --bg-primary: #e7e9ed;
-  --bg-secondary: #f5f6f8;
-  --bg-sidebar: #e7e9ed;
-  --bg-hover: #e5e7eb;
+  /* 3 lapisan dengan kecerahan yang jelas beda satu sama lain — sidebar
+     paling gelap (anchor navigasi), kanvas (di belakang/sekitar tabel)
+     paling terang, tabel di tengah dan sengaja diredupkan (bukan hampir
+     putih lagi) supaya ketiganya tidak menyatu.
+     NOTE: App.css punya blok :root,body.light duplikat yang di-load
+     setelah file ini — nilai di sana yang sebenarnya menang. Selalu ubah
+     keduanya bersamaan supaya tidak drift lagi. */
+  --bg-primary: #eef0f3;
+  --bg-secondary: #e4e6ea;
+  --bg-sidebar: #d6dae0;
+  --bg-hover: #d7dae0;
   --bg-active: #c7ccd6;
-  --bg-sidebar-hover: #d5d9e0;
+  --bg-sidebar-hover: #c9cdd6;
   --bg-input: #f5f6f8;
+  --bg-table-header: #6b7280;
   --bg-modal: #ffffff;
   --bg-card: #f5f6f8;
 
@@ -62,6 +67,7 @@ body.dark {
   --bg-active: #363c50;
   --bg-sidebar-hover: #2a2d3a;
   --bg-input: #252837;
+  --bg-table-header: #232635;
   --bg-modal: #242838;
   --bg-card: #1a1d27;
 

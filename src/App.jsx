@@ -92,12 +92,33 @@ function BoardWorkspace({ boardId }) {
   });
 
   // ============================================================
+  // 🔥 STATE GROUP HEADER BG COLORS - opsional per grup, DARI localStorage
+  // Beda dari groupColors (itu warna aksen/teks Group Title) — ini warna
+  // LATAR baris header kolom (ITEM/STATUS/dst) milik grup ini. Tidak
+  // dipetakan berarti "pakai default" (var(--bg-table-header) di CSS),
+  // bukan tersimpan sebagai key eksplisit sampai user benar-benar memilih.
+  // ============================================================
+  const [groupHeaderColors, setGroupHeaderColors] = useState(() => {
+    const saved = localStorage.getItem(boardKey('forelGroupHeaderColors', boardId));
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (typeof parsed === 'object') return parsed;
+      } catch (e) {
+        console.error('Error loading groupHeaderColors:', e);
+      }
+    }
+    return {};
+  });
+
+  // ============================================================
   // LOAD DATA
   // ============================================================
   useEffect(() => {
     const savedItems = localStorage.getItem(boardKey("forelItems", boardId));
     const savedStatuses = localStorage.getItem(boardKey("forelStatuses", boardId));
     const savedGroupColors = localStorage.getItem(boardKey("forelGroupColors", boardId));
+    const savedGroupHeaderColors = localStorage.getItem(boardKey("forelGroupHeaderColors", boardId));
 
     const defaultStatuses = { [getDefaultStatusKey(t)]: "#9ca3af" };
 
@@ -233,6 +254,20 @@ function BoardWorkspace({ boardId }) {
       }
     }
 
+    // ✅ LOAD GROUP HEADER BG COLORS (opsional — boleh kosong/{})
+    if (savedGroupHeaderColors) {
+      try {
+        const parsed = JSON.parse(savedGroupHeaderColors);
+        if (typeof parsed === 'object') {
+          setGroupHeaderColors(parsed);
+        }
+      } catch (e) {
+        console.error('Error parsing groupHeaderColors:', e);
+      }
+    } else {
+      setGroupHeaderColors({});
+    }
+
     // ✅ PASTIKAN DEFAULT GROUP PUNYA WARNA DAN SIMPAN
     setGroupColors(prev => {
       const updated = { ...prev };
@@ -315,6 +350,10 @@ function BoardWorkspace({ boardId }) {
   useEffect(() => {
     localStorage.setItem(boardKey("forelGroupColors", boardId), JSON.stringify(groupColors));
   }, [groupColors, boardId]);
+
+  useEffect(() => {
+    localStorage.setItem(boardKey("forelGroupHeaderColors", boardId), JSON.stringify(groupHeaderColors));
+  }, [groupHeaderColors, boardId]);
 
   // ✅ Persist groups whenever they change (single source of truth —
   // renameGroup/deleteGroup/addGroup only ever call setGroups now).
@@ -519,6 +558,13 @@ function BoardWorkspace({ boardId }) {
       setGroupColors(newColors);
     }
 
+    const newHeaderColors = { ...groupHeaderColors };
+    if (newHeaderColors[oldName] !== undefined) {
+      newHeaderColors[newName.trim()] = newHeaderColors[oldName];
+      delete newHeaderColors[oldName];
+      setGroupHeaderColors(newHeaderColors);
+    }
+
     setGroups(prev => prev.map(g => g === oldName ? newName.trim() : g));
   };
 
@@ -533,6 +579,9 @@ function BoardWorkspace({ boardId }) {
     const newColors = { ...groupColors };
     delete newColors[groupName];
     setGroupColors(newColors);
+    const newHeaderColors = { ...groupHeaderColors };
+    delete newHeaderColors[groupName];
+    setGroupHeaderColors(newHeaderColors);
     setHasAutoAdded(false);
     setGroups(prev => prev.filter(g => g !== groupName));
   };
@@ -578,6 +627,10 @@ function BoardWorkspace({ boardId }) {
 
   const updateGroupColor = (groupName, color) => {
     setGroupColors((prev) => ({ ...prev, [groupName]: color }));
+  };
+
+  const updateGroupHeaderColor = (groupName, color) => {
+    setGroupHeaderColors((prev) => ({ ...prev, [groupName]: color }));
   };
 
   const reorderGroups = (newOrder) => {
@@ -777,6 +830,8 @@ function BoardWorkspace({ boardId }) {
           statuses={statuses}
           groupColors={groupColors}
           onUpdateGroupColor={updateGroupColor}
+          groupHeaderColors={groupHeaderColors}
+          onUpdateGroupHeaderColor={updateGroupHeaderColor}
           onUpdateItem={updateItem}
           onDeleteItem={deleteItem}
           onAddGroup={addGroup}

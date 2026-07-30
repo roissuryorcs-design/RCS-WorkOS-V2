@@ -11,10 +11,12 @@ const ColumnContext = createContext();
 // be active when this file first imported, ignoring every later switch.
 function getDefaultStatuses(t) {
   return {
-    [t("defaults.statusDefault")]: "#9ca3af",
-    [t("defaults.statusWorkingOnIt")]: "#f59e0b",
+    [t("defaults.statusNone")]: "#9ca3af",
+    [t("defaults.statusOpen")]: "#3b82f6",
+    [t("defaults.statusOnHold")]: "#f59e0b",
     [t("defaults.statusStuck")]: "#ef4444",
-    [t("defaults.statusDone")]: "#22c55e",
+    [t("defaults.statusCancelled")]: "#8b5cf6",
+    [t("defaults.statusClosed")]: "#22c55e",
   };
 }
 
