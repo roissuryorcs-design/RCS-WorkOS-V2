@@ -1,8 +1,19 @@
 import { useState, useEffect } from "react";
 import { ThemeProvider } from "./context/ThemeContext";
+import { LanguageProvider, useLanguage } from "./context/LanguageContext";
 import { ColumnProvider, useColumns } from "./context/ColumnContext";
 import { BoardsProvider, useBoards } from "./context/BoardsContext";
 import { boardKey } from "./utils/boardStorage";
+import {
+  getDefaultGroupName,
+  getDefaultStatusKey,
+  getTaskName,
+  getTaskNameInGroup,
+  getDocNumber,
+  getPeoplePlaceholder,
+  getRevDefault,
+  getSubItemLabel,
+} from "./i18n/defaults";
 import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
 import Toolbar from "./components/Toolbar";
@@ -17,6 +28,7 @@ import { UpdateProvider } from './context/UpdateContext';
 import UpdatePanel from './components/UpdatePanel';
 
 function BoardWorkspace({ boardId }) {
+  const { t } = useLanguage();
   const [items, setItems] = useState([]);
   const [statuses, setStatuses] = useState({});
   const [search, setSearch] = useState("");
@@ -43,9 +55,9 @@ function BoardWorkspace({ boardId }) {
       try {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          // ✅ NORMALISASI: "Default" → "Default Group"
+          // ✅ NORMALISASI: "Default" → nama grup default (bahasa aktif)
           const normalized = parsed.map(g =>
-            g === 'Default' ? 'Default Group' : g
+            g === 'Default' ? getDefaultGroupName(t) : g
           );
           // ✅ SIMPAN KEMBALI KE LOCALSTORAGE
           localStorage.setItem(boardKey('board-groups', boardId), JSON.stringify(normalized));
@@ -55,7 +67,7 @@ function BoardWorkspace({ boardId }) {
         console.error('Error parsing board-groups:', e);
       }
     }
-    return ['Default Group'];
+    return [getDefaultGroupName(t)];
   });
 
   // ============================================================
@@ -75,7 +87,7 @@ function BoardWorkspace({ boardId }) {
     }
     // ✅ Default: Default Group warna biru (#3b82f6)
     return {
-      'Default Group': '#3b82f6'
+      [getDefaultGroupName(t)]: '#3b82f6'
     };
   });
 
@@ -87,7 +99,7 @@ function BoardWorkspace({ boardId }) {
     const savedStatuses = localStorage.getItem(boardKey("forelStatuses", boardId));
     const savedGroupColors = localStorage.getItem(boardKey("forelGroupColors", boardId));
 
-    const defaultStatuses = { Default: "#9ca3af" };
+    const defaultStatuses = { [getDefaultStatusKey(t)]: "#9ca3af" };
 
     if (savedStatuses) {
       const parsed = JSON.parse(savedStatuses);
@@ -116,27 +128,27 @@ function BoardWorkspace({ boardId }) {
       loadedItems = ensureChildren(parsedItems);
       groupsFromItems = [...new Set(loadedItems.map(item => item.group))];
 
-      // ✅ NORMALISASI: "Default" → "Default Group"
+      // ✅ NORMALISASI: "Default" → nama grup default (bahasa aktif)
       groupsFromItems = groupsFromItems.map(g =>
-        g === 'Default' ? 'Default Group' : g
+        g === 'Default' ? getDefaultGroupName(t) : g
       );
 
       if (groupsFromItems.length === 0) {
-        groupsFromItems = ["Default Group"];
+        groupsFromItems = [getDefaultGroupName(t)];
       }
     } else {
-      const defaultGroup = "Default Group";
+      const defaultGroup = getDefaultGroupName(t);
       groupsFromItems = [defaultGroup];
 
       loadedItems = Array.from({ length: 3 }, (_, i) => ({
         id: Date.now() + i + Math.random() * 1000,
         group: defaultGroup,
-        item: `Task ${i + 1}`,
-        document: `DOC-${String(i + 1).padStart(3, '0')}`,
-        people: "Assign to...",
-        status: "Default",
+        item: getTaskName(t, i + 1),
+        document: getDocNumber(t, i + 1),
+        people: getPeoplePlaceholder(t),
+        status: getDefaultStatusKey(t),
         dueDate: "",
-        rev: "R0",
+        rev: getRevDefault(t),
         children: [],
         isExpanded: false,
       }));
@@ -163,12 +175,12 @@ function BoardWorkspace({ boardId }) {
           const newItems = Array.from({ length: 3 }, (_, i) => ({
             id: Date.now() + i + Math.random() * 1000,
             group: group,
-            item: `Task ${startIndex + i + 1}`,
-            document: `DOC-${String(startIndex + i + 1).padStart(3, '0')}`,
+            item: getTaskName(t, startIndex + i + 1),
+            document: getDocNumber(t, startIndex + i + 1),
             people: "",
-            status: "Default",
+            status: getDefaultStatusKey(t),
             dueDate: "",
-            rev: "R0",
+            rev: getRevDefault(t),
             children: [],
             isExpanded: false,
           }));
@@ -191,7 +203,7 @@ function BoardWorkspace({ boardId }) {
         if (Array.isArray(parsed) && parsed.length > 0) {
           // ✅ NORMALISASI
           const normalized = parsed.map(g =>
-            g === 'Default' ? 'Default Group' : g
+            g === 'Default' ? getDefaultGroupName(t) : g
           );
           setGroups(normalized);
           // ✅ SIMPAN KEMBALI KE LOCALSTORAGE
@@ -224,8 +236,9 @@ function BoardWorkspace({ boardId }) {
     // ✅ PASTIKAN DEFAULT GROUP PUNYA WARNA DAN SIMPAN
     setGroupColors(prev => {
       const updated = { ...prev };
-      if (!updated['Default Group']) {
-        updated['Default Group'] = '#3b82f6';
+      const defaultGroupName = getDefaultGroupName(t);
+      if (!updated[defaultGroupName]) {
+        updated[defaultGroupName] = '#3b82f6';
       }
       localStorage.setItem(boardKey('forelGroupColors', boardId), JSON.stringify(updated));
       return updated;
@@ -243,7 +256,7 @@ function BoardWorkspace({ boardId }) {
 
     const groupsFromItems = [...new Set(items.map(item => item.group))];
     let needsAutoAdd = false;
-    const groupsToCheck = groupsFromItems.length > 0 ? groupsFromItems : ['Default Group'];
+    const groupsToCheck = groupsFromItems.length > 0 ? groupsFromItems : [getDefaultGroupName(t)];
 
     groupsToCheck.forEach(group => {
       const groupItems = items.filter(item => item.group === group);
@@ -263,12 +276,12 @@ function BoardWorkspace({ boardId }) {
           const newItems = Array.from({ length: 3 }, (_, i) => ({
             id: Date.now() + i + Math.random() * 1000,
             group: group,
-            item: `Task ${startIndex + i + 1}`,
-            document: `DOC-${String(startIndex + i + 1).padStart(3, '0')}`,
+            item: getTaskName(t, startIndex + i + 1),
+            document: getDocNumber(t, startIndex + i + 1),
             people: "",
-            status: "Default",
+            status: getDefaultStatusKey(t),
             dueDate: "",
-            rev: "R0",
+            rev: getRevDefault(t),
             children: [],
             isExpanded: false,
           }));
@@ -375,10 +388,10 @@ function BoardWorkspace({ boardId }) {
   };
 
   const deleteItem = (id) => {
-    if (!confirm("Delete this item?")) return;
+    if (!confirm(t("app.deleteItemConfirm"))) return;
     const item = findItemById(items, id);
     if (item && item.children && item.children.length > 0) {
-      if (!confirm(`Item "${item.item}" has ${item.children.length} sub item(s). Delete all?`)) return;
+      if (!confirm(t("app.deleteItemWithChildrenConfirm", { name: item.item, count: item.children.length }))) return;
     }
     const newItems = deleteItemRecursive(items, id);
     saveHistory(newItems);
@@ -411,29 +424,21 @@ function BoardWorkspace({ boardId }) {
     const currentDepth = getDepthForParent(items, parentId, 0);
 
     if (currentDepth >= 3) {
-      alert('Maximum 4 levels reached for this item!');
+      alert(t("app.maxLevelsReached"));
       return;
     }
 
-    const getLevelName = (depth) => {
-      if (depth <= 0) return "New Task";
-      if (depth === 1) return "Sub Item";
-      if (depth === 2) return "Sub Sub Item";
-      if (depth === 3) return "Sub Sub Sub Item";
-      return "New Task";
-    };
-
-    const finalTitle = newTitle || getLevelName(currentDepth + 1);
+    const finalTitle = newTitle || getSubItemLabel(t, currentDepth + 1);
 
     const newItem = {
       id: Date.now(),
-      group: parent.group || "Default Group",
+      group: parent.group || getDefaultGroupName(t),
       item: finalTitle,
       document: "NO. DO",
       people: "",
-      status: "Default",
+      status: getDefaultStatusKey(t),
       dueDate: "",
-      rev: "R0",
+      rev: getRevDefault(t),
       children: [],
       isExpanded: false,
     };
@@ -465,18 +470,18 @@ function BoardWorkspace({ boardId }) {
   // ADD ITEM (di group)
   // ============================================================
   const addItem = (groupName) => {
-    const firstStatus = "Default";
+    const firstStatus = getDefaultStatusKey(t);
     const groupItems = items.filter(item => item.group === groupName);
 
     const newItem = {
       id: Date.now(),
-      group: groupName || "Default Group",
-      item: `Task ${groupItems.length + 1}`,
-      document: `DOC-${String(groupItems.length + 1).padStart(3, '0')}`,
+      group: groupName || getDefaultGroupName(t),
+      item: getTaskName(t, groupItems.length + 1),
+      document: getDocNumber(t, groupItems.length + 1),
       people: "",
       status: firstStatus,
       dueDate: "",
-      rev: "R0",
+      rev: getRevDefault(t),
       children: [],
       isExpanded: false,
     };
@@ -490,7 +495,7 @@ function BoardWorkspace({ boardId }) {
   const renameGroup = (oldName, newName) => {
     if (!newName || !newName.trim()) return;
     if (items.some((item) => item.group === newName.trim() && item.group !== oldName)) {
-      alert(`Group "${newName.trim()}" already exists!`);
+      alert(t("app.groupAlreadyExists", { name: newName.trim() }));
       return;
     }
 
@@ -519,10 +524,10 @@ function BoardWorkspace({ boardId }) {
 
   const deleteGroup = (groupName) => {
     if (groups.length <= 1) {
-      alert("Cannot delete the last group. At least one group must remain.");
+      alert(t("app.cannotDeleteLastGroup"));
       return;
     }
-    if (!confirm(`Delete entire group "${groupName}" and all its items?`)) return;
+    if (!confirm(t("app.deleteGroupConfirm", { name: groupName }))) return;
     const newItems = items.filter((it) => it.group !== groupName);
     saveHistory(newItems);
     const newColors = { ...groupColors };
@@ -542,22 +547,22 @@ function BoardWorkspace({ boardId }) {
   const addGroup = (name) => {
     if (!name || !name.trim()) return;
     if (items.some((item) => item.group === name.trim())) {
-      alert(`Group "${name.trim()}" already exists!`);
+      alert(t("app.groupAlreadyExists", { name: name.trim() }));
       return;
     }
 
     const groupName = name.trim();
-    const firstStatus = "Default";
+    const firstStatus = getDefaultStatusKey(t);
 
     const newItems = Array.from({ length: 3 }, (_, i) => ({
       id: Date.now() + i + Math.random() * 1000,
       group: groupName,
-      item: `Task ${i + 1} in ${groupName}`,
-      document: `DOC-${String(i + 1).padStart(3, '0')}`,
+      item: getTaskNameInGroup(t, i + 1, groupName),
+      document: getDocNumber(t, i + 1),
       people: "",
       status: firstStatus,
       dueDate: "",
-      rev: "R0",
+      rev: getRevDefault(t),
       children: [],
       isExpanded: false,
     }));
@@ -584,9 +589,9 @@ function BoardWorkspace({ boardId }) {
   // STATUS CRUD
   // ============================================================
   const addStatus = (name, color) => {
-    const finalName = name.trim() || "Default";
+    const finalName = name.trim() || getDefaultStatusKey(t);
     if (statuses[finalName]) {
-      alert(`Status "${finalName}" already exists!`);
+      alert(t("app.statusAlreadyExists", { name: finalName }));
       return;
     }
     setStatuses({ ...statuses, [finalName]: color || "#9ca3af" });
@@ -599,10 +604,10 @@ function BoardWorkspace({ boardId }) {
   const deleteStatus = (name) => {
     const currentKeys = Object.keys(statuses);
     if (currentKeys.length <= 1) {
-      alert("Cannot delete the last status. At least one status must remain.");
+      alert(t("app.cannotDeleteLastStatus"));
       return;
     }
-    const remainingStatus = currentKeys.find((k) => k !== name) || "Default";
+    const remainingStatus = currentKeys.find((k) => k !== name) || getDefaultStatusKey(t);
 
     const updateStatusRecursive = (items) => {
       return items.map((it) => {
@@ -624,7 +629,7 @@ function BoardWorkspace({ boardId }) {
   const renameStatus = (oldName, newName) => {
     if (!newName || !newName.trim()) return;
     if (statuses[newName.trim()] && newName.trim() !== oldName) {
-      alert(`Status "${newName.trim()}" already exists!`);
+      alert(t("app.statusAlreadyExists", { name: newName.trim() }));
       return;
     }
     const newStatuses = { ...statuses };
@@ -768,6 +773,7 @@ function BoardWorkspace({ boardId }) {
         <BoardTable
           items={filteredItems}
           groups={allGroups}
+          defaultGroupName={getDefaultGroupName(t)}
           statuses={statuses}
           groupColors={groupColors}
           onUpdateGroupColor={updateGroupColor}
@@ -787,16 +793,16 @@ function BoardWorkspace({ boardId }) {
 
         <div className="board-footer">
           <div className="footer-stats">
-            <span>Total: <strong>{totalItems}</strong> items</span>
+            <span>{t("app.footerTotal")} <strong>{totalItems}</strong> {t("app.footerItems")}</span>
             <span className="footer-divider">|</span>
-            <span>Done: <strong style={{ color: "#22c55e" }}>{doneItems}</strong></span>
+            <span>{t("app.footerDone")} <strong style={{ color: "#22c55e" }}>{doneItems}</strong></span>
             <span className="footer-divider">|</span>
-            <span>Pending: <strong style={{ color: "#f59e0b" }}>{pendingItems}</strong></span>
+            <span>{t("app.footerPending")} <strong style={{ color: "#f59e0b" }}>{pendingItems}</strong></span>
           </div>
           <div className="footer-actions">
             <span className="footer-status">
               <span className="status-dot"></span>
-              Auto-saved
+              {t("app.footerAutoSaved")}
             </span>
           </div>
         </div>
@@ -862,17 +868,18 @@ function BoardWorkspace({ boardId }) {
 
 function EmptyWorkspaceState() {
   const { createBoard } = useBoards();
+  const { t } = useLanguage();
 
   const handleCreateBoard = () => {
-    const name = prompt("New board name:");
+    const name = prompt(t("app.newBoardNamePrompt"));
     if (name && name.trim()) createBoard(name.trim(), null);
   };
 
   return (
     <div className="main-content" style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh" }}>
       <div style={{ textAlign: "center", color: "var(--text-secondary)" }}>
-        <p style={{ fontSize: "16px", marginBottom: "16px" }}>This workspace doesn't have any boards yet.</p>
-        <button className="tree-add-btn" onClick={handleCreateBoard}>+ Create board</button>
+        <p style={{ fontSize: "16px", marginBottom: "16px" }}>{t("app.noBoardsYet")}</p>
+        <button className="tree-add-btn" onClick={handleCreateBoard}>{t("app.createBoard")}</button>
       </div>
     </div>
   );
@@ -901,10 +908,12 @@ function AppShellInner() {
 
 export default function App() {
   return (
-    <ThemeProvider>
-      <BoardsProvider>
-        <AppShellInner />
-      </BoardsProvider>
-    </ThemeProvider>
+    <LanguageProvider>
+      <ThemeProvider>
+        <BoardsProvider>
+          <AppShellInner />
+        </BoardsProvider>
+      </ThemeProvider>
+    </LanguageProvider>
   );
 }

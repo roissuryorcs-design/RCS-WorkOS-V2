@@ -10,6 +10,8 @@ import ProgressCell from "./ProgressCell";
 import UpdateBubble from './UpdateBubble';
 import { evaluateFormula } from "../utils/formulaEngine";
 import { resolveSelfWeight, resolveIndependentWeight, weightKeyFor, computeOwnProgress, computeCascadedDisplayPercent, computeAbsoluteWeight } from "../utils/progressWeights";
+import { useLanguage } from "../context/LanguageContext";
+import { getPeoplePlaceholder } from "../i18n/defaults";
 
 export default function Row({
   item,
@@ -38,17 +40,22 @@ export default function Row({
     return null;
   }
 
+  const { t } = useLanguage();
   const [expanded, setExpanded] = useState(item.isExpanded !== false);
   const [isEditing, setIsEditing] = useState(false);
   const [tempName, setTempName] = useState(item.item || '');
-  
+
   // ✅ GUARD: Pastikan children adalah array
   const children = item.children && Array.isArray(item.children) ? item.children : [];
   const hasChildren = children.length > 0;
   const canHaveChildren = depth < maxDepth;
 
-  const placeholders = ["", "New Task", "Sub Item", "Sub Sub Item", "Sub Sub Sub Item"];
-  const placeholder = placeholders[depth] || "New Task";
+  // Preserves the original array's exact (slightly quirky, off-by-one at
+  // depth 0/1 which both show "New Task") index-by-depth mapping — just
+  // translated, not re-derived from getSubItemLabel's own depth mapping
+  // (used elsewhere for *naming a newly created* sub item), which differs.
+  const placeholders = ["", t("defaults.subItemLevel0"), t("defaults.subItemLevel1"), t("defaults.subItemLevel2"), t("defaults.subItemLevel3")];
+  const placeholder = placeholders[depth] || t("defaults.subItemLevel0");
 
   if (item.isExpanded !== expanded) {
     setExpanded(item.isExpanded !== false);
@@ -91,7 +98,7 @@ export default function Row({
           <DateCell
             date={value}
             onChange={(val) => onUpdate(item.id, col.id, val)}
-            placeholder="dd/mm/ttt"
+            placeholder={t("row.datePlaceholder")}
           />
         );
 
@@ -161,7 +168,7 @@ export default function Row({
             value={value}
             onChange={(e) => onUpdate(item.id, col.id, e.target.value)}
             style={inputStyle}
-            placeholder="Assign to..."
+            placeholder={getPeoplePlaceholder(t)}
           />
         );
 
@@ -249,7 +256,7 @@ export default function Row({
     e.stopPropagation();
     if (onAddSubItem) {
       if (depth >= 3) {
-        alert('⚠️ Maximum 4 levels reached! Tidak bisa menambah sub item lagi.');
+        alert(t("row.maxLevelsReached"));
         return;
       }
       onAddSubItem(item.id);
@@ -257,7 +264,7 @@ export default function Row({
   };
 
   const handleDelete = () => {
-    if (confirm(`Hapus item "${item.item || 'untitled'}"?`)) {
+    if (confirm(t("row.deleteItemConfirm", { name: item.item || t("row.untitled") }))) {
       onDelete(item.id);
     }
   };
@@ -449,7 +456,7 @@ export default function Row({
                       onMouseLeave={(e) => {
                         e.currentTarget.style.background = 'transparent';
                       }}
-                      title="Click to edit"
+                      title={t("row.clickToEdit")}
                     >
                       {item.item || placeholder}
                     </span>
@@ -485,7 +492,7 @@ export default function Row({
                         e.currentTarget.style.opacity = 0;
                         e.currentTarget.style.background = 'transparent';
                       }}
-                      title={depth >= 3 ? 'Maximum level reached' : 'Add sub item'}
+                      title={depth >= 3 ? t("row.maxLevelReached") : t("row.addSubItem")}
                     >
                       +
                     </button>

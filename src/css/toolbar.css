@@ -42,7 +42,8 @@
 .toolbar-undo-btn,
 .toolbar-export-btn,
 .toolbar-theme-btn,
-.toolbar-column-btn {
+.toolbar-column-btn,
+.toolbar-lang-btn {
   padding: 6px 14px;
   background: var(--btn-secondary-bg);
   color: var(--btn-secondary-text);
@@ -58,7 +59,8 @@
 .toolbar-undo-btn:hover:not(:disabled),
 .toolbar-export-btn:hover,
 .toolbar-theme-btn:hover,
-.toolbar-column-btn:hover {
+.toolbar-column-btn:hover,
+.toolbar-lang-btn:hover {
   background: var(--bg-hover);
   border-color: var(--border-dark);
 }

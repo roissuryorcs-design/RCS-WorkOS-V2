@@ -20,6 +20,7 @@ export default function ResizableHeader({
   align = "center",
   showMenuButton = true,
   headerColor, // ✅ PROP BARU
+  tooltip,
 }) {
   if (!column) return null;
 
@@ -179,6 +180,28 @@ export default function ResizableHeader({
         >
           {children}
         </span>
+
+        {tooltip && (
+          <span
+            title={tooltip}
+            style={{
+              flexShrink: 0,
+              width: 14,
+              height: 14,
+              borderRadius: "50%",
+              border: `1px solid ${headerColor || "var(--text-secondary)"}`,
+              color: headerColor || "var(--text-secondary)",
+              fontSize: 10,
+              fontWeight: 700,
+              lineHeight: "12px",
+              textAlign: "center",
+              cursor: "help",
+              userSelect: "none",
+            }}
+          >
+            i
+          </span>
+        )}
       </div>
 
       {showMenu && (

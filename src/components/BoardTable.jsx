@@ -3,7 +3,8 @@ import Row from "./Row";
 import ResizableHeader from "./ResizableHeader";
 import Popover from "./Popover";
 import { useColumns } from "../context/ColumnContext";
-import { DEFAULT_GROUP } from "../data/treeData";
+import { useLanguage } from "../context/LanguageContext";
+import { getSubItemLabel } from "../i18n/defaults";
 
 export default function BoardTable({
   items,
@@ -22,8 +23,12 @@ export default function BoardTable({
   onRenameGroup,
   onReorderGroups,
   onOpenAddColumn,
-  defaultGroupName = DEFAULT_GROUP.title,
+  // Always passed explicitly by App.jsx now (the current language's
+  // default group name); this literal is only a last-resort fallback for
+  // any future caller that forgets to.
+  defaultGroupName = "Default Group",
 }) {
+  const { t } = useLanguage();
   const {
     columns,
     updateColumnWidth,
@@ -177,16 +182,16 @@ export default function BoardTable({
   // afterward, adding a 4th item on top of the 3 onAddGroup already
   // creates; removed since onAddGroup already owns item creation.
   const handleAddGroup = () => {
-    const newTitle = prompt("Masukkan nama group baru:");
+    const newTitle = prompt(t("boardTable.addGroupPrompt"));
     if (!newTitle || !newTitle.trim()) return;
 
     if (newTitle.trim() === defaultGroupName) {
-      alert(`"${defaultGroupName}" adalah nama group default!`);
+      alert(t("boardTable.reservedGroupName", { name: defaultGroupName }));
       return;
     }
 
     if (groups.includes(newTitle.trim())) {
-      alert(`Group "${newTitle.trim()}" sudah ada!`);
+      alert(t("boardTable.groupAlreadyExists", { name: newTitle.trim() }));
       return;
     }
 
@@ -218,7 +223,7 @@ export default function BoardTable({
   const safeColumns = (() => {
     const hasItem = visibleColumns.some((col) => col.id === "item");
     let cols = hasItem ? [...visibleColumns] : [
-      { id: "item", label: "ITEM", type: "text", width: 250, visible: true },
+      { id: "item", label: t("defaults.colItem"), type: "text", width: 250, visible: true },
       ...visibleColumns,
     ];
     
@@ -236,7 +241,7 @@ export default function BoardTable({
 
   const handleDeleteSelected = () => {
     if (selectedItems.length === 0) return;
-    if (confirm(`Delete ${selectedItems.length} selected item(s)?`)) {
+    if (confirm(t("boardTable.deleteSelectedConfirm", { count: selectedItems.length }))) {
       selectedItems.forEach((id) => onDeleteItem(id));
       setSelectedItems([]);
     }
@@ -283,19 +288,11 @@ export default function BoardTable({
 
     const currentDepth = getDepth(items, parentId, 0);
     if (currentDepth >= 3) {
-      alert('Maximum 4 levels reached!');
+      alert(t("boardTable.maxLevelsReached"));
       return;
     }
 
-    const getLevelName = (depth) => {
-      if (depth <= 0) return "New Task";
-      if (depth === 1) return "Sub Item";
-      if (depth === 2) return "Sub Sub Item";
-      if (depth === 3) return "Sub Sub Sub Item";
-      return "New Task";
-    };
-
-    const newTitle = getLevelName(currentDepth + 1);
+    const newTitle = getSubItemLabel(t, currentDepth + 1);
     onAddSubItem(parentId, newTitle);
   };
 
@@ -310,9 +307,9 @@ export default function BoardTable({
         className="board-empty-state"
         style={{ padding: '60px 20px', textAlign: 'center', color: 'var(--text-secondary, #8a94a6)' }}
       >
-        <p style={{ marginBottom: '12px' }}>No groups yet.</p>
+        <p style={{ marginBottom: '12px' }}>{t("boardTable.noGroupsYet")}</p>
         <button className="add-group-btn" onClick={handleAddGroup}>
-          + Add group
+          {t("boardTable.addGroup")}
         </button>
       </div>
     );
@@ -320,7 +317,7 @@ export default function BoardTable({
 
   const getDisplayTitle = (groupName) => {
     if (groupName === defaultGroupName) {
-      return "Group Title";
+      return t("boardTable.groupTitleFallback");
     }
     return groupName;
   };
@@ -333,13 +330,13 @@ export default function BoardTable({
       {selectedItems.length > 0 && (
         <div className="selected-items-bar">
           <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>
-            {selectedItems.length} item(s) selected
+            {t("boardTable.itemsSelected", { count: selectedItems.length })}
           </span>
           <button onClick={handleDeleteSelected} className="delete-selected-btn">
-            🗑️ Delete
+            {t("boardTable.deleteSelected")}
           </button>
           <button onClick={() => setSelectedItems([])} className="cancel-selected-btn">
-            Cancel
+            {t("common.cancel")}
           </button>
         </div>
       )}
@@ -516,7 +513,7 @@ export default function BoardTable({
                         {displayTitle}
                         {isDefault && (
                           <span className="badge-default" style={{ marginLeft: '8px', fontSize: '11px' }}>
-                            ⭐ Default
+                            {t("boardTable.defaultBadge")}
                           </span>
                         )}
                       </h3>
@@ -534,25 +531,25 @@ export default function BoardTable({
                 >
                   <button
                     onClick={() => {
-                      const newName = prompt("Masukkan nama baru:", groupName);
+                      const newName = prompt(t("boardTable.renamePrompt"), groupName);
                       if (newName && newName.trim()) {
                         handleRenameGroup(groupName, newName.trim());
                       }
                       closePopup();
                     }}
                   >
-                    ✏️ Rename Group
+                    {t("boardTable.renameGroup")}
                   </button>
                   <button
                     onClick={() => {
-                      if (confirm(`Hapus group "${groupName}" dan semua item di dalamnya?`)) {
+                      if (confirm(t("boardTable.deleteGroupConfirm", { name: groupName }))) {
                         handleDeleteGroup(groupName);
                       }
                       closePopup();
                     }}
                     style={{ color: '#f44336' }}
                   >
-                    🗑️ Delete Group
+                    {t("boardTable.deleteGroupBtn")}
                   </button>
                 </Popover>
 
@@ -620,6 +617,11 @@ export default function BoardTable({
                                     align="center"
                                     showMenuButton={!isItem}
                                     headerColor={groupColor}
+                                    tooltip={
+                                      col.type === "progress"
+                                        ? t("boardTable.progressTooltip")
+                                        : undefined
+                                    }
                                   >
                                     {col.label}
                                   </ResizableHeader>
@@ -732,7 +734,7 @@ export default function BoardTable({
                                     e.currentTarget.style.paddingLeft = '0';
                                   }}
                                 >
-                                  + Add item
+                                  {t("boardTable.addItem")}
                                 </button>
                               </td>
 
@@ -760,9 +762,9 @@ export default function BoardTable({
                         className="empty-group-message" 
                         style={{ borderLeft: `4px solid ${groupColor}` }}
                       >
-                        No items in this group.
+                        {t("boardTable.noItemsInGroup")}
                         <button onClick={() => handleAddItem(groupName)}>
-                          Add item
+                          {t("boardTable.addItemSimple")}
                         </button>
                       </div>
                     )}
@@ -775,7 +777,7 @@ export default function BoardTable({
       </div>
 
       <div className="add-group-container">
-        <button onClick={handleAddGroup}>+ Add new group</button>
+        <button onClick={handleAddGroup}>{t("boardTable.addNewGroup")}</button>
       </div>
     </div>
   );

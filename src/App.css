@@ -141,6 +141,19 @@ body.dark {
 }
 
 /* ============================================================
+   WEIGHT NUMBER INPUT — no native spin buttons
+   ============================================================ */
+/* Narrow (40px) 3-digit input — the native up/down spinner buttons don't
+   fit alongside "100" at that width and end up drawn on top of the digits.
+   A drag slider next to it already covers the "adjust with a control"
+   case, so the spinner is just redundant on top of being broken here. */
+.weight-number-input::-webkit-inner-spin-button,
+.weight-number-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* ============================================================
    GLOBAL SCROLLBAR
    ============================================================ */
 * {

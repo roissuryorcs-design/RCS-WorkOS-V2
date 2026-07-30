@@ -273,6 +273,7 @@ function WeightControl({ explicitWeight, resolvedWeight, explicitSiblingSum, onC
         <div style={{ display: "flex", alignItems: "center", gap: 2, flexShrink: 0 }}>
           <input
             type="number"
+            className="weight-number-input"
             min={0}
             max={100}
             value={draft}
@@ -283,8 +284,8 @@ function WeightControl({ explicitWeight, resolvedWeight, explicitSiblingSum, onC
               if (e.key === "Enter") e.currentTarget.blur();
             }}
             style={{
-              width: 44,
-              padding: "3px 5px",
+              width: 40,
+              padding: "3px 4px",
               fontSize: 12,
               border: "1px solid var(--border-dark)",
               borderRadius: 4,
@@ -292,6 +293,7 @@ function WeightControl({ explicitWeight, resolvedWeight, explicitSiblingSum, onC
               background: "var(--bg-input)",
               color: "var(--text-primary)",
               textAlign: "right",
+              MozAppearance: "textfield",
             }}
           />
           <span style={{ fontSize: 11.5, color: "var(--text-muted)" }}>%</span>

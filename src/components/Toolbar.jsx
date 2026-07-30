@@ -1,4 +1,6 @@
 import { useTheme } from "../context/ThemeContext";
+import { useLanguage } from "../context/LanguageContext";
+import LanguageSwitcher from "./LanguageSwitcher";
 import "../css/toolbar.css";
 
 export default function Toolbar({
@@ -10,12 +12,13 @@ export default function Toolbar({
   onOpenColumnManager, // ← Manage Columns tetap
 }) {
   const { theme, toggleTheme } = useTheme();
+  const { t } = useLanguage();
 
   return (
     <div className="toolbar-sticky">
       <input
         className="toolbar-search"
-        placeholder="🔍 Search items..."
+        placeholder={t("toolbar.searchPlaceholder")}
         value={search}
         onChange={(e) => onSearchChange(e.target.value)}
       />
@@ -29,21 +32,23 @@ export default function Toolbar({
           cursor: canUndo ? "pointer" : "not-allowed",
         }}
       >
-        ↩ Undo
+        {t("toolbar.undo")}
       </button>
 
       <button className="toolbar-export-btn" onClick={onExport}>
-        📤 Export
+        {t("toolbar.export")}
       </button>
 
       {/* Manage Columns - TETAP */}
       <button className="toolbar-column-btn" onClick={onOpenColumnManager}>
-        📋 Manage Columns
+        {t("toolbar.manageColumns")}
       </button>
 
       <button onClick={toggleTheme} className="toolbar-theme-btn">
         {theme === "light" ? "🌙 Dark" : "☀️ Light"}
       </button>
+
+      <LanguageSwitcher />
     </div>
   );
 }
