@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { useBoards } from "../context/BoardsContext";
+import { useLanguage } from "../context/LanguageContext";
 import Popover from "./Popover";
 
 const AVATAR_COLORS = ["#3b82f6", "#8b5cf6", "#ec4899", "#f59e0b", "#10b981", "#ef4444", "#06b6d4", "#6366f1"];
@@ -33,6 +34,7 @@ export default function WorkspaceSwitcher() {
     renameWorkspace,
     deleteWorkspace,
   } = useBoards();
+  const { t } = useLanguage();
 
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -62,13 +64,13 @@ export default function WorkspaceSwitcher() {
   };
 
   const handleAddWorkspace = () => {
-    const name = prompt("New workspace name:");
+    const name = prompt(t("workspaceSwitcher.newWorkspacePrompt"));
     if (name && name.trim()) createWorkspace(name.trim());
     close();
   };
 
   const handleRename = (workspace) => {
-    const name = prompt("Rename workspace:", workspace.name);
+    const name = prompt(t("workspaceSwitcher.renameWorkspacePrompt"), workspace.name);
     if (name && name.trim()) renameWorkspace(workspace.id, name.trim());
     setOpenMenuId(null);
   };
@@ -111,8 +113,8 @@ export default function WorkspaceSwitcher() {
         placement="bottom-end"
         className="tree-node-popup workspace-item-popup"
       >
-        <button onClick={(e) => { e.stopPropagation(); handleRename(workspace); }}>✏️ Rename workspace</button>
-        <button onClick={(e) => { e.stopPropagation(); handleDelete(workspace); }}>🗑️ Delete workspace</button>
+        <button onClick={(e) => { e.stopPropagation(); handleRename(workspace); }}>{t("workspaceSwitcher.renameWorkspaceBtn")}</button>
+        <button onClick={(e) => { e.stopPropagation(); handleDelete(workspace); }}>{t("workspaceSwitcher.deleteWorkspaceBtn")}</button>
       </Popover>
     </div>
     );
@@ -132,7 +134,7 @@ export default function WorkspaceSwitcher() {
         <input
           type="text"
           className="workspace-search-input"
-          placeholder="Search for a workspace"
+          placeholder={t("workspaceSwitcher.searchPlaceholder")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           autoFocus
@@ -140,21 +142,21 @@ export default function WorkspaceSwitcher() {
 
         {filteredRecent.length > 0 && (
           <>
-            <div className="workspace-list-section-title">Recent workspaces</div>
+            <div className="workspace-list-section-title">{t("workspaceSwitcher.recentWorkspaces")}</div>
             {filteredRecent.map((w) => renderWorkspaceItem(w, "recent"))}
           </>
         )}
 
-        <div className="workspace-list-section-title">My workspaces</div>
+        <div className="workspace-list-section-title">{t("workspaceSwitcher.myWorkspaces")}</div>
         {filteredWorkspaces.length > 0 ? (
           filteredWorkspaces.map((w) => renderWorkspaceItem(w, "my"))
         ) : (
-          <div className="workspace-empty-search">No workspaces found</div>
+          <div className="workspace-empty-search">{t("workspaceSwitcher.noWorkspacesFound")}</div>
         )}
 
         <div className="workspace-switcher-footer">
-          <button className="workspace-footer-btn" onClick={handleAddWorkspace}>+ Add workspace</button>
-          <button className="workspace-footer-btn" onClick={() => setSearch("")}>▦ Browse all</button>
+          <button className="workspace-footer-btn" onClick={handleAddWorkspace}>{t("workspaceSwitcher.addWorkspace")}</button>
+          <button className="workspace-footer-btn" onClick={() => setSearch("")}>{t("workspaceSwitcher.browseAll")}</button>
         </div>
       </Popover>
     </div>

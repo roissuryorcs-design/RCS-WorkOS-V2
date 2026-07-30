@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLanguage } from "../context/LanguageContext";
 
 export default function StatusManager({
   columnId,
@@ -8,6 +9,7 @@ export default function StatusManager({
   onUpdateStatusOrder,
   onClose,
 }) {
+  const { t } = useLanguage();
   const [newName, setNewName] = useState("");
   const [newColor, setNewColor] = useState("#9ca3af");
   const [editingId, setEditingId] = useState(null);
@@ -21,11 +23,11 @@ export default function StatusManager({
   const handleAdd = () => {
     const name = newName.trim();
     if (!name) {
-      alert("Please enter a status name.");
+      alert(t("statusManager.enterNameError"));
       return;
     }
     if (statuses[name]) {
-      alert(`Status "${name}" already exists!`);
+      alert(t("statusManager.alreadyExists", { name }));
       return;
     }
     const newStatuses = { ...statuses, [name]: newColor };
@@ -38,10 +40,10 @@ export default function StatusManager({
 
   const handleDelete = (name) => {
     if (orderedKeys.length <= 1) {
-      alert("Cannot delete the last status. At least one status must remain.");
+      alert(t("statusManager.cannotDeleteLast"));
       return;
     }
-    if (!confirm(`Delete status "${name}"?`)) return;
+    if (!confirm(t("statusManager.deleteConfirm", { name }))) return;
     const newStatuses = { ...statuses };
     delete newStatuses[name];
     const newOrder = orderedKeys.filter(s => s !== name);
@@ -57,7 +59,7 @@ export default function StatusManager({
   const saveRename = () => {
     if (editName.trim() && editName.trim() !== editingId) {
       if (statuses[editName.trim()]) {
-        alert(`Status "${editName.trim()}" already exists!`);
+        alert(t("statusManager.alreadyExists", { name: editName.trim() }));
         setEditingId(null);
         setEditName("");
         return;
@@ -145,10 +147,10 @@ export default function StatusManager({
         onClick={(e) => e.stopPropagation()}
       >
         <h3 style={{ marginBottom: 4, fontSize: 18, fontWeight: 600 }}>
-          Manage Statuses
+          {t("statusManager.title")}
         </h3>
         <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 16 }}>
-          Drag ⠿ to reorder. Click name to rename. At least one status must remain.
+          {t("statusManager.hint")}
         </p>
 
         <div style={{ marginBottom: 16 }}>
@@ -222,7 +224,7 @@ export default function StatusManager({
                   onClick={() => startRename(name)}
                   onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-hover)")}
                   onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-                  title="Klik untuk rename"
+                  title={t("statusManager.clickToRename")}
                 >
                   {name}
                 </span>
@@ -254,7 +256,7 @@ export default function StatusManager({
 
         <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
           <input
-            placeholder="New status name"
+            placeholder={t("statusManager.newNamePlaceholder")}
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             style={{
@@ -285,7 +287,7 @@ export default function StatusManager({
               fontWeight: 500,
             }}
           >
-            Add
+            {t("statusManager.add")}
           </button>
         </div>
 
@@ -305,7 +307,7 @@ export default function StatusManager({
           onMouseEnter={(e) => (e.currentTarget.style.background = "var(--border-color)")}
           onMouseLeave={(e) => (e.currentTarget.style.background = "var(--bg-hover)")}
         >
-          Close
+          {t("statusManager.close")}
         </button>
       </div>
     </div>

@@ -1,16 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { boardKey } from '../utils/boardStorage';
+import { useLanguage } from '../context/LanguageContext';
 
 const Header = ({ groups = [], boardId, isReady = true }) => {
+  const { t } = useLanguage();
   // 1. LOAD DARI LOCALSTORAGE
   const [title, setTitle] = useState(() => {
     const saved = localStorage.getItem(boardKey('forelBoardTitle', boardId));
-    return saved && saved.trim() !== '' ? saved : 'BOARD TITLE';
+    return saved && saved.trim() !== '' ? saved : t('defaults.boardTitle');
   });
 
   const [subtitle, setSubtitle] = useState(() => {
     const saved = localStorage.getItem(boardKey('forelBoardSubtitle', boardId));
-    return saved && saved.trim() !== '' ? saved : 'Sub Title / Description';
+    return saved && saved.trim() !== '' ? saved : t('defaults.boardSubtitle');
   });
 
   // 🔥 FLAG UNTUK MENCEGAH RESET SAAT REFRESH
@@ -38,10 +40,12 @@ const Header = ({ groups = [], boardId, isReady = true }) => {
     // Hanya reset jika groups benar-benar kosong setelah loading selesai
     if (groups.length === 0) {
       console.log('🔄 No groups found, resetting header to default');
-      setTitle('BOARD TITLE');
-      setSubtitle('Sub Title / Description');
-      localStorage.setItem(boardKey('forelBoardTitle', boardId), 'BOARD TITLE');
-      localStorage.setItem(boardKey('forelBoardSubtitle', boardId), 'Sub Title / Description');
+      const defaultTitle = t('defaults.boardTitle');
+      const defaultSubtitle = t('defaults.boardSubtitle');
+      setTitle(defaultTitle);
+      setSubtitle(defaultSubtitle);
+      localStorage.setItem(boardKey('forelBoardTitle', boardId), defaultTitle);
+      localStorage.setItem(boardKey('forelBoardSubtitle', boardId), defaultSubtitle);
     }
   }, [groups, isReady, boardId]);
 

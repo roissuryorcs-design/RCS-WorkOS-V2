@@ -1,43 +1,58 @@
 import { createContext, useState, useContext, useEffect } from "react";
 import { boardKey } from "../utils/boardStorage";
+import { useLanguage } from "./LanguageContext";
 
 const ColumnContext = createContext();
 
-const defaultStatuses = {
-  "Default": "#9ca3af",
-  "Working on it": "#f59e0b",
-  "Stuck": "#ef4444",
-  "Done": "#22c55e",
-};
+// Factory functions, not module constants — each must be called with the
+// *currently active* `t`, at the moment a board/column is actually being
+// created or repaired, not once at module load. A `const X = { label:
+// t(...) }` at module scope would freeze at whichever language happened to
+// be active when this file first imported, ignoring every later switch.
+function getDefaultStatuses(t) {
+  return {
+    [t("defaults.statusDefault")]: "#9ca3af",
+    [t("defaults.statusWorkingOnIt")]: "#f59e0b",
+    [t("defaults.statusStuck")]: "#ef4444",
+    [t("defaults.statusDone")]: "#22c55e",
+  };
+}
 
-const defaultStatusOrder = ["Default", "Working on it", "Stuck", "Done"];
+function getDefaultStatusOrder(t) {
+  return Object.keys(getDefaultStatuses(t));
+}
 
-const defaultProgressStages = [
-  { value: 0, label: "Not Started", icon: "🔘", color: "#9E9E9E" },
-  { value: 25, label: "Preparation", icon: "🟡", color: "#FFEB3B" },
-  { value: 50, label: "Execution", icon: "🟠", color: "#FF9800" },
-  { value: 80, label: "Review", icon: "🔵", color: "#2196F3" },
-  { value: 100, label: "Completed", icon: "🟢", color: "#4CAF50" },
-];
+function getDefaultProgressStages(t) {
+  return [
+    { value: 0, label: t("defaults.stageNotStarted"), icon: "🔘", color: "#9E9E9E" },
+    { value: 25, label: t("defaults.stagePreparation"), icon: "🟡", color: "#FFEB3B" },
+    { value: 50, label: t("defaults.stageExecution"), icon: "🟠", color: "#FF9800" },
+    { value: 80, label: t("defaults.stageReview"), icon: "🔵", color: "#2196F3" },
+    { value: 100, label: t("defaults.stageCompleted"), icon: "🟢", color: "#4CAF50" },
+  ];
+}
 
-const defaultColumns = [
-  { id: "item", label: "ITEM", type: "text", width: 150, visible: true },
-  { id: "document", label: "NO. DOCUMENT", type: "text", width: 200, visible: true },
-  { id: "people", label: "PEOPLE", type: "people", width: 120, visible: true },
-  { 
-    id: "status", 
-    label: "STATUS", 
-    type: "status", 
-    width: 120, 
-    visible: true,
-    statuses: { ...defaultStatuses },
-    statusOrder: [...defaultStatusOrder],
-  },
-  { id: "dueDate", label: "DUE DATE", type: "date", width: 120, visible: true },
-  { id: "rev", label: "REV", type: "text", width: 80, visible: true },
-];
+function getDefaultColumns(t) {
+  return [
+    { id: "item", label: t("defaults.colItem"), type: "text", width: 150, visible: true },
+    { id: "document", label: t("defaults.colDocument"), type: "text", width: 200, visible: true },
+    { id: "people", label: t("defaults.colPeople"), type: "people", width: 120, visible: true },
+    {
+      id: "status",
+      label: t("defaults.colStatus"),
+      type: "status",
+      width: 120,
+      visible: true,
+      statuses: getDefaultStatuses(t),
+      statusOrder: getDefaultStatusOrder(t),
+    },
+    { id: "dueDate", label: t("defaults.colDueDate"), type: "date", width: 120, visible: true },
+    { id: "rev", label: t("defaults.colRev"), type: "text", width: 80, visible: true },
+  ];
+}
 
 export function ColumnProvider({ children, boardId }) {
+  const { t } = useLanguage();
   const [columns, setColumns] = useState(() => {
     try {
       const saved = localStorage.getItem(boardKey("forelColumns", boardId));
@@ -50,23 +65,23 @@ export function ColumnProvider({ children, boardId }) {
             if (col.type === "status" && !col.statuses) {
               return {
                 ...col,
-                statuses: { ...defaultStatuses },
-                statusOrder: [...defaultStatusOrder],
+                statuses: getDefaultStatuses(t),
+                statusOrder: getDefaultStatusOrder(t),
               };
             }
             if (col.type === "progress" && !col.progressStages) {
               return {
                 ...col,
-                progressStages: defaultProgressStages.map(s => ({ ...s })),
+                progressStages: getDefaultProgressStages(t),
               };
             }
             return col;
           }).filter(Boolean);
-          
+
           // Pastikan ada kolom item
           const hasItem = result.some(c => c && c.id === "item");
           if (!hasItem) {
-            result.unshift({ id: "item", label: "ITEM", type: "text", width: 150, visible: true });
+            result.unshift({ id: "item", label: t("defaults.colItem"), type: "text", width: 150, visible: true });
           }
           return result;
         }
@@ -74,7 +89,7 @@ export function ColumnProvider({ children, boardId }) {
     } catch (e) {
       console.error('Error loading columns from localStorage:', e);
     }
-    return defaultColumns;
+    return getDefaultColumns(t);
   });
 
   useEffect(() => {
@@ -103,8 +118,8 @@ export function ColumnProvider({ children, boardId }) {
       visible: true,
     };
     if (type === "status") {
-      newCol.statuses = { ...defaultStatuses };
-      newCol.statusOrder = [...defaultStatusOrder];
+      newCol.statuses = getDefaultStatuses(t);
+      newCol.statusOrder = getDefaultStatusOrder(t);
     }
     if (type === "formula") {
       newCol.formula = "";
@@ -113,7 +128,8 @@ export function ColumnProvider({ children, boardId }) {
       newCol.width = 200;
     }
     if (type === "progress") {
-      newCol.progressStages = defaultProgressStages.map(s => ({ ...s }));
+      newCol.progressStages = getDefaultProgressStages(t);
+      newCol.width = 260; // room for the bar, weight box, % label and settings icon
     }
     setColumns((prev) => [...prev, newCol]);
   };
@@ -175,7 +191,7 @@ export function ColumnProvider({ children, boardId }) {
     });
   };
 
-  const resetColumns = () => setColumns(defaultColumns);
+  const resetColumns = () => setColumns(getDefaultColumns(t));
 
   // ============================================================
   // FUNGSI UPDATE STATUS PER KOLOM

@@ -1,7 +1,9 @@
 import { useState, useRef } from "react";
 import Popover from "./Popover";
+import { useLanguage } from "../context/LanguageContext";
 
 export default function DateCell({ date, onChange, placeholder = "dd - mm - yy" }) {
+  const { t } = useLanguage();
   const [inputValue, setInputValue] = useState(date || "");
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
@@ -287,7 +289,7 @@ export default function DateCell({ date, onChange, placeholder = "dd - mm - yy" 
               textAlign: "center",
             }}
           >
-            Format: <strong>DD - MMM - YYYY</strong> (contoh: 23 - May - 2026)
+            {t("dateCell.formatLabel")} <strong>DD - MMM - YYYY</strong> {t("dateCell.formatExample")}
           </div>
 
           {/* Tombol Clear */}
@@ -323,7 +325,7 @@ export default function DateCell({ date, onChange, placeholder = "dd - mm - yy" 
                 e.currentTarget.style.color = "#999";
               }}
             >
-              ✕ Clear date
+              {t("dateCell.clearDate")}
             </button>
           )}
         </div>

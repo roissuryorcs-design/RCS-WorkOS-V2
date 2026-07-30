@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { generateId, boardKey } from "../utils/boardStorage";
+import { useLanguage } from "./LanguageContext";
 
 const BoardsContext = createContext();
 
@@ -23,7 +24,7 @@ const LEGACY_KEYS = [
 // returns the existing v2 registry unchanged. Must be safe to call twice
 // under React StrictMode's lazy-initializer double-invocation, hence the
 // synchronous re-read at the top rather than any "always write" logic.
-function loadOrMigrateRegistry() {
+function loadOrMigrateRegistry(t) {
   try {
     const saved = localStorage.getItem(REGISTRY_KEY);
     if (saved) {
@@ -84,7 +85,7 @@ function loadOrMigrateRegistry() {
   const commissioningId = generateId("f");
 
   const legacyTitle = localStorage.getItem("forelBoardTitle");
-  const boardName = legacyTitle && legacyTitle.trim() ? legacyTitle.trim() : "Board 1";
+  const boardName = legacyTitle && legacyTitle.trim() ? legacyTitle.trim() : t("defaults.defaultBoardName");
 
   LEGACY_KEYS.forEach((key) => {
     const val = localStorage.getItem(key);
@@ -101,9 +102,9 @@ function loadOrMigrateRegistry() {
     favoriteBoardIds: [],
     workspaces: [{ id: workspaceId, name: DEFAULT_WORKSPACE_NAME }],
     nodes: [
-      { id: engineeringId, type: "folder", name: "Engineering", parentId: null, workspaceId, collapsed: false },
+      { id: engineeringId, type: "folder", name: t("defaults.defaultEngineeringFolder"), parentId: null, workspaceId, collapsed: false },
       { id: boardId, type: "board", name: boardName, parentId: engineeringId, workspaceId },
-      { id: commissioningId, type: "folder", name: "Commissioning", parentId: null, workspaceId, collapsed: false },
+      { id: commissioningId, type: "folder", name: t("defaults.defaultCommissioningFolder"), parentId: null, workspaceId, collapsed: false },
     ],
   };
 
@@ -117,7 +118,8 @@ function loadOrMigrateRegistry() {
 }
 
 export function BoardsProvider({ children }) {
-  const [state, setState] = useState(loadOrMigrateRegistry);
+  const { t } = useLanguage();
+  const [state, setState] = useState(() => loadOrMigrateRegistry(t));
 
   useEffect(() => {
     try {
@@ -167,7 +169,7 @@ export function BoardsProvider({ children }) {
     if (parentFolderId) {
       const parent = allNodes.find((n) => n.id === parentFolderId);
       if (!parent || parent.type !== "folder" || parent.parentId) {
-        alert("Folders can only be nested one level deep.");
+        alert(t("boardsContext.folderNestingLimit"));
         return;
       }
     }
@@ -236,7 +238,7 @@ export function BoardsProvider({ children }) {
     if (node.type === "folder") {
       const hasChildren = allNodes.some((n) => n.parentId === id);
       if (hasChildren) {
-        alert("This folder isn't empty. Move or delete its boards first.");
+        alert(t("boardsContext.folderNotEmpty"));
         return;
       }
       setState((prev) => ({ ...prev, nodes: prev.nodes.filter((n) => n.id !== id) }));
@@ -315,12 +317,12 @@ export function BoardsProvider({ children }) {
 
   const deleteWorkspace = (id) => {
     if (workspaces.length <= 1) {
-      alert("You must have at least one workspace.");
+      alert(t("boardsContext.needAtLeastOneWorkspace"));
       return;
     }
     const target = workspaces.find((w) => w.id === id);
     if (!target) return;
-    if (!confirm(`Delete workspace "${target.name}" and everything inside it? This cannot be undone.`)) return;
+    if (!confirm(t("boardsContext.deleteWorkspaceConfirm", { name: target.name }))) return;
 
     allNodes
       .filter((n) => n.workspaceId === id && n.type === "board")

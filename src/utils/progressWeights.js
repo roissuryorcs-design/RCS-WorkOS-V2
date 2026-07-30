@@ -28,15 +28,23 @@ export function resolveSelfWeight(siblings, itemId, columnId) {
   const selfIndex = siblings.findIndex((s) => s.id === itemId);
   const weights = resolveWeights(siblings, columnId);
   const explicitSelf = selfIndex >= 0 && typeof siblings[selfIndex][key] === "number" ? siblings[selfIndex][key] : null;
-  const explicitSiblingSum = siblings.reduce((sum, s, i) => {
+  const explicitValues = siblings.map((s) => (typeof s[key] === "number" ? s[key] : null));
+  const explicitSiblingSum = explicitValues.reduce((sum, w, i) => {
     if (i === selfIndex) return sum;
-    return sum + (typeof s[key] === "number" ? s[key] : 0);
+    return sum + (w || 0);
   }, 0);
+  // Unset siblings auto-split whatever's left, so the group only sums to
+  // something other than 100% once *every* sibling has an explicit value —
+  // there's no more "auto" slot left to absorb the remainder.
+  const allExplicit = siblings.length > 0 && explicitValues.every((w) => w !== null);
+  const explicitTotal = explicitValues.reduce((sum, w) => sum + (w || 0), 0);
+  const weightIncomplete = allExplicit && Math.round(explicitTotal) !== 100;
   return {
     explicitWeight: explicitSelf,
     resolvedWeight: selfIndex >= 0 ? weights[selfIndex] : 0,
     explicitSiblingSum,
     siblingCount: siblings.length,
+    weightIncomplete,
   };
 }
 
@@ -52,6 +60,7 @@ export function resolveIndependentWeight(item, columnId) {
     resolvedWeight: explicit == null ? 100 : explicit,
     explicitSiblingSum: 0,
     siblingCount: 1,
+    weightIncomplete: false,
   };
 }
 

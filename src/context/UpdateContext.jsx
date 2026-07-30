@@ -1,11 +1,13 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { boardKey } from '../utils/boardStorage';
+import { useLanguage } from './LanguageContext';
 
 const UpdateContext = createContext();
 
 export const useUpdates = () => useContext(UpdateContext);
 
 export const UpdateProvider = ({ children, boardId }) => {
+  const { t } = useLanguage();
   const [updates, setUpdates] = useState(() => {
     const saved = localStorage.getItem(boardKey('forelUpdates', boardId));
     return saved ? JSON.parse(saved) : [];
@@ -28,7 +30,7 @@ export const UpdateProvider = ({ children, boardId }) => {
       id: Date.now() + Math.random() * 1000,
       itemId,
       text: text || '',
-      author: 'User',
+      author: t('updatePanel.defaultAuthor'),
       timestamp: new Date().toISOString(),
       files: files || [],
       replies: [],
@@ -46,7 +48,7 @@ export const UpdateProvider = ({ children, boardId }) => {
       id: Date.now() + Math.random() * 1000,
       text: replyData.text || '',
       files: replyData.files || [],
-      author: 'User',
+      author: t('updatePanel.defaultAuthor'),
       timestamp: new Date().toISOString(),
       replies: [],
       parentReplyId: parentReplyId,

@@ -45,7 +45,7 @@ export default function Toolbar({
       </button>
 
       <button onClick={toggleTheme} className="toolbar-theme-btn">
-        {theme === "light" ? "🌙 Dark" : "☀️ Light"}
+        {theme === "light" ? t("toolbar.darkMode") : t("toolbar.lightMode")}
       </button>
 
       <LanguageSwitcher />

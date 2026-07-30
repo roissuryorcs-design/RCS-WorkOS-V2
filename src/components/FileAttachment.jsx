@@ -2,8 +2,10 @@ import { useState, useRef, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import FileIcon from "./FileIcon";
 import { usePopoverPosition } from "../hooks/usePopoverPosition";
+import { useLanguage } from "../context/LanguageContext";
 
 export default function FileAttachment({ value, onUpdate, columnId }) {
+  const { t } = useLanguage();
   const [files, setFiles] = useState(() => {
     try {
       return value ? JSON.parse(value) : [];
@@ -57,7 +59,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
   const uploadFile = async (file) => {
     if (!file) return;
     if (file.size > 10 * 1024 * 1024) {
-      alert("File size must be less than 10MB");
+      alert(t("fileAttachment.fileTooLarge"));
       return;
     }
 
@@ -93,7 +95,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
       }
     } catch (error) {
       console.error("Upload failed:", error);
-      alert("Upload failed. Please try again.");
+      alert(t("fileAttachment.uploadFailed"));
     } finally {
       setUploading(false);
     }
@@ -195,11 +197,11 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
           lineHeight: 1.3,
           marginBottom: 2,
         }}>
-          {file.name || "Untitled"}
+          {file.name || t("fileAttachment.untitled")}
         </div>
 
         <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 6 }}>
-          {file.size ? formatSize(file.size) : ""} {file.isLink ? "🔗 Link" : isPdfFile ? "PDF" : ""}
+          {file.size ? formatSize(file.size) : ""} {file.isLink ? t("fileAttachment.linkTag") : isPdfFile ? "PDF" : ""}
         </div>
 
         <div style={{ display: "flex", gap: 6 }}>
@@ -215,7 +217,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
               fontSize: 11,
             }}
           >
-            Download
+            {t("fileAttachment.download")}
           </button>
           <button
             onClick={onDelete}
@@ -229,7 +231,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
               fontSize: 11,
             }}
           >
-            Delete
+            {t("fileAttachment.delete")}
           </button>
         </div>
       </div>
@@ -353,7 +355,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
         }}
       >
         {files.length === 0 ? (
-          <span style={{ color: "var(--text-muted)", fontSize: 12, whiteSpace: "nowrap" }}>+ Add file or link</span>
+          <span style={{ color: "var(--text-muted)", fontSize: 12, whiteSpace: "nowrap" }}>{t("fileAttachment.addFileOrLink")}</span>
         ) : (
           <>
             {files.slice(0, visibleThumbnails).map((file, index) => (
@@ -458,7 +460,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
           }}
         >
           <div style={{ padding: "8px 12px", fontSize: 12, fontWeight: 600, color: "#6b7280", borderBottom: "1px solid #e5e7eb" }}>
-            {files.length} files
+            {t("fileAttachment.filesCount", { count: files.length })}
           </div>
           {files.map((file, index) => (
             <div
@@ -513,7 +515,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
                   }}
                   onClick={() => window.open(file.url, "_blank")}
                 >
-                  {file.name || "Untitled"}
+                  {file.name || t("fileAttachment.untitled")}
                 </div>
                 <div style={{ fontSize: 11, color: "#6b7280" }}>
                   {file.size ? formatSize(file.size) : ""}
@@ -561,19 +563,19 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
                     onClick={() => { window.open(file.url, "_blank"); setShowActionsIndex(null); setActionsAnchorEl(null); }}
                     style={{ display: "block", width: "100%", padding: "6px 14px", background: "none", border: "none", textAlign: "left", cursor: "pointer", fontSize: 13, color: "#1a1a2e" }}
                   >
-                    Open File
+                    {t("fileAttachment.openFile")}
                   </button>
                   <button
                     onClick={() => { downloadFile(file.url, file.name); setShowActionsIndex(null); setActionsAnchorEl(null); }}
                     style={{ display: "block", width: "100%", padding: "6px 14px", background: "none", border: "none", textAlign: "left", cursor: "pointer", fontSize: 13, color: "#1a1a2e" }}
                   >
-                    Download
+                    {t("fileAttachment.download")}
                   </button>
                   <button
-                    onClick={() => { if (confirm(`Delete "${file.name}"?`)) { removeFile(index); } setShowActionsIndex(null); setActionsAnchorEl(null); }}
+                    onClick={() => { if (confirm(t("fileAttachment.deleteFileConfirm", { name: file.name }))) { removeFile(index); } setShowActionsIndex(null); setActionsAnchorEl(null); }}
                     style={{ display: "block", width: "100%", padding: "6px 14px", background: "none", border: "none", textAlign: "left", cursor: "pointer", fontSize: 13, color: "#ef4444", borderTop: "1px solid #f3f4f6" }}
                   >
-                    Delete
+                    {t("fileAttachment.delete")}
                   </button>
                 </div>,
                 document.body
@@ -647,7 +649,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 style={{ marginBottom: 16, fontSize: 18, fontWeight: 600 }}>Add File or Link</h3>
+            <h3 style={{ marginBottom: 16, fontSize: 18, fontWeight: 600 }}>{t("fileAttachment.addFileOrLinkTitle")}</h3>
 
             <div
               onClick={() => fileInputRef.current?.click()}
@@ -665,14 +667,14 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
             >
               <div style={{ fontSize: 32 }}>📁</div>
               <div style={{ fontSize: 14, color: "var(--text-secondary)", marginTop: 4 }}>
-                {uploading ? "Uploading..." : "Click to upload file"}
+                {uploading ? t("fileAttachment.uploading") : t("fileAttachment.clickToUploadFile")}
               </div>
               <input ref={fileInputRef} type="file" onChange={handleFileSelect} disabled={uploading} style={{ display: "none" }} />
             </div>
 
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
               <div style={{ flex: 1, height: 1, background: "var(--border-color)" }} />
-              <span style={{ fontSize: 12, color: "var(--text-muted)" }}>or</span>
+              <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("fileAttachment.or")}</span>
               <div style={{ flex: 1, height: 1, background: "var(--border-color)" }} />
             </div>
 
@@ -680,7 +682,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
               <input
                 value={linkInput}
                 onChange={(e) => setLinkInput(e.target.value)}
-                placeholder="Paste image or file link..."
+                placeholder={t("fileAttachment.pasteLinkPlaceholder")}
                 style={{
                   flex: 1,
                   padding: "8px 12px",
@@ -708,7 +710,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
                   fontWeight: 500,
                 }}
               >
-                Add
+                {t("fileAttachment.add")}
               </button>
             </div>
 
@@ -728,7 +730,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
               onMouseEnter={(e) => (e.currentTarget.style.background = "var(--border-color)")}
               onMouseLeave={(e) => (e.currentTarget.style.background = "var(--bg-hover)")}
             >
-              Cancel
+              {t("fileAttachment.cancel")}
             </button>
           </div>
         </div>
@@ -767,10 +769,10 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 style={{ marginBottom: 16, fontSize: 18, fontWeight: 600 }}>Files ({files.length})</h3>
+            <h3 style={{ marginBottom: 16, fontSize: 18, fontWeight: 600 }}>{t("fileAttachment.filesTitle", { count: files.length })}</h3>
 
             {files.length === 0 ? (
-              <div style={{ textAlign: "center", color: "var(--text-muted)", padding: 20 }}>No files added yet.</div>
+              <div style={{ textAlign: "center", color: "var(--text-muted)", padding: 20 }}>{t("fileAttachment.noFilesYet")}</div>
             ) : (
               <div style={{ marginBottom: 16 }}>
                 {files.map((file, index) => (
@@ -810,10 +812,10 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
                         }}
                         onClick={() => window.open(file.url, "_blank")}
                       >
-                        {file.name || "Untitled"}
+                        {file.name || t("fileAttachment.untitled")}
                       </div>
                       <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
-                        {file.size ? formatSize(file.size) : ""} {file.isLink ? "🔗 Link" : ""}
+                        {file.size ? formatSize(file.size) : ""} {file.isLink ? t("fileAttachment.linkTag") : ""}
                       </div>
                     </div>
                     <div style={{ display: "flex", gap: 6 }}>
@@ -828,13 +830,13 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
                           cursor: "pointer",
                           fontSize: 11,
                         }}
-                        title="Download"
+                        title={t("fileAttachment.download")}
                       >
                         ⬇️
                       </button>
                       <button
                         onClick={() => {
-                          if (confirm(`Delete "${file.name}"?`)) {
+                          if (confirm(t("fileAttachment.deleteFileConfirm", { name: file.name }))) {
                             removeFile(index);
                           }
                         }}
@@ -847,7 +849,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
                           cursor: "pointer",
                           fontSize: 11,
                         }}
-                        title="Delete"
+                        title={t("fileAttachment.delete")}
                       >
                         ✕
                       </button>
@@ -874,7 +876,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
                   fontWeight: 500,
                 }}
               >
-                + Add File
+                {t("fileAttachment.addFileBtn")}
               </button>
               <button
                 onClick={() => setShowFileManager(false)}
@@ -887,7 +889,7 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
                   color: "var(--text-secondary)",
                 }}
               >
-                Close
+                {t("fileAttachment.close")}
               </button>
             </div>
           </div>

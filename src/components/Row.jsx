@@ -191,6 +191,7 @@ export default function Row({
             explicitWeight={weightInfo?.explicitWeight}
             resolvedWeight={weightInfo?.resolvedWeight}
             explicitSiblingSum={weightInfo?.explicitSiblingSum}
+            weightIncomplete={weightInfo?.weightIncomplete}
             displayPercent={myProgressDisplayPercents[col.id]}
             onChange={(val) => onUpdate(item.id, col.id, val)}
             onChangeWeight={weightInfo ? (val) => onUpdate(item.id, weightKeyFor(col.id), val) : undefined}

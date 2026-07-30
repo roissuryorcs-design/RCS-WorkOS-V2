@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { DEFAULT_COLUMNS } from "../data/treeData";
+import { useLanguage } from "../context/LanguageContext";
 
 export default function ColumnManager({
   columns,
@@ -11,6 +12,7 @@ export default function ColumnManager({
   onResetColumns,
   onClose,
 }) {
+  const { t } = useLanguage();
   const [editingId, setEditingId] = useState(null);
   const [editLabel, setEditLabel] = useState("");
   const [showResetConfirm, setShowResetConfirm] = useState(false);
@@ -88,14 +90,14 @@ export default function ColumnManager({
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
           <h3 style={{ fontSize: 18, fontWeight: 600, margin: 0 }}>
-            Manage Columns
+            {t("columnManager.title")}
           </h3>
           <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
-            {columns.filter(c => c.visible !== false).length} / {columns.length} visible
+            {t("columnManager.visibleCount", { visible: columns.filter(c => c.visible !== false).length, total: columns.length })}
           </span>
         </div>
         <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 4 }}>
-          Click ▾ to collapse, ▸ to expand. Click name to rename.
+          {t("columnManager.hint")}
         </p>
 
         {/* Indikator default columns */}
@@ -111,7 +113,7 @@ export default function ColumnManager({
               color: "var(--text-secondary)",
             }}
           >
-            ⚠️ Beberapa kolom default hilang. Klik "Reset Default" untuk mengembalikan.
+            ⚠️ {t("columnManager.missingDefaultsWarning")}
           </div>
         )}
 
@@ -150,7 +152,7 @@ export default function ColumnManager({
                     textAlign: "center",
                     transition: "color 0.2s",
                   }}
-                  title={isItem ? "Fixed column" : isVisible ? "Click to collapse" : "Click to expand"}
+                  title={isItem ? t("columnManager.fixedColumn") : isVisible ? t("columnManager.clickToCollapse") : t("columnManager.clickToExpand")}
                 >
                   {isVisible ? "▾" : "▸"}
                 </button>
@@ -189,10 +191,10 @@ export default function ColumnManager({
                       gap: 6,
                     }}
                     onClick={() => startRename(col)}
-                    title={isItem ? "Cannot rename fixed column" : "Click to rename"}
+                    title={isItem ? t("columnManager.cannotRenameFixed") : t("columnManager.clickToRename")}
                   >
                     {col.label || col.id}
-                    {isItem && <span style={{ fontSize: 10, color: "var(--text-muted)" }}>(fixed)</span>}
+                    {isItem && <span style={{ fontSize: 10, color: "var(--text-muted)" }}>{t("columnManager.fixedTag")}</span>}
                     {isDefault && !isItem && (
                       <span
                         style={{
@@ -205,11 +207,11 @@ export default function ColumnManager({
                           letterSpacing: 0.3,
                         }}
                       >
-                        DEFAULT
+                        {t("columnManager.defaultTag")}
                       </span>
                     )}
                     {!isVisible && (
-                      <span style={{ fontSize: 11, color: "var(--text-muted)" }}>(hidden)</span>
+                      <span style={{ fontSize: 11, color: "var(--text-muted)" }}>{t("columnManager.hiddenTag")}</span>
                     )}
                   </span>
                 )}
@@ -218,7 +220,7 @@ export default function ColumnManager({
                 {!isItem && !isDefault && onDeleteColumn && (
                   <button
                     onClick={() => {
-                      if (confirm(`Delete column "${col.label || col.id}"?`)) {
+                      if (confirm(t("columnManager.deleteColumnConfirm", { name: col.label || col.id }))) {
                         onDeleteColumn(col.id);
                       }
                     }}
@@ -234,7 +236,7 @@ export default function ColumnManager({
                     }}
                     onMouseEnter={(e) => { e.currentTarget.style.opacity = 1; }}
                     onMouseLeave={(e) => { e.currentTarget.style.opacity = 0.4; }}
-                    title="Delete column"
+                    title={t("columnManager.deleteColumnTitle")}
                   >
                     ✕
                   </button>
@@ -260,7 +262,7 @@ export default function ColumnManager({
                 }}
               >
                 <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>
-                  Reset semua kolom ke default?
+                  {t("columnManager.resetConfirm")}
                 </span>
                 <button
                   onClick={handleReset}
@@ -275,7 +277,7 @@ export default function ColumnManager({
                     fontWeight: 500,
                   }}
                 >
-                  Yes
+                  {t("columnManager.yes")}
                 </button>
                 <button
                   onClick={() => setShowResetConfirm(false)}
@@ -289,7 +291,7 @@ export default function ColumnManager({
                     color: "var(--text-secondary)",
                   }}
                 >
-                  Cancel
+                  {t("common.cancel")}
                 </button>
               </div>
             ) : (
@@ -314,7 +316,7 @@ export default function ColumnManager({
                   e.currentTarget.style.background = "rgba(255, 152, 0, 0.08)";
                 }}
               >
-                🔄 Reset Columns to Default
+                {t("columnManager.resetColumnsBtn")}
               </button>
             )}
           </div>
@@ -337,7 +339,7 @@ export default function ColumnManager({
           onMouseEnter={(e) => (e.currentTarget.style.background = "var(--border-color)")}
           onMouseLeave={(e) => (e.currentTarget.style.background = "var(--bg-hover)")}
         >
-          Close
+          {t("columnManager.close")}
         </button>
 
         {/* Info default columns */}
@@ -352,8 +354,7 @@ export default function ColumnManager({
             color: "var(--text-muted)",
           }}
         >
-          💡 Kolom dengan label <span style={{ color: "#4CAF50", fontWeight: 600 }}>DEFAULT</span> adalah 
-          kolom bawaan dan tidak bisa dihapus.
+          💡 {t("columnManager.defaultInfo")}
         </div>
       </div>
     </div>

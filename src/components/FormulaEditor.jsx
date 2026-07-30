@@ -1,7 +1,9 @@
 import { useState, useRef } from "react";
 import { evaluateFormula, FORMULA_FUNCTION_HELP } from "../utils/formulaEngine";
+import { useLanguage } from "../context/LanguageContext";
 
 export default function FormulaEditor({ column, columns, sampleItem, onSave, onClose }) {
+  const { t } = useLanguage();
   const [formula, setFormula] = useState(column?.formula || "");
   const textareaRef = useRef(null);
 
@@ -66,18 +68,18 @@ export default function FormulaEditor({ column, columns, sampleItem, onSave, onC
         onClick={(e) => e.stopPropagation()}
       >
         <h3 style={{ marginBottom: 4, fontSize: 18, fontWeight: 600 }}>
-          🧮 Formula — {column?.label}
+          {t("formulaEditor.titlePrefix")} {column?.label}
         </h3>
         <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 14 }}>
-          Referensi kolom lain pakai <code>{"{Nama Kolom}"}</code>. Contoh:{" "}
-          <code>{"{Progress} * 2"}</code> atau <code>{'IF({Status} = "Done", "✅", "⏳")'}</code>
+          {t("formulaEditor.refHint")} <code>{"{Nama Kolom}"}</code>. {t("formulaEditor.refExample")}{" "}
+          <code>{"{Progress} * 2"}</code> {t("formulaEditor.or")} <code>{'IF({Status} = "Done", "✅", "⏳")'}</code>
         </p>
 
         <textarea
           ref={textareaRef}
           value={formula}
           onChange={(e) => setFormula(e.target.value)}
-          placeholder="Tulis formula di sini..."
+          placeholder={t("formulaEditor.formulaPlaceholder")}
           rows={3}
           style={{
             width: "100%",
@@ -105,16 +107,16 @@ export default function FormulaEditor({ column, columns, sampleItem, onSave, onC
           }}
         >
           {sampleItem ? (
-            <>Preview (baris "{sampleItem.item || "item"}"): <strong>{preview === "" ? "—" : String(preview)}</strong></>
+            <>{t("formulaEditor.previewRow", { item: sampleItem.item || t("formulaEditor.itemFallback") })} <strong>{preview === "" ? "—" : String(preview)}</strong></>
           ) : (
-            "Preview muncul setelah ada item di board."
+            t("formulaEditor.previewEmpty")
           )}
         </div>
 
         {referenceableColumns.length > 0 && (
           <div style={{ marginBottom: 14 }}>
             <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6, color: "var(--text-secondary)" }}>
-              Kolom
+              {t("formulaEditor.columns")}
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
               {referenceableColumns.map((c) => (
@@ -140,7 +142,7 @@ export default function FormulaEditor({ column, columns, sampleItem, onSave, onC
 
         <div style={{ marginBottom: 18 }}>
           <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6, color: "var(--text-secondary)" }}>
-            Fungsi
+            {t("formulaEditor.functions")}
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 4, maxHeight: 150, overflowY: "auto" }}>
             {FORMULA_FUNCTION_HELP.map((f) => (
@@ -160,7 +162,7 @@ export default function FormulaEditor({ column, columns, sampleItem, onSave, onC
                 onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
               >
                 <code style={{ color: "var(--btn-primary-bg)", flexShrink: 0 }}>{f.name}</code>
-                <span style={{ color: "var(--text-muted)", textAlign: "right" }}>{f.desc}</span>
+                <span style={{ color: "var(--text-muted)", textAlign: "right" }}>{t(f.descKey)}</span>
               </div>
             ))}
           </div>
@@ -180,7 +182,7 @@ export default function FormulaEditor({ column, columns, sampleItem, onSave, onC
               fontWeight: 500,
             }}
           >
-            Save
+            {t("formulaEditor.save")}
           </button>
           <button
             onClick={onClose}
@@ -193,7 +195,7 @@ export default function FormulaEditor({ column, columns, sampleItem, onSave, onC
               color: "var(--text-secondary)",
             }}
           >
-            Cancel
+            {t("formulaEditor.cancel")}
           </button>
         </div>
       </div>

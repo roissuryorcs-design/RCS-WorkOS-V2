@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { parseDateValue } from "../utils/formulaEngine";
 import Popover from "./Popover";
+import { useLanguage } from "../context/LanguageContext";
 
 const MONTHS_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -28,6 +29,7 @@ function shortLabel(dateStr) {
 }
 
 export default function TimelineCell({ value, onChange }) {
+  const { t } = useLanguage();
   const timeline = value && typeof value === "object" ? value : {};
   const [open, setOpen] = useState(false);
   const triggerRef = useRef(null);
@@ -94,7 +96,7 @@ export default function TimelineCell({ value, onChange }) {
             fontWeight: hasRange ? 500 : 400,
           }}
         >
-          {hasRange ? `${shortLabel(timeline.start)} → ${shortLabel(timeline.end)}` : "Set timeline..."}
+          {hasRange ? `${shortLabel(timeline.start)} → ${shortLabel(timeline.end)}` : t("timelineCell.setTimeline")}
         </span>
         {hasRange && (
           <div style={{ width: "100%", height: 5, borderRadius: 3, background: "var(--border-color)", overflow: "hidden" }}>
@@ -127,7 +129,7 @@ export default function TimelineCell({ value, onChange }) {
       >
         <div onClick={(e) => e.stopPropagation()}>
             <label style={{ display: "block", fontSize: 11, color: "var(--text-muted)", marginBottom: 2 }}>
-              Start
+              {t("timelineCell.start")}
             </label>
             <input
               type="date"
@@ -146,7 +148,7 @@ export default function TimelineCell({ value, onChange }) {
               }}
             />
             <label style={{ display: "block", fontSize: 11, color: "var(--text-muted)", marginBottom: 2 }}>
-              End
+              {t("timelineCell.end")}
             </label>
             <input
               type="date"
@@ -188,7 +190,7 @@ export default function TimelineCell({ value, onChange }) {
                   e.currentTarget.style.color = "var(--text-muted)";
                 }}
               >
-                ✕ Clear timeline
+                {t("timelineCell.clearTimeline")}
               </button>
             )}
         </div>

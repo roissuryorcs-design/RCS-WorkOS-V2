@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLanguage } from "../context/LanguageContext";
 
 export default function ProgressStageManager({
   columnId,
@@ -6,6 +7,7 @@ export default function ProgressStageManager({
   onUpdateStages,
   onClose,
 }) {
+  const { t } = useLanguage();
   const [newValue, setNewValue] = useState(50);
   const [newLabel, setNewLabel] = useState("");
   const [newIcon, setNewIcon] = useState("⚪");
@@ -19,12 +21,12 @@ export default function ProgressStageManager({
   const handleAdd = () => {
     const label = newLabel.trim();
     if (!label) {
-      alert("Please enter a stage name.");
+      alert(t("progressStageManager.enterNameError"));
       return;
     }
     const value = Math.min(100, Math.max(0, parseInt(newValue, 10) || 0));
     if (stages.some((s) => s.value === value)) {
-      alert(`A stage at ${value}% already exists!`);
+      alert(t("progressStageManager.alreadyExistsAtValue", { value }));
       return;
     }
     onUpdateStages([...stages, { value, label, icon: newIcon.trim() || "⚪", color: newColor }]);
@@ -36,10 +38,10 @@ export default function ProgressStageManager({
 
   const handleDelete = (value) => {
     if (stages.length <= 1) {
-      alert("Cannot delete the last stage. At least one stage must remain.");
+      alert(t("progressStageManager.cannotDeleteLast"));
       return;
     }
-    if (!confirm(`Delete stage "${stages.find((s) => s.value === value)?.label}"?`)) return;
+    if (!confirm(t("progressStageManager.deleteConfirm", { name: stages.find((s) => s.value === value)?.label }))) return;
     onUpdateStages(stages.filter((s) => s.value !== value));
   };
 
@@ -137,10 +139,10 @@ export default function ProgressStageManager({
         onClick={(e) => e.stopPropagation()}
       >
         <h3 style={{ marginBottom: 4, fontSize: 18, fontWeight: 600 }}>
-          Manage Progress Stages
+          {t("progressStageManager.title")}
         </h3>
         <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 16 }}>
-          Drag ⠿ to reorder. Click name to rename. At least one stage must remain.
+          {t("progressStageManager.hint")}
         </p>
 
         <div style={{ marginBottom: 16 }}>
@@ -233,7 +235,7 @@ export default function ProgressStageManager({
                   onClick={() => startRename(index, stage.label)}
                   onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-hover)")}
                   onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-                  title="Klik untuk rename"
+                  title={t("progressStageManager.clickToRename")}
                 >
                   {stage.label}
                 </span>
@@ -295,7 +297,7 @@ export default function ProgressStageManager({
             }}
           />
           <input
-            placeholder="New stage name"
+            placeholder={t("progressStageManager.newNamePlaceholder")}
             value={newLabel}
             onChange={(e) => setNewLabel(e.target.value)}
             style={{
@@ -327,7 +329,7 @@ export default function ProgressStageManager({
               fontWeight: 500,
             }}
           >
-            Add
+            {t("progressStageManager.add")}
           </button>
         </div>
 
@@ -347,7 +349,7 @@ export default function ProgressStageManager({
           onMouseEnter={(e) => (e.currentTarget.style.background = "var(--border-color)")}
           onMouseLeave={(e) => (e.currentTarget.style.background = "var(--bg-hover)")}
         >
-          Close
+          {t("progressStageManager.close")}
         </button>
       </div>
     </div>

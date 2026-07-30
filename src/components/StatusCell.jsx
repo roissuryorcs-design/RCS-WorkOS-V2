@@ -1,5 +1,7 @@
 import { useState, useRef } from "react";
 import Popover from "./Popover";
+import { useLanguage } from "../context/LanguageContext";
+import { getDefaultStatusKey } from "../i18n/defaults";
 
 // Walks the subtree collecting the status value of every leaf item (an
 // item with no children of its own) — intermediate parents don't have a
@@ -27,6 +29,9 @@ export default function StatusCell({
   onChange,
   onOpenStatusManager,
 }) {
+  const { t } = useLanguage();
+  const defaultStatusKey = getDefaultStatusKey(t);
+
   // Pastikan statuses dan statusOrder valid
   const safeStatuses = statuses || {};
   const safeStatusOrder = statusOrder && statusOrder.length > 0
@@ -34,11 +39,11 @@ export default function StatusCell({
     : Object.keys(safeStatuses);
 
   // Jika masih kosong, beri default
-  const finalStatuses = safeStatusOrder.length > 0 ? safeStatusOrder : ["Default"];
-  const usedStatuses = Object.keys(safeStatuses).length > 0 ? safeStatuses : { Default: "#9ca3af" };
+  const finalStatuses = safeStatusOrder.length > 0 ? safeStatusOrder : [defaultStatusKey];
+  const usedStatuses = Object.keys(safeStatuses).length > 0 ? safeStatuses : { [defaultStatusKey]: "#9ca3af" };
 
   const getColor = (s) => usedStatuses[s] || "#9ca3af";
-  const currentStatus = status || finalStatuses[0] || "Default";
+  const currentStatus = status || finalStatuses[0] || defaultStatusKey;
   const currentColor = getColor(currentStatus);
 
   const [isOpen, setIsOpen] = useState(false);
@@ -65,7 +70,7 @@ export default function StatusCell({
 
     const counts = {};
     leafStatuses.forEach((s) => {
-      const key = s || finalStatuses[0] || "Default";
+      const key = s || finalStatuses[0] || defaultStatusKey;
       counts[key] = (counts[key] || 0) + 1;
     });
 
@@ -77,7 +82,7 @@ export default function StatusCell({
 
     return (
       <div
-        title={total > 0 ? summary : "No sub-items with a status yet"}
+        title={total > 0 ? summary : t("statusCell.noSubItemStatus")}
         style={{
           display: "flex",
           width: "100%",
@@ -202,7 +207,7 @@ export default function StatusCell({
           onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-hover)")}
           onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
         >
-          📝 Manage Statuses...
+          {t("statusCell.manageStatuses")}
         </div>
       </Popover>
     </div>

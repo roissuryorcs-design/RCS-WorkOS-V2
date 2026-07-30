@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import Popover from "./Popover";
+import { useLanguage } from "../context/LanguageContext";
 
 export default function ColumnMenu({
   column,
@@ -10,6 +11,7 @@ export default function ColumnMenu({
   onOpenFormula,
   onClose,
 }) {
+  const { t } = useLanguage();
   const [isRenaming, setIsRenaming] = useState(false);
   const [newLabel, setNewLabel] = useState(column.label || "");
   const inputRef = useRef(null);
@@ -88,7 +90,7 @@ export default function ColumnMenu({
                   fontSize: 12,
                 }}
               >
-                Save
+                {t("common.save")}
               </button>
               <button
                 onClick={() => {
@@ -105,7 +107,7 @@ export default function ColumnMenu({
                   color: "var(--text-secondary)",
                 }}
               >
-                Cancel
+                {t("common.cancel")}
               </button>
             </div>
           </div>
@@ -113,7 +115,7 @@ export default function ColumnMenu({
           <>
             {/* Rename - semua kolom */}
             <button onClick={() => setIsRenaming(true)} style={menuStyle}>
-              ✏️ Rename
+              {t("columnMenu.rename")}
             </button>
 
             {/* Edit Formula - hanya untuk kolom formula */}
@@ -125,7 +127,7 @@ export default function ColumnMenu({
                 }}
                 style={menuStyle}
               >
-                🧮 Edit Formula
+                {t("columnMenu.editFormula")}
               </button>
             )}
 
@@ -138,7 +140,7 @@ export default function ColumnMenu({
                 }}
                 style={menuStyle}
               >
-                {column.visible ? "👁️ Hide" : "👁️ Show"}
+                {column.visible ? t("columnMenu.hide") : t("columnMenu.show")}
               </button>
             )}
 
@@ -146,7 +148,7 @@ export default function ColumnMenu({
             {!isProtected && (
               <button
                 onClick={() => {
-                  if (confirm(`Delete column "${column.label}"?`)) {
+                  if (confirm(t("columnMenu.deleteColumnConfirm", { name: column.label }))) {
                     onDelete(column.id);
                   }
                   onClose();
@@ -157,7 +159,7 @@ export default function ColumnMenu({
                   borderTop: "1px solid var(--border-color)",
                 }}
               >
-                🗑️ Delete
+                🗑️ {t("common.delete")}
               </button>
             )}
 
@@ -171,7 +173,7 @@ export default function ColumnMenu({
                   borderTop: "1px solid var(--border-color)",
                 }}
               >
-                🔒 {column.id === "item" ? "ITEM column (protected)" : "Fixed column"}
+                {column.id === "item" ? t("columnMenu.itemColumnProtected") : t("columnMenu.fixedColumn")}
               </div>
             )}
           </>

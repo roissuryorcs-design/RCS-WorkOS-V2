@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useUpdates } from '../context/UpdateContext';
+import { useLanguage } from '../context/LanguageContext';
 
 const UpdatePanel = () => {
-  const { 
+  const { t } = useLanguage();
+  const {
     isPanelOpen, 
     closePanel, 
     selectedItem, 
@@ -243,7 +245,7 @@ const UpdatePanel = () => {
   };
 
   const handleDeleteUpdate = (updateId) => {
-    if (confirm('Delete this update and all replies?')) {
+    if (confirm(t('updatePanel.deleteUpdateConfirm'))) {
       deleteUpdate(updateId);
     }
   };
@@ -280,7 +282,7 @@ const UpdatePanel = () => {
   };
 
   const handleDeleteReply = (updateId, replyId) => {
-    if (confirm('Delete this reply?')) {
+    if (confirm(t('updatePanel.deleteReplyConfirm'))) {
       deleteReply(updateId, replyId);
     }
   };
@@ -289,7 +291,7 @@ const UpdatePanel = () => {
   // RENDER TEXT WITH MENTION
   // ============================================================
   const renderTextWithMentions = (text) => {
-    if (!text) return <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Empty update</span>;
+    if (!text) return <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>{t('updatePanel.emptyUpdate')}</span>;
     const parts = text.split(/(@\w+)/g);
     return parts.map((part, index) => {
       if (part.startsWith('@')) {
@@ -399,7 +401,7 @@ const UpdatePanel = () => {
                 }}
                 onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(239,68,68,0.15)'}
                 onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                title="Remove file"
+                title={t('updatePanel.removeFile')}
               >
                 ✕
               </button>
@@ -442,7 +444,7 @@ const UpdatePanel = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   {renderAvatar(reply.author, 20)}
                   <strong style={{ fontSize: '11px', color: 'var(--text-primary)', fontWeight: 700 }}>
-                    {reply.author || 'User'}
+                    {reply.author || t('updatePanel.defaultAuthor')}
                   </strong>
                 </div>
                 <span style={{ fontSize: '9px', color: 'var(--text-secondary)', fontWeight: 500 }}>
@@ -516,7 +518,7 @@ const UpdatePanel = () => {
                       }}
                       onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-active)'}
                       onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                      title="Upload file"
+                      title={t('updatePanel.uploadFile')}
                     >
                       📎
                     </button>
@@ -533,7 +535,7 @@ const UpdatePanel = () => {
                         fontWeight: 600,
                       }}
                     >
-                      Save
+                      {t('updatePanel.save')}
                     </button>
                     <button
                       onClick={handleCancelEditReply}
@@ -548,7 +550,7 @@ const UpdatePanel = () => {
                         fontWeight: 500,
                       }}
                     >
-                      Cancel
+                      {t('updatePanel.cancel')}
                     </button>
                   </div>
                 </div>
@@ -585,7 +587,7 @@ const UpdatePanel = () => {
                   onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-active)'}
                   onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                 >
-                  ↳ Reply
+                  {t('updatePanel.reply')}
                 </button>
                 <button
                   onClick={() => startEditReply(updateId, reply)}
@@ -603,7 +605,7 @@ const UpdatePanel = () => {
                   onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-active)'}
                   onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                 >
-                  ✎ Edit
+                  {t('updatePanel.edit')}
                 </button>
                 <button
                   onClick={() => handleDeleteReply(updateId, reply.id)}
@@ -621,7 +623,7 @@ const UpdatePanel = () => {
                   onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(239,68,68,0.15)'}
                   onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                 >
-                  ✕ Delete
+                  {t('updatePanel.delete')}
                 </button>
               </div>
 
@@ -643,7 +645,7 @@ const UpdatePanel = () => {
                     borderRadius: '4px',
                     fontStyle: 'italic',
                   }}>
-                    <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Replying to reply:</span> {reply.text.substring(0, 50)}...
+                    <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{t('updatePanel.replyingToReply')}</span> {reply.text.substring(0, 50)}...
                   </div>
 
                   {/* 🔥 PREVIEW FILE DI REPLY - DENGAN WARNA BIRU DAN NOMOR URUT */}
@@ -696,7 +698,7 @@ const UpdatePanel = () => {
                             }}
                             onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(239,68,68,0.15)'}
                             onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                            title="Remove file"
+                            title={t('updatePanel.removeFile')}
                           >
                             ✕
                           </button>
@@ -719,7 +721,7 @@ const UpdatePanel = () => {
                           handleCancelReply();
                         }
                       }}
-                      placeholder="Write a reply to this reply..."
+                      placeholder={t('updatePanel.replyToReplyPlaceholder')}
                       rows={2}
                       style={{
                         width: '100%',
@@ -763,7 +765,7 @@ const UpdatePanel = () => {
                         }}
                         onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-active)'}
                         onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                        title="Upload file"
+                        title={t('updatePanel.uploadFile')}
                       >
                         📎
                       </button>
@@ -780,7 +782,7 @@ const UpdatePanel = () => {
                           fontWeight: 600,
                         }}
                       >
-                        Reply
+                        {t('updatePanel.replyBtn')}
                       </button>
                       <button
                         onClick={handleCancelReply}
@@ -795,7 +797,7 @@ const UpdatePanel = () => {
                           fontWeight: 500,
                         }}
                       >
-                        Cancel
+                        {t('updatePanel.cancel')}
                       </button>
                     </div>
                   </div>
@@ -832,7 +834,7 @@ const UpdatePanel = () => {
   // ============================================================
   const AVATAR_COLORS = ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#06b6d4', '#f43f5e'];
   const getAvatarColor = (name) => {
-    const str = name || 'U';
+    const str = name || t('updatePanel.defaultAuthor');
     let hash = 0;
     for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
     return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
@@ -854,7 +856,7 @@ const UpdatePanel = () => {
       flexShrink: 0,
       lineHeight: 1,
     }}>
-      {(name || 'U').trim().charAt(0).toUpperCase()}
+      {(name || t('updatePanel.defaultAuthor')).trim().charAt(0).toUpperCase()}
     </span>
   );
 
@@ -908,7 +910,7 @@ const UpdatePanel = () => {
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
-              💬 Updates
+              {t('updatePanel.updatesTitle')}
             </h3>
             <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 500 }}>
               {itemUpdates.length}
@@ -970,7 +972,7 @@ const UpdatePanel = () => {
                     }}
                     onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(239,68,68,0.15)'}
                     onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                    title="Remove file"
+                    title={t('updatePanel.removeFile')}
                   >
                     ✕
                   </button>
@@ -993,7 +995,7 @@ const UpdatePanel = () => {
               ref={inputRef}
               value={newUpdate}
               onChange={(e) => setNewUpdate(e.target.value)}
-              placeholder="Write an update and mention others with @"
+              placeholder={t('updatePanel.newUpdatePlaceholder')}
               rows={2}
               style={{
                 width: '100%',
@@ -1036,12 +1038,12 @@ const UpdatePanel = () => {
                   }}
                   onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-active)'}
                   onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                  title="Upload file"
+                  title={t('updatePanel.uploadFile')}
                 >
                   📎
                 </button>
                 <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
-                  Shift+Enter new line
+                  {t('updatePanel.shiftEnterHint')}
                 </span>
               </div>
               <div style={{ display: 'flex', gap: '4px' }}>
@@ -1063,7 +1065,7 @@ const UpdatePanel = () => {
                     onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-active)'}
                     onMouseLeave={(e) => e.currentTarget.style.background = 'var(--bg-active)'}
                   >
-                    Cancel
+                    {t('updatePanel.cancel')}
                   </button>
                 )}
                 <button
@@ -1082,7 +1084,7 @@ const UpdatePanel = () => {
                   onMouseEnter={(e) => e.currentTarget.style.background = 'var(--btn-primary-hover)'}
                   onMouseLeave={(e) => e.currentTarget.style.background = 'var(--btn-primary-bg)'}
                 >
-                  Send
+                  {t('updatePanel.send')}
                 </button>
               </div>
             </div>
@@ -1109,7 +1111,7 @@ const UpdatePanel = () => {
               padding: '40px 20px',
             }}>
               <div style={{ fontSize: '40px', marginBottom: '12px' }}>💬</div>
-              <p style={{ margin: 0, fontWeight: 600, fontSize: '14px', color: 'var(--text-secondary)' }}>No updates yet</p>
+              <p style={{ margin: 0, fontWeight: 600, fontSize: '14px', color: 'var(--text-secondary)' }}>{t('updatePanel.noUpdatesYet')}</p>
             </div>
           ) : (
             sortedUpdates.map((update) => {
@@ -1130,7 +1132,7 @@ const UpdatePanel = () => {
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         {renderAvatar(update.author, 26)}
                         <strong style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 700 }}>
-                          {update.author || 'User'}
+                          {update.author || t('updatePanel.defaultAuthor')}
                         </strong>
                       </div>
                       <span style={{ fontSize: '10px', color: 'var(--text-secondary)', fontWeight: 500 }}>
@@ -1204,7 +1206,7 @@ const UpdatePanel = () => {
                             }}
                             onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-active)'}
                             onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                            title="Upload file"
+                            title={t('updatePanel.uploadFile')}
                           >
                             📎
                           </button>
@@ -1221,7 +1223,7 @@ const UpdatePanel = () => {
                               fontWeight: 600,
                             }}
                           >
-                            Save
+                            {t('updatePanel.save')}
                           </button>
                           <button
                             onClick={handleCancelEditUpdate}
@@ -1236,7 +1238,7 @@ const UpdatePanel = () => {
                               fontWeight: 500,
                             }}
                           >
-                            Cancel
+                            {t('updatePanel.cancel')}
                           </button>
                         </div>
                       </div>
@@ -1274,7 +1276,7 @@ const UpdatePanel = () => {
                         onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-active)'}
                         onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                       >
-                        ↳ Reply
+                        {t('updatePanel.reply')}
                       </button>
                       <button
                         onClick={() => startEditUpdate(update)}
@@ -1292,7 +1294,7 @@ const UpdatePanel = () => {
                         onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-active)'}
                         onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                       >
-                        ✎ Edit
+                        {t('updatePanel.edit')}
                       </button>
                       <button
                         onClick={() => handleDeleteUpdate(update.id)}
@@ -1310,7 +1312,7 @@ const UpdatePanel = () => {
                         onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(239,68,68,0.15)'}
                         onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                       >
-                        ✕ Delete
+                        {t('updatePanel.delete')}
                       </button>
                     </div>
 
@@ -1332,7 +1334,7 @@ const UpdatePanel = () => {
                           borderRadius: '4px',
                           fontStyle: 'italic',
                         }}>
-                          <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Replying to update:</span> {update.text.substring(0, 50)}...
+                          <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{t('updatePanel.replyingToUpdate')}</span> {update.text.substring(0, 50)}...
                         </div>
 
                         {/* 🔥 PREVIEW FILE DI REPLY - DENGAN WARNA BIRU DAN NOMOR URUT */}
@@ -1385,7 +1387,7 @@ const UpdatePanel = () => {
                                   }}
                                   onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(239,68,68,0.15)'}
                                   onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                                  title="Remove file"
+                                  title={t('updatePanel.removeFile')}
                                 >
                                   ✕
                                 </button>
@@ -1408,7 +1410,7 @@ const UpdatePanel = () => {
                                 handleCancelReply();
                               }
                             }}
-                            placeholder="Write a reply..."
+                            placeholder={t('updatePanel.replyPlaceholder')}
                             rows={2}
                             style={{
                               width: '100%',
@@ -1452,7 +1454,7 @@ const UpdatePanel = () => {
                               }}
                               onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-active)'}
                               onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                              title="Upload file"
+                              title={t('updatePanel.uploadFile')}
                             >
                               📎
                             </button>
@@ -1469,7 +1471,7 @@ const UpdatePanel = () => {
                                 fontWeight: 600,
                               }}
                             >
-                              Reply
+                              {t('updatePanel.replyBtn')}
                             </button>
                             <button
                               onClick={handleCancelReply}
@@ -1484,7 +1486,7 @@ const UpdatePanel = () => {
                                 fontWeight: 500,
                               }}
                             >
-                              Cancel
+                              {t('updatePanel.cancel')}
                             </button>
                           </div>
                         </div>

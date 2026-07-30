@@ -1,23 +1,25 @@
 import { useState } from "react";
+import { useLanguage } from "../context/LanguageContext";
 
 export default function AddColumnPopup({ onAdd, onClose }) {
+  const { t } = useLanguage();
   const [name, setName] = useState("");
   const [type, setType] = useState("text");
 
   const columnTypes = [
-    { value: "text", label: "📝 Text" },
-    { value: "status", label: "🏷️ Status" },
-    { value: "priority", label: "🚩 Priority" },
-    { value: "date", label: "📅 Date" },
-    { value: "timeline", label: "📆 Timeline" },
-    { value: "people", label: "👤 People" },
-    { value: "phone", label: "📞 Phone" },
-    { value: "number", label: "🔢 Number" },
-    { value: "numbering", label: "🔠 No. (multi-level)" },
-    { value: "files", label: "📎 Files" },
-    { value: "checkbox", label: "☑️ Checkbox" },
-    { value: "progress", label: "📊 Progress" },
-    { value: "formula", label: "🧮 Formula" },
+    { value: "text", label: t("addColumnPopup.typeText") },
+    { value: "status", label: t("addColumnPopup.typeStatus") },
+    { value: "priority", label: t("addColumnPopup.typePriority") },
+    { value: "date", label: t("addColumnPopup.typeDate") },
+    { value: "timeline", label: t("addColumnPopup.typeTimeline") },
+    { value: "people", label: t("addColumnPopup.typePeople") },
+    { value: "phone", label: t("addColumnPopup.typePhone") },
+    { value: "number", label: t("addColumnPopup.typeNumber") },
+    { value: "numbering", label: t("addColumnPopup.typeNumbering") },
+    { value: "files", label: t("addColumnPopup.typeFiles") },
+    { value: "checkbox", label: t("addColumnPopup.typeCheckbox") },
+    { value: "progress", label: t("addColumnPopup.typeProgress") },
+    { value: "formula", label: t("addColumnPopup.typeFormula") },
   ];
 
   const handleAdd = () => {
@@ -59,17 +61,17 @@ export default function AddColumnPopup({ onAdd, onClose }) {
         onClick={(e) => e.stopPropagation()}
       >
         <h3 style={{ marginBottom: 16, fontSize: 18, fontWeight: 600 }}>
-          Add Column
+          {t("addColumnPopup.title")}
         </h3>
 
         <div style={{ marginBottom: 12 }}>
           <label style={{ display: "block", fontSize: 13, fontWeight: 500, marginBottom: 4 }}>
-            Column Name
+            {t("addColumnPopup.columnName")}
           </label>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Enter column name..."
+            placeholder={t("addColumnPopup.namePlaceholder")}
             style={{
               width: "100%",
               padding: "8px 10px",
@@ -86,7 +88,7 @@ export default function AddColumnPopup({ onAdd, onClose }) {
 
         <div style={{ marginBottom: 16 }}>
           <label style={{ display: "block", fontSize: 13, fontWeight: 500, marginBottom: 4 }}>
-            Column Type
+            {t("addColumnPopup.columnType")}
           </label>
           <select
             value={type}
@@ -122,7 +124,7 @@ export default function AddColumnPopup({ onAdd, onClose }) {
               fontWeight: 500,
             }}
           >
-            Add
+            {t("addColumnPopup.add")}
           </button>
           <button
             onClick={onClose}
@@ -135,7 +137,7 @@ export default function AddColumnPopup({ onAdd, onClose }) {
               color: "var(--text-secondary)",
             }}
           >
-            Cancel
+            {t("addColumnPopup.cancel")}
           </button>
         </div>
       </div>

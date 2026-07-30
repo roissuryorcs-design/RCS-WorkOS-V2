@@ -73,19 +73,23 @@ const FUNCS = {
 
 const FUNC_NAMES = Object.keys(FUNCS);
 
+// `descKey` (not a stored `desc` string) — this is static reference text,
+// translated at render time by FormulaEditor.jsx via t(descKey), not
+// board/seed data, so it doesn't need the "resolve at creation time"
+// treatment default-generation code elsewhere in the app needs.
 export const FORMULA_FUNCTION_HELP = [
-  { name: "IF(cond, a, b)", desc: "a jika cond benar, kalau tidak b" },
-  { name: "ROUND(n, d)", desc: "Bulatkan n ke d angka desimal" },
-  { name: "ABS(n)", desc: "Nilai absolut" },
-  { name: "SUM(a, b, ...)", desc: "Jumlah semua angka" },
-  { name: "AVG(a, b, ...)", desc: "Rata-rata" },
-  { name: "MIN(a, b, ...) / MAX(a, b, ...)", desc: "Nilai minimum / maksimum" },
-  { name: "CONCAT(a, b, ...)", desc: "Gabungkan teks" },
-  { name: "LEN(text)", desc: "Panjang teks" },
-  { name: "UPPER(text) / LOWER(text)", desc: "Ubah ke huruf besar / kecil" },
-  { name: "AND(...) / OR(...) / NOT(x)", desc: "Logika boolean" },
-  { name: "TODAY()", desc: "Tanggal hari ini" },
-  { name: "DATEDIFF(a, b)", desc: "Selisih hari antara dua tanggal (a - b)" },
+  { name: "IF(cond, a, b)", descKey: "formulaHelp.if" },
+  { name: "ROUND(n, d)", descKey: "formulaHelp.round" },
+  { name: "ABS(n)", descKey: "formulaHelp.abs" },
+  { name: "SUM(a, b, ...)", descKey: "formulaHelp.sum" },
+  { name: "AVG(a, b, ...)", descKey: "formulaHelp.avg" },
+  { name: "MIN(a, b, ...) / MAX(a, b, ...)", descKey: "formulaHelp.minMax" },
+  { name: "CONCAT(a, b, ...)", descKey: "formulaHelp.concat" },
+  { name: "LEN(text)", descKey: "formulaHelp.len" },
+  { name: "UPPER(text) / LOWER(text)", descKey: "formulaHelp.upperLower" },
+  { name: "AND(...) / OR(...) / NOT(x)", descKey: "formulaHelp.andOrNot" },
+  { name: "TODAY()", descKey: "formulaHelp.today" },
+  { name: "DATEDIFF(a, b)", descKey: "formulaHelp.datediff" },
 ];
 
 // Ganti "=" tunggal (bukan bagian dari ==, !=, <=, >=) jadi "==" supaya
