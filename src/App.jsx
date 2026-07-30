@@ -17,7 +17,9 @@ import {
 import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
 import Toolbar from "./components/Toolbar";
+import ViewTabs from "./components/ViewTabs";
 import BoardTable from "./components/BoardTable";
+import Dashboard from "./components/Dashboard";
 import StatusManager from "./components/StatusManager";
 import ProgressStageManager from "./components/ProgressStageManager";
 import ColumnManager from "./components/ColumnManager";
@@ -43,6 +45,9 @@ function BoardWorkspace({ boardId }) {
   const [activeFormulaColumnId, setActiveFormulaColumnId] = useState(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const [hasAutoAdded, setHasAutoAdded] = useState(false);
+  const [currentView, setCurrentView] = useState(() => {
+    return localStorage.getItem(boardKey('forelCurrentView', boardId)) || 'table';
+  });
 
   const { columns, addColumn, renameColumn, toggleColumn, deleteColumn, resetColumns, updateColumnStatuses, updateColumnStatusOrder, updateColumnFormula, updateColumnProgressStages } = useColumns();
 
@@ -354,6 +359,14 @@ function BoardWorkspace({ boardId }) {
   useEffect(() => {
     localStorage.setItem(boardKey("forelGroupHeaderColors", boardId), JSON.stringify(groupHeaderColors));
   }, [groupHeaderColors, boardId]);
+
+  useEffect(() => {
+    setCurrentView(localStorage.getItem(boardKey('forelCurrentView', boardId)) || 'table');
+  }, [boardId]);
+
+  useEffect(() => {
+    localStorage.setItem(boardKey('forelCurrentView', boardId), currentView);
+  }, [currentView, boardId]);
 
   // ✅ Persist groups whenever they change (single source of truth —
   // renameGroup/deleteGroup/addGroup only ever call setGroups now).
@@ -781,10 +794,15 @@ function BoardWorkspace({ boardId }) {
     return count;
   };
 
+  // "Done" secara historis cocok string status apa pun; sekarang default
+  // status set sudah tidak ada "Done" lagi (jadi "Closed"/"Ditutup") —
+  // bandingkan ke label default saat ini, bukan string Inggris hardcode,
+  // supaya tetap kena untuk board yang masih pakai default status.
   const countDoneItems = (items) => {
+    const closedLabel = t("defaults.statusClosed");
     let count = 0;
     items.forEach((item) => {
-      if (item.status && item.status.toLowerCase() === "done") count++;
+      if (item.status && item.status === closedLabel) count++;
       if (item.children && item.children.length > 0) {
         count += countDoneItems(item.children);
       }
@@ -813,54 +831,64 @@ function BoardWorkspace({ boardId }) {
       <div className="main-content">
         <Header groups={allGroups || []} boardId={boardId} isReady={isInitialized} />
 
-        <Toolbar
-          search={search}
-          onSearchChange={setSearch}
-          onAddGroup={addGroup}
-          onUndo={undo}
-          onExport={exportData}
-          canUndo={history.length > 0}
-          onOpenColumnManager={() => setShowColumnManager(true)}
-        />
+        <ViewTabs currentView={currentView} onChange={setCurrentView} />
 
-        <BoardTable
-          items={filteredItems}
-          groups={allGroups}
-          defaultGroupName={getDefaultGroupName(t)}
-          statuses={statuses}
-          groupColors={groupColors}
-          onUpdateGroupColor={updateGroupColor}
-          groupHeaderColors={groupHeaderColors}
-          onUpdateGroupHeaderColor={updateGroupHeaderColor}
-          onUpdateItem={updateItem}
-          onDeleteItem={deleteItem}
-          onAddGroup={addGroup}
-          onDeleteGroup={deleteGroup}
-          onAddItem={addItem}
-          onAddSubItem={addSubItem}
-          onOpenStatusManager={openStatusManager}
-          onOpenProgressManager={openProgressManager}
-          onOpenFormula={openFormulaEditor}
-          onRenameGroup={renameGroup}
-          onReorderGroups={reorderGroups}
-          onOpenAddColumn={() => setShowAddColumnPopup(true)}
-        />
+        {currentView === "dashboard" ? (
+          <div style={{ padding: "0 24px" }}>
+            <Dashboard items={items} columns={columns} groups={allGroups} groupColors={groupColors} />
+          </div>
+        ) : (
+          <>
+            <Toolbar
+              search={search}
+              onSearchChange={setSearch}
+              onAddGroup={addGroup}
+              onUndo={undo}
+              onExport={exportData}
+              canUndo={history.length > 0}
+              onOpenColumnManager={() => setShowColumnManager(true)}
+            />
 
-        <div className="board-footer">
-          <div className="footer-stats">
-            <span>{t("app.footerTotal")} <strong>{totalItems}</strong> {t("app.footerItems")}</span>
-            <span className="footer-divider">|</span>
-            <span>{t("app.footerDone")} <strong style={{ color: "#22c55e" }}>{doneItems}</strong></span>
-            <span className="footer-divider">|</span>
-            <span>{t("app.footerPending")} <strong style={{ color: "#f59e0b" }}>{pendingItems}</strong></span>
-          </div>
-          <div className="footer-actions">
-            <span className="footer-status">
-              <span className="status-dot"></span>
-              {t("app.footerAutoSaved")}
-            </span>
-          </div>
-        </div>
+            <BoardTable
+              items={filteredItems}
+              groups={allGroups}
+              defaultGroupName={getDefaultGroupName(t)}
+              statuses={statuses}
+              groupColors={groupColors}
+              onUpdateGroupColor={updateGroupColor}
+              groupHeaderColors={groupHeaderColors}
+              onUpdateGroupHeaderColor={updateGroupHeaderColor}
+              onUpdateItem={updateItem}
+              onDeleteItem={deleteItem}
+              onAddGroup={addGroup}
+              onDeleteGroup={deleteGroup}
+              onAddItem={addItem}
+              onAddSubItem={addSubItem}
+              onOpenStatusManager={openStatusManager}
+              onOpenProgressManager={openProgressManager}
+              onOpenFormula={openFormulaEditor}
+              onRenameGroup={renameGroup}
+              onReorderGroups={reorderGroups}
+              onOpenAddColumn={() => setShowAddColumnPopup(true)}
+            />
+
+            <div className="board-footer">
+              <div className="footer-stats">
+                <span>{t("app.footerTotal")} <strong>{totalItems}</strong> {t("app.footerItems")}</span>
+                <span className="footer-divider">|</span>
+                <span>{t("app.footerDone")} <strong style={{ color: "#22c55e" }}>{doneItems}</strong></span>
+                <span className="footer-divider">|</span>
+                <span>{t("app.footerPending")} <strong style={{ color: "#f59e0b" }}>{pendingItems}</strong></span>
+              </div>
+              <div className="footer-actions">
+                <span className="footer-status">
+                  <span className="status-dot"></span>
+                  {t("app.footerAutoSaved")}
+                </span>
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {showStatusManager && (

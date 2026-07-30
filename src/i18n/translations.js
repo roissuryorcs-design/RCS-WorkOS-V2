@@ -79,6 +79,16 @@ export const translations = {
       footerDone: "Done:",
       footerPending: "Pending:",
       footerAutoSaved: "Auto-saved",
+      viewTable: "Table",
+      viewDashboard: "Dashboard",
+    },
+    dashboard: {
+      totalItems: "Total Items",
+      totalGroups: "Total Groups",
+      overallProgress: "Overall Progress",
+      itemsPerGroup: "Items per Group",
+      other: "Other",
+      noData: "No items yet — add some in the Table view first.",
     },
     boardTable: {
       addGroupPrompt: "Enter new group name:",
@@ -421,6 +431,16 @@ export const translations = {
       footerDone: "Selesai:",
       footerPending: "Tertunda:",
       footerAutoSaved: "Tersimpan otomatis",
+      viewTable: "Tabel",
+      viewDashboard: "Dashboard",
+    },
+    dashboard: {
+      totalItems: "Total Item",
+      totalGroups: "Total Grup",
+      overallProgress: "Progress Keseluruhan",
+      itemsPerGroup: "Item per Grup",
+      other: "Lainnya",
+      noData: "Belum ada item — tambahkan dulu di tampilan Tabel.",
     },
     boardTable: {
       addGroupPrompt: "Masukkan nama grup baru:",
