@@ -1,9 +1,29 @@
 import { useState, useRef } from "react";
 import Popover from "./Popover";
-import TreeGuides from "./TreeGuides";
+import TreeGuides, { INDENT_SIZE } from "./TreeGuides";
 import { computeWeightedProgress } from "../utils/progressWeights";
 
 const FALLBACK_STAGES = [{ value: 0, label: "Not Started", icon: "🔘", color: "#9E9E9E" }];
+
+// Every row's bar ends at the same fixed point (the column's own width,
+// minus room for the % label and cell padding) — only the *start* moves,
+// pushed right by exactly the same amount the tree guide's indent already
+// consumes. So the track shrinks by INDENT_SIZE per level (matching
+// TreeGuides, not an arbitrary amount) purely as a side effect of a fixed
+// end, the same way indenting text in an editor leaves the right margin
+// where it was. Deriving the end from the column's actual (resizable)
+// width — rather than a flat constant — is what keeps the bar inside the
+// cell instead of overflowing into the next column once it's resized
+// narrower.
+const DEFAULT_COLUMN_WIDTH = 220;
+// Cell padding (8px) + button padding (6px) + gap (6px) + % label
+// (~36px) — the horizontal space around the track that isn't track.
+const RESERVED_SPACE = 56;
+const MIN_TRACK_WIDTH = 40;
+function trackWidthForDepth(depth, columnWidth) {
+  const base = (columnWidth || DEFAULT_COLUMN_WIDTH) - RESERVED_SPACE;
+  return Math.max(MIN_TRACK_WIDTH, base - depth * INDENT_SIZE);
+}
 
 function hexToRgb(hex) {
   const clean = (hex || "#9ca3af").replace("#", "");
@@ -334,6 +354,9 @@ export default function ProgressCell({
   onChangeWeight,
   onOpenProgressManager,
   displayPercent,
+  groupColor,
+  expanded = true,
+  columnWidth,
 }) {
   const safeStages = stages && stages.length > 0 ? stages : FALLBACK_STAGES;
   const sortedStages = [...safeStages].sort((a, b) => a.value - b.value);
@@ -352,9 +375,19 @@ export default function ProgressCell({
   // flex sibling below — run the row's full height, so it touches the
   // border above/below and reads as one continuous line across rows
   // instead of a segment that stops short each time.
-  const wrapperStyle = { display: "flex", alignItems: "center", width: "100%", height: "100%" };
+  // position: relative so TreeGuides' childStub (an absolutely positioned
+  // overlay, not a flex slot — see its own comment) anchors to this row's
+  // own box rather than some further-out ancestor.
+  const wrapperStyle = { display: "flex", alignItems: "center", width: "100%", height: "100%", position: "relative" };
   const treeGuides = (
-    <TreeGuides depth={depth} ancestorLines={ancestorLines} isLastChild={isLastChild} color="var(--text-secondary)" thickness={1.5} />
+    <TreeGuides
+      depth={depth}
+      ancestorLines={ancestorLines}
+      isLastChild={isLastChild}
+      color={groupColor || "var(--text-secondary)"}
+      thickness={1.5}
+      childrenVisible={hasChildren && expanded}
+    />
   );
 
   // `rounded` = this row's own local progress (its own stage for a Task, or
@@ -372,11 +405,14 @@ export default function ProgressCell({
   // their own progress untouched.
   const shownPercent = displayPercent != null ? displayPercent : rounded;
 
+  const trackWidth = trackWidthForDepth(depth, columnWidth);
+
   const bar = (
-    <div style={{ display: "flex", alignItems: "center", gap: 6, flex: 1, minWidth: 0 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
       <div
         style={{
-          flex: 1,
+          width: trackWidth,
+          flexShrink: 0,
           height: 6,
           background: "var(--border-color)",
           borderRadius: 3,
@@ -421,7 +457,7 @@ export default function ProgressCell({
           ref={triggerRef}
           onClick={() => setIsOpen((prev) => !prev)}
           title={`Cumulative progress from sub-items: ${rounded}% — click to set this item's weight`}
-          style={{ display: "flex", alignItems: "center", width: "100%", padding: "4px 2px", background: "transparent", border: "none", cursor: "pointer" }}
+          style={{ display: "flex", alignItems: "center", width: "100%", padding: "4px 6px 4px 0", background: "transparent", border: "none", cursor: "pointer" }}
         >
           {bar}
         </button>
@@ -475,7 +511,7 @@ export default function ProgressCell({
           display: "flex",
           alignItems: "center",
           width: "100%",
-          padding: "4px 2px",
+          padding: "4px 6px 4px 0",
           background: "transparent",
           border: "none",
           cursor: "pointer",

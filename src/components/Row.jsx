@@ -178,6 +178,9 @@ export default function Row({
             depth={depth}
             isLastChild={isLastChild}
             ancestorLines={ancestorLines}
+            groupColor={groupColor}
+            expanded={expanded}
+            columnWidth={col.width}
             explicitWeight={weightInfo?.explicitWeight}
             resolvedWeight={weightInfo?.resolvedWeight}
             explicitSiblingSum={weightInfo?.explicitSiblingSum}
@@ -511,8 +514,19 @@ export default function Row({
                 // guide lines (rendered full-height inside ProgressCell)
                 // touch the row border above/below instead of leaving a
                 // gap — otherwise the connector looks broken between rows.
+                // overflow stays visible for them too, so the guide's
+                // small bleed past that edge (see TreeGuides) can actually
+                // paint over the border pixel instead of being clipped.
                 padding: col.type === 'progress' ? '0 8px' : '6px 8px',
-                overflow: 'hidden',
+                // `height: 1px` on a table-cell is a standard trick, not a
+                // literal size — it gives the cell a *definite* height for
+                // percentage-height children to resolve against (an "auto"
+                // table-cell height doesn't reliably let a 100%-height
+                // child fill it in every browser/row-height combination),
+                // while the row's real rendered height — set by whichever
+                // column's content is tallest — still wins as normal.
+                height: col.type === 'progress' ? '1px' : undefined,
+                overflow: col.type === 'progress' ? 'visible' : 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
               }}
