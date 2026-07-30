@@ -170,17 +170,21 @@ export default function BoardTable({
   };
 
   // ============================================================
-  // ADD GROUP - LANGSUNG DENGAN 1 ITEM
+  // ADD GROUP
   // ============================================================
+  // Prompts once, here, and passes the name straight to onAddGroup — which
+  // seeds its own starter items. It used to also call onAddItem
+  // afterward, adding a 4th item on top of the 3 onAddGroup already
+  // creates; removed since onAddGroup already owns item creation.
   const handleAddGroup = () => {
     const newTitle = prompt("Masukkan nama group baru:");
     if (!newTitle || !newTitle.trim()) return;
-    
+
     if (newTitle.trim() === defaultGroupName) {
       alert(`"${defaultGroupName}" adalah nama group default!`);
       return;
     }
-    
+
     if (groups.includes(newTitle.trim())) {
       alert(`Group "${newTitle.trim()}" sudah ada!`);
       return;
@@ -188,10 +192,6 @@ export default function BoardTable({
 
     if (onAddGroup) {
       onAddGroup(newTitle.trim());
-    }
-
-    if (onAddItem) {
-      onAddItem(newTitle.trim());
     }
   };
 
@@ -675,6 +675,7 @@ export default function BoardTable({
                                   groupName={groupName}
                                   isDefaultGroup={isDefault}
                                   numberPath={String(taskIndex + 1)}
+                                  siblings={tasks}
                                 />
                               );
                             })}

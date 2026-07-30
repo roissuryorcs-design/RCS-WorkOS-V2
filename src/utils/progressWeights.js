@@ -40,6 +40,21 @@ export function resolveSelfWeight(siblings, itemId, columnId) {
   };
 }
 
+// Depth-0 rows' shared "parent" is the ITEM level itself, not each other —
+// each top-level item independently gets up to 100% weight rather than
+// splitting a pool with its depth-0 siblings. Default (unset) is full
+// weight, and there's no sibling sum to cap against.
+export function resolveIndependentWeight(item, columnId) {
+  const key = weightKeyFor(columnId);
+  const explicit = typeof item[key] === "number" ? item[key] : null;
+  return {
+    explicitWeight: explicit,
+    resolvedWeight: explicit == null ? 100 : explicit,
+    explicitSiblingSum: 0,
+    siblingCount: 1,
+  };
+}
+
 // Recursive weighted rollup: a leaf's progress is its own stored stage
 // value; a parent's progress is Σ(child weight% × child progress%) across
 // its direct children.
@@ -66,14 +81,27 @@ export function computeOwnProgress(item, columnId) {
   return computeWeightedProgress(kids, columnId);
 }
 
-// "Progress terhadap total": this row's own progress × its own weight ×
-// its parent's *already-cascaded* display percent, all divided down to a
-// 0-100 range. Cascading through `parentDisplayPercent` (rather than just
-// one level) means a deeply-nested row's displayed % reflects its true
-// contribution to the grand total, not just to its immediate parent — each
-// ancestor's weight along the way compounds the dilution. Root rows
-// (depth 0, no parent) show their own progress untouched.
-export function computeCascadedDisplayPercent(ownProgress, resolvedWeight, parentDisplayPercent, depth) {
-  if (depth === 0 || resolvedWeight == null) return Math.round(ownProgress);
-  return Math.round((ownProgress * resolvedWeight * parentDisplayPercent) / (100 * 100));
+// A row's own absolute weight — its true share of the *whole board*, not
+// just of its immediate parent. Found by chaining relative weights down
+// from the root: each ancestor's relative weight (0-100, share of *its*
+// parent) multiplies into the running product. The implicit root has an
+// absolute weight of 100, so a depth-0 row's absolute weight equals its own
+// relative weight.
+export function computeAbsoluteWeight(resolvedWeight, parentAbsoluteWeight) {
+  const weight = resolvedWeight == null ? 100 : resolvedWeight;
+  const parentWeight = parentAbsoluteWeight == null ? 100 : parentAbsoluteWeight;
+  return (weight / 100) * parentWeight;
+}
+
+// "Progress terhadap total": this row's own progress × its own absolute
+// weight (its true share of the whole board — the product of every
+// ancestor's relative weight, chained via `parentAbsoluteWeight`). Only
+// weight compounds down the chain here, never progress — an ancestor being
+// half-done doesn't additionally dilute a fully-done descendant's
+// contribution, it only sets how large a slice that descendant owns.
+// Applies uniformly at every depth, including depth 0 (whose "parent" is
+// the implicit whole-board root, absolute weight 100).
+export function computeCascadedDisplayPercent(ownProgress, resolvedWeight, parentAbsoluteWeight) {
+  const absoluteWeight = computeAbsoluteWeight(resolvedWeight, parentAbsoluteWeight);
+  return Math.round((ownProgress * absoluteWeight) / 100);
 }

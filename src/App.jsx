@@ -287,44 +287,6 @@ function BoardWorkspace({ boardId }) {
   }, [items, isInitialized, boardId]);
 
   // ============================================================
-  // 🔥 FORCE AUTO-ADD 3 ITEMS KE DEFAULT GROUP
-  // ============================================================
-  useEffect(() => {
-    if (!isInitialized) return;
-
-    // Cek apakah Default Group ada di groups
-    const hasDefaultGroup = groups && Array.isArray(groups) && groups.includes('Default Group');
-    if (!hasDefaultGroup) return;
-
-    // Cek items di Default Group
-    const defaultItems = items.filter(item => item && item.group === 'Default Group');
-
-    // Jika kurang dari 3 item, tambahkan
-    if (defaultItems.length < 3) {
-      const startIndex = defaultItems.length;
-      const newItems = Array.from({ length: 3 - defaultItems.length }, (_, i) => ({
-        id: Date.now() + i + Math.random() * 1000,
-        group: 'Default Group',
-        item: `Task ${startIndex + i + 1}`,
-        document: `DOC-${String(startIndex + i + 1).padStart(3, '0')}`,
-        people: "",
-        status: "Default",
-        dueDate: "",
-        rev: "R0",
-        children: [],
-        isExpanded: false,
-      }));
-
-      if (newItems.length > 0) {
-        const updatedItems = [...items, ...newItems];
-        setItems(updatedItems);
-        localStorage.setItem(boardKey("forelItems", boardId), JSON.stringify(updatedItems));
-        console.log(`✅ Auto-added ${newItems.length} items to Default Group (total: ${defaultItems.length + newItems.length})`);
-      }
-    }
-  }, [items, groups, isInitialized, boardId]);
-
-  // ============================================================
   // AUTO-SAVE KE localStorage
   // ============================================================
   useEffect(() => {
@@ -573,8 +535,11 @@ function BoardWorkspace({ boardId }) {
   // ============================================================
   // ADD GROUP - DENGAN AUTO-ADD 3 ITEM
   // ============================================================
-  const addGroup = () => {
-    const name = prompt("Enter new group name:");
+  // Takes the name directly rather than prompting — the only caller
+  // (BoardTable's handleAddGroup) already prompts and validates before
+  // calling this, so prompting again here used to show a second, unexpected
+  // dialog that silently killed group creation if the user dismissed it.
+  const addGroup = (name) => {
     if (!name || !name.trim()) return;
     if (items.some((item) => item.group === name.trim())) {
       alert(`Group "${name.trim()}" already exists!`);

@@ -47,7 +47,9 @@ body.light {
   --bg-active: #c7ccd6;
   --bg-sidebar-hover: #d5d9e0;
   --bg-input: #f5f6f8;
-  --bg-modal: #f5f6f8;
+  /* Popover/modal sedikit lebih terang dari bg-secondary supaya
+     kelihatan "mengambang" di atas tabel, bukan menyatu. */
+  --bg-modal: #ffffff;
   --bg-card: #f5f6f8;
 
   --text-primary: #1a1a2e;
@@ -97,7 +99,9 @@ body.dark {
   --bg-active: #363c50;
   --bg-sidebar-hover: #2a2d3a;
   --bg-input: #252837;
-  --bg-modal: #1a1d27;
+  /* Popover/modal sedikit lebih terang dari bg-secondary supaya
+     kelihatan "mengambang" di atas tabel, bukan menyatu. */
+  --bg-modal: #242838;
   --bg-card: #1a1d27;
 
   --text-primary: #e8edf5;
@@ -200,7 +204,7 @@ body.dark {
   flex: 1;
   padding: 24px 32px;
   padding-bottom: 0;
-  background: var(--bg-secondary);
+  background: var(--bg-primary);
   transition: background 0.3s ease;
   height: 100vh;
   overflow: hidden;

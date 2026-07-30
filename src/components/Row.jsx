@@ -9,7 +9,7 @@ import FormulaCell from "./FormulaCell";
 import ProgressCell from "./ProgressCell";
 import UpdateBubble from './UpdateBubble';
 import { evaluateFormula } from "../utils/formulaEngine";
-import { resolveSelfWeight, weightKeyFor, computeOwnProgress, computeCascadedDisplayPercent } from "../utils/progressWeights";
+import { resolveSelfWeight, resolveIndependentWeight, weightKeyFor, computeOwnProgress, computeCascadedDisplayPercent, computeAbsoluteWeight } from "../utils/progressWeights";
 
 export default function Row({
   item,
@@ -31,7 +31,7 @@ export default function Row({
   isLastChild = false,
   ancestorLines = [],
   siblings = [],
-  parentDisplayPercents = {},
+  parentAbsoluteWeights = {},
 }) {
   // ✅ GUARD: Jika item undefined
   if (!item) {
@@ -166,9 +166,9 @@ export default function Row({
         );
 
       case "progress": {
-        const weightInfo = depth > 0
-          ? resolveSelfWeight(siblings, item.id, col.id)
-          : null;
+        const weightInfo = depth === 0
+          ? resolveIndependentWeight(item, col.id)
+          : resolveSelfWeight(siblings, item.id, col.id);
         return (
           <ProgressCell
             value={value}
@@ -288,20 +288,25 @@ export default function Row({
   const safeColumns = visibleColumns && Array.isArray(visibleColumns) ? visibleColumns : [];
 
   // Cascading "progress terhadap total" for every Progress column on this
-  // row — own progress × own weight × parent's *already-cascaded* %. Kept
+  // row — own progress × own absolute weight (the chained product of every
+  // ancestor's relative weight, never diluted by ancestor progress). Kept
   // here (not inside ProgressCell) since a child needs its parent's
-  // already-computed value, which only this top-down render pass has.
+  // already-computed absolute weight, which only this top-down render pass
+  // has.
   const myProgressDisplayPercents = {};
+  const myAbsoluteWeights = {};
   safeColumns.forEach((col) => {
     if (!col || col.type !== "progress") return;
     const ownProgress = computeOwnProgress(item, col.id);
-    const weightInfo = depth > 0 ? resolveSelfWeight(siblings, item.id, col.id) : null;
-    const parentPercent = parentDisplayPercents[col.id] ?? 100;
+    const weightInfo = depth === 0
+      ? resolveIndependentWeight(item, col.id)
+      : resolveSelfWeight(siblings, item.id, col.id);
+    const parentAbsoluteWeight = parentAbsoluteWeights[col.id] ?? 100;
+    myAbsoluteWeights[col.id] = computeAbsoluteWeight(weightInfo.resolvedWeight, parentAbsoluteWeight);
     myProgressDisplayPercents[col.id] = computeCascadedDisplayPercent(
       ownProgress,
-      weightInfo ? weightInfo.resolvedWeight : null,
-      parentPercent,
-      depth
+      weightInfo.resolvedWeight,
+      parentAbsoluteWeight
     );
   });
 
@@ -502,7 +507,11 @@ export default function Row({
                 borderRight: isLast ? "none" : "2px solid var(--border-color)",
                 borderBottom: '2px solid var(--border-color)',
                 background: isSelected ? 'var(--bg-hover)' : 'var(--bg-secondary)',
-                padding: '6px 8px',
+                // Progress columns get no vertical padding so their tree
+                // guide lines (rendered full-height inside ProgressCell)
+                // touch the row border above/below instead of leaving a
+                // gap — otherwise the connector looks broken between rows.
+                padding: col.type === 'progress' ? '0 8px' : '6px 8px',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
@@ -560,7 +569,7 @@ export default function Row({
               isLastChild={childIsLastChild}
               ancestorLines={childAncestorLines}
               siblings={children}
-              parentDisplayPercents={myProgressDisplayPercents}
+              parentAbsoluteWeights={myAbsoluteWeights}
             />
           );
         })

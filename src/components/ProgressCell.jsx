@@ -37,20 +37,166 @@ function gradientColorForValue(stages, value) {
   return sorted[sorted.length - 1].color;
 }
 
-// "Weight" = how much of the immediate parent's 100% this row accounts for
-// — separate from its own completion %. Only meaningful for rows that have
-// a parent (depth > 0). Validated against the sum of siblings' *explicit*
-// weights so a group can never be configured to exceed 100%.
-function WeightField({ explicitWeight, resolvedWeight, explicitSiblingSum, onChangeWeight, progressInfo }) {
-  const [draft, setDraft] = useState(explicitWeight != null ? String(explicitWeight) : "");
+function SectionLabel({ children }) {
+  return (
+    <div
+      style={{
+        fontSize: 10,
+        fontWeight: 700,
+        letterSpacing: "0.06em",
+        textTransform: "uppercase",
+        color: "var(--text-muted)",
+        padding: "0 12px",
+        marginBottom: 6,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
 
-  const commit = () => {
-    if (draft.trim() === "") {
-      onChangeWeight(null); // back to auto/even split
-      return;
-    }
-    let n = parseInt(draft, 10);
-    if (isNaN(n)) n = 0;
+// Top-of-popover summary: this row's own % (big, colored) with a mini bar,
+// plus — only when it actually differs, so simple single-item boards don't
+// see redundant noise — how much that's worth once weight dilutes it down
+// to a share of the grand total.
+function ProgressSummary({ rounded, shownPercent, barColor, icon, label, note }) {
+  const showsContribution = shownPercent != null && shownPercent !== rounded;
+  return (
+    <div style={{ padding: "10px 12px 12px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
+          {icon && <span style={{ fontSize: 14, lineHeight: 1 }}>{icon}</span>}
+          <span
+            style={{
+              fontSize: 12.5,
+              fontWeight: 600,
+              color: "var(--text-secondary)",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {label}
+          </span>
+        </div>
+        <span style={{ fontSize: 22, fontWeight: 700, color: barColor, flexShrink: 0, lineHeight: 1 }}>
+          {rounded}%
+        </span>
+      </div>
+
+      <div style={{ marginTop: 8, height: 6, borderRadius: 3, background: "var(--border-color)", overflow: "hidden" }}>
+        <div
+          style={{
+            width: `${rounded}%`,
+            height: "100%",
+            background: barColor,
+            borderRadius: 3,
+            transition: "width 0.2s",
+          }}
+        />
+      </div>
+
+      {note && (
+        <div style={{ marginTop: 7, fontSize: 11, color: "var(--text-muted)" }}>{note}</div>
+      )}
+
+      {showsContribution && (
+        <div
+          style={{
+            marginTop: 6,
+            display: "flex",
+            alignItems: "center",
+            gap: 5,
+            fontSize: 11,
+            color: "var(--text-secondary)",
+            background: "var(--bg-hover)",
+            borderRadius: 5,
+            padding: "5px 8px",
+          }}
+        >
+          <span style={{ opacity: 0.7 }}>→</span>
+          <span>
+            Counts as <strong style={{ color: "var(--text-primary)" }}>{shownPercent}%</strong> of the overall total
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Selectable list of stages. Only the active stage gets full color + a
+// checkmark; the rest stay as a plain, low-noise list with a small color
+// dot — easier to scan than a wall of solid-colored blocks.
+function StageList({ stages, currentValue, onSelect }) {
+  return (
+    <div style={{ padding: "0 6px" }}>
+      {stages.map((stage) => {
+        const isSelected = stage.value === currentValue;
+        return (
+          <button
+            key={stage.value}
+            onClick={() => onSelect(stage.value)}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              width: "100%",
+              background: isSelected ? stage.color : "transparent",
+              color: isSelected ? "#fff" : "var(--text-primary)",
+              border: "none",
+              padding: "7px 8px",
+              borderRadius: 6,
+              marginBottom: 2,
+              fontSize: 12.5,
+              fontWeight: isSelected ? 600 : 500,
+              cursor: "pointer",
+              textAlign: "left",
+              transition: "background 0.12s ease",
+            }}
+            onMouseEnter={(e) => {
+              if (!isSelected) e.currentTarget.style.background = "var(--bg-hover)";
+            }}
+            onMouseLeave={(e) => {
+              if (!isSelected) e.currentTarget.style.background = "transparent";
+            }}
+          >
+            <span
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: "50%",
+                background: isSelected ? "#fff" : stage.color,
+                flexShrink: 0,
+              }}
+            />
+            <span style={{ flexShrink: 0 }}>{stage.icon}</span>
+            <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {stage.label}
+            </span>
+            <span style={{ opacity: isSelected ? 0.95 : 0.6, fontSize: 11.5, flexShrink: 0 }}>
+              {stage.value}%
+            </span>
+            {isSelected && <span style={{ fontSize: 11, flexShrink: 0 }}>✓</span>}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// "Weight" = how much of the immediate parent's 100% this row accounts for
+// — separate from its own completion %. Depth-0 rows are the exception:
+// their "parent" is the ITEM level itself, not each other, so each
+// top-level item independently gets up to 100% rather than splitting a
+// pool with its depth-0 siblings. For depth > 0, validated against the sum
+// of siblings' *explicit* weights so a group can never be configured to
+// exceed 100%.
+function WeightControl({ explicitWeight, resolvedWeight, explicitSiblingSum, onChangeWeight, depth }) {
+  const [draft, setDraft] = useState(explicitWeight != null ? String(explicitWeight) : "");
+  const isDefault = explicitWeight == null;
+  const sliderValue = draft.trim() !== "" ? Math.min(100, Math.max(0, parseInt(draft, 10) || 0)) : Math.round(resolvedWeight);
+
+  const commitValue = (n) => {
     n = Math.min(100, Math.max(0, n));
     if (n + explicitSiblingSum > 100) {
       alert(
@@ -63,50 +209,115 @@ function WeightField({ explicitWeight, resolvedWeight, explicitSiblingSum, onCha
     onChangeWeight(n);
   };
 
+  const commit = () => {
+    if (draft.trim() === "") {
+      onChangeWeight(null); // back to auto/default
+      return;
+    }
+    let n = parseInt(draft, 10);
+    if (isNaN(n)) n = 0;
+    commitValue(n);
+  };
+
+  const handleSlider = (e) => {
+    const n = parseInt(e.target.value, 10);
+    setDraft(String(n));
+    commitValue(n);
+  };
+
+  const resetToDefault = () => {
+    setDraft("");
+    onChangeWeight(null);
+  };
+
   return (
-    <div style={{ padding: "6px 10px" }} onClick={(e) => e.stopPropagation()}>
-      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        <span style={{ fontSize: 11, color: "var(--text-muted)", flex: 1 }}>
-          Weight (share of parent)
+    <div style={{ padding: "8px 12px 10px" }} onClick={(e) => e.stopPropagation()}>
+      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
+        <span style={{ fontSize: 11.5, color: "var(--text-secondary)" }}>
+          {depth > 0 ? "Share of parent" : "Share of this item"}
         </span>
+        <span style={{ fontSize: 11.5, color: "var(--text-muted)" }}>
+          {isDefault ? "auto" : "manual"}
+        </span>
+      </div>
+
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
         <input
-          type="number"
+          type="range"
           min={0}
           max={100}
-          value={draft}
-          placeholder={String(Math.round(resolvedWeight))}
-          onChange={(e) => setDraft(e.target.value)}
-          onBlur={commit}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") e.currentTarget.blur();
-          }}
-          style={{
-            width: 52,
-            padding: "3px 6px",
-            fontSize: 12,
-            border: "1px solid var(--border-dark)",
-            borderRadius: 4,
-            outline: "none",
-            background: "var(--bg-input)",
-            color: "var(--text-primary)",
-            textAlign: "right",
-          }}
+          value={sliderValue}
+          onChange={handleSlider}
+          style={{ flex: 1, accentColor: "var(--btn-primary-bg)", cursor: "pointer" }}
         />
-        <span style={{ fontSize: 11, color: "var(--text-muted)" }}>%</span>
-      </div>
-      <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>
-        {explicitWeight != null
-          ? `Currently: ${explicitWeight}% (set manually)`
-          : `Currently: ${Math.round(resolvedWeight)}% (auto — split evenly among sibling items left unset)`}
-      </div>
-      {progressInfo && (
-        <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
-          {progressInfo}
+        <div style={{ display: "flex", alignItems: "center", gap: 2, flexShrink: 0 }}>
+          <input
+            type="number"
+            min={0}
+            max={100}
+            value={draft}
+            placeholder={String(Math.round(resolvedWeight))}
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={commit}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") e.currentTarget.blur();
+            }}
+            style={{
+              width: 44,
+              padding: "3px 5px",
+              fontSize: 12,
+              border: "1px solid var(--border-dark)",
+              borderRadius: 4,
+              outline: "none",
+              background: "var(--bg-input)",
+              color: "var(--text-primary)",
+              textAlign: "right",
+            }}
+          />
+          <span style={{ fontSize: 11.5, color: "var(--text-muted)" }}>%</span>
         </div>
-      )}
+      </div>
+
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 5 }}>
+        <span style={{ fontSize: 10.5, color: "var(--text-muted)" }}>
+          {isDefault
+            ? depth > 0
+              ? "Default — split evenly among unset siblings"
+              : "Default — full weight, independent of other items"
+            : "Set manually"}
+        </span>
+        {!isDefault && (
+          <button
+            onClick={resetToDefault}
+            style={{
+              fontSize: 10.5,
+              color: "var(--btn-primary-bg)",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: 0,
+            }}
+          >
+            Reset
+          </button>
+        )}
+      </div>
     </div>
   );
 }
+
+function Divider() {
+  return <div style={{ borderTop: "1px solid var(--border-color)", margin: "2px 0" }} />;
+}
+
+const popoverShellStyle = {
+  background: "var(--bg-modal)",
+  border: "1px solid var(--border-color)",
+  borderRadius: 8,
+  boxShadow: "var(--shadow-md)",
+  padding: "4px 0",
+  minWidth: 250,
+};
 
 export default function ProgressCell({
   value,
@@ -131,12 +342,17 @@ export default function ProgressCell({
   const triggerRef = useRef(null);
 
   const hasChildren = itemChildren && itemChildren.length > 0;
-  const showWeightField = depth > 0 && typeof onChangeWeight === "function";
+  const showWeightField = typeof onChangeWeight === "function";
 
   // Same L-shaped connectors as the ITEM column, so the bar's nesting reads
   // as a direct visual echo of the item tree instead of a flat list of
   // unrelated percentages.
-  const wrapperStyle = { display: "flex", alignItems: "center", width: "100%" };
+  // height: 100% (matched with zero vertical padding on the <td> itself,
+  // set in Row.jsx) lets the tree guide's vertical line — a stretch-aligned
+  // flex sibling below — run the row's full height, so it touches the
+  // border above/below and reads as one continuous line across rows
+  // instead of a segment that stops short each time.
+  const wrapperStyle = { display: "flex", alignItems: "center", width: "100%", height: "100%" };
   const treeGuides = (
     <TreeGuides depth={depth} ancestorLines={ancestorLines} isLastChild={isLastChild} color="var(--text-secondary)" thickness={1.5} />
   );
@@ -183,16 +399,6 @@ export default function ProgressCell({
     </div>
   );
 
-  const weightPopoverSection = (progressInfo) => showWeightField && (
-    <WeightField
-      explicitWeight={explicitWeight}
-      resolvedWeight={resolvedWeight}
-      explicitSiblingSum={explicitSiblingSum}
-      onChangeWeight={onChangeWeight}
-      progressInfo={progressInfo}
-    />
-  );
-
   // ============================================================
   // PARENT DENGAN CHILDREN — progress read-only (gradasi warna dari
   // komulatif Task), tapi weight-nya sendiri (porsi ke parent-nya sendiri)
@@ -220,24 +426,24 @@ export default function ProgressCell({
           {bar}
         </button>
 
-        <Popover
-          anchorRef={triggerRef}
-          isOpen={isOpen}
-          onClose={() => setIsOpen(false)}
-          placement="bottom-start"
-          style={{
-            background: "var(--bg-modal)",
-            border: "1px solid var(--border-color)",
-            borderRadius: 6,
-            boxShadow: "var(--shadow-md)",
-            padding: "4px 0 8px",
-            minWidth: 220,
-          }}
-        >
-          <div style={{ padding: "2px 10px 6px", fontSize: 12, color: "var(--text-muted)", borderBottom: "1px solid var(--border-color)" }}>
-            Only this item's own weight can be set — its progress is auto-calculated from sub-items.
-          </div>
-          {weightPopoverSection(`Currently progress: ${rounded}% (auto-calculated from sub-items)`)}
+        <Popover anchorRef={triggerRef} isOpen={isOpen} onClose={() => setIsOpen(false)} placement="bottom-start" style={popoverShellStyle}>
+          <ProgressSummary
+            rounded={rounded}
+            shownPercent={shownPercent}
+            barColor={barColor}
+            icon="Σ"
+            label="Auto-calculated from sub-items"
+            note="This item's own progress follows its sub-items — only its weight can be set here."
+          />
+          <Divider />
+          <SectionLabel>Weight</SectionLabel>
+          <WeightControl
+            explicitWeight={explicitWeight}
+            resolvedWeight={resolvedWeight}
+            explicitSiblingSum={explicitSiblingSum}
+            onChangeWeight={onChangeWeight}
+            depth={depth}
+          />
         </Popover>
       </div>
     );
@@ -278,83 +484,52 @@ export default function ProgressCell({
         {bar}
       </button>
 
-      <Popover
-        anchorRef={triggerRef}
-        isOpen={isOpen}
-        onClose={() => setIsOpen(false)}
-        placement="bottom-start"
-        style={{
-          background: "var(--bg-modal)",
-          border: "1px solid var(--border-color)",
-          borderRadius: 6,
-          boxShadow: "var(--shadow-md)",
-          padding: 4,
-          minWidth: 180,
-        }}
-      >
-        {!showWeightField && (
-          <div style={{ padding: "4px 10px 6px", fontSize: 11, color: "var(--text-muted)" }}>
-            Currently progress: {rounded}% ({currentStage.label})
-          </div>
-        )}
-        {sortedStages.map((stage) => (
-          <div
-            key={stage.value}
-            onClick={() => handleSelect(stage.value)}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              background: stage.color,
-              color: "white",
-              padding: "6px 10px",
-              borderRadius: 4,
-              marginBottom: 2,
-              fontSize: 12,
-              fontWeight: 500,
-              cursor: "pointer",
-              transition: "filter 0.12s ease, box-shadow 0.12s ease",
-              outline: stage.value === currentStage.value ? "2px solid var(--text-primary)" : "none",
-              outlineOffset: "-2px",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.filter = "brightness(1.15)";
-              e.currentTarget.style.boxShadow = "0 2px 6px rgba(0,0,0,0.25)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.filter = "none";
-              e.currentTarget.style.boxShadow = "none";
-            }}
-          >
-            <span>{stage.icon}</span>
-            <span style={{ flex: 1 }}>{stage.label}</span>
-            <span style={{ opacity: 0.9 }}>{stage.value}%</span>
-          </div>
-        ))}
+      <Popover anchorRef={triggerRef} isOpen={isOpen} onClose={() => setIsOpen(false)} placement="bottom-start" style={popoverShellStyle}>
+        <ProgressSummary
+          rounded={rounded}
+          shownPercent={shownPercent}
+          barColor={barColor}
+          icon={currentStage.icon}
+          label={currentStage.label}
+        />
+        <Divider />
+        <SectionLabel>Stage</SectionLabel>
+        <StageList stages={sortedStages} currentValue={currentStage.value} onSelect={handleSelect} />
 
         {showWeightField && (
-          <div style={{ borderTop: "1px solid var(--border-color)", marginTop: 4 }}>
-            {weightPopoverSection(`Currently progress: ${rounded}% (${currentStage.label})`)}
-          </div>
+          <>
+            <Divider />
+            <SectionLabel>Weight</SectionLabel>
+            <WeightControl
+              explicitWeight={explicitWeight}
+              resolvedWeight={resolvedWeight}
+              explicitSiblingSum={explicitSiblingSum}
+              onChangeWeight={onChangeWeight}
+              depth={depth}
+            />
+          </>
         )}
 
+        <Divider />
         <div
           onClick={handleManage}
           style={{
-            marginTop: 4,
-            paddingTop: 6,
-            borderTop: "1px solid var(--border-color)",
-            padding: "6px 10px",
+            padding: "8px 12px",
             fontSize: 12,
-            fontWeight: 400,
-            color: "var(--text-primary)",
+            fontWeight: 500,
+            color: "var(--text-secondary)",
             cursor: "pointer",
             borderRadius: 4,
+            margin: "0 4px",
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
           }}
           onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-hover)")}
           onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
         >
-          📝 Manage Progress Stages...
+          <span>📝</span>
+          <span>Manage stages...</span>
         </div>
       </Popover>
     </div>
