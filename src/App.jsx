@@ -3,6 +3,7 @@ import { ThemeProvider } from "./context/ThemeContext";
 import { LanguageProvider, useLanguage } from "./context/LanguageContext";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { ColumnProvider, useColumns } from "./context/ColumnContext";
+import { GroupProvider, useGroups } from "./context/GroupContext";
 import { BoardsProvider, useBoards } from "./context/BoardsContext";
 import { boardKey } from "./utils/boardStorage";
 import LoginScreen from "./components/LoginScreen";
@@ -53,70 +54,21 @@ function BoardWorkspace({ boardId }) {
 
   const { columns, addColumn, renameColumn, toggleColumn, deleteColumn, resetColumns, updateColumnStatuses, updateColumnStatusOrder, updateColumnFormula, updateColumnProgressStages } = useColumns();
 
-  // ============================================================
-  // 🔥 STATE GROUPS - LANGSUNG DARI LOCALSTORAGE
-  // ============================================================
-  const [groups, setGroups] = useState(() => {
-    const saved = localStorage.getItem(boardKey('board-groups', boardId));
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          // ✅ NORMALISASI: "Default" → nama grup default (bahasa aktif)
-          const normalized = parsed.map(g =>
-            g === 'Default' ? getDefaultGroupName(t) : g
-          );
-          // ✅ SIMPAN KEMBALI KE LOCALSTORAGE
-          localStorage.setItem(boardKey('board-groups', boardId), JSON.stringify(normalized));
-          return normalized;
-        }
-      } catch (e) {
-        console.error('Error parsing board-groups:', e);
-      }
-    }
-    return [getDefaultGroupName(t)];
-  });
-
-  // ============================================================
-  // 🔥 STATE GROUP COLORS - DARI LOCALSTORAGE, DEFAULT BIRU
-  // ============================================================
-  const [groupColors, setGroupColors] = useState(() => {
-    const saved = localStorage.getItem(boardKey('forelGroupColors', boardId));
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (typeof parsed === 'object' && Object.keys(parsed).length > 0) {
-          return parsed;
-        }
-      } catch (e) {
-        console.error('Error loading groupColors:', e);
-      }
-    }
-    // ✅ Default: Default Group warna biru (#3b82f6)
-    return {
-      [getDefaultGroupName(t)]: '#3b82f6'
-    };
-  });
-
-  // ============================================================
-  // 🔥 STATE GROUP HEADER BG COLORS - opsional per grup, DARI localStorage
-  // Beda dari groupColors (itu warna aksen/teks Group Title) — ini warna
-  // LATAR baris header kolom (ITEM/STATUS/dst) milik grup ini. Tidak
-  // dipetakan berarti "pakai default" (var(--bg-table-header) di CSS),
-  // bukan tersimpan sebagai key eksplisit sampai user benar-benar memilih.
-  // ============================================================
-  const [groupHeaderColors, setGroupHeaderColors] = useState(() => {
-    const saved = localStorage.getItem(boardKey('forelGroupHeaderColors', boardId));
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (typeof parsed === 'object') return parsed;
-      } catch (e) {
-        console.error('Error loading groupHeaderColors:', e);
-      }
-    }
-    return {};
-  });
+  // Groups (name/color/header-color/order) now live in Supabase via
+  // GroupContext — items (below) are still localStorage until Phase 5, so
+  // this component still owns seeding/deleting/renaming items in response
+  // to group operations, just delegating the group *row* itself to context.
+  const {
+    groups,
+    groupColors,
+    groupHeaderColors,
+    createGroup,
+    renameGroupEntry,
+    removeGroup,
+    reorderGroups: persistGroupOrder,
+    updateGroupColor,
+    updateGroupHeaderColor,
+  } = useGroups();
 
   // ============================================================
   // LOAD DATA
@@ -124,8 +76,6 @@ function BoardWorkspace({ boardId }) {
   useEffect(() => {
     const savedItems = localStorage.getItem(boardKey("forelItems", boardId));
     const savedStatuses = localStorage.getItem(boardKey("forelStatuses", boardId));
-    const savedGroupColors = localStorage.getItem(boardKey("forelGroupColors", boardId));
-    const savedGroupHeaderColors = localStorage.getItem(boardKey("forelGroupHeaderColors", boardId));
 
     const defaultStatuses = { [getDefaultStatusKey(t)]: "#9ca3af" };
 
@@ -222,70 +172,6 @@ function BoardWorkspace({ boardId }) {
     }
 
     setItems(finalItems);
-
-    // ✅ UPDATE groups dari localStorage (jika ada) - DENGAN SIMPAN KEMBALI
-    const savedGroups = localStorage.getItem(boardKey('board-groups', boardId));
-    if (savedGroups) {
-      try {
-        const parsed = JSON.parse(savedGroups);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          // ✅ NORMALISASI
-          const normalized = parsed.map(g =>
-            g === 'Default' ? getDefaultGroupName(t) : g
-          );
-          setGroups(normalized);
-          // ✅ SIMPAN KEMBALI KE LOCALSTORAGE
-          localStorage.setItem(boardKey('board-groups', boardId), JSON.stringify(normalized));
-        } else {
-          setGroups(groupsFromItems);
-          localStorage.setItem(boardKey('board-groups', boardId), JSON.stringify(groupsFromItems));
-        }
-      } catch (e) {
-        setGroups(groupsFromItems);
-        localStorage.setItem(boardKey('board-groups', boardId), JSON.stringify(groupsFromItems));
-      }
-    } else {
-      setGroups(groupsFromItems);
-      localStorage.setItem(boardKey('board-groups', boardId), JSON.stringify(groupsFromItems));
-    }
-
-    // ✅ LOAD GROUP COLORS
-    if (savedGroupColors) {
-      try {
-        const parsed = JSON.parse(savedGroupColors);
-        if (typeof parsed === 'object' && Object.keys(parsed).length > 0) {
-          setGroupColors(parsed);
-        }
-      } catch (e) {
-        console.error('Error parsing groupColors:', e);
-      }
-    }
-
-    // ✅ LOAD GROUP HEADER BG COLORS (opsional — boleh kosong/{})
-    if (savedGroupHeaderColors) {
-      try {
-        const parsed = JSON.parse(savedGroupHeaderColors);
-        if (typeof parsed === 'object') {
-          setGroupHeaderColors(parsed);
-        }
-      } catch (e) {
-        console.error('Error parsing groupHeaderColors:', e);
-      }
-    } else {
-      setGroupHeaderColors({});
-    }
-
-    // ✅ PASTIKAN DEFAULT GROUP PUNYA WARNA DAN SIMPAN
-    setGroupColors(prev => {
-      const updated = { ...prev };
-      const defaultGroupName = getDefaultGroupName(t);
-      if (!updated[defaultGroupName]) {
-        updated[defaultGroupName] = '#3b82f6';
-      }
-      localStorage.setItem(boardKey('forelGroupColors', boardId), JSON.stringify(updated));
-      return updated;
-    });
-
     setIsInitialized(true);
   }, [boardId]);
 
@@ -295,10 +181,13 @@ function BoardWorkspace({ boardId }) {
   useEffect(() => {
     if (!isInitialized) return;
     if (hasAutoAdded) return;
+    // Waits on GroupContext's own load rather than deriving group names
+    // from items — items no longer are the source of truth for which
+    // groups exist now that groups live in their own Supabase table.
+    if (groups.length === 0) return;
 
-    const groupsFromItems = [...new Set(items.map(item => item.group))];
     let needsAutoAdd = false;
-    const groupsToCheck = groupsFromItems.length > 0 ? groupsFromItems : [getDefaultGroupName(t)];
+    const groupsToCheck = groups;
 
     groupsToCheck.forEach(group => {
       const groupItems = items.filter(item => item.group === group);
@@ -339,7 +228,7 @@ function BoardWorkspace({ boardId }) {
         setHasAutoAdded(false);
       }, 1000);
     }
-  }, [items, isInitialized, boardId]);
+  }, [items, isInitialized, boardId, groups]);
 
   // ============================================================
   // AUTO-SAVE KE localStorage
@@ -355,28 +244,12 @@ function BoardWorkspace({ boardId }) {
   }, [statuses, boardId]);
 
   useEffect(() => {
-    localStorage.setItem(boardKey("forelGroupColors", boardId), JSON.stringify(groupColors));
-  }, [groupColors, boardId]);
-
-  useEffect(() => {
-    localStorage.setItem(boardKey("forelGroupHeaderColors", boardId), JSON.stringify(groupHeaderColors));
-  }, [groupHeaderColors, boardId]);
-
-  useEffect(() => {
     setCurrentView(localStorage.getItem(boardKey('forelCurrentView', boardId)) || 'table');
   }, [boardId]);
 
   useEffect(() => {
     localStorage.setItem(boardKey('forelCurrentView', boardId), currentView);
   }, [currentView, boardId]);
-
-  // ✅ Persist groups whenever they change (single source of truth —
-  // renameGroup/deleteGroup/addGroup only ever call setGroups now).
-  useEffect(() => {
-    if (isInitialized) {
-      localStorage.setItem(boardKey('board-groups', boardId), JSON.stringify(groups));
-    }
-  }, [groups, isInitialized, boardId]);
 
   // ============================================================
   // UNDO
@@ -544,18 +417,21 @@ function BoardWorkspace({ boardId }) {
   };
 
   // ============================================================
-  // GROUP CRUD
+  // GROUP CRUD — the group *row* (name/color/order) is owned by
+  // GroupContext now; this component still owns the item-side effects
+  // (rename/seed/delete items) since items are local until Phase 5.
   // ============================================================
   const renameGroup = (oldName, newName) => {
     if (!newName || !newName.trim()) return;
-    if (items.some((item) => item.group === newName.trim() && item.group !== oldName)) {
-      alert(t("app.groupAlreadyExists", { name: newName.trim() }));
+    const trimmed = newName.trim();
+    if (groups.some((g) => g === trimmed && g !== oldName)) {
+      alert(t("app.groupAlreadyExists", { name: trimmed }));
       return;
     }
 
     const renameGroupRecursive = (items) => {
       return items.map((it) => {
-        const updated = it.group === oldName ? { ...it, group: newName.trim() } : it;
+        const updated = it.group === oldName ? { ...it, group: trimmed } : it;
         if (updated.children && updated.children.length > 0) {
           return { ...updated, children: renameGroupRecursive(updated.children) };
         }
@@ -565,22 +441,7 @@ function BoardWorkspace({ boardId }) {
 
     const newItems = renameGroupRecursive(items);
     saveHistory(newItems);
-
-    const newColors = { ...groupColors };
-    if (newColors[oldName] !== undefined) {
-      newColors[newName.trim()] = newColors[oldName];
-      delete newColors[oldName];
-      setGroupColors(newColors);
-    }
-
-    const newHeaderColors = { ...groupHeaderColors };
-    if (newHeaderColors[oldName] !== undefined) {
-      newHeaderColors[newName.trim()] = newHeaderColors[oldName];
-      delete newHeaderColors[oldName];
-      setGroupHeaderColors(newHeaderColors);
-    }
-
-    setGroups(prev => prev.map(g => g === oldName ? newName.trim() : g));
+    renameGroupEntry(oldName, trimmed);
   };
 
   const deleteGroup = (groupName) => {
@@ -591,14 +452,8 @@ function BoardWorkspace({ boardId }) {
     if (!confirm(t("app.deleteGroupConfirm", { name: groupName }))) return;
     const newItems = items.filter((it) => it.group !== groupName);
     saveHistory(newItems);
-    const newColors = { ...groupColors };
-    delete newColors[groupName];
-    setGroupColors(newColors);
-    const newHeaderColors = { ...groupHeaderColors };
-    delete newHeaderColors[groupName];
-    setGroupHeaderColors(newHeaderColors);
     setHasAutoAdded(false);
-    setGroups(prev => prev.filter(g => g !== groupName));
+    removeGroup(groupName);
   };
 
   // ============================================================
@@ -610,7 +465,7 @@ function BoardWorkspace({ boardId }) {
   // dialog that silently killed group creation if the user dismissed it.
   const addGroup = (name) => {
     if (!name || !name.trim()) return;
-    if (items.some((item) => item.group === name.trim())) {
+    if (groups.some((g) => g === name.trim())) {
       alert(t("app.groupAlreadyExists", { name: name.trim() }));
       return;
     }
@@ -633,24 +488,15 @@ function BoardWorkspace({ boardId }) {
 
     const updatedItems = [...items, ...newItems];
     saveHistory(updatedItems);
-    setGroupColors((prev) => ({ ...prev, [groupName]: "#3b82f6" }));
     setHasAutoAdded(false);
-    setGroups(prev => [...prev, groupName]);
+    createGroup(groupName);
 
     console.log(`✅ Added new group "${groupName}" with 3 items`);
   };
 
-  const updateGroupColor = (groupName, color) => {
-    setGroupColors((prev) => ({ ...prev, [groupName]: color }));
-  };
-
-  const updateGroupHeaderColor = (groupName, color) => {
-    setGroupHeaderColors((prev) => ({ ...prev, [groupName]: color }));
-  };
-
   const reorderGroups = (newOrder) => {
     if (!Array.isArray(newOrder) || newOrder.length === 0) return;
-    setGroups(newOrder);
+    persistGroupOrder(newOrder);
   };
 
   // ============================================================
@@ -992,10 +838,12 @@ function AppShellInner() {
         </div>
       ) : activeBoardId ? (
         <ColumnProvider key={activeBoardId} boardId={activeBoardId}>
-          <UpdateProvider boardId={activeBoardId}>
-            <BoardWorkspace boardId={activeBoardId} />
-            <UpdatePanel />
-          </UpdateProvider>
+          <GroupProvider boardId={activeBoardId}>
+            <UpdateProvider boardId={activeBoardId}>
+              <BoardWorkspace boardId={activeBoardId} />
+              <UpdatePanel />
+            </UpdateProvider>
+          </GroupProvider>
         </ColumnProvider>
       ) : (
         <EmptyWorkspaceState />
