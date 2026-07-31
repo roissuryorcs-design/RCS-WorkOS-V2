@@ -24,15 +24,123 @@ function WorkspaceAvatar({ workspace, size = 22 }) {
   );
 }
 
+// A native alert() can't be selected/copied reliably across browsers — this
+// gives the invite code its own small modal with a real Copy button instead.
+function InviteCodeModal({ code, onClose }) {
+  const { t } = useLanguage();
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // Clipboard API can fail (permissions, non-HTTPS) — the code is still
+      // visible/selectable in the input as a fallback.
+    }
+  };
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,0.5)",
+        zIndex: 1000,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        backdropFilter: "blur(4px)",
+      }}
+      onClick={onClose}
+    >
+      <div
+        style={{
+          background: "var(--bg-modal)",
+          borderRadius: 12,
+          padding: 24,
+          maxWidth: 380,
+          width: "90%",
+          color: "var(--text-primary)",
+          boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
+          border: "1px solid var(--border-color)",
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3 style={{ marginBottom: 8, fontSize: 16, fontWeight: 600 }}>{t("workspaceSwitcher.inviteCodeTitle")}</h3>
+        <p style={{ fontSize: 12.5, color: "var(--text-secondary)", marginBottom: 14 }}>
+          {t("workspaceSwitcher.inviteCodeHint")}
+        </p>
+
+        <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+          <input
+            type="text"
+            readOnly
+            value={code}
+            onFocus={(e) => e.target.select()}
+            style={{
+              flex: 1,
+              padding: "10px 12px",
+              fontSize: 15,
+              fontWeight: 600,
+              letterSpacing: "0.05em",
+              border: "1px solid var(--border-dark)",
+              borderRadius: 6,
+              background: "var(--bg-input)",
+              color: "var(--text-primary)",
+              textAlign: "center",
+            }}
+          />
+          <button
+            onClick={handleCopy}
+            style={{
+              padding: "0 16px",
+              background: copied ? "#22c55e" : "var(--btn-primary-bg)",
+              color: "var(--btn-primary-text)",
+              border: "none",
+              borderRadius: 6,
+              cursor: "pointer",
+              fontWeight: 500,
+              fontSize: 13,
+              whiteSpace: "nowrap",
+            }}
+          >
+            {copied ? t("workspaceSwitcher.copied") : t("workspaceSwitcher.copyBtn")}
+          </button>
+        </div>
+
+        <button
+          onClick={onClose}
+          style={{
+            width: "100%",
+            padding: "8px",
+            background: "var(--bg-hover)",
+            border: "none",
+            borderRadius: 6,
+            cursor: "pointer",
+            color: "var(--text-secondary)",
+          }}
+        >
+          {t("common.close")}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function WorkspaceSwitcher() {
   const {
     workspaces,
     activeWorkspaceId,
+    isActiveWorkspaceOwner,
     recentWorkspaces,
     switchWorkspace,
     createWorkspace,
     renameWorkspace,
     deleteWorkspace,
+    createInviteCode,
+    joinWorkspaceByCode,
   } = useBoards();
   const { t } = useLanguage();
 
@@ -40,6 +148,7 @@ export default function WorkspaceSwitcher() {
   const [search, setSearch] = useState("");
   const [openMenuId, setOpenMenuId] = useState(null);
   const [itemMenuAnchorEl, setItemMenuAnchorEl] = useState(null);
+  const [inviteCodeToShow, setInviteCodeToShow] = useState(null);
   const switcherBtnRef = useRef(null);
 
   const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId) || workspaces[0];
@@ -78,6 +187,18 @@ export default function WorkspaceSwitcher() {
   const handleDelete = (workspace) => {
     deleteWorkspace(workspace.id);
     setOpenMenuId(null);
+  };
+
+  const handleInvite = async () => {
+    const code = await createInviteCode();
+    close();
+    if (code) setInviteCodeToShow(code);
+  };
+
+  const handleJoin = () => {
+    const code = prompt(t("workspaceSwitcher.joinWorkspacePrompt"));
+    if (code && code.trim()) joinWorkspaceByCode(code.trim());
+    close();
   };
 
   const renderWorkspaceItem = (workspace, sectionKey) => {
@@ -156,9 +277,17 @@ export default function WorkspaceSwitcher() {
 
         <div className="workspace-switcher-footer">
           <button className="workspace-footer-btn" onClick={handleAddWorkspace}>{t("workspaceSwitcher.addWorkspace")}</button>
+          <button className="workspace-footer-btn" onClick={handleJoin}>{t("workspaceSwitcher.joinWorkspace")}</button>
+          {isActiveWorkspaceOwner && (
+            <button className="workspace-footer-btn" onClick={handleInvite}>{t("workspaceSwitcher.inviteBtn")}</button>
+          )}
           <button className="workspace-footer-btn" onClick={() => setSearch("")}>{t("workspaceSwitcher.browseAll")}</button>
         </div>
       </Popover>
+
+      {inviteCodeToShow && (
+        <InviteCodeModal code={inviteCodeToShow} onClose={() => setInviteCodeToShow(null)} />
+      )}
     </div>
   );
 }

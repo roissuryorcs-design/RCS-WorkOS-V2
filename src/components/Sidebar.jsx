@@ -3,11 +3,13 @@ import "../css/sidebar.css";
 import Logo from "./Logo";
 import { useBoards } from "../context/BoardsContext";
 import { useLanguage } from "../context/LanguageContext";
+import { useAuth } from "../context/AuthContext";
 import WorkspaceSwitcher from "./WorkspaceSwitcher";
 import Popover from "./Popover";
 
 export default function Sidebar() {
   const { t } = useLanguage();
+  const { user, signOut } = useAuth();
   const {
     nodes,
     activeBoardId,
@@ -240,6 +242,54 @@ export default function Sidebar() {
       <div className="sidebar-section">
         <div className="section-title">{t("sidebar.moreTitle")}</div>
         <div className="nav-item">{t("sidebar.automate")}</div>
+      </div>
+
+      <div
+        className="sidebar-section"
+        style={{
+          marginTop: 16,
+          borderTop: "1px solid var(--border-color)",
+          paddingTop: 10,
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 8,
+            padding: "0 4px",
+          }}
+        >
+          <span
+            style={{
+              fontSize: 12,
+              color: "var(--text-secondary)",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+              minWidth: 0,
+            }}
+            title={user?.email}
+          >
+            {user?.email}
+          </span>
+          <button
+            onClick={signOut}
+            style={{
+              flexShrink: 0,
+              background: "none",
+              border: "1px solid var(--border-dark)",
+              borderRadius: 4,
+              padding: "3px 8px",
+              fontSize: 11.5,
+              color: "var(--text-secondary)",
+              cursor: "pointer",
+            }}
+          >
+            {t("auth.signOut")}
+          </button>
+        </div>
       </div>
     </div>
   );

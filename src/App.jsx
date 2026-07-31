@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 import { ThemeProvider } from "./context/ThemeContext";
 import { LanguageProvider, useLanguage } from "./context/LanguageContext";
+import { AuthProvider, useAuth } from "./context/AuthContext";
 import { ColumnProvider, useColumns } from "./context/ColumnContext";
 import { BoardsProvider, useBoards } from "./context/BoardsContext";
 import { boardKey } from "./utils/boardStorage";
+import LoginScreen from "./components/LoginScreen";
 import {
   getDefaultGroupName,
   getDefaultStatusKey,
@@ -969,13 +971,26 @@ function EmptyWorkspaceState() {
 }
 
 function AppShellInner() {
-  const { activeBoardId } = useBoards();
+  const { activeBoardId, loading } = useBoards();
 
   return (
     <div className="app-container">
       <Sidebar />
 
-      {activeBoardId ? (
+      {loading ? (
+        <div
+          style={{
+            flex: 1,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "var(--text-secondary)",
+            fontSize: 14,
+          }}
+        >
+          …
+        </div>
+      ) : activeBoardId ? (
         <ColumnProvider key={activeBoardId} boardId={activeBoardId}>
           <UpdateProvider boardId={activeBoardId}>
             <BoardWorkspace boardId={activeBoardId} />
@@ -989,13 +1004,50 @@ function AppShellInner() {
   );
 }
 
+// Board data still reads/writes localStorage at this phase (Phase 2 of the
+// Supabase migration plan — auth is wired first, in isolation, before any
+// data-layer risk). AuthGate blocks the whole app behind a session check so
+// later phases can assume `useAuth().user` is always available downstream.
+function AuthGate({ children }) {
+  const { session, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div
+        style={{
+          position: "fixed",
+          inset: 0,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "var(--bg-primary)",
+          color: "var(--text-secondary)",
+          fontSize: 14,
+        }}
+      >
+        …
+      </div>
+    );
+  }
+
+  if (!session) {
+    return <LoginScreen />;
+  }
+
+  return children;
+}
+
 export default function App() {
   return (
     <LanguageProvider>
       <ThemeProvider>
-        <BoardsProvider>
-          <AppShellInner />
-        </BoardsProvider>
+        <AuthProvider>
+          <AuthGate>
+            <BoardsProvider>
+              <AppShellInner />
+            </BoardsProvider>
+          </AuthGate>
+        </AuthProvider>
       </ThemeProvider>
     </LanguageProvider>
   );

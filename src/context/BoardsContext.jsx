@@ -1,169 +1,288 @@
 import { createContext, useContext, useState, useEffect } from "react";
-import { generateId, boardKey } from "../utils/boardStorage";
+import { supabase } from "../lib/supabaseClient";
+import { useAuth } from "./AuthContext";
 import { useLanguage } from "./LanguageContext";
 
 const BoardsContext = createContext();
 
-const REGISTRY_KEY = "rcs-boards-registry";
-const DEFAULT_WORKSPACE_NAME = "FOREL FPSO";
 const MAX_RECENT_WORKSPACES = 5;
 
-const LEGACY_KEYS = [
-  "forelItems",
-  "board-groups",
-  "forelGroupColors",
-  "forelStatuses",
-  "forelColumns",
-  "forelBoardTitle",
-  "forelBoardSubtitle",
-  "forelUpdates",
-];
-
-// Bootstraps the registry the first time this runs (fresh install, an old
-// single-workspace v1 registry, or migrating a pre-multi-board install), or
-// returns the existing v2 registry unchanged. Must be safe to call twice
-// under React StrictMode's lazy-initializer double-invocation, hence the
-// synchronous re-read at the top rather than any "always write" logic.
-function loadOrMigrateRegistry(t) {
+// activeWorkspaceId/activeBoardId/recentWorkspaceIds are per-device UI
+// preferences, not shared board data — kept in localStorage (scoped by
+// user id so switching accounts on the same browser doesn't cross-wire),
+// same as theme/language. Everything else now lives in Supabase.
+function prefsKey(userId) {
+  return `rcs-board-prefs::${userId}`;
+}
+function loadPrefs(userId) {
   try {
-    const saved = localStorage.getItem(REGISTRY_KEY);
-    if (saved) {
-      const parsed = JSON.parse(saved);
-
-      // Already v2 — validate and repair any orphaned active ids.
-      if (
-        parsed &&
-        parsed.version === 2 &&
-        Array.isArray(parsed.workspaces) &&
-        parsed.workspaces.length > 0 &&
-        Array.isArray(parsed.nodes)
-      ) {
-        const activeWorkspaceId = parsed.workspaces.some((w) => w.id === parsed.activeWorkspaceId)
-          ? parsed.activeWorkspaceId
-          : parsed.workspaces[0].id;
-        const boardsInWorkspace = parsed.nodes.filter(
-          (n) => n.type === "board" && n.workspaceId === activeWorkspaceId
-        );
-        const activeBoardId = boardsInWorkspace.some((b) => b.id === parsed.activeBoardId)
-          ? parsed.activeBoardId
-          : boardsInWorkspace[0]?.id ?? null;
-        const recentWorkspaceIds = Array.isArray(parsed.recentWorkspaceIds)
-          ? parsed.recentWorkspaceIds.filter((id) => parsed.workspaces.some((w) => w.id === id))
-          : [activeWorkspaceId];
-        const favoriteBoardIds = Array.isArray(parsed.favoriteBoardIds)
-          ? parsed.favoriteBoardIds.filter((id) => parsed.nodes.some((n) => n.id === id && n.type === "board"))
-          : [];
-
-        return { ...parsed, activeWorkspaceId, activeBoardId, recentWorkspaceIds, favoriteBoardIds };
-      }
-
-      // v1 (single implicit workspace) — wrap everything into one real workspace.
-      if (parsed && parsed.version === 1 && Array.isArray(parsed.nodes) && parsed.nodes.length > 0) {
-        const workspaceId = generateId("w");
-        const registry = {
-          version: 2,
-          activeWorkspaceId: workspaceId,
-          activeBoardId: parsed.activeBoardId ?? null,
-          recentWorkspaceIds: [workspaceId],
-          favoriteBoardIds: [],
-          workspaces: [{ id: workspaceId, name: DEFAULT_WORKSPACE_NAME }],
-          nodes: parsed.nodes.map((n) => ({ ...n, workspaceId })),
-        };
-        localStorage.setItem(REGISTRY_KEY, JSON.stringify(registry));
-        return registry;
-      }
-    }
+    const saved = localStorage.getItem(prefsKey(userId));
+    if (saved) return JSON.parse(saved);
   } catch (e) {
-    console.error("Error loading boards registry:", e);
+    console.error("Error loading board prefs:", e);
   }
+  return { activeWorkspaceId: null, activeBoardId: null, recentWorkspaceIds: [] };
+}
 
-  // No valid registry — migrate any existing single-board data (or start
-  // fresh if there isn't any; both cases produce the same shape).
-  const workspaceId = generateId("w");
-  const boardId = generateId("b");
-  const engineeringId = generateId("f");
-  const commissioningId = generateId("f");
-
-  const legacyTitle = localStorage.getItem("forelBoardTitle");
-  const boardName = legacyTitle && legacyTitle.trim() ? legacyTitle.trim() : t("defaults.defaultBoardName");
-
-  LEGACY_KEYS.forEach((key) => {
-    const val = localStorage.getItem(key);
-    if (val !== null) {
-      localStorage.setItem(boardKey(key, boardId), val);
-    }
-  });
-
-  const registry = {
-    version: 2,
-    activeWorkspaceId: workspaceId,
-    activeBoardId: boardId,
-    recentWorkspaceIds: [workspaceId],
-    favoriteBoardIds: [],
-    workspaces: [{ id: workspaceId, name: DEFAULT_WORKSPACE_NAME }],
-    nodes: [
-      { id: engineeringId, type: "folder", name: t("defaults.defaultEngineeringFolder"), parentId: null, workspaceId, collapsed: false },
-      { id: boardId, type: "board", name: boardName, parentId: engineeringId, workspaceId },
-      { id: commissioningId, type: "folder", name: t("defaults.defaultCommissioningFolder"), parentId: null, workspaceId, collapsed: false },
-    ],
+// DB rows are snake_case; the rest of the app (Sidebar.jsx, WorkspaceSwitcher.jsx)
+// expects the same camelCase node shape the old localStorage registry used —
+// bridging it here means those components need zero changes.
+function mapNode(row) {
+  return {
+    id: row.id,
+    type: row.type,
+    name: row.name,
+    parentId: row.parent_id,
+    workspaceId: row.workspace_id,
+    position: row.position,
+    collapsed: row.collapsed,
   };
+}
 
-  try {
-    localStorage.setItem(REGISTRY_KEY, JSON.stringify(registry));
-  } catch (e) {
-    console.error("Error writing boards registry:", e);
-  }
-
-  return registry;
+function randomInviteCode() {
+  return crypto.randomUUID().replace(/-/g, "").slice(0, 10);
 }
 
 export function BoardsProvider({ children }) {
   const { t } = useLanguage();
-  const [state, setState] = useState(() => loadOrMigrateRegistry(t));
+  const { user } = useAuth();
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(REGISTRY_KEY, JSON.stringify(state));
-    } catch (e) {
-      console.error("Error saving boards registry:", e);
-    }
-  }, [state]);
+  const [workspaces, setWorkspaces] = useState([]); // [{id, name, role}]
+  const [allNodesByWorkspace, setAllNodesByWorkspace] = useState({}); // {workspaceId: node[]}
+  const [favoriteBoardIds, setFavoriteBoardIds] = useState([]);
+  const [favoriteBoardsMeta, setFavoriteBoardsMeta] = useState([]); // resolved {id,name,workspaceId}
+  const [loading, setLoading] = useState(true);
 
-  const { nodes: allNodes, activeBoardId, workspaces, activeWorkspaceId, recentWorkspaceIds, favoriteBoardIds } = state;
-  const nodes = allNodes.filter((n) => n.workspaceId === activeWorkspaceId);
+  const [prefs, setPrefs] = useState(() => loadPrefs(user.id));
+  const { activeWorkspaceId, activeBoardId, recentWorkspaceIds } = prefs;
 
-  const switchBoard = (id) => {
-    if (!allNodes.some((n) => n.id === id && n.type === "board" && n.workspaceId === activeWorkspaceId)) return;
-    setState((prev) => ({ ...prev, activeBoardId: id }));
+  const updatePrefs = (patch) => {
+    setPrefs((prev) => {
+      const next = { ...prev, ...patch };
+      localStorage.setItem(prefsKey(user.id), JSON.stringify(next));
+      return next;
+    });
   };
 
-  // Switches workspace (if needed) and board in one go — used by Favorites,
-  // which can point at a board outside the currently active workspace.
-  const goToBoard = (id) => {
-    const node = allNodes.find((n) => n.id === id && n.type === "board");
-    if (!node) return;
-    setState((prev) => ({
-      ...prev,
-      activeWorkspaceId: node.workspaceId,
+  // ------------------------------------------------------------
+  // Initial load: workspaces the user belongs to, then nodes for
+  // whichever workspace ends up active.
+  // ------------------------------------------------------------
+  useEffect(() => {
+    let cancelled = false;
+
+    async function bootstrap() {
+      setLoading(true);
+
+      const { data: memberRows, error: memberError } = await supabase
+        .from("workspace_members")
+        .select("role, workspaces(id, name)")
+        .eq("user_id", user.id);
+
+      if (memberError) {
+        console.error("Error loading workspaces:", memberError);
+        setLoading(false);
+        return;
+      }
+
+      let ws = (memberRows || [])
+        .filter((r) => r.workspaces)
+        .map((r) => ({ id: r.workspaces.id, name: r.workspaces.name, role: r.role }));
+
+      // Brand new account with zero workspaces — bootstrap one starter
+      // workspace so the app isn't a dead end (mirrors the old localStorage
+      // fresh-install path, minus the auto-seeded folders/board — the
+      // existing EmptyWorkspaceState UI already handles "create your first
+      // board" from here).
+      if (ws.length === 0) {
+        const { data: newId, error: createError } = await supabase.rpc("create_workspace", {
+          _name: t("defaults.defaultWorkspaceName"),
+        });
+        if (createError) {
+          console.error("Error bootstrapping starter workspace:", createError);
+          setLoading(false);
+          return;
+        }
+        ws = [{ id: newId, name: t("defaults.defaultWorkspaceName"), role: "owner" }];
+      }
+
+      if (cancelled) return;
+      setWorkspaces(ws);
+
+      const savedPrefs = loadPrefs(user.id);
+      const activeWs = ws.some((w) => w.id === savedPrefs.activeWorkspaceId)
+        ? savedPrefs.activeWorkspaceId
+        : ws[0].id;
+
+      const { data: nodeRows, error: nodeError } = await supabase
+        .from("nodes")
+        .select("*")
+        .eq("workspace_id", activeWs)
+        .order("position");
+
+      if (cancelled) return;
+      if (nodeError) {
+        console.error("Error loading nodes:", nodeError);
+      }
+      const mapped = (nodeRows || []).map(mapNode);
+      setAllNodesByWorkspace({ [activeWs]: mapped });
+
+      const boardsInWs = mapped.filter((n) => n.type === "board");
+      const activeBoard = boardsInWs.some((b) => b.id === savedPrefs.activeBoardId)
+        ? savedPrefs.activeBoardId
+        : boardsInWs[0]?.id ?? null;
+
+      updatePrefs({
+        activeWorkspaceId: activeWs,
+        activeBoardId: activeBoard,
+        recentWorkspaceIds: savedPrefs.recentWorkspaceIds?.length ? savedPrefs.recentWorkspaceIds : [activeWs],
+      });
+
+      // Favorites can point into any workspace the user belongs to.
+      const { data: favRows, error: favError } = await supabase
+        .from("user_board_favorites")
+        .select("board_id, nodes(id, name, workspace_id)")
+        .eq("user_id", user.id);
+      if (!cancelled && !favError) {
+        const favs = (favRows || []).filter((r) => r.nodes);
+        setFavoriteBoardIds(favs.map((r) => r.board_id));
+        setFavoriteBoardsMeta(favs.map((r) => ({ id: r.nodes.id, name: r.nodes.name, workspaceId: r.nodes.workspace_id })));
+      }
+
+      setLoading(false);
+    }
+
+    bootstrap();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user.id]);
+
+  // ------------------------------------------------------------
+  // Fetch nodes whenever the active workspace changes and we don't
+  // already have them cached.
+  // ------------------------------------------------------------
+  useEffect(() => {
+    if (!activeWorkspaceId || allNodesByWorkspace[activeWorkspaceId]) return;
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from("nodes")
+        .select("*")
+        .eq("workspace_id", activeWorkspaceId)
+        .order("position");
+      if (cancelled) return;
+      if (error) {
+        console.error("Error loading nodes:", error);
+        return;
+      }
+      setAllNodesByWorkspace((prev) => ({ ...prev, [activeWorkspaceId]: (data || []).map(mapNode) }));
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeWorkspaceId, allNodesByWorkspace]);
+
+  // ------------------------------------------------------------
+  // Realtime: keep the active workspace's node list in sync live.
+  // ------------------------------------------------------------
+  useEffect(() => {
+    if (!activeWorkspaceId) return;
+    const channel = supabase
+      .channel(`nodes:${activeWorkspaceId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "nodes", filter: `workspace_id=eq.${activeWorkspaceId}` },
+        (payload) => {
+          setAllNodesByWorkspace((prev) => {
+            const list = prev[activeWorkspaceId] || [];
+            if (payload.eventType === "DELETE") {
+              return { ...prev, [activeWorkspaceId]: list.filter((n) => n.id !== payload.old.id) };
+            }
+            const mapped = mapNode(payload.new);
+            const exists = list.some((n) => n.id === mapped.id);
+            const next = exists ? list.map((n) => (n.id === mapped.id ? mapped : n)) : [...list, mapped];
+            return { ...prev, [activeWorkspaceId]: next };
+          });
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [activeWorkspaceId]);
+
+  const allNodes = allNodesByWorkspace[activeWorkspaceId] || [];
+  const nodes = allNodes; // already scoped to the active workspace by the query
+
+  const activeMembership = workspaces.find((w) => w.id === activeWorkspaceId);
+  const isActiveWorkspaceOwner = activeMembership?.role === "owner";
+
+  // Ensures a workspace's nodes are loaded, then makes it (and its first
+  // board, if any) active. Resolves from the freshly-fetched data directly
+  // rather than re-reading `allNodesByWorkspace` right after setting it —
+  // state updates aren't synchronous, so a read on the very next line would
+  // still see the pre-update value.
+  const activateWorkspace = async (id) => {
+    let nodesForWs = allNodesByWorkspace[id];
+    if (!nodesForWs) {
+      const { data } = await supabase.from("nodes").select("*").eq("workspace_id", id).order("position");
+      nodesForWs = (data || []).map(mapNode);
+      setAllNodesByWorkspace((prev) => ({ ...prev, [id]: nodesForWs }));
+    }
+    const boardsInWs = nodesForWs.filter((n) => n.type === "board");
+    updatePrefs({
+      activeWorkspaceId: id,
+      activeBoardId: boardsInWs[0]?.id ?? null,
+      recentWorkspaceIds: [id, ...recentWorkspaceIds.filter((w) => w !== id)].slice(0, MAX_RECENT_WORKSPACES),
+    });
+  };
+
+  // ------------------------------------------------------------
+  // Board/folder tree operations
+  // ------------------------------------------------------------
+  const switchBoard = (id) => {
+    if (!allNodes.some((n) => n.id === id && n.type === "board")) return;
+    updatePrefs({ activeBoardId: id });
+  };
+
+  const goToBoard = async (id) => {
+    const meta = favoriteBoardsMeta.find((f) => f.id === id);
+    const targetWorkspaceId = meta?.workspaceId ?? allNodes.find((n) => n.id === id)?.workspaceId;
+    if (!targetWorkspaceId) return;
+
+    if (targetWorkspaceId !== activeWorkspaceId && !allNodesByWorkspace[targetWorkspaceId]) {
+      const { data } = await supabase.from("nodes").select("*").eq("workspace_id", targetWorkspaceId).order("position");
+      setAllNodesByWorkspace((prev) => ({ ...prev, [targetWorkspaceId]: (data || []).map(mapNode) }));
+    }
+
+    updatePrefs({
+      activeWorkspaceId: targetWorkspaceId,
       activeBoardId: id,
-      recentWorkspaceIds: [node.workspaceId, ...prev.recentWorkspaceIds.filter((w) => w !== node.workspaceId)].slice(
+      recentWorkspaceIds: [targetWorkspaceId, ...recentWorkspaceIds.filter((w) => w !== targetWorkspaceId)].slice(
         0,
         MAX_RECENT_WORKSPACES
       ),
-    }));
+    });
   };
 
-  const toggleFavorite = (id) => {
-    if (!allNodes.some((n) => n.id === id && n.type === "board")) return;
-    setState((prev) => ({
-      ...prev,
-      favoriteBoardIds: prev.favoriteBoardIds.includes(id)
-        ? prev.favoriteBoardIds.filter((f) => f !== id)
-        : [...prev.favoriteBoardIds, id],
-    }));
+  const toggleFavorite = async (id) => {
+    const isFav = favoriteBoardIds.includes(id);
+    if (isFav) {
+      setFavoriteBoardIds((prev) => prev.filter((f) => f !== id));
+      setFavoriteBoardsMeta((prev) => prev.filter((f) => f.id !== id));
+      await supabase.from("user_board_favorites").delete().eq("user_id", user.id).eq("board_id", id);
+    } else {
+      const node = allNodes.find((n) => n.id === id);
+      if (!node) return;
+      setFavoriteBoardIds((prev) => [...prev, id]);
+      setFavoriteBoardsMeta((prev) => [...prev, { id, name: node.name, workspaceId: node.workspaceId }]);
+      await supabase.from("user_board_favorites").insert({ user_id: user.id, board_id: id });
+    }
   };
 
-  const createFolder = (name, parentFolderId = null) => {
+  const createFolder = async (name, parentFolderId = null) => {
     const trimmed = (name || "").trim();
     if (!trimmed) return;
     if (parentFolderId) {
@@ -173,65 +292,82 @@ export function BoardsProvider({ children }) {
         return;
       }
     }
-    const id = generateId("f");
-    setState((prev) => ({
-      ...prev,
-      nodes: [
-        ...prev.nodes,
-        { id, type: "folder", name: trimmed, parentId: parentFolderId, workspaceId: prev.activeWorkspaceId, collapsed: false },
-      ],
-    }));
-  };
-
-  const createBoard = (name, parentFolderId = null) => {
-    const trimmed = (name || "").trim();
-    if (!trimmed) return;
-    const id = generateId("b");
-    try {
-      localStorage.setItem(boardKey("forelBoardTitle", id), trimmed);
-    } catch (e) {
-      console.error("Error seeding new board title:", e);
+    const position = allNodes.filter((n) => n.parentId === parentFolderId).length;
+    const { data, error } = await supabase
+      .from("nodes")
+      .insert({ workspace_id: activeWorkspaceId, type: "folder", name: trimmed, parent_id: parentFolderId, position })
+      .select()
+      .single();
+    if (error) {
+      console.error("Error creating folder:", error);
+      return;
     }
-    setState((prev) => ({
+    const mapped = mapNode(data);
+    setAllNodesByWorkspace((prev) => ({
       ...prev,
-      activeBoardId: id,
-      nodes: [
-        ...prev.nodes,
-        { id, type: "board", name: trimmed, parentId: parentFolderId, workspaceId: prev.activeWorkspaceId },
-      ],
+      [activeWorkspaceId]: [...(prev[activeWorkspaceId] || []), mapped],
     }));
   };
 
-  const renameNode = (id, name) => {
+  const createBoard = async (name, parentFolderId = null) => {
     const trimmed = (name || "").trim();
     if (!trimmed) return;
-    setState((prev) => ({
+    const position = allNodes.filter((n) => n.parentId === parentFolderId).length;
+    const { data: node, error: nodeError } = await supabase
+      .from("nodes")
+      .insert({ workspace_id: activeWorkspaceId, type: "board", name: trimmed, parent_id: parentFolderId, position })
+      .select()
+      .single();
+    if (nodeError) {
+      console.error("Error creating board:", nodeError);
+      return;
+    }
+    const { error: boardError } = await supabase.from("boards").insert({ id: node.id, title: trimmed });
+    if (boardError) {
+      console.error("Error seeding board settings:", boardError);
+    }
+    const mapped = mapNode(node);
+    setAllNodesByWorkspace((prev) => ({
       ...prev,
-      nodes: prev.nodes.map((n) => (n.id === id ? { ...n, name: trimmed } : n)),
+      [activeWorkspaceId]: [...(prev[activeWorkspaceId] || []), mapped],
     }));
+    updatePrefs({ activeBoardId: mapped.id });
   };
 
-  // Drag-reorder: moves draggedId to sit just before targetId. Only takes
-  // effect when both share the same parent (including two top-level nodes,
-  // where parentId is null on both) — reordering across parents/levels is
-  // a no-op here, by design.
-  const reorderNode = (draggedId, targetId) => {
+  const renameNode = async (id, name) => {
+    const trimmed = (name || "").trim();
+    if (!trimmed) return;
+    setAllNodesByWorkspace((prev) => ({
+      ...prev,
+      [activeWorkspaceId]: (prev[activeWorkspaceId] || []).map((n) => (n.id === id ? { ...n, name: trimmed } : n)),
+    }));
+    const { error } = await supabase.from("nodes").update({ name: trimmed }).eq("id", id);
+    if (error) console.error("Error renaming node:", error);
+  };
+
+  // Drag-reorder: only takes effect when both nodes share the same parent.
+  // Persists by renumbering every sibling's `position` to match the new
+  // local order (small sibling counts, cheap to renumber in full).
+  const reorderNode = async (draggedId, targetId) => {
     if (draggedId === targetId) return;
-    setState((prev) => {
-      const dragged = prev.nodes.find((n) => n.id === draggedId);
-      const target = prev.nodes.find((n) => n.id === targetId);
-      if (!dragged || !target || dragged.parentId !== target.parentId) return prev;
+    const dragged = allNodes.find((n) => n.id === draggedId);
+    const target = allNodes.find((n) => n.id === targetId);
+    if (!dragged || !target || dragged.parentId !== target.parentId) return;
 
-      const withoutDragged = prev.nodes.filter((n) => n.id !== draggedId);
-      const targetIndex = withoutDragged.findIndex((n) => n.id === targetId);
-      if (targetIndex === -1) return prev;
+    const withoutDragged = allNodes.filter((n) => n.id !== draggedId);
+    const targetIndex = withoutDragged.findIndex((n) => n.id === targetId);
+    if (targetIndex === -1) return;
+    const reordered = [...withoutDragged.slice(0, targetIndex), dragged, ...withoutDragged.slice(targetIndex)];
 
-      const nodes = [...withoutDragged.slice(0, targetIndex), dragged, ...withoutDragged.slice(targetIndex)];
-      return { ...prev, nodes };
-    });
+    setAllNodesByWorkspace((prev) => ({ ...prev, [activeWorkspaceId]: reordered }));
+
+    const siblings = reordered.filter((n) => n.parentId === dragged.parentId);
+    await Promise.all(
+      siblings.map((n, i) => supabase.from("nodes").update({ position: i }).eq("id", n.id))
+    );
   };
 
-  const deleteNode = (id) => {
+  const deleteNode = async (id) => {
     const node = allNodes.find((n) => n.id === id);
     if (!node) return;
 
@@ -241,81 +377,71 @@ export function BoardsProvider({ children }) {
         alert(t("boardsContext.folderNotEmpty"));
         return;
       }
-      setState((prev) => ({ ...prev, nodes: prev.nodes.filter((n) => n.id !== id) }));
-      return;
     }
 
-    // node.type === "board" — a workspace is allowed to end up with zero
-    // boards (mirrors real Monday.com); the empty state lives in AppShellInner.
-    LEGACY_KEYS.forEach((key) => {
-      localStorage.removeItem(boardKey(key, id));
-    });
-
-    setState((prev) => {
-      const remainingNodes = prev.nodes.filter((n) => n.id !== id);
-      let nextActiveBoardId = prev.activeBoardId;
-      if (prev.activeBoardId === id) {
-        const remainingInWorkspace = remainingNodes.filter(
-          (n) => n.type === "board" && n.workspaceId === prev.activeWorkspaceId
-        );
-        nextActiveBoardId = remainingInWorkspace[0]?.id ?? null;
-      }
-      return {
-        ...prev,
-        nodes: remainingNodes,
-        activeBoardId: nextActiveBoardId,
-        favoriteBoardIds: prev.favoriteBoardIds.filter((f) => f !== id),
-      };
-    });
-  };
-
-  const toggleFolderCollapsed = (id) => {
-    setState((prev) => ({
+    setAllNodesByWorkspace((prev) => ({
       ...prev,
-      nodes: prev.nodes.map((n) => (n.id === id ? { ...n, collapsed: !n.collapsed } : n)),
+      [activeWorkspaceId]: (prev[activeWorkspaceId] || []).filter((n) => n.id !== id),
     }));
+    if (activeBoardId === id) {
+      const remaining = allNodes.filter((n) => n.id !== id && n.type === "board");
+      updatePrefs({ activeBoardId: remaining[0]?.id ?? null });
+    }
+    setFavoriteBoardIds((prev) => prev.filter((f) => f !== id));
+    setFavoriteBoardsMeta((prev) => prev.filter((f) => f.id !== id));
+
+    // ON DELETE CASCADE on `boards`/`columns`/`groups`/`items`/`updates`
+    // (all FK'd to nodes.id) handles cleanup of everything downstream.
+    const { error } = await supabase.from("nodes").delete().eq("id", id);
+    if (error) console.error("Error deleting node:", error);
   };
 
-  // ============================================================
-  // WORKSPACES
-  // ============================================================
-  const switchWorkspace = (id) => {
+  const toggleFolderCollapsed = async (id) => {
+    const node = allNodes.find((n) => n.id === id);
+    if (!node) return;
+    const collapsed = !node.collapsed;
+    setAllNodesByWorkspace((prev) => ({
+      ...prev,
+      [activeWorkspaceId]: (prev[activeWorkspaceId] || []).map((n) => (n.id === id ? { ...n, collapsed } : n)),
+    }));
+    await supabase.from("nodes").update({ collapsed }).eq("id", id);
+  };
+
+  // ------------------------------------------------------------
+  // Workspaces
+  // ------------------------------------------------------------
+  const switchWorkspace = async (id) => {
     if (id === activeWorkspaceId) return;
     if (!workspaces.some((w) => w.id === id)) return;
-    setState((prev) => {
-      const boardsInWorkspace = prev.nodes.filter((n) => n.type === "board" && n.workspaceId === id);
-      return {
-        ...prev,
-        activeWorkspaceId: id,
-        activeBoardId: boardsInWorkspace[0]?.id ?? null,
-        recentWorkspaceIds: [id, ...prev.recentWorkspaceIds.filter((w) => w !== id)].slice(0, MAX_RECENT_WORKSPACES),
-      };
+    await activateWorkspace(id);
+  };
+
+  const createWorkspace = async (name) => {
+    const trimmed = (name || "").trim();
+    if (!trimmed) return;
+    const { data: id, error } = await supabase.rpc("create_workspace", { _name: trimmed });
+    if (error) {
+      console.error("Error creating workspace:", error);
+      return;
+    }
+    setWorkspaces((prev) => [...prev, { id, name: trimmed, role: "owner" }]);
+    setAllNodesByWorkspace((prev) => ({ ...prev, [id]: [] }));
+    updatePrefs({
+      activeWorkspaceId: id,
+      activeBoardId: null,
+      recentWorkspaceIds: [id, ...recentWorkspaceIds.filter((w) => w !== id)].slice(0, MAX_RECENT_WORKSPACES),
     });
   };
 
-  const createWorkspace = (name) => {
+  const renameWorkspace = async (id, name) => {
     const trimmed = (name || "").trim();
     if (!trimmed) return;
-    const id = generateId("w");
-    setState((prev) => ({
-      ...prev,
-      activeWorkspaceId: id,
-      activeBoardId: null,
-      workspaces: [...prev.workspaces, { id, name: trimmed }],
-      recentWorkspaceIds: [id, ...prev.recentWorkspaceIds.filter((w) => w !== id)].slice(0, MAX_RECENT_WORKSPACES),
-    }));
+    setWorkspaces((prev) => prev.map((w) => (w.id === id ? { ...w, name: trimmed } : w)));
+    const { error } = await supabase.from("workspaces").update({ name: trimmed }).eq("id", id);
+    if (error) console.error("Error renaming workspace:", error);
   };
 
-  const renameWorkspace = (id, name) => {
-    const trimmed = (name || "").trim();
-    if (!trimmed) return;
-    setState((prev) => ({
-      ...prev,
-      workspaces: prev.workspaces.map((w) => (w.id === id ? { ...w, name: trimmed } : w)),
-    }));
-  };
-
-  const deleteWorkspace = (id) => {
+  const deleteWorkspace = async (id) => {
     if (workspaces.length <= 1) {
       alert(t("boardsContext.needAtLeastOneWorkspace"));
       return;
@@ -324,51 +450,94 @@ export function BoardsProvider({ children }) {
     if (!target) return;
     if (!confirm(t("boardsContext.deleteWorkspaceConfirm", { name: target.name }))) return;
 
-    allNodes
-      .filter((n) => n.workspaceId === id && n.type === "board")
-      .forEach((b) => {
-        LEGACY_KEYS.forEach((key) => localStorage.removeItem(boardKey(key, b.id)));
-      });
+    // Leaving membership is enough — RLS means only members can see/act on
+    // a workspace; if you're the sole owner this just orphans it for
+    // everyone (acceptable for v1, matches "no admin console" scope).
+    const { error } = await supabase.from("workspace_members").delete().eq("workspace_id", id).eq("user_id", user.id);
+    if (error) {
+      console.error("Error leaving workspace:", error);
+      return;
+    }
 
-    setState((prev) => {
-      const remainingWorkspaces = prev.workspaces.filter((w) => w.id !== id);
-      const remainingNodes = prev.nodes.filter((n) => n.workspaceId !== id);
-      const remainingRecent = prev.recentWorkspaceIds.filter((w) => w !== id);
-      const remainingFavorites = prev.favoriteBoardIds.filter((f) => remainingNodes.some((n) => n.id === f));
+    const remainingWorkspaces = workspaces.filter((w) => w.id !== id);
+    const remainingRecent = recentWorkspaceIds.filter((w) => w !== id);
+    const remainingFavorites = favoriteBoardsMeta.filter((f) => f.workspaceId !== id);
 
-      let nextActiveWorkspaceId = prev.activeWorkspaceId;
-      let nextActiveBoardId = prev.activeBoardId;
-      if (prev.activeWorkspaceId === id) {
-        nextActiveWorkspaceId = remainingRecent[0] || remainingWorkspaces[0].id;
-        const boardsInNext = remainingNodes.filter(
-          (n) => n.type === "board" && n.workspaceId === nextActiveWorkspaceId
-        );
-        nextActiveBoardId = boardsInNext[0]?.id ?? null;
-      }
-
-      return {
-        ...prev,
-        workspaces: remainingWorkspaces,
-        nodes: remainingNodes,
-        activeWorkspaceId: nextActiveWorkspaceId,
-        activeBoardId: nextActiveBoardId,
-        recentWorkspaceIds: remainingRecent.length ? remainingRecent : [nextActiveWorkspaceId],
-        favoriteBoardIds: remainingFavorites,
-      };
+    setWorkspaces(remainingWorkspaces);
+    setFavoriteBoardIds(remainingFavorites.map((f) => f.id));
+    setFavoriteBoardsMeta(remainingFavorites);
+    setAllNodesByWorkspace((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
     });
+
+    if (activeWorkspaceId === id) {
+      const nextActiveWorkspaceId = remainingRecent[0] || remainingWorkspaces[0].id;
+      await activateWorkspace(nextActiveWorkspaceId);
+    } else if (remainingRecent.length !== recentWorkspaceIds.length) {
+      updatePrefs({ recentWorkspaceIds: remainingRecent.length ? remainingRecent : [activeWorkspaceId] });
+    }
   };
 
-  const recentWorkspaces = recentWorkspaceIds
-    .map((id) => workspaces.find((w) => w.id === id))
-    .filter(Boolean);
+  // ------------------------------------------------------------
+  // Sharing: join-code invites
+  // ------------------------------------------------------------
+  const createInviteCode = async () => {
+    if (!activeWorkspaceId) return null;
+    const code = randomInviteCode();
+    const { error } = await supabase
+      .from("workspace_invites")
+      .insert({ workspace_id: activeWorkspaceId, code, created_by: user.id });
+    if (error) {
+      console.error("Error creating invite:", error);
+      alert(t("boardsContext.inviteCreateFailed"));
+      return null;
+    }
+    return code;
+  };
 
-  const favoriteBoards = favoriteBoardIds
-    .map((id) => allNodes.find((n) => n.id === id && n.type === "board"))
-    .filter(Boolean);
+  const joinWorkspaceByCode = async (code) => {
+    const trimmed = (code || "").trim();
+    if (!trimmed) return;
+    const { data: workspaceId, error } = await supabase.rpc("redeem_workspace_invite", { _code: trimmed });
+    if (error) {
+      alert(t("boardsContext.inviteRedeemFailed"));
+      return;
+    }
+    const { data: wsRow } = await supabase.from("workspaces").select("id, name").eq("id", workspaceId).single();
+    if (wsRow) {
+      setWorkspaces((prev) => (prev.some((w) => w.id === wsRow.id) ? prev : [...prev, { id: wsRow.id, name: wsRow.name, role: "member" }]));
+    }
+    // Call activateWorkspace directly rather than switchWorkspace() — the
+    // latter validates against the `workspaces` state we just updated
+    // above, but that update hasn't landed yet in this closure (state
+    // updates aren't synchronous), so the validation would incorrectly
+    // reject the workspace we just joined.
+    await activateWorkspace(workspaceId);
+  };
+
+  // Someone opened a shared invite link (?join=<code>) — redeem it once on
+  // boot, then strip the param so a refresh doesn't re-prompt. No router in
+  // this app, so a plain query-param read is the whole mechanism.
+  useEffect(() => {
+    const code = new URLSearchParams(window.location.search).get("join");
+    if (!code) return;
+    const url = new URL(window.location.href);
+    url.searchParams.delete("join");
+    window.history.replaceState({}, "", url.toString());
+    if (confirm(t("boardsContext.confirmJoinFromLink", { code }))) {
+      joinWorkspaceByCode(code);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const recentWorkspaces = recentWorkspaceIds.map((id) => workspaces.find((w) => w.id === id)).filter(Boolean);
 
   return (
     <BoardsContext.Provider
       value={{
+        loading,
         nodes,
         activeBoardId,
         switchBoard,
@@ -381,14 +550,17 @@ export function BoardsProvider({ children }) {
         toggleFolderCollapsed,
         workspaces,
         activeWorkspaceId,
+        isActiveWorkspaceOwner,
         recentWorkspaces,
         switchWorkspace,
         createWorkspace,
         renameWorkspace,
         deleteWorkspace,
         favoriteBoardIds,
-        favoriteBoards,
+        favoriteBoards: favoriteBoardsMeta,
         toggleFavorite,
+        createInviteCode,
+        joinWorkspaceByCode,
       }}
     >
       {children}
