@@ -6,6 +6,7 @@ import { useLanguage } from "../context/LanguageContext";
 import { useAuth } from "../context/AuthContext";
 import WorkspaceSwitcher from "./WorkspaceSwitcher";
 import Popover from "./Popover";
+import BoardAccessModal from "./BoardAccessModal";
 
 export default function Sidebar() {
   const { t } = useLanguage();
@@ -24,7 +25,9 @@ export default function Sidebar() {
     favoriteBoardIds,
     favoriteBoards,
     toggleFavorite,
+    isActiveWorkspaceOwner,
   } = useBoards();
+  const [accessModalBoard, setAccessModalBoard] = useState(null);
 
   const [openMenuId, setOpenMenuId] = useState(null);
   const [menuAnchorEl, setMenuAnchorEl] = useState(null);
@@ -147,6 +150,9 @@ export default function Sidebar() {
           {favoriteBoardIds.includes(node.id) ? t("sidebar.removeFromFavorites") : t("sidebar.addToFavorites")}
         </button>
         <button onClick={() => handleRename(node)}>{t("sidebar.renameBoard")}</button>
+        {isActiveWorkspaceOwner && (
+          <button onClick={() => { setAccessModalBoard(node); closeMenu(); }}>{t("sidebar.manageAccess")}</button>
+        )}
         <button onClick={() => handleDelete(node)}>{t("sidebar.deleteBoard")}</button>
       </Popover>
     </div>
@@ -291,6 +297,14 @@ export default function Sidebar() {
           </button>
         </div>
       </div>
+
+      {accessModalBoard && (
+        <BoardAccessModal
+          boardId={accessModalBoard.id}
+          boardName={accessModalBoard.name}
+          onClose={() => setAccessModalBoard(null)}
+        />
+      )}
     </div>
   );
 }

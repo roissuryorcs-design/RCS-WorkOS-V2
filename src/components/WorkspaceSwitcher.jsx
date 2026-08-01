@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { useBoards } from "../context/BoardsContext";
 import { useLanguage } from "../context/LanguageContext";
 import Popover from "./Popover";
+import MembersModal from "./MembersModal";
 
 const AVATAR_COLORS = ["#3b82f6", "#8b5cf6", "#ec4899", "#f59e0b", "#10b981", "#ef4444", "#06b6d4", "#6366f1"];
 
@@ -149,6 +150,7 @@ export default function WorkspaceSwitcher() {
   const [openMenuId, setOpenMenuId] = useState(null);
   const [itemMenuAnchorEl, setItemMenuAnchorEl] = useState(null);
   const [inviteCodeToShow, setInviteCodeToShow] = useState(null);
+  const [showMembersModal, setShowMembersModal] = useState(false);
   const switcherBtnRef = useRef(null);
 
   const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId) || workspaces[0];
@@ -281,12 +283,24 @@ export default function WorkspaceSwitcher() {
           {isActiveWorkspaceOwner && (
             <button className="workspace-footer-btn" onClick={handleInvite}>{t("workspaceSwitcher.inviteBtn")}</button>
           )}
+          <button
+            className="workspace-footer-btn"
+            onClick={() => {
+              close();
+              setShowMembersModal(true);
+            }}
+          >
+            {t("workspaceSwitcher.manageMembersBtn")}
+          </button>
           <button className="workspace-footer-btn" onClick={() => setSearch("")}>{t("workspaceSwitcher.browseAll")}</button>
         </div>
       </Popover>
 
       {inviteCodeToShow && (
         <InviteCodeModal code={inviteCodeToShow} onClose={() => setInviteCodeToShow(null)} />
+      )}
+      {showMembersModal && (
+        <MembersModal onClose={() => setShowMembersModal(false)} />
       )}
     </div>
   );

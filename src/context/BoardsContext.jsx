@@ -532,6 +532,73 @@ export function BoardsProvider({ children }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // ------------------------------------------------------------
+  // Member management (Phase 5.5) — fetched on demand (when a members/
+  // access modal opens) rather than kept as live context state, since
+  // membership changes are infrequent and every consumer here already
+  // owns its own local list + loading state.
+  // ------------------------------------------------------------
+  const fetchWorkspaceMembers = async () => {
+    if (!activeWorkspaceId) return [];
+    const { data, error } = await supabase
+      .from("workspace_members")
+      .select("user_id, role, profiles(id, email, display_name)")
+      .eq("workspace_id", activeWorkspaceId);
+    if (error) {
+      console.error("Error loading workspace members:", error);
+      return [];
+    }
+    return (data || [])
+      .filter((r) => r.profiles)
+      .map((r) => ({ userId: r.user_id, role: r.role, email: r.profiles.email, displayName: r.profiles.display_name }));
+  };
+
+  // Owner-only (enforced by the RPC itself, not just the UI). Removing a
+  // member deletes their workspace_members row (and any board_members
+  // rows they had in this workspace) — RLS then blocks their next request
+  // for anything here. Their existing Auth session stays logged in; only
+  // access to this workspace's data is cut.
+  const removeMember = async (userId) => {
+    if (!activeWorkspaceId) return { error: "no active workspace" };
+    const { error } = await supabase.rpc("remove_workspace_member", {
+      _workspace_id: activeWorkspaceId,
+      _user_id: userId,
+    });
+    if (error) console.error("Error removing member:", error);
+    return { error };
+  };
+
+  const fetchBoardMembers = async (boardId) => {
+    const { data, error } = await supabase.from("board_members").select("user_id").eq("board_id", boardId);
+    if (error) {
+      console.error("Error loading board access list:", error);
+      return [];
+    }
+    return (data || []).map((r) => r.user_id);
+  };
+
+  // Replaces the board's allowlist wholesale with `userIds` (empty array
+  // = unrestricted, workspace-wide again). Simple delete-then-insert
+  // rather than diffing — board member lists are small, and this only
+  // runs on an explicit "Save" click, not per-checkbox-toggle.
+  const setBoardAccess = async (boardId, userIds) => {
+    const { error: delError } = await supabase.from("board_members").delete().eq("board_id", boardId);
+    if (delError) {
+      console.error("Error clearing board access list:", delError);
+      return { error: delError };
+    }
+    if (userIds.length > 0) {
+      const { error: insError } = await supabase
+        .from("board_members")
+        .insert(userIds.map((userId) => ({ board_id: boardId, user_id: userId })));
+      if (insError) {
+        console.error("Error setting board access list:", insError);
+        return { error: insError };
+      }
+    }
+    return { error: null };
+  };
+
   const recentWorkspaces = recentWorkspaceIds.map((id) => workspaces.find((w) => w.id === id)).filter(Boolean);
 
   return (
@@ -561,6 +628,10 @@ export function BoardsProvider({ children }) {
         toggleFavorite,
         createInviteCode,
         joinWorkspaceByCode,
+        fetchWorkspaceMembers,
+        removeMember,
+        fetchBoardMembers,
+        setBoardAccess,
       }}
     >
       {children}

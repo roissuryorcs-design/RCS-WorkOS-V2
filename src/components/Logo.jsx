@@ -8,7 +8,7 @@ export default function Logo({ width = 130 }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-      <div style={{ position: "relative", width, lineHeight: 0 }}>
+      <div style={{ position: "relative", width, aspectRatio: "200 / 122", lineHeight: 0 }}>
         <img
           src={src}
           alt="RCS"
