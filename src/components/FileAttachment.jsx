@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import FileIcon from "./FileIcon";
 import { usePopoverPosition } from "../hooks/usePopoverPosition";
 import { useLanguage } from "../context/LanguageContext";
+import { uploadToCloudinary, FileTooLargeError } from "../utils/cloudinaryUpload";
 
 export default function FileAttachment({ value, onUpdate, columnId }) {
   const { t } = useLanguage();
@@ -58,44 +59,15 @@ export default function FileAttachment({ value, onUpdate, columnId }) {
 
   const uploadFile = async (file) => {
     if (!file) return;
-    if (file.size > 10 * 1024 * 1024) {
-      alert(t("fileAttachment.fileTooLarge"));
-      return;
-    }
-
     setUploading(true);
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", "rcs_upload");
-
-    // Cloudinary serves PDFs/ZIPs uploaded as "image" resource type with a
-    // 401 by default (a security restriction on that account's Cloudinary
-    // plan) — routing non-image/video files through "raw" instead avoids
-    // that restriction entirely, since it doesn't apply to raw delivery.
-    const isImageOrVideo = file.type.startsWith("image/") || file.type.startsWith("video/");
-    const resourceType = isImageOrVideo ? "auto" : "raw";
-
     try {
-      const res = await fetch(
-        `https://api.cloudinary.com/v1_1/lawjar8t/${resourceType}/upload`,
-        { method: "POST", body: formData }
-      );
-      const data = await res.json();
-      if (data.secure_url) {
-        const newFile = {
-          url: data.secure_url,
-          name: file.name,
-          size: file.size,
-          type: file.type,
-          uploadedAt: new Date().toISOString(),
-        };
-        saveFiles([...files, newFile]);
-        setShowPopup(false);
-        setShowFileManager(false);
-      }
+      const newFile = await uploadToCloudinary(file);
+      saveFiles([...files, newFile]);
+      setShowPopup(false);
+      setShowFileManager(false);
     } catch (error) {
       console.error("Upload failed:", error);
-      alert(t("fileAttachment.uploadFailed"));
+      alert(error instanceof FileTooLargeError ? t("fileAttachment.fileTooLarge") : t("fileAttachment.uploadFailed"));
     } finally {
       setUploading(false);
     }

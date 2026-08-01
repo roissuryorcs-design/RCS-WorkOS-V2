@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useUpdates } from '../context/UpdateContext';
 import { useLanguage } from '../context/LanguageContext';
+import { uploadToCloudinary } from '../utils/cloudinaryUpload';
 
 const UpdatePanel = () => {
   const { t } = useLanguage();
@@ -22,12 +23,16 @@ const UpdatePanel = () => {
   const [replyText, setReplyText] = useState('');
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [replyFiles, setReplyFiles] = useState([]);
-  
+  const [uploadingNew, setUploadingNew] = useState(false);
+  const [uploadingReply, setUploadingReply] = useState(false);
+  const [uploadingEdit, setUploadingEdit] = useState(false);
+  const [uploadingEditReply, setUploadingEditReply] = useState(false);
+
   const [editingUpdateId, setEditingUpdateId] = useState(null);
   const [editText, setEditText] = useState('');
   const [editFiles, setEditFiles] = useState([]);
   const [editNewFiles, setEditNewFiles] = useState([]);
-  
+
   const [editingReplyId, setEditingReplyId] = useState(null);
   const [editingReplyUpdateId, setEditingReplyUpdateId] = useState(null);
   const [editReplyText, setEditReplyText] = useState('');
@@ -74,21 +79,23 @@ const UpdatePanel = () => {
   }, [isPanelOpen]);
 
   // ============================================================
-  // HANDLE UPLOAD FILE UNTUK UPDATE
+  // HANDLE UPLOAD FILE UNTUK UPDATE — real Cloudinary uploads, not
+  // ephemeral blob URLs (those died on refresh and never actually
+  // persisted anywhere — `file: file` doesn't survive JSON serialization).
   // ============================================================
-  const handleFileUpload = (e) => {
+  const handleFileUpload = async (e) => {
     const files = Array.from(e.target.files);
-    const newFiles = files.map(file => ({
-      id: Date.now() + Math.random(),
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      url: URL.createObjectURL(file),
-      file: file,
-    }));
-    setUploadedFiles([...uploadedFiles, ...newFiles]);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (files.length === 0) return;
+    setUploadingNew(true);
+    try {
+      const uploaded = await Promise.all(files.map((f) => uploadToCloudinary(f)));
+      setUploadedFiles((prev) => [...prev, ...uploaded.map((u) => ({ ...u, id: u.url }))]);
+    } catch (err) {
+      console.error('Upload failed:', err);
+      alert(t('fileAttachment.uploadFailed'));
+    } finally {
+      setUploadingNew(false);
     }
   };
 
@@ -99,19 +106,19 @@ const UpdatePanel = () => {
   // ============================================================
   // HANDLE UPLOAD FILE UNTUK REPLY
   // ============================================================
-  const handleReplyFileUpload = (e) => {
+  const handleReplyFileUpload = async (e) => {
     const files = Array.from(e.target.files);
-    const newFiles = files.map(file => ({
-      id: Date.now() + Math.random(),
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      url: URL.createObjectURL(file),
-      file: file,
-    }));
-    setReplyFiles([...replyFiles, ...newFiles]);
-    if (replyFileInputRef.current) {
-      replyFileInputRef.current.value = '';
+    if (replyFileInputRef.current) replyFileInputRef.current.value = '';
+    if (files.length === 0) return;
+    setUploadingReply(true);
+    try {
+      const uploaded = await Promise.all(files.map((f) => uploadToCloudinary(f)));
+      setReplyFiles((prev) => [...prev, ...uploaded.map((u) => ({ ...u, id: u.url }))]);
+    } catch (err) {
+      console.error('Upload failed:', err);
+      alert(t('fileAttachment.uploadFailed'));
+    } finally {
+      setUploadingReply(false);
     }
   };
 
@@ -122,19 +129,19 @@ const UpdatePanel = () => {
   // ============================================================
   // HANDLE UPLOAD FILE UNTUK EDIT UPDATE
   // ============================================================
-  const handleEditFileUpload = (e) => {
+  const handleEditFileUpload = async (e) => {
     const files = Array.from(e.target.files);
-    const newFiles = files.map(file => ({
-      id: Date.now() + Math.random(),
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      url: URL.createObjectURL(file),
-      file: file,
-    }));
-    setEditNewFiles([...editNewFiles, ...newFiles]);
-    if (editFileInputRef.current) {
-      editFileInputRef.current.value = '';
+    if (editFileInputRef.current) editFileInputRef.current.value = '';
+    if (files.length === 0) return;
+    setUploadingEdit(true);
+    try {
+      const uploaded = await Promise.all(files.map((f) => uploadToCloudinary(f)));
+      setEditNewFiles((prev) => [...prev, ...uploaded.map((u) => ({ ...u, id: u.url }))]);
+    } catch (err) {
+      console.error('Upload failed:', err);
+      alert(t('fileAttachment.uploadFailed'));
+    } finally {
+      setUploadingEdit(false);
     }
   };
 
@@ -149,19 +156,19 @@ const UpdatePanel = () => {
   // ============================================================
   // HANDLE UPLOAD FILE UNTUK EDIT REPLY
   // ============================================================
-  const handleEditReplyFileUpload = (e) => {
+  const handleEditReplyFileUpload = async (e) => {
     const files = Array.from(e.target.files);
-    const newFiles = files.map(file => ({
-      id: Date.now() + Math.random(),
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      url: URL.createObjectURL(file),
-      file: file,
-    }));
-    setEditReplyNewFiles([...editReplyNewFiles, ...newFiles]);
-    if (editReplyFileInputRef.current) {
-      editReplyFileInputRef.current.value = '';
+    if (editReplyFileInputRef.current) editReplyFileInputRef.current.value = '';
+    if (files.length === 0) return;
+    setUploadingEditReply(true);
+    try {
+      const uploaded = await Promise.all(files.map((f) => uploadToCloudinary(f)));
+      setEditReplyNewFiles((prev) => [...prev, ...uploaded.map((u) => ({ ...u, id: u.url }))]);
+    } catch (err) {
+      console.error('Upload failed:', err);
+      alert(t('fileAttachment.uploadFailed'));
+    } finally {
+      setUploadingEditReply(false);
     }
   };
 
@@ -506,21 +513,23 @@ const UpdatePanel = () => {
                     <button
                       type="button"
                       onClick={() => editReplyFileInputRef.current?.click()}
+                      disabled={uploadingEditReply}
                       style={{
                         background: 'none',
                         border: 'none',
                         fontSize: '14px',
-                        cursor: 'pointer',
+                        cursor: uploadingEditReply ? 'default' : 'pointer',
                         padding: '2px 6px',
                         borderRadius: '4px',
                         color: 'var(--text-secondary)',
                         transition: 'background 0.2s',
+                        opacity: uploadingEditReply ? 0.5 : 1,
                       }}
                       onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-active)'}
                       onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                       title={t('updatePanel.uploadFile')}
                     >
-                      📎
+                      {uploadingEditReply ? '⏳' : '📎'}
                     </button>
                     <button
                       onClick={() => handleSaveEditReply(updateId, reply.id)}
@@ -753,21 +762,23 @@ const UpdatePanel = () => {
                       <button
                         type="button"
                         onClick={() => replyFileInputRef.current?.click()}
+                        disabled={uploadingReply}
                         style={{
                           background: 'none',
                           border: 'none',
                           fontSize: '16px',
-                          cursor: 'pointer',
+                          cursor: uploadingReply ? 'default' : 'pointer',
                           padding: '2px 6px',
                           borderRadius: '4px',
                           color: 'var(--text-secondary)',
                           transition: 'background 0.2s',
+                          opacity: uploadingReply ? 0.5 : 1,
                         }}
                         onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-active)'}
                         onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                         title={t('updatePanel.uploadFile')}
                       >
-                        📎
+                        {uploadingReply ? '⏳' : '📎'}
                       </button>
                       <button
                         onClick={handleReplySubmit}
@@ -1026,21 +1037,23 @@ const UpdatePanel = () => {
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingNew}
                   style={{
                     background: 'none',
                     border: 'none',
                     fontSize: '16px',
-                    cursor: 'pointer',
+                    cursor: uploadingNew ? 'default' : 'pointer',
                     padding: '2px 6px',
                     borderRadius: '4px',
                     color: 'var(--text-secondary)',
                     transition: 'background 0.2s',
+                    opacity: uploadingNew ? 0.5 : 1,
                   }}
                   onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-active)'}
                   onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                   title={t('updatePanel.uploadFile')}
                 >
-                  📎
+                  {uploadingNew ? '⏳' : '📎'}
                 </button>
                 <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
                   {t('updatePanel.shiftEnterHint')}
@@ -1194,21 +1207,23 @@ const UpdatePanel = () => {
                           <button
                             type="button"
                             onClick={() => editFileInputRef.current?.click()}
+                            disabled={uploadingEdit}
                             style={{
                               background: 'none',
                               border: 'none',
                               fontSize: '14px',
-                              cursor: 'pointer',
+                              cursor: uploadingEdit ? 'default' : 'pointer',
                               padding: '2px 6px',
                               borderRadius: '4px',
                               color: 'var(--text-secondary)',
                               transition: 'background 0.2s',
+                              opacity: uploadingEdit ? 0.5 : 1,
                             }}
                             onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-active)'}
                             onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                             title={t('updatePanel.uploadFile')}
                           >
-                            📎
+                            {uploadingEdit ? '⏳' : '📎'}
                           </button>
                           <button
                             onClick={() => handleSaveEditUpdate(update.id)}
@@ -1442,21 +1457,23 @@ const UpdatePanel = () => {
                             <button
                               type="button"
                               onClick={() => replyFileInputRef.current?.click()}
+                              disabled={uploadingReply}
                               style={{
                                 background: 'none',
                                 border: 'none',
                                 fontSize: '16px',
-                                cursor: 'pointer',
+                                cursor: uploadingReply ? 'default' : 'pointer',
                                 padding: '2px 6px',
                                 borderRadius: '4px',
                                 color: 'var(--text-secondary)',
                                 transition: 'background 0.2s',
+                                opacity: uploadingReply ? 0.5 : 1,
                               }}
                               onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-active)'}
                               onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                               title={t('updatePanel.uploadFile')}
                             >
-                              📎
+                              {uploadingReply ? '⏳' : '📎'}
                             </button>
                             <button
                               onClick={handleReplySubmit}
