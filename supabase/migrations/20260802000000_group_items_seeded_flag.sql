@@ -1,0 +1,13 @@
+-- ------------------------------------------------------------
+-- Phase 5 fix: atomic claim for "seed 3 starter items into a new/empty
+-- group" so multiple clients viewing the same board at once can't each
+-- independently seed the same group (was producing 6/9 duplicate items
+-- under concurrent testing — a client-side debounce heuristic wasn't
+-- reliable enough under real network timing variance).
+--
+-- A client "claims" the right to seed by flipping seeded false->true in
+-- one atomic UPDATE ... WHERE seeded = false; only the client whose
+-- UPDATE actually matched a row (Postgres guarantees exactly one
+-- concurrent UPDATE wins per row) proceeds to insert the 3 items.
+-- ------------------------------------------------------------
+alter table groups add column seeded boolean not null default false;

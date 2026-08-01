@@ -110,7 +110,15 @@ export function GroupProvider({ children, boardId }) {
   const groupHeaderColors = Object.fromEntries(
     groupRows.filter((g) => g.headerColor).map((g) => [g.name, g.headerColor])
   );
+  // Exposed so ItemsContext can translate between the group *names* the
+  // rest of the app still works with and the `group_id` FK items are
+  // actually stored against.
+  const groupIdByName = Object.fromEntries(groupRows.map((g) => [g.name, g.id]));
+  const groupNameById = Object.fromEntries(groupRows.map((g) => [g.id, g.name]));
 
+  // Returns the new group's id so callers (ItemsContext's addGroup) can
+  // insert items referencing it immediately, without waiting for this
+  // context's own state to re-render.
   const createGroup = async (name) => {
     const position = groupRows.length;
     const { data, error } = await supabase
@@ -120,9 +128,10 @@ export function GroupProvider({ children, boardId }) {
       .single();
     if (error) {
       console.error("Error creating group:", error);
-      return;
+      return null;
     }
     setGroupRows((prev) => [...prev, mapGroup(data)]);
+    return data.id;
   };
 
   const renameGroupEntry = async (oldName, newName) => {
@@ -178,8 +187,11 @@ export function GroupProvider({ children, boardId }) {
       value={{
         loading,
         groups,
+        groupRows,
         groupColors,
         groupHeaderColors,
+        groupIdByName,
+        groupNameById,
         createGroup,
         renameGroupEntry,
         removeGroup,

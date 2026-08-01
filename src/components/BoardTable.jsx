@@ -381,8 +381,8 @@ export default function BoardTable({
             const groupId = index + 1;
 
             return (
-              <div 
-                key={groupName} 
+              <div
+                key={`${groupName}__${index}`}
                 className="group-wrapper"
                 data-group-id={String(groupId)}
                 data-group-name={groupName}
