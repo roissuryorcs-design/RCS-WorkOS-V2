@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useBoards } from "../context/BoardsContext";
 import { useLanguage } from "../context/LanguageContext";
 
@@ -41,7 +42,7 @@ export default function BoardAccessModal({ boardId, boardName, onClose }) {
     onClose();
   };
 
-  return (
+  return createPortal(
     <div
       style={{
         position: "fixed",
@@ -163,6 +164,7 @@ export default function BoardAccessModal({ boardId, boardName, onClose }) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

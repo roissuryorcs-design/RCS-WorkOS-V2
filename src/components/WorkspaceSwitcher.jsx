@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useBoards } from "../context/BoardsContext";
 import { useLanguage } from "../context/LanguageContext";
 import Popover from "./Popover";
@@ -42,7 +43,7 @@ function InviteCodeModal({ code, onClose }) {
     }
   };
 
-  return (
+  return createPortal(
     <div
       style={{
         position: "fixed",
@@ -126,7 +127,8 @@ function InviteCodeModal({ code, onClose }) {
           {t("common.close")}
         </button>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
