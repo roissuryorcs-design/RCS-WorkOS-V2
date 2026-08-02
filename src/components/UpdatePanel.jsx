@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useUpdates } from '../context/UpdateContext';
 import { useLanguage } from '../context/LanguageContext';
 import { uploadToCloudinary } from '../utils/cloudinaryUpload';
+import TranslateToggle from './TranslateToggle';
 
 const UpdatePanel = () => {
   const { t } = useLanguage();
@@ -587,6 +588,8 @@ const UpdatePanel = () => {
               {!isEditingReply && reply.files && reply.files.length > 0 && (
                 renderFiles(reply.files)
               )}
+
+              {!isEditingReply && <TranslateToggle text={reply.text} />}
 
               <div style={{ marginTop: '4px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 <button
@@ -1284,6 +1287,8 @@ const UpdatePanel = () => {
                     {!isEditingUpdate && update.files && update.files.length > 0 && (
                       renderFiles(update.files)
                     )}
+
+                    {!isEditingUpdate && <TranslateToggle text={update.text} />}
 
                     <div style={{ marginTop: '6px', display: 'flex', gap: '10px', flexWrap: 'wrap', borderTop: '1px solid var(--border-color)', paddingTop: '6px' }}>
                       <button
