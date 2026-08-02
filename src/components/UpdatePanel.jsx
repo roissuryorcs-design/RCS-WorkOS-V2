@@ -342,7 +342,7 @@ const UpdatePanel = () => {
         maxWidth: '100%',
       }}>
         {files.map((file, index) => (
-          <span key={file.id} style={{
+          <a key={file.id} href={file.url} target="_blank" rel="noopener noreferrer" style={{
             fontSize: '12px',
             color: 'var(--btn-primary-bg)',
             textDecoration: 'underline',
@@ -354,7 +354,7 @@ const UpdatePanel = () => {
             maxWidth: '100%',
           }}>
             {index + 1}. {file.name}
-          </span>
+          </a>
         ))}
       </div>
     );

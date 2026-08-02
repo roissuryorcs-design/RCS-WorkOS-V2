@@ -130,7 +130,11 @@ export function GroupProvider({ children, boardId }) {
       console.error("Error creating group:", error);
       return null;
     }
-    setGroupRows((prev) => [...prev, mapGroup(data)]);
+    const mapped = mapGroup(data);
+    // The Realtime INSERT echo of this same row can land before this
+    // optimistic update does — de-dupe by id rather than blindly
+    // appending, or the creator's own screen briefly shows it twice.
+    setGroupRows((prev) => (prev.some((g) => g.id === mapped.id) ? prev : [...prev, mapped]));
     return data.id;
   };
 

@@ -309,10 +309,14 @@ export function BoardsProvider({ children }) {
       return;
     }
     const mapped = mapNode(data);
-    setAllNodesByWorkspace((prev) => ({
-      ...prev,
-      [activeWorkspaceId]: [...(prev[activeWorkspaceId] || []), mapped],
-    }));
+    setAllNodesByWorkspace((prev) => {
+      const list = prev[activeWorkspaceId] || [];
+      // The Realtime INSERT echo of this same row can land before this
+      // optimistic update does — de-dupe by id rather than blindly
+      // appending, or the creator's own screen briefly shows it twice.
+      if (list.some((n) => n.id === mapped.id)) return prev;
+      return { ...prev, [activeWorkspaceId]: [...list, mapped] };
+    });
   };
 
   // Generates the id client-side and inserts without `.select()` — a
@@ -347,10 +351,11 @@ export function BoardsProvider({ children }) {
       collapsed: false,
       created_by: user.id,
     });
-    setAllNodesByWorkspace((prev) => ({
-      ...prev,
-      [activeWorkspaceId]: [...(prev[activeWorkspaceId] || []), mapped],
-    }));
+    setAllNodesByWorkspace((prev) => {
+      const list = prev[activeWorkspaceId] || [];
+      if (list.some((n) => n.id === mapped.id)) return prev;
+      return { ...prev, [activeWorkspaceId]: [...list, mapped] };
+    });
     updatePrefs({ activeBoardId: mapped.id });
   };
 

@@ -446,10 +446,9 @@ function AppShellInner() {
   );
 }
 
-// Board data still reads/writes localStorage at this phase (Phase 2 of the
-// Supabase migration plan — auth is wired first, in isolation, before any
-// data-layer risk). AuthGate blocks the whole app behind a session check so
-// later phases can assume `useAuth().user` is always available downstream.
+// Blocks the whole app behind a session check so every provider below
+// (Boards/Column/Group/Items/Update) can assume `useAuth().user` is always
+// available — all board data lives in Supabase now, gated by RLS on that user.
 function AuthGate({ children }) {
   const { session, loading } = useAuth();
 
