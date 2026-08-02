@@ -569,20 +569,38 @@ export function BoardsProvider({ children }) {
     return { error };
   };
 
-  const fetchBoardMembers = async (boardId) => {
-    const { data, error } = await supabase.from("board_members").select("user_id").eq("board_id", boardId);
-    if (error) {
-      console.error("Error loading board access list:", error);
-      return [];
-    }
-    return (data || []).map((r) => r.user_id);
+  // `restricted` is an explicit flag (boards.access_restricted), not
+  // inferred from whether board_members has rows — an empty allowlist is
+  // ambiguous between "never restricted" and "restricted to owner only,
+  // zero other members granted", which surfaced as a real bug (unchecking
+  // the sole non-owner member silently reverted to unrestricted instead
+  // of locking them out).
+  const fetchBoardAccess = async (boardId) => {
+    const [{ data: boardRow, error: boardError }, { data: memberRows, error: memberError }] = await Promise.all([
+      supabase.from("boards").select("access_restricted").eq("id", boardId).single(),
+      supabase.from("board_members").select("user_id").eq("board_id", boardId),
+    ]);
+    if (boardError) console.error("Error loading board access flag:", boardError);
+    if (memberError) console.error("Error loading board access list:", memberError);
+    return {
+      restricted: boardRow?.access_restricted ?? false,
+      memberIds: (memberRows || []).map((r) => r.user_id),
+    };
   };
 
-  // Replaces the board's allowlist wholesale with `userIds` (empty array
-  // = unrestricted, workspace-wide again). Simple delete-then-insert
-  // rather than diffing — board member lists are small, and this only
-  // runs on an explicit "Save" click, not per-checkbox-toggle.
-  const setBoardAccess = async (boardId, userIds) => {
+  // Replaces the board's allowlist wholesale with `userIds` and sets the
+  // explicit restriction flag. Simple delete-then-insert rather than
+  // diffing — board member lists are small, and this only runs on an
+  // explicit "Save" click, not per-checkbox-toggle.
+  const setBoardAccess = async (boardId, userIds, restricted) => {
+    const { error: flagError } = await supabase.rpc("set_board_access_restricted", {
+      _board_id: boardId,
+      _restricted: restricted,
+    });
+    if (flagError) {
+      console.error("Error setting board access flag:", flagError);
+      return { error: flagError };
+    }
     const { error: delError } = await supabase.from("board_members").delete().eq("board_id", boardId);
     if (delError) {
       console.error("Error clearing board access list:", delError);
@@ -631,7 +649,7 @@ export function BoardsProvider({ children }) {
         joinWorkspaceByCode,
         fetchWorkspaceMembers,
         removeMember,
-        fetchBoardMembers,
+        fetchBoardAccess,
         setBoardAccess,
       }}
     >

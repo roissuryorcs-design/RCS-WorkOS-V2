@@ -5,7 +5,7 @@ import { useLanguage } from "../context/LanguageContext";
 
 export default function BoardAccessModal({ boardId, boardName, onClose }) {
   const { t } = useLanguage();
-  const { fetchWorkspaceMembers, fetchBoardMembers, setBoardAccess } = useBoards();
+  const { fetchWorkspaceMembers, fetchBoardAccess, setBoardAccess } = useBoards();
   const [members, setMembers] = useState([]);
   const [selectedIds, setSelectedIds] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -13,16 +13,16 @@ export default function BoardAccessModal({ boardId, boardName, onClose }) {
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([fetchWorkspaceMembers(), fetchBoardMembers(boardId)]).then(([memberList, restrictedIds]) => {
+    Promise.all([fetchWorkspaceMembers(), fetchBoardAccess(boardId)]).then(([memberList, { restricted, memberIds }]) => {
       if (cancelled) return;
       setMembers(memberList);
-      // An unrestricted board (no board_members rows) means "everyone
-      // currently has access" — represent that visually as every non-owner
-      // member starting checked, so unchecking someone reads as "revoke
-      // their access" rather than starting from an all-unchecked list that
-      // contradicts the "open to everyone" banner right above it.
+      // An unrestricted board means "everyone currently has access" —
+      // represent that visually as every non-owner member starting
+      // checked, so unchecking someone reads as "revoke their access"
+      // rather than starting from an all-unchecked list that contradicts
+      // the "open to everyone" banner right above it.
       const nonOwnerIds = memberList.filter((m) => m.role !== "owner").map((m) => m.userId);
-      setSelectedIds(restrictedIds.length > 0 ? restrictedIds : nonOwnerIds);
+      setSelectedIds(restricted ? memberIds : nonOwnerIds);
       setLoading(false);
     });
     return () => {
@@ -40,11 +40,7 @@ export default function BoardAccessModal({ boardId, boardName, onClose }) {
 
   const handleSave = async () => {
     setSaving(true);
-    // Everyone still checked -> collapse back to the simpler "open to
-    // workspace" state (empty allowlist) rather than persisting a
-    // redundant "restricted to literally everyone" list.
-    const allChecked = nonOwnerIds.every((id) => selectedIds.includes(id));
-    const { error } = await setBoardAccess(boardId, allChecked ? [] : selectedIds);
+    const { error } = await setBoardAccess(boardId, selectedIds, isRestricted);
     setSaving(false);
     if (error) {
       alert(t("boardAccessModal.saveFailed"));
