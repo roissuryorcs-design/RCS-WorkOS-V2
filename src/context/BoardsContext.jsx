@@ -36,6 +36,7 @@ function mapNode(row) {
     workspaceId: row.workspace_id,
     position: row.position,
     collapsed: row.collapsed,
+    createdBy: row.created_by,
   };
 }
 
@@ -295,7 +296,7 @@ export function BoardsProvider({ children }) {
     const position = allNodes.filter((n) => n.parentId === parentFolderId).length;
     const { data, error } = await supabase
       .from("nodes")
-      .insert({ workspace_id: activeWorkspaceId, type: "folder", name: trimmed, parent_id: parentFolderId, position })
+      .insert({ workspace_id: activeWorkspaceId, type: "folder", name: trimmed, parent_id: parentFolderId, position, created_by: user.id })
       .select()
       .single();
     if (error) {
@@ -315,7 +316,7 @@ export function BoardsProvider({ children }) {
     const position = allNodes.filter((n) => n.parentId === parentFolderId).length;
     const { data: node, error: nodeError } = await supabase
       .from("nodes")
-      .insert({ workspace_id: activeWorkspaceId, type: "board", name: trimmed, parent_id: parentFolderId, position })
+      .insert({ workspace_id: activeWorkspaceId, type: "board", name: trimmed, parent_id: parentFolderId, position, created_by: user.id })
       .select()
       .single();
     if (nodeError) {

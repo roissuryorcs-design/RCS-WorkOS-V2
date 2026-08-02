@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { supabase } from "./lib/supabaseClient";
 import { ThemeProvider } from "./context/ThemeContext";
 import { LanguageProvider, useLanguage } from "./context/LanguageContext";
 import { AuthProvider, useAuth } from "./context/AuthContext";
@@ -6,7 +7,6 @@ import { ColumnProvider, useColumns } from "./context/ColumnContext";
 import { GroupProvider, useGroups } from "./context/GroupContext";
 import { ItemsProvider, useItems } from "./context/ItemsContext";
 import { BoardsProvider, useBoards } from "./context/BoardsContext";
-import { boardKey } from "./utils/boardStorage";
 import LoginScreen from "./components/LoginScreen";
 import { getDefaultGroupName } from "./i18n/defaults";
 import Sidebar from "./components/Sidebar";
@@ -35,9 +35,7 @@ function BoardWorkspace({ boardId }) {
   const [showAddColumnPopup, setShowAddColumnPopup] = useState(false);
   const [showFormulaEditor, setShowFormulaEditor] = useState(false);
   const [activeFormulaColumnId, setActiveFormulaColumnId] = useState(null);
-  const [currentView, setCurrentView] = useState(() => {
-    return localStorage.getItem(boardKey('forelCurrentView', boardId)) || 'table';
-  });
+  const [currentView, setCurrentView] = useState('table');
 
   const { columns, addColumn, renameColumn, toggleColumn, deleteColumn, resetColumns, updateColumnStatuses, updateColumnStatusOrder, updateColumnFormula, updateColumnProgressStages } = useColumns();
 
@@ -72,13 +70,47 @@ function BoardWorkspace({ boardId }) {
 
   const isInitialized = !groupsLoading && !itemsLoading;
 
+  // current_view lives in the `boards` table (existed since Phase 1 but
+  // was never wired up — Table/Dashboard mode never synced between
+  // collaborators). Loaded per boardId + kept live via Realtime.
   useEffect(() => {
-    setCurrentView(localStorage.getItem(boardKey('forelCurrentView', boardId)) || 'table');
+    let cancelled = false;
+    supabase.from('boards').select('current_view').eq('id', boardId).single().then(({ data, error }) => {
+      if (cancelled) return;
+      if (error) {
+        console.error('Error loading board view mode:', error);
+        return;
+      }
+      if (data?.current_view) setCurrentView(data.current_view);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [boardId]);
 
   useEffect(() => {
-    localStorage.setItem(boardKey('forelCurrentView', boardId), currentView);
-  }, [currentView, boardId]);
+    if (!boardId) return;
+    const channel = supabase
+      .channel(`board-view:${boardId}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'boards', filter: `id=eq.${boardId}` },
+        (payload) => {
+          if (payload.new.current_view) setCurrentView(payload.new.current_view);
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [boardId]);
+
+  const changeView = (view) => {
+    setCurrentView(view);
+    supabase.from('boards').update({ current_view: view }).eq('id', boardId).then(({ error }) => {
+      if (error) console.error('Error updating board view mode:', error);
+    });
+  };
 
   // ============================================================
   // GROUP CRUD — the group *row* (name/color/order) is owned by
@@ -240,7 +272,7 @@ function BoardWorkspace({ boardId }) {
       <div className="main-content">
         <Header groups={allGroups || []} boardId={boardId} isReady={isInitialized} />
 
-        <ViewTabs currentView={currentView} onChange={setCurrentView} />
+        <ViewTabs currentView={currentView} onChange={changeView} />
 
         {currentView === "dashboard" ? (
           <div style={{ padding: "0 24px" }}>

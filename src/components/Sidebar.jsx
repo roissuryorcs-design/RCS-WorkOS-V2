@@ -150,7 +150,7 @@ export default function Sidebar() {
           {favoriteBoardIds.includes(node.id) ? t("sidebar.removeFromFavorites") : t("sidebar.addToFavorites")}
         </button>
         <button onClick={() => handleRename(node)}>{t("sidebar.renameBoard")}</button>
-        {isActiveWorkspaceOwner && (
+        {(isActiveWorkspaceOwner || node.createdBy === user.id) && (
           <button onClick={() => { setAccessModalBoard(node); closeMenu(); }}>{t("sidebar.manageAccess")}</button>
         )}
         <button onClick={() => handleDelete(node)}>{t("sidebar.deleteBoard")}</button>
