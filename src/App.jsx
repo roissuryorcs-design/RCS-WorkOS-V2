@@ -23,6 +23,7 @@ import FormulaEditor from "./components/FormulaEditor";
 import "./App.css";
 import { UpdateProvider } from './context/UpdateContext';
 import UpdatePanel from './components/UpdatePanel';
+import LegacyImportPrompt from './components/LegacyImportPrompt';
 
 function BoardWorkspace({ boardId }) {
   const { t } = useLanguage();
@@ -411,6 +412,7 @@ function AppShellInner() {
 
   return (
     <div className="app-container">
+      <LegacyImportPrompt />
       <Sidebar />
 
       {loading ? (
