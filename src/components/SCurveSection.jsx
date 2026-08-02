@@ -301,7 +301,7 @@ export default function SCurveSection({ boardId, items, groups, progressColumns,
         </div>
       </div>
 
-      <SCurveChart chart={chart} />
+      <SCurveChart chart={chart} startDate={startDate} endDate={endDate} />
 
       <div style={{ display: "flex", gap: 16, marginTop: 10, fontSize: 11.5, color: "var(--text-secondary)", flexWrap: "wrap" }}>
         <LegendDot color="#9ca3af" dashed label={t("sCurve.legendPlan")} />
@@ -361,11 +361,16 @@ function LegendDot({ color, dashed, label }) {
   );
 }
 
-function SCurveChart({ chart }) {
+const MONTHS_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+function shortDateLabel(d) {
+  return `${String(d.getDate()).padStart(2, "0")} ${MONTHS_SHORT[d.getMonth()]}`;
+}
+
+function SCurveChart({ chart, startDate, endDate }) {
   const width = 720;
   const height = 260;
   const padL = 36;
-  const padB = 22;
+  const padB = 26;
   const padT = 10;
   const padR = 10;
   const plotW = width - padL - padR;
@@ -373,6 +378,19 @@ function SCurveChart({ chart }) {
 
   const xScale = (x) => padL + (x / chart.maxX) * plotW;
   const yScale = (y) => padT + plotH - (Math.max(0, Math.min(105, y)) / 100) * plotH;
+
+  // X-axis ticks are real calendar dates (spread across the full plotted
+  // range, including the >100% overshoot zone when a forecast/actual
+  // runs past the planned end date), not raw percentages — matching a
+  // normal S-curve chart's convention.
+  const xTickCount = 6;
+  const xTicks = Array.from({ length: xTickCount + 1 }, (_, i) => (i / xTickCount) * chart.maxX);
+  const totalDays = daysBetween(startDate, endDate);
+  const dateForX = (x) => {
+    const d = new Date(startDate);
+    d.setDate(d.getDate() + Math.round((x / 100) * totalDays));
+    return d;
+  };
 
   const toPath = (points) => points.map((p, i) => `${i === 0 ? "M" : "L"} ${xScale(p.x)} ${yScale(p.y)}`).join(" ");
   const toAreaPath = (topPoints, bottomPoints) => {
@@ -396,9 +414,9 @@ function SCurveChart({ chart }) {
           </text>
         </g>
       ))}
-      {[0, 25, 50, 75, 100].map((pct) => (
-        <text key={pct} x={xScale(pct)} y={height - 6} textAnchor="middle" style={{ fontSize: 9, fill: "var(--text-muted)" }}>
-          {pct}%
+      {xTicks.map((x) => (
+        <text key={x} x={xScale(x)} y={height - 8} textAnchor="middle" style={{ fontSize: 9, fill: "var(--text-muted)" }}>
+          {shortDateLabel(dateForX(x))}
         </text>
       ))}
 
