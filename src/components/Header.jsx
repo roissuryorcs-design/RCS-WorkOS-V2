@@ -19,22 +19,24 @@ const Header = ({ groups = [], boardId, isReady = true }) => {
   useEffect(() => {
     let cancelled = false;
     isInitial.current = true;
-    supabase
-      .from('boards')
-      .select('title, subtitle')
-      .eq('id', boardId)
-      .single()
-      .then(({ data, error }) => {
-        if (cancelled) return;
-        if (error) {
-          console.error('Error loading board header:', error);
-          return;
-        }
-        if (data) {
-          setTitle(data.title && data.title.trim() !== '' ? data.title : t('defaults.boardTitle'));
-          setSubtitle(data.subtitle && data.subtitle.trim() !== '' ? data.subtitle : t('defaults.boardSubtitle'));
-        }
-      });
+    Promise.all([
+      supabase.from('boards').select('title, subtitle').eq('id', boardId).single(),
+      // Fallback source when title was never set (e.g. legacy-imported
+      // boards whose old in-page title was left blank) — the sidebar
+      // name is a far more useful default than a generic placeholder.
+      supabase.from('nodes').select('name').eq('id', boardId).single(),
+    ]).then(([{ data, error }, { data: nodeData }]) => {
+      if (cancelled) return;
+      if (error) {
+        console.error('Error loading board header:', error);
+        return;
+      }
+      if (data) {
+        const fallbackTitle = (nodeData && nodeData.name) || t('defaults.boardTitle');
+        setTitle(data.title && data.title.trim() !== '' ? data.title : fallbackTitle);
+        setSubtitle(data.subtitle && data.subtitle.trim() !== '' ? data.subtitle : t('defaults.boardSubtitle'));
+      }
+    });
     return () => {
       cancelled = true;
     };
