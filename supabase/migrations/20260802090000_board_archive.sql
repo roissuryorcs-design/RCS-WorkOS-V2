@@ -1,0 +1,13 @@
+-- ------------------------------------------------------------
+-- Archive/Restore boards: a soft "hide from the sidebar tree, but keep
+-- everything intact and bring it back later" state, distinct from delete.
+-- Board-only (not folders) — matches the request ("board yang nggak
+-- dipakai bisa disembunyikan dulu"), and avoids the complexity of what
+-- archiving a folder with non-archived children would even mean.
+--
+-- No RLS change needed: archived is a display-filtering concern (same
+-- pattern as favorites, filtered client-side), not an access-control
+-- concern — anyone who could already see/edit the board can archive or
+-- restore it, same permission level as rename/delete today.
+-- ------------------------------------------------------------
+alter table nodes add column archived_at timestamptz;

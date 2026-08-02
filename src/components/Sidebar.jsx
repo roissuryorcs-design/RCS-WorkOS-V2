@@ -13,6 +13,9 @@ export default function Sidebar() {
   const { user, signOut } = useAuth();
   const {
     nodes,
+    archivedBoards,
+    archiveBoard,
+    restoreBoard,
     activeBoardId,
     switchBoard,
     goToBoard,
@@ -100,6 +103,11 @@ export default function Sidebar() {
     closeMenu();
   };
 
+  const handleArchive = (node) => {
+    archiveBoard(node.id);
+    closeMenu();
+  };
+
   const handleAddBoard = (parentFolderId) => {
     const name = prompt(t("sidebar.newBoardNamePrompt"));
     if (name && name.trim()) createBoard(name.trim(), parentFolderId);
@@ -153,6 +161,7 @@ export default function Sidebar() {
         {(isActiveWorkspaceOwner || node.createdBy === user.id) && (
           <button onClick={() => { setAccessModalBoard(node); closeMenu(); }}>{t("sidebar.manageAccess")}</button>
         )}
+        <button onClick={() => handleArchive(node)}>{t("sidebar.archiveBoard")}</button>
         <button onClick={() => handleDelete(node)}>{t("sidebar.deleteBoard")}</button>
       </Popover>
     </div>
@@ -236,6 +245,40 @@ export default function Sidebar() {
           <div className="favorites-empty-hint">{t("sidebar.favoritesEmptyHint")}</div>
         )}
       </div>
+
+      {archivedBoards.length > 0 && (
+        <div className="sidebar-section">
+          <div className="section-title">{t("sidebar.archivedTitle")}</div>
+          {archivedBoards.map((board) => (
+            <div
+              key={board.id}
+              className="favorite-item"
+              style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6 }}
+            >
+              <span style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
+                <span>📦</span>
+                <span className="tree-node-label">{board.name}</span>
+              </span>
+              <button
+                onClick={() => restoreBoard(board.id)}
+                title={t("sidebar.restoreBoard")}
+                style={{
+                  background: "none",
+                  border: "1px solid var(--border-dark)",
+                  borderRadius: 4,
+                  padding: "2px 8px",
+                  fontSize: 11,
+                  color: "var(--text-secondary)",
+                  cursor: "pointer",
+                  flexShrink: 0,
+                }}
+              >
+                {t("sidebar.restoreBoard")}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="sidebar-section">
         <div className="section-title">{t("sidebar.workspaceTitle")}</div>

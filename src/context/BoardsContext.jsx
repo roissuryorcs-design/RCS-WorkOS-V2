@@ -37,6 +37,7 @@ function mapNode(row) {
     position: row.position,
     collapsed: row.collapsed,
     createdBy: row.created_by,
+    archivedAt: row.archived_at,
   };
 }
 
@@ -215,7 +216,11 @@ export function BoardsProvider({ children }) {
   }, [activeWorkspaceId]);
 
   const allNodes = allNodesByWorkspace[activeWorkspaceId] || [];
-  const nodes = allNodes; // already scoped to the active workspace by the query
+  // `nodes` (fed to the sidebar tree) excludes archived boards — those are
+  // surfaced separately via `archivedBoards` instead. Everything else in
+  // this file still reads from the unfiltered `allNodes`.
+  const nodes = allNodes.filter((n) => !n.archivedAt);
+  const archivedBoards = allNodes.filter((n) => n.type === "board" && n.archivedAt);
 
   const activeMembership = workspaces.find((w) => w.id === activeWorkspaceId);
   const isActiveWorkspaceOwner = activeMembership?.role === "owner";
@@ -409,6 +414,35 @@ export function BoardsProvider({ children }) {
     // (all FK'd to nodes.id) handles cleanup of everything downstream.
     const { error } = await supabase.from("nodes").delete().eq("id", id);
     if (error) console.error("Error deleting node:", error);
+  };
+
+  // Archive/Restore — a board-only soft-hide, distinct from delete: the
+  // board and everything in it stays fully intact, just filtered out of
+  // the normal sidebar tree until restored. Same permission level as
+  // rename/delete today (no extra ownership gate).
+  const archiveBoard = async (id) => {
+    const node = allNodes.find((n) => n.id === id);
+    if (!node || node.type !== "board") return;
+    const archivedAt = new Date().toISOString();
+    setAllNodesByWorkspace((prev) => ({
+      ...prev,
+      [activeWorkspaceId]: (prev[activeWorkspaceId] || []).map((n) => (n.id === id ? { ...n, archivedAt } : n)),
+    }));
+    if (activeBoardId === id) {
+      const remaining = allNodes.filter((n) => n.id !== id && n.type === "board" && !n.archivedAt);
+      updatePrefs({ activeBoardId: remaining[0]?.id ?? null });
+    }
+    const { error } = await supabase.from("nodes").update({ archived_at: archivedAt }).eq("id", id);
+    if (error) console.error("Error archiving board:", error);
+  };
+
+  const restoreBoard = async (id) => {
+    setAllNodesByWorkspace((prev) => ({
+      ...prev,
+      [activeWorkspaceId]: (prev[activeWorkspaceId] || []).map((n) => (n.id === id ? { ...n, archivedAt: null } : n)),
+    }));
+    const { error } = await supabase.from("nodes").update({ archived_at: null }).eq("id", id);
+    if (error) console.error("Error restoring board:", error);
   };
 
   const toggleFolderCollapsed = async (id) => {
@@ -639,6 +673,9 @@ export function BoardsProvider({ children }) {
       value={{
         loading,
         nodes,
+        archivedBoards,
+        archiveBoard,
+        restoreBoard,
         activeBoardId,
         switchBoard,
         goToBoard,
