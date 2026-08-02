@@ -276,7 +276,7 @@ function BoardWorkspace({ boardId }) {
         <ViewTabs currentView={currentView} onChange={changeView} />
 
         {currentView === "dashboard" ? (
-          <div style={{ padding: "0 24px" }}>
+          <div style={{ padding: "0 24px", flex: 1, minHeight: 0, overflowY: "auto" }}>
             <Dashboard boardId={boardId} items={items} columns={columns} groups={allGroups} groupColors={groupColors} />
           </div>
         ) : (
