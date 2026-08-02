@@ -277,7 +277,7 @@ function BoardWorkspace({ boardId }) {
 
         {currentView === "dashboard" ? (
           <div style={{ padding: "0 24px" }}>
-            <Dashboard items={items} columns={columns} groups={allGroups} groupColors={groupColors} />
+            <Dashboard boardId={boardId} items={items} columns={columns} groups={allGroups} groupColors={groupColors} />
           </div>
         ) : (
           <>

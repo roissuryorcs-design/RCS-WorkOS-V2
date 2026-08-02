@@ -4,6 +4,7 @@ import {
   computeOwnProgress,
   computeCascadedDisplayPercent,
 } from "../utils/progressWeights";
+import SCurveSection from "./SCurveSection";
 
 function flattenItems(items) {
   let result = [];
@@ -241,11 +242,12 @@ function GroupBreakdownCard({ items, groups, groupColors, t }) {
   );
 }
 
-export default function Dashboard({ items, columns, groups, groupColors }) {
+export default function Dashboard({ boardId, items, columns, groups, groupColors }) {
   const { t } = useLanguage();
   const flatItems = flattenItems(items);
   const statusColumns = (columns || []).filter((c) => c && c.type === "status");
   const progressColumns = (columns || []).filter((c) => c && c.type === "progress");
+  const primaryProgress = progressColumns.length > 0 ? computeBoardProgress(items, progressColumns[0].id) : 0;
 
   return (
     <div style={{ padding: "8px 0 40px" }}>
@@ -261,6 +263,8 @@ export default function Dashboard({ items, columns, groups, groupColors }) {
           />
         ))}
       </div>
+
+      {progressColumns.length > 0 && <SCurveSection boardId={boardId} currentProgress={primaryProgress} />}
 
       {flatItems.length === 0 ? (
         <div style={{ ...cardStyle, textAlign: "center", color: "var(--text-secondary)" }}>
