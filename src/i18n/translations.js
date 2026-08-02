@@ -136,6 +136,7 @@ export const translations = {
       legendActual: "Actual",
       legendForecast: "Forecast",
       dragHint: "Tip: grab and drag the dashed baseline to reshape it directly.",
+      apply5070Btn: "📐 Apply 50/70 rule (50% time → 70% progress)",
     },
     boardTable: {
       addGroupPrompt: "Enter new group name:",
@@ -584,6 +585,7 @@ export const translations = {
       legendActual: "Aktual",
       legendForecast: "Prediksi",
       dragHint: "Tips: pegang dan geser garis putus-putus baseline untuk mengubah bentuknya langsung.",
+      apply5070Btn: "📐 Terapkan aturan 50/70 (50% waktu → 70% progres)",
     },
     boardTable: {
       addGroupPrompt: "Masukkan nama grup baru:",

@@ -572,6 +572,13 @@ function SettingsModal({
           {t("sCurve.shiftLabel")}: {formShift > 0 ? t("sCurve.shiftBackLoaded") : formShift < 0 ? t("sCurve.shiftFrontLoaded") : t("sCurve.shiftSymmetric")}
         </label>
         <input type="range" min={-1} max={1} step={0.1} value={formShift} onChange={(e) => setFormShift(parseFloat(e.target.value))} style={{ width: "100%" }} />
+        <button
+          type="button"
+          onClick={() => setFormShift(shiftForPoint(50, 70))}
+          style={{ marginTop: 6, padding: "5px 10px", background: "var(--bg-hover)", border: "1px solid var(--border-dark)", borderRadius: 6, cursor: "pointer", fontSize: 11.5, color: "var(--text-secondary)" }}
+        >
+          {t("sCurve.apply5070Btn")}
+        </button>
 
         <div style={{ display: "flex", gap: 8, marginTop: 20 }}>
           <button onClick={onClose} disabled={saving} style={{ flex: 1, padding: 8, background: "var(--bg-hover)", border: "none", borderRadius: 6, cursor: "pointer", color: "var(--text-secondary)" }}>
