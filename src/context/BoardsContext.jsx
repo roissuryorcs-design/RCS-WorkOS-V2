@@ -310,24 +310,38 @@ export function BoardsProvider({ children }) {
     }));
   };
 
+  // Generates the id client-side and inserts without `.select()` — a
+  // board-type node's row-return would otherwise trigger nodes_select's
+  // can_access_board(id) check against a row that isn't visible to that
+  // self-lookup yet (the INSERT ... RETURNING clause is itself governed
+  // by the table's SELECT policies). Folders don't hit this (their
+  // policies short-circuit on type='folder'), only boards do.
   const createBoard = async (name, parentFolderId = null) => {
     const trimmed = (name || "").trim();
     if (!trimmed) return;
     const position = allNodes.filter((n) => n.parentId === parentFolderId).length;
-    const { data: node, error: nodeError } = await supabase
+    const newId = crypto.randomUUID();
+    const { error: nodeError } = await supabase
       .from("nodes")
-      .insert({ workspace_id: activeWorkspaceId, type: "board", name: trimmed, parent_id: parentFolderId, position, created_by: user.id })
-      .select()
-      .single();
+      .insert({ id: newId, workspace_id: activeWorkspaceId, type: "board", name: trimmed, parent_id: parentFolderId, position, created_by: user.id });
     if (nodeError) {
       console.error("Error creating board:", nodeError);
       return;
     }
-    const { error: boardError } = await supabase.from("boards").insert({ id: node.id, title: trimmed });
+    const { error: boardError } = await supabase.from("boards").insert({ id: newId, title: trimmed });
     if (boardError) {
       console.error("Error seeding board settings:", boardError);
     }
-    const mapped = mapNode(node);
+    const mapped = mapNode({
+      id: newId,
+      workspace_id: activeWorkspaceId,
+      type: "board",
+      name: trimmed,
+      parent_id: parentFolderId,
+      position,
+      collapsed: false,
+      created_by: user.id,
+    });
     setAllNodesByWorkspace((prev) => ({
       ...prev,
       [activeWorkspaceId]: [...(prev[activeWorkspaceId] || []), mapped],

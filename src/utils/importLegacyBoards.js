@@ -144,24 +144,26 @@ export async function importLegacyBoards(userId) {
       if (readyIndex === -1) break; // orphaned nodes (broken parentId) — stop rather than loop forever
       const [node] = remaining.splice(readyIndex, 1);
       const newWorkspaceId = workspaceIdMap[node.workspaceId] || fallbackWorkspaceId;
-      const { data: inserted, error } = await supabase
-        .from("nodes")
-        .insert({
-          workspace_id: newWorkspaceId,
-          type: node.type,
-          name: node.name,
-          parent_id: node.parentId ? nodeIdMap[node.parentId] : null,
-          position: node.position || 0,
-          collapsed: !!node.collapsed,
-          created_by: userId,
-        })
-        .select()
-        .single();
+      // id generated client-side and inserted without `.select()` — a
+      // board-type row's RETURNING clause is itself governed by
+      // nodes_select's can_access_board(id), which can't see a row that
+      // isn't committed/visible yet (same fix as BoardsContext.createBoard).
+      const newNodeId = crypto.randomUUID();
+      const { error } = await supabase.from("nodes").insert({
+        id: newNodeId,
+        workspace_id: newWorkspaceId,
+        type: node.type,
+        name: node.name,
+        parent_id: node.parentId ? nodeIdMap[node.parentId] : null,
+        position: node.position || 0,
+        collapsed: !!node.collapsed,
+        created_by: userId,
+      });
       if (error) throw new Error(`Creating ${node.type} "${node.name}": ${error.message}`);
-      nodeIdMap[node.id] = inserted.id;
+      nodeIdMap[node.id] = newNodeId;
 
       if (node.type === "board") {
-        await importLegacyBoardContent({ oldBoardId: node.id, newBoardId: inserted.id, userId });
+        await importLegacyBoardContent({ oldBoardId: node.id, newBoardId: newNodeId, userId });
         boardsImported += 1;
       }
     }
