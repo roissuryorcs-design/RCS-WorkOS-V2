@@ -203,8 +203,8 @@ export const translations = {
     },
     boardAccessModal: {
       title: 'Manage access — "{{name}}"',
-      hint: "By default, everyone in the workspace can see this board. Check specific members below to restrict it to just them (plus the workspace owner, who always has access).",
-      restrictedNote: "Restricted — only checked members (and the owner) can see this board.",
+      hint: "Everyone below currently has access to this board. Uncheck a member to remove their access (the workspace owner always has access and can't be unchecked).",
+      restrictedNote: "Restricted — unchecked members no longer have access to this board.",
       openNote: "Open to the whole workspace.",
       ownerAlwaysHint: "(owner — always has access)",
       saveBtn: "Save",
@@ -604,8 +604,8 @@ export const translations = {
     },
     boardAccessModal: {
       title: 'Atur akses — "{{name}}"',
-      hint: "Secara default, semua orang di workspace bisa lihat board ini. Centang member tertentu di bawah untuk membatasi hanya untuk mereka (plus owner workspace, yang selalu punya akses).",
-      restrictedNote: "Dibatasi — hanya member yang dicentang (dan owner) yang bisa lihat board ini.",
+      hint: "Semua yang di bawah ini saat ini punya akses ke board ini. Uncheck seorang member untuk mencabut aksesnya (owner workspace selalu punya akses dan tidak bisa di-uncheck).",
+      restrictedNote: "Dibatasi — member yang tidak dicentang sudah tidak punya akses ke board ini.",
       openNote: "Terbuka untuk seluruh workspace.",
       ownerAlwaysHint: "(owner — selalu punya akses)",
       saveBtn: "Simpan",

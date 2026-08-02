@@ -16,7 +16,13 @@ export default function BoardAccessModal({ boardId, boardName, onClose }) {
     Promise.all([fetchWorkspaceMembers(), fetchBoardMembers(boardId)]).then(([memberList, restrictedIds]) => {
       if (cancelled) return;
       setMembers(memberList);
-      setSelectedIds(restrictedIds);
+      // An unrestricted board (no board_members rows) means "everyone
+      // currently has access" — represent that visually as every non-owner
+      // member starting checked, so unchecking someone reads as "revoke
+      // their access" rather than starting from an all-unchecked list that
+      // contradicts the "open to everyone" banner right above it.
+      const nonOwnerIds = memberList.filter((m) => m.role !== "owner").map((m) => m.userId);
+      setSelectedIds(restrictedIds.length > 0 ? restrictedIds : nonOwnerIds);
       setLoading(false);
     });
     return () => {
@@ -25,7 +31,8 @@ export default function BoardAccessModal({ boardId, boardName, onClose }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [boardId]);
 
-  const isRestricted = selectedIds.length > 0;
+  const nonOwnerIds = members.filter((m) => m.role !== "owner").map((m) => m.userId);
+  const isRestricted = nonOwnerIds.some((id) => !selectedIds.includes(id));
 
   const toggleMember = (userId) => {
     setSelectedIds((prev) => (prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]));
@@ -33,7 +40,11 @@ export default function BoardAccessModal({ boardId, boardName, onClose }) {
 
   const handleSave = async () => {
     setSaving(true);
-    const { error } = await setBoardAccess(boardId, selectedIds);
+    // Everyone still checked -> collapse back to the simpler "open to
+    // workspace" state (empty allowlist) rather than persisting a
+    // redundant "restricted to literally everyone" list.
+    const allChecked = nonOwnerIds.every((id) => selectedIds.includes(id));
+    const { error } = await setBoardAccess(boardId, allChecked ? [] : selectedIds);
     setSaving(false);
     if (error) {
       alert(t("boardAccessModal.saveFailed"));
