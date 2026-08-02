@@ -285,7 +285,7 @@ export default function Dashboard({ boardId, items, columns, groups, groupColors
       <SubTabs active={subTab} onChange={setSubTab} t={t} sCurveAvailable={sCurveAvailable} />
 
       {subTab === "scurve" ? (
-        <SCurveSection boardId={boardId} items={items} progressColumns={progressColumns} timelineColumns={timelineColumns} />
+        <SCurveSection boardId={boardId} items={items} groups={groups} progressColumns={progressColumns} timelineColumns={timelineColumns} />
       ) : flatItems.length === 0 ? (
         <div style={{ ...cardStyle, textAlign: "center", color: "var(--text-secondary)" }}>
           {t("dashboard.noData")}

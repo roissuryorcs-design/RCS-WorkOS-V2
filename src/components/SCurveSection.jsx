@@ -62,17 +62,19 @@ function deriveDateRange(items, timelineColumnId) {
   return { start, end };
 }
 
-export default function SCurveSection({ boardId, items, progressColumns, timelineColumns }) {
+export default function SCurveSection({ boardId, items, groups, progressColumns, timelineColumns }) {
   const { t } = useLanguage();
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [progressColumnId, setProgressColumnId] = useState(null);
   const [timelineColumnId, setTimelineColumnId] = useState(null);
+  const [groupScope, setGroupScope] = useState(null); // null = whole board
   const [shift, setShift] = useState(0);
   const [snapshots, setSnapshots] = useState([]);
   const [showSettings, setShowSettings] = useState(false);
   const [formProgressCol, setFormProgressCol] = useState("");
   const [formTimelineCol, setFormTimelineCol] = useState("");
+  const [formGroupScope, setFormGroupScope] = useState("");
   const [formShift, setFormShift] = useState(0);
   const [saving, setSaving] = useState(false);
 
@@ -81,7 +83,7 @@ export default function SCurveSection({ boardId, items, progressColumns, timelin
     async function load() {
       setLoading(true);
       const [{ data: board, error: boardError }, { data: snaps, error: snapError }] = await Promise.all([
-        supabase.from("boards").select("s_curve_progress_column_id, s_curve_timeline_column_id, s_curve_shift").eq("id", boardId).single(),
+        supabase.from("boards").select("s_curve_progress_column_id, s_curve_timeline_column_id, s_curve_shift, s_curve_group_name").eq("id", boardId).single(),
         supabase.from("board_progress_snapshots").select("snapshot_date, actual_progress").eq("board_id", boardId).order("snapshot_date"),
       ]);
       if (cancelled) return;
@@ -90,9 +92,11 @@ export default function SCurveSection({ boardId, items, progressColumns, timelin
       if (board) {
         setProgressColumnId(board.s_curve_progress_column_id);
         setTimelineColumnId(board.s_curve_timeline_column_id);
+        setGroupScope(board.s_curve_group_name || null);
         setShift(board.s_curve_shift ?? 0);
         setFormProgressCol(board.s_curve_progress_column_id || progressColumns[0]?.id || "");
         setFormTimelineCol(board.s_curve_timeline_column_id || timelineColumns[0]?.id || "");
+        setFormGroupScope(board.s_curve_group_name || "");
         setFormShift(board.s_curve_shift ?? 0);
       }
       setSnapshots(snaps || []);
@@ -105,13 +109,21 @@ export default function SCurveSection({ boardId, items, progressColumns, timelin
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [boardId]);
 
+  // Scoping to a group just narrows which top-level items feed the date
+  // range + progress calc — items already carry their group name as a
+  // plain string, same as everywhere else in the app.
+  const scopedItems = useMemo(
+    () => (groupScope ? (items || []).filter((i) => i.group === groupScope) : items),
+    [items, groupScope]
+  );
+
   const isConfigured = !!(progressColumnId && timelineColumnId);
   const { start: startDate, end: endDate } = useMemo(
-    () => (isConfigured ? deriveDateRange(items, timelineColumnId) : { start: null, end: null }),
-    [isConfigured, items, timelineColumnId]
+    () => (isConfigured ? deriveDateRange(scopedItems, timelineColumnId) : { start: null, end: null }),
+    [isConfigured, scopedItems, timelineColumnId]
   );
   const hasDateRange = !!(startDate && endDate && endDate > startDate);
-  const currentProgress = isConfigured ? computeBoardProgress(items, progressColumnId) : 0;
+  const currentProgress = isConfigured ? computeBoardProgress(scopedItems, progressColumnId) : 0;
 
   const chart = useMemo(() => {
     if (!hasDateRange) return null;
@@ -153,6 +165,7 @@ export default function SCurveSection({ boardId, items, progressColumns, timelin
       .update({
         s_curve_progress_column_id: formProgressCol,
         s_curve_timeline_column_id: formTimelineCol,
+        s_curve_group_name: formGroupScope || null,
         s_curve_shift: formShift,
       })
       .eq("id", boardId);
@@ -164,6 +177,7 @@ export default function SCurveSection({ boardId, items, progressColumns, timelin
     }
     setProgressColumnId(formProgressCol);
     setTimelineColumnId(formTimelineCol);
+    setGroupScope(formGroupScope || null);
     setShift(formShift);
     setShowSettings(false);
   };
@@ -209,13 +223,16 @@ export default function SCurveSection({ boardId, items, progressColumns, timelin
         {showSettings && (
           <SettingsModal
             t={t}
+            groups={groups}
             progressColumns={progressColumns}
             timelineColumns={timelineColumns}
             formProgressCol={formProgressCol}
             formTimelineCol={formTimelineCol}
+            formGroupScope={formGroupScope}
             formShift={formShift}
             setFormProgressCol={setFormProgressCol}
             setFormTimelineCol={setFormTimelineCol}
+            setFormGroupScope={setFormGroupScope}
             setFormShift={setFormShift}
             onSave={handleSaveSettings}
             onClose={() => setShowSettings(false)}
@@ -238,13 +255,16 @@ export default function SCurveSection({ boardId, items, progressColumns, timelin
         {showSettings && (
           <SettingsModal
             t={t}
+            groups={groups}
             progressColumns={progressColumns}
             timelineColumns={timelineColumns}
             formProgressCol={formProgressCol}
             formTimelineCol={formTimelineCol}
+            formGroupScope={formGroupScope}
             formShift={formShift}
             setFormProgressCol={setFormProgressCol}
             setFormTimelineCol={setFormTimelineCol}
+            setFormGroupScope={setFormGroupScope}
             setFormShift={setFormShift}
             onSave={handleSaveSettings}
             onClose={() => setShowSettings(false)}
@@ -259,7 +279,9 @@ export default function SCurveSection({ boardId, items, progressColumns, timelin
     <div style={{ ...cardStyle, marginBottom: 16 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
         <div>
-          <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>{t("sCurve.title")}</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>
+            {t("sCurve.title")}{groupScope ? ` — ${groupScope}` : ` — ${t("sCurve.scopeWholeBoard")}`}
+          </div>
           <div style={{ fontSize: 11.5, color: "var(--text-muted)" }}>
             {toDateStr(startDate)} → {toDateStr(endDate)}
             {chart?.forecastCompletionDate && (
@@ -290,13 +312,16 @@ export default function SCurveSection({ boardId, items, progressColumns, timelin
       {showSettings && (
         <SettingsModal
           t={t}
+          groups={groups}
           progressColumns={progressColumns}
           timelineColumns={timelineColumns}
           formProgressCol={formProgressCol}
           formTimelineCol={formTimelineCol}
+          formGroupScope={formGroupScope}
           formShift={formShift}
           setFormProgressCol={setFormProgressCol}
           setFormTimelineCol={setFormTimelineCol}
+          setFormGroupScope={setFormGroupScope}
           setFormShift={setFormShift}
           onSave={handleSaveSettings}
           onClose={() => setShowSettings(false)}
@@ -407,13 +432,16 @@ function millerAtX(baseline, x) {
 
 function SettingsModal({
   t,
+  groups,
   progressColumns,
   timelineColumns,
   formProgressCol,
   formTimelineCol,
+  formGroupScope,
   formShift,
   setFormProgressCol,
   setFormTimelineCol,
+  setFormGroupScope,
   setFormShift,
   onSave,
   onClose,
@@ -430,7 +458,15 @@ function SettingsModal({
       >
         <h3 style={{ marginBottom: 12, fontSize: 16, fontWeight: 600 }}>{t("sCurve.settingsTitle")}</h3>
 
-        <label style={{ display: "block", fontSize: 12, color: "var(--text-secondary)", marginBottom: 4 }}>{t("sCurve.progressColumnLabel")}</label>
+        <label style={{ display: "block", fontSize: 12, color: "var(--text-secondary)", marginBottom: 4 }}>{t("sCurve.scopeLabel")}</label>
+        <select value={formGroupScope} onChange={(e) => setFormGroupScope(e.target.value)} style={inputStyle}>
+          <option value="">{t("sCurve.scopeWholeBoard")}</option>
+          {(groups || []).map((g) => (
+            <option key={g} value={g}>{g}</option>
+          ))}
+        </select>
+
+        <label style={{ display: "block", fontSize: 12, color: "var(--text-secondary)", margin: "10px 0 4px" }}>{t("sCurve.progressColumnLabel")}</label>
         <select value={formProgressCol} onChange={(e) => setFormProgressCol(e.target.value)} style={inputStyle}>
           {progressColumns.map((c) => (
             <option key={c.id} value={c.id}>{c.label}</option>
