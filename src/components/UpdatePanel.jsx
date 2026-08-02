@@ -185,6 +185,12 @@ const UpdatePanel = () => {
   // ============================================================
   const handleSubmit = (e) => {
     e.preventDefault();
+    // Guards against a race where hitting Enter/Kirim while a file is
+    // still mid-upload sends the message before uploadedFiles has the
+    // finished upload — the attachment would land, orphaned, on
+    // whatever gets sent next instead of the message the user meant it
+    // for.
+    if (uploadingNew) return;
     const text = newUpdate.trim();
     if (text || uploadedFiles.length > 0) {
       addUpdate(selectedItem, text, uploadedFiles);
@@ -205,6 +211,7 @@ const UpdatePanel = () => {
   // HANDLE REPLY SUBMIT
   // ============================================================
   const handleReplySubmit = () => {
+    if (uploadingReply) return;
     if (replyText.trim() || replyFiles.length > 0) {
       const replyData = {
         text: replyText.trim(),
@@ -234,6 +241,7 @@ const UpdatePanel = () => {
   };
 
   const handleSaveEditUpdate = (updateId) => {
+    if (uploadingEdit) return;
     if (editText.trim()) {
       const allFiles = [...editFiles, ...editNewFiles];
       editUpdate(updateId, editText.trim(), allFiles);
@@ -269,6 +277,7 @@ const UpdatePanel = () => {
   };
 
   const handleSaveEditReply = (updateId, replyId) => {
+    if (uploadingEditReply) return;
     if (editReplyText.trim()) {
       const allFiles = [...editReplyFiles, ...editReplyNewFiles];
       editReply(updateId, replyId, editReplyText.trim(), allFiles);
@@ -1083,6 +1092,7 @@ const UpdatePanel = () => {
                 )}
                 <button
                   type="submit"
+                  disabled={uploadingNew}
                   style={{
                     padding: '4px 16px',
                     background: 'var(--btn-primary-bg)',
@@ -1090,14 +1100,15 @@ const UpdatePanel = () => {
                     border: 'none',
                     borderRadius: '14px',
                     fontSize: '12px',
-                    cursor: 'pointer',
+                    cursor: uploadingNew ? 'default' : 'pointer',
                     transition: 'background 0.2s',
                     fontWeight: 600,
+                    opacity: uploadingNew ? 0.6 : 1,
                   }}
                   onMouseEnter={(e) => e.currentTarget.style.background = 'var(--btn-primary-hover)'}
                   onMouseLeave={(e) => e.currentTarget.style.background = 'var(--btn-primary-bg)'}
                 >
-                  {t('updatePanel.send')}
+                  {uploadingNew ? t('fileAttachment.uploading') : t('updatePanel.send')}
                 </button>
               </div>
             </div>
