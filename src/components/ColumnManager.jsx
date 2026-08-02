@@ -1,8 +1,13 @@
 // src/components/ColumnManager.jsx
 
 import { useState } from "react";
-import { DEFAULT_COLUMNS } from "../data/treeData";
 import { useLanguage } from "../context/LanguageContext";
+
+// Matches ColumnContext.jsx's getDefaultColumns() ids exactly — kept as a
+// plain id list here (rather than importing the full default-column
+// factory) since this component only needs to know which ids are
+// protected/non-deletable, not their labels or full config.
+const DEFAULT_COLUMN_IDS = ["item", "document", "people", "status", "dueDate", "rev"];
 
 export default function ColumnManager({
   columns,
@@ -49,8 +54,7 @@ export default function ColumnManager({
   };
 
   // Cek apakah ada kolom default yang hilang
-  const defaultColumnIds = DEFAULT_COLUMNS.map(c => c.id);
-  const missingDefaultColumns = defaultColumnIds.filter(
+  const missingDefaultColumns = DEFAULT_COLUMN_IDS.filter(
     id => !columns.some(c => c.id === id)
   );
 
@@ -120,7 +124,7 @@ export default function ColumnManager({
         <div style={{ marginBottom: 16 }}>
           {columns.map((col) => {
             const isItem = col.id === "item";
-            const isDefault = DEFAULT_COLUMNS.some(c => c.id === col.id);
+            const isDefault = DEFAULT_COLUMN_IDS.includes(col.id);
             const isVisible = col.visible !== false;
 
             return (
