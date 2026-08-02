@@ -135,6 +135,7 @@ export const translations = {
       legendPlan: "Plan",
       legendActual: "Actual",
       legendForecast: "Forecast",
+      dragHint: "Tip: grab and drag the dashed baseline to reshape it directly.",
     },
     boardTable: {
       addGroupPrompt: "Enter new group name:",
@@ -582,6 +583,7 @@ export const translations = {
       legendPlan: "Rencana",
       legendActual: "Aktual",
       legendForecast: "Prediksi",
+      dragHint: "Tips: pegang dan geser garis putus-putus baseline untuk mengubah bentuknya langsung.",
     },
     boardTable: {
       addGroupPrompt: "Masukkan nama grup baru:",

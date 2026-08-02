@@ -30,6 +30,29 @@ export function millerBaseline(xPercent, shift = 0) {
   return Math.max(0, Math.min(100, millerRaw(xSkewed)));
 }
 
+// For a fixed x, millerBaseline(x, shift) is monotonic in shift (higher
+// shift skews x smaller before the lookup, and Miller's formula is
+// monotonically increasing over 0-100, so a smaller skewed-x means a
+// smaller y) — binary search finds the shift whose curve passes through
+// a dragged (x, y) point. Powers direct "click and drag the curve to
+// reshape it" interaction instead of only a slider.
+export function shiftForPoint(xPercent, yTarget, { min = -1, max = 1, iterations = 40 } = {}) {
+  let lo = min;
+  let hi = max;
+  // millerBaseline decreases as shift increases (for x in (0,100)) — bail
+  // out to the nearest bound if the target is outside what's reachable at
+  // all, rather than iterating toward a false answer.
+  if (yTarget >= millerBaseline(xPercent, min)) return min;
+  if (yTarget <= millerBaseline(xPercent, max)) return max;
+  for (let i = 0; i < iterations; i++) {
+    const mid = (lo + hi) / 2;
+    const y = millerBaseline(xPercent, mid);
+    if (y > yTarget) lo = mid;
+    else hi = mid;
+  }
+  return (lo + hi) / 2;
+}
+
 // ------------------------------------------------------------
 // Gompertz forecast — fit b,c (a held fixed) to actual data points via
 // plain gradient descent. Not a production-grade solver, but "good

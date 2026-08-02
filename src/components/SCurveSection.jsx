@@ -1,10 +1,10 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { useLanguage } from "../context/LanguageContext";
 import { useAuth } from "../context/AuthContext";
 import { computeBoardProgress } from "../utils/progressWeights";
 import { parseDateValue } from "../utils/formulaEngine";
-import { millerBaseline, fitGompertz, gompertz, forecastCompletionX } from "../utils/sCurve";
+import { millerBaseline, fitGompertz, gompertz, forecastCompletionX, shiftForPoint } from "../utils/sCurve";
 
 const cardStyle = {
   background: "var(--bg-modal)",
@@ -182,6 +182,17 @@ export default function SCurveSection({ boardId, items, groups, progressColumns,
     setShowSettings(false);
   };
 
+  // Dragging the baseline directly in the chart updates `shift` live (for
+  // instant visual feedback as the curve reshapes) and persists only once
+  // the drag ends — same field the settings-modal slider controls, just a
+  // second, more direct way to set it ("grab the shape and pull it").
+  const handleShiftDrag = (newShift) => setShift(newShift);
+  const handleShiftDragEnd = async (newShift) => {
+    setFormShift(newShift);
+    const { error } = await supabase.from("boards").update({ s_curve_shift: newShift }).eq("id", boardId);
+    if (error) console.error("Error saving baseline shift:", error);
+  };
+
   const handleRecordSnapshot = async () => {
     const input = prompt(t("sCurve.recordPrompt"), String(Math.round(currentProgress)));
     if (input === null) return;
@@ -301,7 +312,8 @@ export default function SCurveSection({ boardId, items, groups, progressColumns,
         </div>
       </div>
 
-      <SCurveChart chart={chart} startDate={startDate} endDate={endDate} />
+      <SCurveChart chart={chart} startDate={startDate} endDate={endDate} onShiftDrag={handleShiftDrag} onShiftDragEnd={handleShiftDragEnd} />
+      <div style={{ fontSize: 10.5, color: "var(--text-muted)", marginTop: 4, textAlign: "center" }}>{t("sCurve.dragHint")}</div>
 
       <div style={{ display: "flex", gap: 16, marginTop: 10, fontSize: 11.5, color: "var(--text-secondary)", flexWrap: "wrap" }}>
         <LegendDot color="#9ca3af" dashed label={t("sCurve.legendPlan")} />
@@ -366,7 +378,7 @@ function shortDateLabel(d) {
   return `${String(d.getDate()).padStart(2, "0")} ${MONTHS_SHORT[d.getMonth()]}`;
 }
 
-function SCurveChart({ chart, startDate, endDate }) {
+function SCurveChart({ chart, startDate, endDate, onShiftDrag, onShiftDragEnd }) {
   const width = 720;
   const height = 260;
   const padL = 36;
@@ -375,9 +387,47 @@ function SCurveChart({ chart, startDate, endDate }) {
   const padR = 10;
   const plotW = width - padL - padR;
   const plotH = height - padT - padB;
+  const svgRef = useRef(null);
+  const [dragging, setDragging] = useState(false);
 
   const xScale = (x) => padL + (x / chart.maxX) * plotW;
   const yScale = (y) => padT + plotH - (Math.max(0, Math.min(105, y)) / 100) * plotH;
+
+  // Converts a pointer event's screen position into this chart's own SVG
+  // user-space coordinates (720x260, per the viewBox) regardless of how
+  // large the SVG is actually rendered — then inverts xScale/yScale to
+  // get back (x%, y%), and solves for the shift whose baseline passes
+  // through that point.
+  const handlePointer = (e) => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const pt = svg.createSVGPoint();
+    pt.x = e.clientX;
+    pt.y = e.clientY;
+    const svgPoint = pt.matrixTransform(svg.getScreenCTM().inverse());
+    const xPercent = Math.max(1, Math.min(99, ((svgPoint.x - padL) / plotW) * chart.maxX));
+    const yPercent = ((padT + plotH - svgPoint.y) / plotH) * 100;
+    const newShift = shiftForPoint(Math.min(100, xPercent), yPercent);
+    onShiftDrag(newShift);
+    return newShift;
+  };
+
+  const handlePointerDown = (e) => {
+    e.preventDefault();
+    e.target.setPointerCapture(e.pointerId);
+    setDragging(true);
+    handlePointer(e);
+  };
+  const handlePointerMove = (e) => {
+    if (!dragging) return;
+    handlePointer(e);
+  };
+  const handlePointerUp = (e) => {
+    if (!dragging) return;
+    setDragging(false);
+    const finalShift = handlePointer(e);
+    onShiftDragEnd(finalShift);
+  };
 
   // X-axis ticks are real calendar dates (spread across the full plotted
   // range, including the >100% overshoot zone when a forecast/actual
@@ -405,7 +455,12 @@ function SCurveChart({ chart, startDate, endDate }) {
   const isAhead = lastActual && baselineAtLastActual != null && lastActual.y >= baselineAtLastActual;
 
   return (
-    <svg width="100%" viewBox={`0 0 ${width} ${height}`} style={{ display: "block" }}>
+    <svg
+      ref={svgRef}
+      width="100%"
+      viewBox={`0 0 ${width} ${height}`}
+      style={{ display: "block", touchAction: "none" }}
+    >
       {[0, 25, 50, 75, 100].map((pct) => (
         <g key={pct}>
           <line x1={padL} x2={width - padR} y1={yScale(pct)} y2={yScale(pct)} stroke="var(--border-color)" strokeWidth={1} />
@@ -436,6 +491,21 @@ function SCurveChart({ chart, startDate, endDate }) {
       {chart.actual.map((p, i) => (
         <circle key={i} cx={xScale(p.x)} cy={yScale(p.y)} r={3} fill="#3b82f6" />
       ))}
+
+      {/* Wide, invisible hit area over the baseline — "grab the shape"
+          drag target, wider than the visible 2px stroke so it's easy to
+          catch with a mouse/finger. */}
+      <path
+        d={toPath(chart.baseline)}
+        fill="none"
+        stroke="transparent"
+        strokeWidth={20}
+        style={{ cursor: dragging ? "grabbing" : "grab" }}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+      />
     </svg>
   );
 }
