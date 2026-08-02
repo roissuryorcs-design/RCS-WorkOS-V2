@@ -7,7 +7,6 @@ import {
   getDefaultGroupName,
   getDefaultStatusKey,
   getTaskName,
-  getTaskNameInGroup,
   getDocNumber,
   getRevDefault,
   getSubItemLabel,
@@ -215,9 +214,12 @@ export function ItemsProvider({ children, boardId }) {
   };
 
   // Seeds `count` starter items into a group — used both when a brand-new
-  // group is created (naming via getTaskNameInGroup) and by the reactive
-  // auto-add-if-empty effect below (naming via plain getTaskName).
-  const seedItems = (groupId, groupName, count, useGroupNaming) => {
+  // group is created and by the reactive auto-add-if-empty effect below.
+  // Plain "Task N" naming, not "Task N in <group>": baking the group's
+  // name into the item title made renaming a group look broken (already-
+  // seeded items kept the old name in their title forever, since it was
+  // copied once at creation, not a live reference).
+  const seedItems = (groupId, count) => {
     const startIndex = itemRows.filter((r) => !r.parent_id && r.group_id === groupId).length;
     const rows = Array.from({ length: count }, (_, i) => ({
       board_id: boardId,
@@ -225,7 +227,7 @@ export function ItemsProvider({ children, boardId }) {
       parent_id: null,
       position: startIndex + i,
       depth: 0,
-      name: useGroupNaming ? getTaskNameInGroup(t, startIndex + i + 1, groupName) : getTaskName(t, startIndex + i + 1),
+      name: getTaskName(t, startIndex + i + 1),
       is_expanded: false,
       fields: {
         document: getDocNumber(t, startIndex + i + 1),
@@ -334,7 +336,7 @@ export function ItemsProvider({ children, boardId }) {
       if (!groupId) return;
       const claimed = await claimGroupForSeeding(groupId);
       if (!claimed) return;
-      seedItems(groupId, g, 3, true);
+      seedItems(groupId, 3);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groups, itemRows, groupsLoading, loading, groupIdByName]);

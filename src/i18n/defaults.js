@@ -22,10 +22,6 @@ export function getTaskName(t, n) {
   return t("defaults.taskName", { n });
 }
 
-export function getTaskNameInGroup(t, n, group) {
-  return t("defaults.taskNameInGroup", { n, group });
-}
-
 export function getDocNumber(t, n) {
   return t("defaults.docNumber", { n: String(n).padStart(3, "0") });
 }
