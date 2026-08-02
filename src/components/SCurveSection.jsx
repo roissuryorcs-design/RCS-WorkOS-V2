@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { useLanguage } from "../context/LanguageContext";
 import { useAuth } from "../context/AuthContext";
+import { computeBoardProgress } from "../utils/progressWeights";
+import { parseDateValue } from "../utils/formulaEngine";
 import { millerBaseline, fitGompertz, gompertz, forecastCompletionX } from "../utils/sCurve";
 
 const cardStyle = {
@@ -20,9 +22,6 @@ function daysBetween(a, b) {
   return (new Date(b) - new Date(a)) / (1000 * 60 * 60 * 24);
 }
 
-// % of project duration elapsed for a given calendar date (can exceed 100
-// if the date is past the planned end date — plotted, not clamped, so a
-// late-running actual/forecast line visibly overshoots the baseline).
 function percentElapsed(date, startDate, endDate) {
   const total = daysBetween(startDate, endDate);
   if (total <= 0) return 0;
@@ -36,17 +35,44 @@ function dateAtPercent(pct, startDate, endDate) {
   return d;
 }
 
-export default function SCurveSection({ boardId, currentProgress }) {
+function flattenItems(items) {
+  let result = [];
+  for (const item of items || []) {
+    result.push(item);
+    if (item.children && item.children.length > 0) result = result.concat(flattenItems(item.children));
+  }
+  return result;
+}
+
+// Project date range comes from the chosen Timeline column's data, not a
+// separately-typed date: earliest start across every item that has one,
+// latest end across every item that has one.
+function deriveDateRange(items, timelineColumnId) {
+  const flat = flattenItems(items);
+  let start = null;
+  let end = null;
+  for (const item of flat) {
+    const tl = item[timelineColumnId];
+    if (!tl || typeof tl !== "object") continue;
+    const s = parseDateValue(tl.start);
+    const e = parseDateValue(tl.end);
+    if (s && (!start || s < start)) start = s;
+    if (e && (!end || e > end)) end = e;
+  }
+  return { start, end };
+}
+
+export default function SCurveSection({ boardId, items, progressColumns, timelineColumns }) {
   const { t } = useLanguage();
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [startDate, setStartDate] = useState(null);
-  const [endDate, setEndDate] = useState(null);
+  const [progressColumnId, setProgressColumnId] = useState(null);
+  const [timelineColumnId, setTimelineColumnId] = useState(null);
   const [shift, setShift] = useState(0);
   const [snapshots, setSnapshots] = useState([]);
   const [showSettings, setShowSettings] = useState(false);
-  const [formStart, setFormStart] = useState("");
-  const [formEnd, setFormEnd] = useState("");
+  const [formProgressCol, setFormProgressCol] = useState("");
+  const [formTimelineCol, setFormTimelineCol] = useState("");
   const [formShift, setFormShift] = useState(0);
   const [saving, setSaving] = useState(false);
 
@@ -55,18 +81,18 @@ export default function SCurveSection({ boardId, currentProgress }) {
     async function load() {
       setLoading(true);
       const [{ data: board, error: boardError }, { data: snaps, error: snapError }] = await Promise.all([
-        supabase.from("boards").select("project_start_date, project_end_date, s_curve_shift").eq("id", boardId).single(),
+        supabase.from("boards").select("s_curve_progress_column_id, s_curve_timeline_column_id, s_curve_shift").eq("id", boardId).single(),
         supabase.from("board_progress_snapshots").select("snapshot_date, actual_progress").eq("board_id", boardId).order("snapshot_date"),
       ]);
       if (cancelled) return;
-      if (boardError) console.error("Error loading project settings:", boardError);
+      if (boardError) console.error("Error loading S-curve settings:", boardError);
       if (snapError) console.error("Error loading progress snapshots:", snapError);
       if (board) {
-        setStartDate(board.project_start_date);
-        setEndDate(board.project_end_date);
+        setProgressColumnId(board.s_curve_progress_column_id);
+        setTimelineColumnId(board.s_curve_timeline_column_id);
         setShift(board.s_curve_shift ?? 0);
-        setFormStart(board.project_start_date || "");
-        setFormEnd(board.project_end_date || "");
+        setFormProgressCol(board.s_curve_progress_column_id || progressColumns[0]?.id || "");
+        setFormTimelineCol(board.s_curve_timeline_column_id || timelineColumns[0]?.id || "");
         setFormShift(board.s_curve_shift ?? 0);
       }
       setSnapshots(snaps || []);
@@ -76,19 +102,26 @@ export default function SCurveSection({ boardId, currentProgress }) {
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [boardId]);
 
-  const isConfigured = !!(startDate && endDate);
+  const isConfigured = !!(progressColumnId && timelineColumnId);
+  const { start: startDate, end: endDate } = useMemo(
+    () => (isConfigured ? deriveDateRange(items, timelineColumnId) : { start: null, end: null }),
+    [isConfigured, items, timelineColumnId]
+  );
+  const hasDateRange = !!(startDate && endDate && endDate > startDate);
+  const currentProgress = isConfigured ? computeBoardProgress(items, progressColumnId) : 0;
 
   const chart = useMemo(() => {
-    if (!isConfigured) return null;
-    const maxX = 130; // extend past 100% so a late forecast/actual can overshoot visibly
+    if (!hasDateRange) return null;
+    const maxX = 130;
 
     const baseline = [];
     for (let x = 0; x <= 100; x += 2) baseline.push({ x, y: millerBaseline(x, shift) });
 
     const actual = snapshots
-      .map((s) => ({ x: percentElapsed(s.snapshot_date, startDate, endDate), y: s.actual_progress }))
+      .map((s) => ({ x: percentElapsed(new Date(s.snapshot_date), startDate, endDate), y: s.actual_progress }))
       .filter((p) => Number.isFinite(p.x))
       .sort((a, b) => a.x - b.x);
 
@@ -108,25 +141,29 @@ export default function SCurveSection({ boardId, currentProgress }) {
     }
 
     return { baseline, actual, forecast, forecastCompletionDate, maxX };
-  }, [isConfigured, shift, snapshots, startDate, endDate]);
+  }, [hasDateRange, shift, snapshots, startDate, endDate]);
 
   const todaySnapshot = snapshots.find((s) => s.snapshot_date === toDateStr(new Date()));
 
   const handleSaveSettings = async () => {
-    if (!formStart || !formEnd) return;
+    if (!formProgressCol || !formTimelineCol) return;
     setSaving(true);
     const { error } = await supabase
       .from("boards")
-      .update({ project_start_date: formStart, project_end_date: formEnd, s_curve_shift: formShift })
+      .update({
+        s_curve_progress_column_id: formProgressCol,
+        s_curve_timeline_column_id: formTimelineCol,
+        s_curve_shift: formShift,
+      })
       .eq("id", boardId);
     setSaving(false);
     if (error) {
-      console.error("Error saving project settings:", error);
+      console.error("Error saving S-curve settings:", error);
       alert(t("sCurve.saveFailed"));
       return;
     }
-    setStartDate(formStart);
-    setEndDate(formEnd);
+    setProgressColumnId(formProgressCol);
+    setTimelineColumnId(formTimelineCol);
     setShift(formShift);
     setShowSettings(false);
   };
@@ -154,24 +191,60 @@ export default function SCurveSection({ boardId, currentProgress }) {
 
   if (loading) return null;
 
+  if (progressColumns.length === 0 || timelineColumns.length === 0) {
+    return (
+      <div style={{ ...cardStyle, textAlign: "center", color: "var(--text-secondary)", fontSize: 13 }}>
+        {t("sCurve.needColumnsHint")}
+      </div>
+    );
+  }
+
   if (!isConfigured) {
     return (
-      <div style={{ ...cardStyle, marginBottom: 16, textAlign: "center" }}>
+      <div style={{ ...cardStyle, textAlign: "center" }}>
         <div style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 10 }}>{t("sCurve.notSetHint")}</div>
-        <button
-          onClick={() => setShowSettings(true)}
-          style={{ padding: "8px 16px", background: "var(--btn-primary-bg)", color: "var(--btn-primary-text)", border: "none", borderRadius: 6, cursor: "pointer", fontWeight: 500 }}
-        >
+        <button onClick={() => setShowSettings(true)} style={primaryBtnStyle}>
           {t("sCurve.setupBtn")}
         </button>
         {showSettings && (
           <SettingsModal
             t={t}
-            formStart={formStart}
-            formEnd={formEnd}
+            progressColumns={progressColumns}
+            timelineColumns={timelineColumns}
+            formProgressCol={formProgressCol}
+            formTimelineCol={formTimelineCol}
             formShift={formShift}
-            setFormStart={setFormStart}
-            setFormEnd={setFormEnd}
+            setFormProgressCol={setFormProgressCol}
+            setFormTimelineCol={setFormTimelineCol}
+            setFormShift={setFormShift}
+            onSave={handleSaveSettings}
+            onClose={() => setShowSettings(false)}
+            saving={saving}
+          />
+        )}
+      </div>
+    );
+  }
+
+  if (!hasDateRange) {
+    return (
+      <div style={{ ...cardStyle, textAlign: "center", color: "var(--text-secondary)", fontSize: 13 }}>
+        {t("sCurve.noTimelineDataHint")}
+        <div style={{ marginTop: 10 }}>
+          <button onClick={() => setShowSettings(true)} style={smallBtnStyle}>
+            {t("sCurve.settingsBtn")}
+          </button>
+        </div>
+        {showSettings && (
+          <SettingsModal
+            t={t}
+            progressColumns={progressColumns}
+            timelineColumns={timelineColumns}
+            formProgressCol={formProgressCol}
+            formTimelineCol={formTimelineCol}
+            formShift={formShift}
+            setFormProgressCol={setFormProgressCol}
+            setFormTimelineCol={setFormTimelineCol}
             setFormShift={setFormShift}
             onSave={handleSaveSettings}
             onClose={() => setShowSettings(false)}
@@ -188,7 +261,7 @@ export default function SCurveSection({ boardId, currentProgress }) {
         <div>
           <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>{t("sCurve.title")}</div>
           <div style={{ fontSize: 11.5, color: "var(--text-muted)" }}>
-            {startDate} → {endDate}
+            {toDateStr(startDate)} → {toDateStr(endDate)}
             {chart?.forecastCompletionDate && (
               <span style={{ marginLeft: 8, color: "#f59e0b", fontWeight: 600 }}>
                 {t("sCurve.forecastCompletion")} {toDateStr(chart.forecastCompletionDate)}
@@ -206,7 +279,7 @@ export default function SCurveSection({ boardId, currentProgress }) {
         </div>
       </div>
 
-      <SCurveChart chart={chart} t={t} />
+      <SCurveChart chart={chart} />
 
       <div style={{ display: "flex", gap: 16, marginTop: 10, fontSize: 11.5, color: "var(--text-secondary)", flexWrap: "wrap" }}>
         <LegendDot color="#9ca3af" dashed label={t("sCurve.legendPlan")} />
@@ -217,11 +290,13 @@ export default function SCurveSection({ boardId, currentProgress }) {
       {showSettings && (
         <SettingsModal
           t={t}
-          formStart={formStart}
-          formEnd={formEnd}
+          progressColumns={progressColumns}
+          timelineColumns={timelineColumns}
+          formProgressCol={formProgressCol}
+          formTimelineCol={formTimelineCol}
           formShift={formShift}
-          setFormStart={setFormStart}
-          setFormEnd={setFormEnd}
+          setFormProgressCol={setFormProgressCol}
+          setFormTimelineCol={setFormTimelineCol}
           setFormShift={setFormShift}
           onSave={handleSaveSettings}
           onClose={() => setShowSettings(false)}
@@ -242,6 +317,16 @@ const smallBtnStyle = {
   color: "var(--text-primary)",
 };
 
+const primaryBtnStyle = {
+  padding: "8px 16px",
+  background: "var(--btn-primary-bg)",
+  color: "var(--btn-primary-text)",
+  border: "none",
+  borderRadius: 6,
+  cursor: "pointer",
+  fontWeight: 500,
+};
+
 function LegendDot({ color, dashed, label }) {
   return (
     <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -251,7 +336,7 @@ function LegendDot({ color, dashed, label }) {
   );
 }
 
-function SCurveChart({ chart, t }) {
+function SCurveChart({ chart }) {
   const width = 720;
   const height = 260;
   const padL = 36;
@@ -265,10 +350,6 @@ function SCurveChart({ chart, t }) {
   const yScale = (y) => padT + plotH - (Math.max(0, Math.min(105, y)) / 100) * plotH;
 
   const toPath = (points) => points.map((p, i) => `${i === 0 ? "M" : "L"} ${xScale(p.x)} ${yScale(p.y)}`).join(" ");
-  // Closed polygon tracing the baseline forward then the actual points
-  // backward, so the fill between them renders as one continuous shape —
-  // reusing toPath() for the "backward" leg would re-emit a mid-path `M`,
-  // which starts a disconnected subpath instead of continuing the polygon.
   const toAreaPath = (topPoints, bottomPoints) => {
     if (topPoints.length === 0 || bottomPoints.length === 0) return "";
     const top = topPoints.map((p, i) => `${i === 0 ? "M" : "L"} ${xScale(p.x)} ${yScale(p.y)}`).join(" ");
@@ -324,36 +405,49 @@ function millerAtX(baseline, x) {
   return closest?.y;
 }
 
-function SettingsModal({ t, formStart, formEnd, formShift, setFormStart, setFormEnd, setFormShift, onSave, onClose, saving }) {
+function SettingsModal({
+  t,
+  progressColumns,
+  timelineColumns,
+  formProgressCol,
+  formTimelineCol,
+  formShift,
+  setFormProgressCol,
+  setFormTimelineCol,
+  setFormShift,
+  onSave,
+  onClose,
+  saving,
+}) {
   return (
     <div
       style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(4px)" }}
       onClick={onClose}
     >
       <div
-        style={{ background: "var(--bg-modal)", borderRadius: 12, padding: 24, maxWidth: 380, width: "90%", color: "var(--text-primary)", boxShadow: "0 20px 60px rgba(0,0,0,0.3)", border: "1px solid var(--border-color)" }}
+        style={{ background: "var(--bg-modal)", borderRadius: 12, padding: 24, maxWidth: 380, width: "90%", color: "var(--text-primary)", boxShadow: "0 20px 60px rgba(0,0,0,0.3)", border: "1px solid var(--border-color)", textAlign: "left" }}
         onClick={(e) => e.stopPropagation()}
       >
         <h3 style={{ marginBottom: 12, fontSize: 16, fontWeight: 600 }}>{t("sCurve.settingsTitle")}</h3>
 
-        <label style={{ display: "block", fontSize: 12, color: "var(--text-secondary)", marginBottom: 4 }}>{t("sCurve.startDateLabel")}</label>
-        <input type="date" value={formStart} onChange={(e) => setFormStart(e.target.value)} style={inputStyle} />
+        <label style={{ display: "block", fontSize: 12, color: "var(--text-secondary)", marginBottom: 4 }}>{t("sCurve.progressColumnLabel")}</label>
+        <select value={formProgressCol} onChange={(e) => setFormProgressCol(e.target.value)} style={inputStyle}>
+          {progressColumns.map((c) => (
+            <option key={c.id} value={c.id}>{c.label}</option>
+          ))}
+        </select>
 
-        <label style={{ display: "block", fontSize: 12, color: "var(--text-secondary)", margin: "10px 0 4px" }}>{t("sCurve.endDateLabel")}</label>
-        <input type="date" value={formEnd} onChange={(e) => setFormEnd(e.target.value)} style={inputStyle} />
+        <label style={{ display: "block", fontSize: 12, color: "var(--text-secondary)", margin: "10px 0 4px" }}>{t("sCurve.timelineColumnLabel")}</label>
+        <select value={formTimelineCol} onChange={(e) => setFormTimelineCol(e.target.value)} style={inputStyle}>
+          {timelineColumns.map((c) => (
+            <option key={c.id} value={c.id}>{c.label}</option>
+          ))}
+        </select>
 
         <label style={{ display: "block", fontSize: 12, color: "var(--text-secondary)", margin: "14px 0 4px" }}>
           {t("sCurve.shiftLabel")}: {formShift > 0 ? t("sCurve.shiftBackLoaded") : formShift < 0 ? t("sCurve.shiftFrontLoaded") : t("sCurve.shiftSymmetric")}
         </label>
-        <input
-          type="range"
-          min={-1}
-          max={1}
-          step={0.1}
-          value={formShift}
-          onChange={(e) => setFormShift(parseFloat(e.target.value))}
-          style={{ width: "100%" }}
-        />
+        <input type="range" min={-1} max={1} step={0.1} value={formShift} onChange={(e) => setFormShift(parseFloat(e.target.value))} style={{ width: "100%" }} />
 
         <div style={{ display: "flex", gap: 8, marginTop: 20 }}>
           <button onClick={onClose} disabled={saving} style={{ flex: 1, padding: 8, background: "var(--bg-hover)", border: "none", borderRadius: 6, cursor: "pointer", color: "var(--text-secondary)" }}>
@@ -361,7 +455,7 @@ function SettingsModal({ t, formStart, formEnd, formShift, setFormStart, setForm
           </button>
           <button
             onClick={onSave}
-            disabled={saving || !formStart || !formEnd}
+            disabled={saving || !formProgressCol || !formTimelineCol}
             style={{ flex: 1, padding: 8, background: "var(--btn-primary-bg)", color: "var(--btn-primary-text)", border: "none", borderRadius: 6, cursor: "pointer", fontWeight: 500, opacity: saving ? 0.7 : 1 }}
           >
             {t("common.save")}

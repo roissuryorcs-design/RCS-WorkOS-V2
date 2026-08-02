@@ -1,9 +1,6 @@
+import { useState } from "react";
 import { useLanguage } from "../context/LanguageContext";
-import {
-  resolveIndependentWeight,
-  computeOwnProgress,
-  computeCascadedDisplayPercent,
-} from "../utils/progressWeights";
+import { computeBoardProgress } from "../utils/progressWeights";
 import SCurveSection from "./SCurveSection";
 
 function flattenItems(items) {
@@ -15,20 +12,6 @@ function flattenItems(items) {
     }
   }
   return result;
-}
-
-// Same formula each row already uses to show "progress terhadap total" —
-// summed across every top-level item gives the whole board's completion,
-// since a depth-0 item's absolute weight is its own share of the implicit
-// 100%-wide root (see progressWeights.js).
-function computeBoardProgress(items, columnId) {
-  let total = 0;
-  for (const item of items || []) {
-    const ownProgress = computeOwnProgress(item, columnId);
-    const weightInfo = resolveIndependentWeight(item, columnId);
-    total += computeCascadedDisplayPercent(ownProgress, weightInfo.resolvedWeight, 100);
-  }
-  return Math.max(0, Math.min(100, Math.round(total)));
 }
 
 const cardStyle = {
@@ -242,12 +225,47 @@ function GroupBreakdownCard({ items, groups, groupColors, t }) {
   );
 }
 
+function SubTabs({ active, onChange, t, sCurveAvailable }) {
+  const tabs = [
+    { id: "overview", label: t("dashboard.subTabOverview") },
+    ...(sCurveAvailable ? [{ id: "scurve", label: t("dashboard.subTabSCurve") }] : []),
+  ];
+  return (
+    <div style={{ display: "flex", gap: 6, marginBottom: 16 }}>
+      {tabs.map((tab) => (
+        <button
+          key={tab.id}
+          onClick={() => onChange(tab.id)}
+          style={{
+            padding: "6px 14px",
+            borderRadius: 999,
+            border: `1px solid ${active === tab.id ? "var(--btn-primary-bg)" : "var(--border-color)"}`,
+            background: active === tab.id ? "var(--btn-primary-bg)" : "transparent",
+            color: active === tab.id ? "var(--btn-primary-text)" : "var(--text-secondary)",
+            fontSize: 12.5,
+            fontWeight: 600,
+            cursor: "pointer",
+          }}
+        >
+          {tab.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export default function Dashboard({ boardId, items, columns, groups, groupColors }) {
   const { t } = useLanguage();
+  const [subTab, setSubTab] = useState("overview");
   const flatItems = flattenItems(items);
   const statusColumns = (columns || []).filter((c) => c && c.type === "status");
   const progressColumns = (columns || []).filter((c) => c && c.type === "progress");
-  const primaryProgress = progressColumns.length > 0 ? computeBoardProgress(items, progressColumns[0].id) : 0;
+  const timelineColumns = (columns || []).filter((c) => c && c.type === "timeline");
+  // S-curve setup requires at least one Progress column and one Timeline
+  // column to exist on this board — the project date range and "Aktual"
+  // line are both derived from real column data the user picks, not a
+  // separate manually-typed date.
+  const sCurveAvailable = progressColumns.length > 0 && timelineColumns.length > 0;
 
   return (
     <div style={{ padding: "8px 0 40px" }}>
@@ -264,9 +282,11 @@ export default function Dashboard({ boardId, items, columns, groups, groupColors
         ))}
       </div>
 
-      {progressColumns.length > 0 && <SCurveSection boardId={boardId} currentProgress={primaryProgress} />}
+      <SubTabs active={subTab} onChange={setSubTab} t={t} sCurveAvailable={sCurveAvailable} />
 
-      {flatItems.length === 0 ? (
+      {subTab === "scurve" ? (
+        <SCurveSection boardId={boardId} items={items} progressColumns={progressColumns} timelineColumns={timelineColumns} />
+      ) : flatItems.length === 0 ? (
         <div style={{ ...cardStyle, textAlign: "center", color: "var(--text-secondary)" }}>
           {t("dashboard.noData")}
         </div>

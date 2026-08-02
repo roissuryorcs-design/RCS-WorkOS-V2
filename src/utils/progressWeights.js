@@ -114,3 +114,18 @@ export function computeCascadedDisplayPercent(ownProgress, resolvedWeight, paren
   const absoluteWeight = computeAbsoluteWeight(resolvedWeight, parentAbsoluteWeight);
   return Math.round((ownProgress * absoluteWeight) / 100);
 }
+
+// Whole-board completion %: summing every top-level item's cascaded
+// display percent gives the board's overall completion, since a depth-0
+// item's absolute weight is already its own share of the implicit
+// 100%-wide root. Shared by Dashboard.jsx and SCurveSection.jsx so both
+// read the exact same number for a given progress column.
+export function computeBoardProgress(items, columnId) {
+  let total = 0;
+  for (const item of items || []) {
+    const ownProgress = computeOwnProgress(item, columnId);
+    const weightInfo = resolveIndependentWeight(item, columnId);
+    total += computeCascadedDisplayPercent(ownProgress, weightInfo.resolvedWeight, 100);
+  }
+  return Math.max(0, Math.min(100, Math.round(total)));
+}
