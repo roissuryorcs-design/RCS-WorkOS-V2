@@ -110,25 +110,16 @@ export default function BoardTable({
   // ============================================================
   const boardRef = useRef(null);
 
-  // TEMPORARY on-screen debug readout for diagnosing the mobile
-  // group-header scroll issue without needing DevTools — remove once
-  // it's actually solved.
-  const [scrollDebug, setScrollDebug] = useState(null);
-
   // Horizontal group-header pinning via JS — confirmed CSS position:sticky
-  // genuinely does not stick on this axis on the reported mobile browser.
-  // Earlier versions listened to "scroll" and/or "touchmove" events, but
-  // running two separate event-driven update paths caused visible
-  // back-and-forth flicker (each firing with a slightly different,
-  // independently-timed scrollLeft reading, so one would occasionally
-  // overwrite the other with a stale value). A single continuous rAF
-  // loop — one authoritative update path, always reading the live
-  // current value, synced to the display's own refresh — has no such
-  // conflict and is what native sticky/scroll-driven effects use anyway.
+  // genuinely does not stick on this axis on the reported device. A
+  // single continuous rAF loop is the sole update path (earlier versions
+  // also called setState here for an on-screen debug readout — removed,
+  // since triggering a React re-render of this whole component on a
+  // timer turned out to itself cause visible stutter/bounce, competing
+  // with the very smoothness this is trying to achieve).
   useEffect(() => {
     let rafId;
     let lastX = null;
-    let lastDebugAt = 0;
     const tick = () => {
       const container = document.querySelector('.board-scroll-container');
       if (container) {
@@ -138,21 +129,6 @@ export default function BoardTable({
           lastX = x;
           container.querySelectorAll('.group-header-inner').forEach((el) => {
             el.style.transform = `translateX(${x}px)`;
-          });
-        }
-        // Debug readout updates on its own slower cadence — a React
-        // state update on every single frame would add jank on top of
-        // exactly what this is trying to fix.
-        const now = performance.now();
-        if (now - lastDebugAt > 150) {
-          lastDebugAt = now;
-          setScrollDebug({
-            scrollLeft: Math.round(container.scrollLeft),
-            scrollWidth: container.scrollWidth,
-            clientWidth: container.clientWidth,
-            max,
-            appliedX: Math.round(x),
-            headerCount: container.querySelectorAll('.group-header-inner').length,
           });
         }
       }
@@ -451,35 +427,6 @@ export default function BoardTable({
   // ============================================================
   return (
     <div className="board-table-wrapper">
-      {/* TEMPORARY debug readout for diagnosing the mobile scroll issue —
-          remove once it's actually solved. */}
-      {scrollDebug && (
-        <div
-          style={{
-            position: "fixed",
-            top: 6,
-            right: 6,
-            zIndex: 99999,
-            background: "rgba(0,0,0,0.85)",
-            color: "#0f0",
-            fontFamily: "monospace",
-            fontSize: 10,
-            padding: "6px 8px",
-            borderRadius: 6,
-            lineHeight: 1.5,
-            pointerEvents: "none",
-            whiteSpace: "pre",
-          }}
-        >
-          {`scrollLeft: ${scrollDebug.scrollLeft}
-scrollWidth: ${scrollDebug.scrollWidth}
-clientWidth: ${scrollDebug.clientWidth}
-max: ${scrollDebug.max}
-appliedX: ${scrollDebug.appliedX}
-headers: ${scrollDebug.headerCount}`}
-        </div>
-      )}
-
       {selectedItems.length > 0 && (
         <div className="selected-items-bar">
           <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>
