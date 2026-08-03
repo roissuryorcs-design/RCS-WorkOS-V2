@@ -315,6 +315,10 @@ body.dark {
   margin-bottom: 0 !important;
   min-height: 48px;
   border-bottom: 2px solid var(--group-color, #3b82f6) !important;
+  /* Defensive: explicitly kill any transition that might otherwise ease
+     position/transform changes on this element (none found in this
+     codebase's own CSS, but ruling it out entirely costs nothing). */
+  transition: none !important;
 }
 
 .group-header-inner {
@@ -343,6 +347,11 @@ body.dark {
   background-color: var(--bg-secondary) !important;
   border-left: 4px solid var(--group-color, #3b82f6) !important;
   min-height: 48px;
+  /* Same as .group-header — rule out any eased transition on this
+     element's position/transform, and hint the compositor to keep this
+     layer ready so the per-frame transform write has minimal cost. */
+  transition: none !important;
+  will-change: transform;
 }
 
 .group-header-inner > .group-toggle-btn {
