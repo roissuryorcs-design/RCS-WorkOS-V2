@@ -8,6 +8,7 @@ import { GroupProvider, useGroups } from "./context/GroupContext";
 import { ItemsProvider, useItems } from "./context/ItemsContext";
 import { BoardsProvider, useBoards } from "./context/BoardsContext";
 import LoginScreen from "./components/LoginScreen";
+import LandingPage from "./components/LandingPage";
 import { getDefaultGroupName } from "./i18n/defaults";
 import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
@@ -451,6 +452,7 @@ function AppShellInner() {
 // available — all board data lives in Supabase now, gated by RLS on that user.
 function AuthGate({ children }) {
   const { session, loading } = useAuth();
+  const [authView, setAuthView] = useState(null); // null = landing, else "signIn" | "signUp"
 
   if (loading) {
     return (
@@ -472,7 +474,8 @@ function AuthGate({ children }) {
   }
 
   if (!session) {
-    return <LoginScreen />;
+    if (!authView) return <LandingPage onGetStarted={setAuthView} />;
+    return <LoginScreen initialMode={authView} onBack={() => setAuthView(null)} />;
   }
 
   return children;

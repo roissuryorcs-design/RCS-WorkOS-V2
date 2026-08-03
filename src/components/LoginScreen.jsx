@@ -3,10 +3,10 @@ import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 import Logo from "./Logo";
 
-export default function LoginScreen() {
+export default function LoginScreen({ initialMode = "signIn", onBack }) {
   const { t } = useLanguage();
   const { signIn, signUp } = useAuth();
-  const [mode, setMode] = useState("signIn"); // "signIn" | "signUp"
+  const [mode, setMode] = useState(initialMode); // "signIn" | "signUp"
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -79,6 +79,23 @@ export default function LoginScreen() {
         <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
           <Logo width={110} />
         </div>
+
+        {onBack && (
+          <button
+            onClick={onBack}
+            style={{
+              background: "none",
+              border: "none",
+              color: "var(--text-secondary)",
+              cursor: "pointer",
+              fontSize: 12.5,
+              marginBottom: 12,
+              padding: 0,
+            }}
+          >
+            {t("auth.backToHome")}
+          </button>
+        )}
 
         <h2
           style={{
