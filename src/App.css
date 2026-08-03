@@ -288,14 +288,7 @@ body.dark {
 .group-header {
   position: sticky !important;
   top: 0 !important;
-  /* Horizontal pinning is handled by .group-header-inner below instead —
-     this outer box spans the group's full scrollable width (so it has
-     something to actually stay stuck *to*), while the inner box is the
-     one that needs to visibly stay in view as you scroll sideways.
-     Nesting two elements both sticky on the same axis was redundant and
-     is the prime suspect for mobile browsers not resolving it — mobile
-     WebKit/Chromium is pickier about doubled-up sticky than desktop. */
-  left: auto !important;
+  left: 0 !important;
   z-index: 999 !important;
   background: var(--bg-secondary) !important;
   width: fit-content !important;
@@ -334,24 +327,26 @@ body.dark {
   max-width: 1244px !important;
   overflow: hidden !important;
   position: sticky !important;
-  /* Confirmed by direct A/B test on the reported device: real CSS
-     sticky-left does not stick here even with every inline/redundancy
-     conflict fixed — so horizontal pinning is done in JS instead (see
-     the effect in BoardTable.jsx), combined with overscroll-behavior:
-     contain on .board-scroll-container to stop the rubber-band jitter
-     that plagued the first JS attempt. Vertical (top:0) stays on real
-     sticky, which does work correctly. */
-  left: auto !important;
+  /* Reverted to pure CSS sticky-left after user-run DevTools testing
+     found the JS transform approach was the actual source of visible
+     bounce at the rendering/compositing level (the JS's own tracked
+     values were confirmed correct via console logging — the mismatch
+     was between "what was set" and "what actually painted"). The
+     earlier A/B test where this didn't stick predates contain:layout
+     on .group-header below, which apparently was the missing piece.
+     transform:none blocks BoardTable.jsx's rAF loop from fighting this
+     via !important (stylesheet !important beats inline JS styles) —
+     that effect is now fully inert on this element, kept only as a
+     harmless no-op rather than ripped out immediately. */
+  left: 0 !important;
+  transform: none !important;
   top: 0 !important;
   z-index: 1001 !important;
   background-color: var(--bg-secondary) !important;
   border-left: 4px solid var(--group-color, #3b82f6) !important;
   min-height: 48px;
-  /* Same as .group-header — rule out any eased transition on this
-     element's position/transform, and hint the compositor to keep this
-     layer ready so the per-frame transform write has minimal cost. */
   transition: none !important;
-  will-change: transform;
+  will-change: left;
 }
 
 .group-header-inner > .group-toggle-btn {
