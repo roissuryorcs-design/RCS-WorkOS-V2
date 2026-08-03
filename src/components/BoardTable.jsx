@@ -110,36 +110,6 @@ export default function BoardTable({
   // ============================================================
   const boardRef = useRef(null);
 
-  // Horizontal group-header pinning, done manually instead of via CSS
-  // position:sticky — the nested-sticky CSS approach didn't reliably
-  // stick horizontally on mobile browsers even after simplifying it, so
-  // this replaces that axis with a direct scroll-linked transform
-  // instead. (Vertical stays on CSS position:sticky, which does work.)
-  //
-  // Listens on `document` in the *capture* phase rather than adding the
-  // listener directly to the scroll container via a ref: the plain
-  // "scroll" event doesn't bubble, but capture-phase listeners on an
-  // ancestor still see it regardless of exactly when/how many times
-  // .board-scroll-container itself mounts — removes any dependency on
-  // ref-attachment timing, which a directly-attached listener is
-  // sensitive to.
-  useEffect(() => {
-    const handleScroll = (e) => {
-      const target = e.target;
-      if (!target || !target.classList || !target.classList.contains('board-scroll-container')) return;
-      // Clamp against rubber-band overscroll — some mobile browsers
-      // briefly report scrollLeft past the real [0, max] range during
-      // the bounce, which made the header jitter/overshoot in sync.
-      const max = target.scrollWidth - target.clientWidth;
-      const x = Math.min(Math.max(target.scrollLeft, 0), Math.max(max, 0));
-      target.querySelectorAll('.group-header-inner').forEach((el) => {
-        el.style.transform = `translateX(${x}px)`;
-      });
-    };
-    document.addEventListener('scroll', handleScroll, true);
-    return () => document.removeEventListener('scroll', handleScroll, true);
-  }, []);
-
   const saveNewOrder = useCallback(() => {
     const container = boardRef.current;
     if (!container) return;
