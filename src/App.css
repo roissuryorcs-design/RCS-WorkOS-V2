@@ -419,16 +419,19 @@ body.dark {
   font-size: 14px !important;
   font-weight: 600 !important;
   color: var(--group-color, #3b82f6) !important;
-  /* Not position:sticky — .group-header-inner (its direct parent) is
-     already sticky-left as one whole unit (icons + title together), so
-     this doesn't need to independently stick too. Nesting a second sticky
-     element inside a parent that has overflow:hidden (below) makes that
-     parent become *this* element's "nearest scrolling ancestor" for
-     sticky-offset purposes instead of the real scroller further up
-     (.board-scroll-container) — since the parent itself never actually
-     scrolls, the nested sticky child then never appears to move at all,
-     which is exactly the "not sticky at all on mobile" symptom reported. */
-  position: relative !important;
+  /* Turns out .group-header-inner's own sticky-left wasn't actually the
+     thing holding this in view — removing this element's OWN independent
+     sticky broke it on desktop too (previously only reported broken on
+     mobile), proving THIS sticky, not the parent's, was doing the real
+     work all along. Restored. What actually mattered for mobile was
+     removing the overflow:hidden on the wrapper div between this and
+     .group-header-inner (fixed in BoardTable.jsx + here) — that ancestor
+     overflow was making the wrapper resolve as this element's "nearest
+     scrolling ancestor" instead of the real one (.board-scroll-container),
+     which is what silently broke it on Android WebView specifically. */
+  position: sticky !important;
+  left: 35px !important;
+  z-index: 1002 !important;
 }
 
 /* ============================================================

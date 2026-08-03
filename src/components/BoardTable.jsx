@@ -627,7 +627,9 @@ export default function BoardTable({
                           fontSize: '14px',
                           fontWeight: 600,
                           color: groupColor,
-                          position: 'relative',
+                          position: 'sticky',
+                          left: '35px',
+                          zIndex: 1002,
                           cursor: 'default',
                         }}
                       >
