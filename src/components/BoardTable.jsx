@@ -109,6 +109,28 @@ export default function BoardTable({
   // 🔥 DRAG & DROP GROUP - SIMPAN LANGSUNG NAMA GROUP
   // ============================================================
   const boardRef = useRef(null);
+  const scrollContainerRef = useRef(null);
+
+  // Horizontal group-header pinning, done manually instead of via CSS
+  // position:sticky — the nested-sticky CSS approach didn't reliably
+  // stick horizontally on mobile browsers even after simplifying it, so
+  // this replaces that axis with a direct scroll-linked transform
+  // instead. (Vertical stays on CSS position:sticky, which does work.)
+  // Applied imperatively (not via React state) so it stays smooth at
+  // scroll-event frequency.
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    const handleScroll = () => {
+      const x = container.scrollLeft;
+      container.querySelectorAll('.group-header-inner').forEach((el) => {
+        el.style.transform = `translateX(${x}px)`;
+      });
+    };
+    handleScroll();
+    container.addEventListener('scroll', handleScroll, { passive: true });
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const saveNewOrder = useCallback(() => {
     const container = boardRef.current;
@@ -413,8 +435,8 @@ export default function BoardTable({
         </div>
       )}
 
-      <div className="board-scroll-container">
-        <div 
+      <div className="board-scroll-container" ref={scrollContainerRef}>
+        <div
           className="board-scroll-content"
           ref={boardRef}
         >

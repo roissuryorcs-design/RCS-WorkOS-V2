@@ -314,7 +314,10 @@ body.dark {
   max-width: 1244px !important;
   overflow: hidden !important;
   position: sticky !important;
-  left: 0 !important;
+  /* Horizontal is pinned manually via a scroll-linked transform in
+     BoardTable.jsx (see the "Horizontal group-header pinning" effect) —
+     CSS sticky-left never reliably worked here on mobile. Vertical
+     stays on sticky top:0, which does work. */
   top: 0 !important;
   z-index: 1001 !important;
   background-color: var(--bg-secondary) !important;
