@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Analytics } from "@vercel/analytics/react";
 import { supabase } from "./lib/supabaseClient";
 import { ThemeProvider } from "./context/ThemeContext";
 import { LanguageProvider, useLanguage } from "./context/LanguageContext";
@@ -493,6 +494,7 @@ export default function App() {
           </AuthGate>
         </AuthProvider>
       </ThemeProvider>
+      <Analytics />
     </LanguageProvider>
   );
 }
