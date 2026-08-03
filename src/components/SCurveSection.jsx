@@ -648,7 +648,7 @@ function SCurveChart({ t, chart, startDate, endDate, onShiftDrag, onShiftDragEnd
       ref={svgRef}
       width="100%"
       viewBox={`0 0 ${width} ${height}`}
-      style={{ display: "block", touchAction: "none" }}
+      style={{ display: "block", touchAction: dragging ? "none" : "auto" }}
     >
       <defs>
         <linearGradient id="baselineColorGradient" gradientUnits="userSpaceOnUse" x1={xScale(0)} y1="0" x2={xScale(100)} y2="0">

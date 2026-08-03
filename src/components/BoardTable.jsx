@@ -434,7 +434,7 @@ export default function BoardTable({
                 className="group-wrapper"
                 data-group-id={String(groupId)}
                 data-group-name={groupName}
-                style={{ 
+                style={{
                   '--group-color': groupColor,
                   marginBottom: '24px',
                   position: 'relative',
@@ -443,7 +443,6 @@ export default function BoardTable({
                   overflow: 'visible',
                   cursor: 'default',
                   userSelect: 'none',
-                  touchAction: 'none',
                 }}
               >
                 {/* HEADER GROUP - BISA DRAG */}
@@ -465,9 +464,10 @@ export default function BoardTable({
                     overflow: 'visible',
                     cursor: 'grab',
                     userSelect: 'none',
+                    touchAction: 'none',
                   }}
                 >
-                  <div 
+                  <div
                     className="group-header-inner"
                     style={{
                       display: 'flex',
