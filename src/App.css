@@ -301,6 +301,16 @@ body.dark {
   width: fit-content !important;
   min-width: 100% !important;
   overflow: visible !important;
+  /* Root cause of the "scrollWidth keeps growing / scroll never stops"
+     bug on this device's WebView: it was letting .group-header-inner's
+     *transformed* (translateX'd) visual position leak into how far this
+     scrolls — so the further you scrolled, the further right the
+     transform pushed the inner box, which the browser then (wrongly)
+     counted as *more scrollable content*, growing scrollWidth and
+     letting you scroll further still, compounding every frame.
+     contain:layout stops a descendant's box from affecting an ancestor's
+     size/overflow calculations at all, regardless of transforms. */
+  contain: layout;
   padding: 0 !important;
   margin-bottom: 0 !important;
   min-height: 48px;
