@@ -123,7 +123,6 @@ export default function BoardTable({
     // TEMPORARY: console-only diagnostics (no setState — a re-render
     // per tick was a previously-confirmed source of visible stutter).
     // window.__gh_debug = true in the console to turn logging on.
-    let lastLogAt = 0;
     let lastFrameAt = 0;
     const tick = (now) => {
       const container = document.querySelector('.board-scroll-container');
@@ -138,15 +137,15 @@ export default function BoardTable({
             el.style.transform = `translateX(${x}px)`;
           });
         }
-        if (window.__gh_debug) {
+        // Only logs while scrollLeft is actually changing (i.e. during
+        // real scroll activity) — logging every idle frame just floods
+        // the console with thousands of identical no-op lines.
+        if (window.__gh_debug && changed) {
           const frameDelta = lastFrameAt ? (now - lastFrameAt).toFixed(1) : 0;
           lastFrameAt = now;
-          if (now - lastLogAt > 16) {
-            lastLogAt = now;
-            console.log(
-              `[gh] t=${now.toFixed(0)} frameDt=${frameDelta}ms rawScrollLeft=${rawScrollLeft.toFixed(2)} scrollWidth=${container.scrollWidth} clientWidth=${container.clientWidth} max=${max} appliedX=${x}${changed ? " (CHANGED)" : ""}`
-            );
-          }
+          console.log(
+            `[gh] t=${now.toFixed(0)} frameDt=${frameDelta}ms rawScrollLeft=${rawScrollLeft.toFixed(2)} scrollWidth=${container.scrollWidth} clientWidth=${container.clientWidth} max=${max} appliedX=${x}`
+          );
         }
       }
       rafId = requestAnimationFrame(tick);
