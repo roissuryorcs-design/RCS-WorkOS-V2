@@ -120,16 +120,33 @@ export default function BoardTable({
   useEffect(() => {
     let rafId;
     let lastX = null;
-    const tick = () => {
+    // TEMPORARY: console-only diagnostics (no setState — a re-render
+    // per tick was a previously-confirmed source of visible stutter).
+    // window.__gh_debug = true in the console to turn logging on.
+    let lastLogAt = 0;
+    let lastFrameAt = 0;
+    const tick = (now) => {
       const container = document.querySelector('.board-scroll-container');
       if (container) {
+        const rawScrollLeft = container.scrollLeft;
         const max = container.scrollWidth - container.clientWidth;
-        const x = Math.min(Math.max(container.scrollLeft, 0), Math.max(max, 0));
-        if (x !== lastX) {
+        const x = Math.min(Math.max(rawScrollLeft, 0), Math.max(max, 0));
+        const changed = x !== lastX;
+        if (changed) {
           lastX = x;
           container.querySelectorAll('.group-header-inner').forEach((el) => {
             el.style.transform = `translateX(${x}px)`;
           });
+        }
+        if (window.__gh_debug) {
+          const frameDelta = lastFrameAt ? (now - lastFrameAt).toFixed(1) : 0;
+          lastFrameAt = now;
+          if (now - lastLogAt > 16) {
+            lastLogAt = now;
+            console.log(
+              `[gh] t=${now.toFixed(0)} frameDt=${frameDelta}ms rawScrollLeft=${rawScrollLeft.toFixed(2)} scrollWidth=${container.scrollWidth} clientWidth=${container.clientWidth} max=${max} appliedX=${x}${changed ? " (CHANGED)" : ""}`
+            );
+          }
         }
       }
       rafId = requestAnimationFrame(tick);
