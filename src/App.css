@@ -282,7 +282,14 @@ body.dark {
 .group-header {
   position: sticky !important;
   top: 0 !important;
-  left: 0 !important;
+  /* Horizontal pinning is handled by .group-header-inner below instead —
+     this outer box spans the group's full scrollable width (so it has
+     something to actually stay stuck *to*), while the inner box is the
+     one that needs to visibly stay in view as you scroll sideways.
+     Nesting two elements both sticky on the same axis was redundant and
+     is the prime suspect for mobile browsers not resolving it — mobile
+     WebKit/Chromium is pickier about doubled-up sticky than desktop. */
+  left: auto !important;
   z-index: 999 !important;
   background: var(--bg-secondary) !important;
   width: fit-content !important;

@@ -42,7 +42,7 @@ export default function ResizableHeader({
   // to the DOM as an !important inline style (see below), no CSS rule
   // can ever override it — the cap has to happen right here.
   const MOBILE_BREAKPOINT = 768;
-  const MOBILE_ITEM_MAX_WIDTH = 140;
+  const MOBILE_ITEM_MAX_WIDTH = 91;
   const effectiveWidth = (w) =>
     isItemColumn && window.innerWidth <= MOBILE_BREAKPOINT ? Math.min(w, MOBILE_ITEM_MAX_WIDTH) : w;
 

@@ -19,7 +19,7 @@ import { getPeoplePlaceholder } from "../i18n/defaults";
 // the sticky Item column still ate the whole phone screen even after
 // the header was fixed.
 const MOBILE_BREAKPOINT = 768;
-const MOBILE_ITEM_MAX_WIDTH = 140;
+const MOBILE_ITEM_MAX_WIDTH = 91;
 function effectiveColWidth(col) {
   if (col.id === "item" && typeof window !== "undefined" && window.innerWidth <= MOBILE_BREAKPOINT) {
     return Math.min(col.width, MOBILE_ITEM_MAX_WIDTH);
