@@ -35,13 +35,25 @@ export default function ResizableHeader({
   const isItemColumn = column.id === "item";
   const isDraggable = !isResizing && !isItemColumn;
 
+  // The Item column is also the sticky/frozen one — on a narrow phone
+  // screen, a desktop-set width (often 200-300px+) can alone consume
+  // nearly the whole viewport, leaving no room for anything else to
+  // appear even after scrolling. Since this width is applied straight
+  // to the DOM as an !important inline style (see below), no CSS rule
+  // can ever override it — the cap has to happen right here.
+  const MOBILE_BREAKPOINT = 768;
+  const MOBILE_ITEM_MAX_WIDTH = 140;
+  const effectiveWidth = (w) =>
+    isItemColumn && window.innerWidth <= MOBILE_BREAKPOINT ? Math.min(w, MOBILE_ITEM_MAX_WIDTH) : w;
+
   const applyWidth = (th, newWidth) => {
     if (!th) return;
+    const w = effectiveWidth(newWidth);
     // ✅ setProperty(..., 'important') supaya menang melawan rule CSS
     // lain yang juga pakai !important (mis. width kolom di board-table).
-    th.style.setProperty("width", `${newWidth}px`, "important");
-    th.style.setProperty("min-width", `${newWidth}px`, "important");
-    th.style.setProperty("max-width", `${newWidth}px`, "important");
+    th.style.setProperty("width", `${w}px`, "important");
+    th.style.setProperty("min-width", `${w}px`, "important");
+    th.style.setProperty("max-width", `${w}px`, "important");
   };
 
   const handleResizeStart = (e) => {
@@ -96,6 +108,18 @@ export default function ResizableHeader({
     setWidth(column.width || 100);
     applyWidth(thRef.current, column.width || 100);
   }, [column.width]);
+
+  // Re-caps on rotate/resize (not just on mount) — otherwise turning the
+  // phone sideways past the breakpoint, or resizing a desktop window
+  // down, wouldn't re-trigger the mobile cap until something else
+  // happened to touch column.width.
+  useEffect(() => {
+    if (!isItemColumn) return;
+    const onResize = () => applyWidth(thRef.current, column.width || 100);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isItemColumn, column.width]);
 
   const handleDragStart = (e) => {
     if (!isDraggable) return;
