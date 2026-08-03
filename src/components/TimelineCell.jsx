@@ -28,11 +28,32 @@ function shortLabel(dateStr) {
   return `${String(d.getDate()).padStart(2, "0")} ${MONTHS_SHORT[d.getMonth()]}`;
 }
 
-export default function TimelineCell({ value, onChange }) {
+export default function TimelineCell({ value, onChange, parentValue }) {
   const { t } = useLanguage();
   const timeline = value && typeof value === "object" ? value : {};
   const [open, setOpen] = useState(false);
   const triggerRef = useRef(null);
+
+  // A sub-item's timeline must stay within its parent's — only enforced
+  // when the parent actually has a complete range set (an unset parent
+  // range doesn't constrain anything).
+  const parent = parentValue && typeof parentValue === "object" ? parentValue : {};
+  const parentStart = parseDateValue(parent.start);
+  const parentEnd = parseDateValue(parent.end);
+  const hasParentRange = !!(parentStart && parentEnd);
+  const minInput = hasParentRange ? toInputValue(parent.start) : undefined;
+  const maxInput = hasParentRange ? toInputValue(parent.end) : undefined;
+
+  // Defensive clamp for the rare case a date lands outside the parent's
+  // range some other way (e.g. the parent's own range shrinks after the
+  // child's dates were already set) — native min/max on the <input>
+  // handles the normal picking flow, this just keeps saved data honest.
+  const clampToParent = (d) => {
+    if (!hasParentRange || !d) return d;
+    if (d < parentStart) return parentStart;
+    if (d > parentEnd) return parentEnd;
+    return d;
+  };
 
   // Closes on scroll (of the table's scroll container or the page) rather
   // than trying to track the trigger's moving position — simplest way to
@@ -59,11 +80,21 @@ export default function TimelineCell({ value, onChange }) {
     overdue = today.getTime() > end.getTime();
   }
 
+  const clampInputValue = (val) => {
+    if (!hasParentRange || !val) return val;
+    const clamped = clampToParent(new Date(`${val}T00:00:00`));
+    if (!clamped) return val;
+    const y = clamped.getFullYear();
+    const m = String(clamped.getMonth() + 1).padStart(2, "0");
+    const day = String(clamped.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  };
+
   const setStart = (val) => {
-    onChange({ ...timeline, start: fromInputValue(val) });
+    onChange({ ...timeline, start: fromInputValue(clampInputValue(val)) });
   };
   const setEnd = (val) => {
-    onChange({ ...timeline, end: fromInputValue(val) });
+    onChange({ ...timeline, end: fromInputValue(clampInputValue(val)) });
   };
   const clearAll = () => {
     onChange({ start: "", end: "" });
@@ -135,6 +166,8 @@ export default function TimelineCell({ value, onChange }) {
               type="date"
               value={toInputValue(timeline.start)}
               onChange={(e) => setStart(e.target.value)}
+              min={minInput}
+              max={maxInput}
               style={{
                 width: "100%",
                 padding: "6px 8px",
@@ -154,6 +187,8 @@ export default function TimelineCell({ value, onChange }) {
               type="date"
               value={toInputValue(timeline.end)}
               onChange={(e) => setEnd(e.target.value)}
+              min={minInput}
+              max={maxInput}
               style={{
                 width: "100%",
                 padding: "6px 8px",
@@ -165,6 +200,11 @@ export default function TimelineCell({ value, onChange }) {
                 color: "var(--text-primary)",
               }}
             />
+            {hasParentRange && (
+              <div style={{ fontSize: 10.5, color: "var(--text-muted)", marginTop: 6 }}>
+                {t("timelineCell.parentRangeHint", { start: shortLabel(parent.start), end: shortLabel(parent.end) })}
+              </div>
+            )}
 
             {hasRange && (
               <button

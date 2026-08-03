@@ -34,6 +34,7 @@ export default function Row({
   ancestorLines = [],
   siblings = [],
   parentAbsoluteWeights = {},
+  parentItem = null,
 }) {
   // ✅ GUARD: Jika item undefined
   if (!item) {
@@ -106,6 +107,7 @@ export default function Row({
           <TimelineCell
             value={value}
             onChange={(val) => onUpdate(item.id, col.id, val)}
+            parentValue={parentItem ? parentItem[col.id] : null}
           />
         );
 
@@ -591,6 +593,7 @@ export default function Row({
               ancestorLines={childAncestorLines}
               siblings={children}
               parentAbsoluteWeights={myAbsoluteWeights}
+              parentItem={item}
             />
           );
         })

@@ -416,6 +416,7 @@ export const translations = {
       start: "Start",
       end: "End",
       clearTimeline: "✕ Clear timeline",
+      parentRangeHint: "Limited to the parent's timeline ({{start}} → {{end}})",
     },
     formulaCell: {
       hint: "fx — click ⋮ to set formula",
@@ -880,6 +881,7 @@ export const translations = {
       start: "Mulai",
       end: "Selesai",
       clearTimeline: "✕ Hapus linimasa",
+      parentRangeHint: "Dibatasi linimasa induk ({{start}} → {{end}})",
     },
     formulaCell: {
       hint: "fx — klik ⋮ untuk atur formula",
