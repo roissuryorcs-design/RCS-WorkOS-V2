@@ -124,8 +124,7 @@ export default function BoardTable({
   // contain on .board-scroll-container (still in App.css) fixes that
   // independently of this, so this should now be both sticky and smooth.
   useEffect(() => {
-    const handleScroll = (e) => {
-      const target = e.target;
+    const applyFrom = (target) => {
       if (!target || !target.classList || !target.classList.contains('board-scroll-container')) return;
       const max = target.scrollWidth - target.clientWidth;
       const x = Math.min(Math.max(target.scrollLeft, 0), Math.max(max, 0));
@@ -142,8 +141,30 @@ export default function BoardTable({
         headerCount: headers.length,
       });
     };
+    const handleScroll = (e) => applyFrom(e.target);
+    // The "scroll" event alone visibly lags a real finger-drag on this
+    // device — mobile browsers throttle how often it actually dispatches
+    // during an active touch gesture, well below the ~60-120fps the
+    // native compositor scrolls at. "touchmove" fires far more densely,
+    // and scrollLeft itself is already live/current at any instant even
+    // between "scroll" events — so re-reading it on every touchmove
+    // closes most of that gap. rAF-throttled so it can't outpace paint.
+    let rafPending = false;
+    const handleTouchMove = () => {
+      if (rafPending) return;
+      rafPending = true;
+      requestAnimationFrame(() => {
+        rafPending = false;
+        const container = document.querySelector('.board-scroll-container');
+        if (container) applyFrom(container);
+      });
+    };
     document.addEventListener('scroll', handleScroll, true);
-    return () => document.removeEventListener('scroll', handleScroll, true);
+    document.addEventListener('touchmove', handleTouchMove, { passive: true });
+    return () => {
+      document.removeEventListener('scroll', handleScroll, true);
+      document.removeEventListener('touchmove', handleTouchMove);
+    };
   }, []);
 
   const saveNewOrder = useCallback(() => {
