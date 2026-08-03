@@ -926,15 +926,26 @@ th:hover .resize-handle {
        scroll, compounding every frame. Scoped to mobile only: desktop
        never runs that transform, so it never had this leak to begin with. */
     contain: layout;
+    /* left:auto (not left:0) turns OFF this element's own horizontal
+       sticky while leaving position:sticky + top:0 (vertical) intact —
+       sticky only activates on an axis that has an explicit offset. This
+       element's own left:0 sticky was apparently doing real work on this
+       device (unlike .group-title's, confirmed dead) and was silently
+       stacking with the JS transform below: both were compensating for
+       the same scroll amount at once, overshooting further right the
+       more you scrolled until the header ran off-screen entirely. Only
+       one mechanism should ever control horizontal position on mobile —
+       JS now owns it exclusively. */
+    left: auto !important;
   }
 
   .group-header-inner {
     padding: 6px 8px;
     min-height: 40px;
     max-width: 100% !important;
-    /* Native sticky is left unset here (not blocked) so BoardTable.jsx's
-       mobile-only rAF loop can drive this element's position via
-       transform instead — see .group-title below for why. */
+    /* Same double-compensation risk as .group-header above — turn off
+       this element's own horizontal sticky too, keep top:0 (vertical). */
+    left: auto !important;
   }
 
   .group-header-inner > .group-title,
