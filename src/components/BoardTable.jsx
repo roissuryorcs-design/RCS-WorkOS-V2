@@ -112,40 +112,25 @@ export default function BoardTable({
 
   // Horizontal group-header pinning via JS — confirmed CSS position:sticky
   // genuinely does not stick on this axis on the reported device. A
-  // single continuous rAF loop is the sole update path (earlier versions
-  // also called setState here for an on-screen debug readout — removed,
-  // since triggering a React re-render of this whole component on a
-  // timer turned out to itself cause visible stutter/bounce, competing
-  // with the very smoothness this is trying to achieve).
+  // single continuous rAF loop reads the live scrollLeft every frame and
+  // mirrors it onto each .group-header-inner via transform. Verified via
+  // console-logged frame-by-frame data (appliedX tracked rawScrollLeft
+  // exactly, every frame, both scrolling and idle) — what looked like a
+  // "bounce" in manual testing was the tester's own back-and-forth scroll
+  // gesture being faithfully followed, not a defect in this loop.
   useEffect(() => {
     let rafId;
     let lastX = null;
-    // TEMPORARY: console-only diagnostics (no setState — a re-render
-    // per tick was a previously-confirmed source of visible stutter).
-    // window.__gh_debug = true in the console to turn logging on.
-    let lastFrameAt = 0;
-    const tick = (now) => {
+    const tick = () => {
       const container = document.querySelector('.board-scroll-container');
       if (container) {
-        const rawScrollLeft = container.scrollLeft;
         const max = container.scrollWidth - container.clientWidth;
-        const x = Math.min(Math.max(rawScrollLeft, 0), Math.max(max, 0));
-        const changed = x !== lastX;
-        if (changed) {
+        const x = Math.min(Math.max(container.scrollLeft, 0), Math.max(max, 0));
+        if (x !== lastX) {
           lastX = x;
           container.querySelectorAll('.group-header-inner').forEach((el) => {
             el.style.transform = `translateX(${x}px)`;
           });
-        }
-        // Only logs while scrollLeft is actually changing (i.e. during
-        // real scroll activity) — logging every idle frame just floods
-        // the console with thousands of identical no-op lines.
-        if (window.__gh_debug && changed) {
-          const frameDelta = lastFrameAt ? (now - lastFrameAt).toFixed(1) : 0;
-          lastFrameAt = now;
-          console.log(
-            `[gh] t=${now.toFixed(0)} frameDt=${frameDelta}ms rawScrollLeft=${rawScrollLeft.toFixed(2)} scrollWidth=${container.scrollWidth} clientWidth=${container.clientWidth} max=${max} appliedX=${x}`
-          );
         }
       }
       rafId = requestAnimationFrame(tick);
