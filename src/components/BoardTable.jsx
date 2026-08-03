@@ -550,7 +550,7 @@ export default function BoardTable({
                         alignItems: 'center',
                         padding: '0 8px',
                         minWidth: 0,
-                        overflow: 'hidden',
+                        overflow: 'visible',
                       }}
                     >
                       <button
@@ -627,9 +627,7 @@ export default function BoardTable({
                           fontSize: '14px',
                           fontWeight: 600,
                           color: groupColor,
-                          position: 'sticky',
-                          left: '35px',
-                          zIndex: 1002,
+                          position: 'relative',
                           cursor: 'default',
                         }}
                       >

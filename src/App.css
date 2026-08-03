@@ -400,7 +400,15 @@ body.dark {
   padding: 0 !important;
 }
 
-.group-header-inner > .group-title {
+.group-title {
+  /* Selector deliberately NOT scoped to ">" direct-child of
+     .group-header-inner — the actual DOM has an unclassed flex wrapper
+     div between them (menu/color-picker row), so a child-combinator
+     selector here silently never matched anything. That's why an
+     earlier attempt to override position via this rule had zero effect
+     on the real page despite compiling fine — the fix had to happen at
+     the inline-style source in BoardTable.jsx instead. Kept here too,
+     unscoped, purely as a defensive backstop. */
   flex: 1 1 auto !important;
   min-width: 0 !important;
   white-space: nowrap !important;
