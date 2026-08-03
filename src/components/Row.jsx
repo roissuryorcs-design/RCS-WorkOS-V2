@@ -13,6 +13,20 @@ import { resolveSelfWeight, resolveIndependentWeight, weightKeyFor, computeOwnPr
 import { useLanguage } from "../context/LanguageContext";
 import { getPeoplePlaceholder } from "../i18n/defaults";
 
+// Same mobile cap as ResizableHeader.jsx's applyWidth — that one only
+// controls the <th>, but this file independently sets the Item <td>'s
+// width from the raw (uncapped) col.width on every row, so without this
+// the sticky Item column still ate the whole phone screen even after
+// the header was fixed.
+const MOBILE_BREAKPOINT = 768;
+const MOBILE_ITEM_MAX_WIDTH = 140;
+function effectiveColWidth(col) {
+  if (col.id === "item" && typeof window !== "undefined" && window.innerWidth <= MOBILE_BREAKPOINT) {
+    return Math.min(col.width, MOBILE_ITEM_MAX_WIDTH);
+  }
+  return col.width;
+}
+
 export default function Row({
   item,
   groupColor,
@@ -365,9 +379,9 @@ export default function Row({
                 className="row-cell row-item-cell"
                 style={{
                   ...itemCellStyle,
-                  width: `${col.width}px`,
-                  minWidth: `${col.width}px`,
-                  maxWidth: `${col.width}px`,
+                  width: `${effectiveColWidth(col)}px`,
+                  minWidth: `${effectiveColWidth(col)}px`,
+                  maxWidth: `${effectiveColWidth(col)}px`,
                   borderRight: isLast ? "none" : "2px solid var(--border-color)",
                 }}
               >
