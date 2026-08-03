@@ -300,6 +300,8 @@ export const translations = {
       linkTag: "🔗 Link",
     },
     sidebar: {
+      openMenu: "Open menu",
+      closeMenu: "Close menu",
       nodeTypeFolder: "folder",
       nodeTypeBoard: "board",
       renamePrompt: "Rename {{type}}:",
@@ -765,6 +767,8 @@ export const translations = {
       linkTag: "🔗 Link",
     },
     sidebar: {
+      openMenu: "Buka menu",
+      closeMenu: "Tutup menu",
       nodeTypeFolder: "folder",
       nodeTypeBoard: "board",
       renamePrompt: "Ganti nama {{type}}:",

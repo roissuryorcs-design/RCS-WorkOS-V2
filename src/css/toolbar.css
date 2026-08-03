@@ -69,3 +69,30 @@
   min-width: 70px;
   text-align: center;
 }
+
+/* On narrow screens, one scrollable row reads far better than wrapping
+   every button onto its own full-width line (each stayed full-width
+   since none of them shrink, so wrapping just stacked them vertically). */
+@media (max-width: 768px) {
+  .toolbar-sticky {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 8px 12px;
+  }
+
+  .toolbar-search {
+    width: 140px;
+    flex-shrink: 0;
+  }
+
+  .toolbar-undo-btn,
+  .toolbar-export-btn,
+  .toolbar-theme-btn,
+  .toolbar-column-btn,
+  .toolbar-lang-btn,
+  .toolbar-add-btn {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+}

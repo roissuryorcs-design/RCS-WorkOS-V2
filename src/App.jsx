@@ -8,6 +8,7 @@ import { ColumnProvider, useColumns } from "./context/ColumnContext";
 import { GroupProvider, useGroups } from "./context/GroupContext";
 import { ItemsProvider, useItems } from "./context/ItemsContext";
 import { BoardsProvider, useBoards } from "./context/BoardsContext";
+import { MobileNavProvider } from "./context/MobileNavContext";
 import LoginScreen from "./components/LoginScreen";
 import LandingPage from "./components/LandingPage";
 import { getDefaultGroupName } from "./i18n/defaults";
@@ -487,7 +488,9 @@ export default function App() {
         <AuthProvider>
           <AuthGate>
             <BoardsProvider>
-              <AppShellInner />
+              <MobileNavProvider>
+                <AppShellInner />
+              </MobileNavProvider>
             </BoardsProvider>
           </AuthGate>
         </AuthProvider>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { useLanguage } from '../context/LanguageContext';
+import { useMobileNav } from '../context/MobileNavContext';
 
 // title/subtitle now live in the `boards` table (columns existed since
 // Phase 1 but were never wired up — this component was still 100%
@@ -9,6 +10,7 @@ import { useLanguage } from '../context/LanguageContext';
 // every other Supabase-backed context in this app.
 const Header = ({ groups = [], boardId, isReady = true }) => {
   const { t } = useLanguage();
+  const { setSidebarOpen } = useMobileNav();
   const [title, setTitle] = useState(t('defaults.boardTitle'));
   const [subtitle, setSubtitle] = useState(t('defaults.boardSubtitle'));
 
@@ -123,6 +125,9 @@ const Header = ({ groups = [], boardId, isReady = true }) => {
 
   return (
     <div className="header-sticky" style={{ padding: '16px 24px' }}>
+      <button className="mobile-menu-btn" onClick={() => setSidebarOpen(true)} aria-label={t('sidebar.openMenu')}>
+        ☰
+      </button>
       {/* TITLE */}
       <h1
         contentEditable={true}

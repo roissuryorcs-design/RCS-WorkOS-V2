@@ -4,6 +4,7 @@ import Logo from "./Logo";
 import { useBoards } from "../context/BoardsContext";
 import { useLanguage } from "../context/LanguageContext";
 import { useAuth } from "../context/AuthContext";
+import { useMobileNav } from "../context/MobileNavContext";
 import WorkspaceSwitcher from "./WorkspaceSwitcher";
 import Popover from "./Popover";
 import BoardAccessModal from "./BoardAccessModal";
@@ -31,6 +32,7 @@ export default function Sidebar() {
     isActiveWorkspaceOwner,
   } = useBoards();
   const [accessModalBoard, setAccessModalBoard] = useState(null);
+  const { sidebarOpen, setSidebarOpen } = useMobileNav();
 
   const [openMenuId, setOpenMenuId] = useState(null);
   const [menuAnchorEl, setMenuAnchorEl] = useState(null);
@@ -221,7 +223,15 @@ export default function Sidebar() {
   };
 
   return (
-    <div className="sidebar">
+    <>
+      {/* Only visible/interactive on mobile via CSS — harmless on desktop
+          even though sidebarOpen defaults false and nothing ever flips it
+          there (no hamburger button renders outside the mobile breakpoint). */}
+      {sidebarOpen && <div className="sidebar-mobile-backdrop" onClick={() => setSidebarOpen(false)} />}
+      <div className={`sidebar${sidebarOpen ? " sidebar-mobile-open" : ""}`}>
+        <button className="sidebar-mobile-close" onClick={() => setSidebarOpen(false)} aria-label={t("sidebar.closeMenu")}>
+          ✕
+        </button>
       <div className="sidebar-header">
         <Logo width={150} />
       </div>
@@ -348,6 +358,7 @@ export default function Sidebar() {
           onClose={() => setAccessModalBoard(null)}
         />
       )}
-    </div>
+      </div>
+    </>
   );
 }
