@@ -110,6 +110,11 @@ export default function BoardTable({
   // ============================================================
   const boardRef = useRef(null);
 
+  // TEMPORARY on-screen debug readout for diagnosing the mobile
+  // group-header scroll issue without needing DevTools — remove once
+  // it's actually solved.
+  const [scrollDebug, setScrollDebug] = useState(null);
+
   // Horizontal group-header pinning via JS — confirmed CSS position:sticky
   // genuinely does not stick on this axis on the reported mobile browser
   // (tested with the inline-style conflict fixed, and again with the
@@ -124,8 +129,17 @@ export default function BoardTable({
       if (!target || !target.classList || !target.classList.contains('board-scroll-container')) return;
       const max = target.scrollWidth - target.clientWidth;
       const x = Math.min(Math.max(target.scrollLeft, 0), Math.max(max, 0));
-      target.querySelectorAll('.group-header-inner').forEach((el) => {
+      const headers = target.querySelectorAll('.group-header-inner');
+      headers.forEach((el) => {
         el.style.transform = `translateX(${x}px)`;
+      });
+      setScrollDebug({
+        scrollLeft: Math.round(target.scrollLeft),
+        scrollWidth: target.scrollWidth,
+        clientWidth: target.clientWidth,
+        max,
+        appliedX: Math.round(x),
+        headerCount: headers.length,
       });
     };
     document.addEventListener('scroll', handleScroll, true);
@@ -421,6 +435,35 @@ export default function BoardTable({
   // ============================================================
   return (
     <div className="board-table-wrapper">
+      {/* TEMPORARY debug readout for diagnosing the mobile scroll issue —
+          remove once it's actually solved. */}
+      {scrollDebug && (
+        <div
+          style={{
+            position: "fixed",
+            top: 6,
+            right: 6,
+            zIndex: 99999,
+            background: "rgba(0,0,0,0.85)",
+            color: "#0f0",
+            fontFamily: "monospace",
+            fontSize: 10,
+            padding: "6px 8px",
+            borderRadius: 6,
+            lineHeight: 1.5,
+            pointerEvents: "none",
+            whiteSpace: "pre",
+          }}
+        >
+          {`scrollLeft: ${scrollDebug.scrollLeft}
+scrollWidth: ${scrollDebug.scrollWidth}
+clientWidth: ${scrollDebug.clientWidth}
+max: ${scrollDebug.max}
+appliedX: ${scrollDebug.appliedX}
+headers: ${scrollDebug.headerCount}`}
+        </div>
+      )}
+
       {selectedItems.length > 0 && (
         <div className="selected-items-bar">
           <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>
