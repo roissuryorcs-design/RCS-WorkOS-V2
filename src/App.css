@@ -257,6 +257,12 @@ body.dark {
   width: 100%;
   height: 100%;
   position: relative;
+  /* Stops rubber-band/bounce overscroll on mobile — without this, the
+     scroll-linked group-header transform and the Item column's own
+     sticky positioning both got dragged along with the momentary
+     out-of-range scrollLeft during a bounce, showing up as jitter and
+     the Item column briefly un-sticking near the scroll edges. */
+  overscroll-behavior: contain;
 }
 
 .board-scroll-content {

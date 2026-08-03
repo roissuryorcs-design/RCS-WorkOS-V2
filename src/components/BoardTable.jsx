@@ -127,7 +127,11 @@ export default function BoardTable({
     const handleScroll = (e) => {
       const target = e.target;
       if (!target || !target.classList || !target.classList.contains('board-scroll-container')) return;
-      const x = target.scrollLeft;
+      // Clamp against rubber-band overscroll — some mobile browsers
+      // briefly report scrollLeft past the real [0, max] range during
+      // the bounce, which made the header jitter/overshoot in sync.
+      const max = target.scrollWidth - target.clientWidth;
+      const x = Math.min(Math.max(target.scrollLeft, 0), Math.max(max, 0));
       target.querySelectorAll('.group-header-inner').forEach((el) => {
         el.style.transform = `translateX(${x}px)`;
       });
