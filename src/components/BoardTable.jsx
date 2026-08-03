@@ -110,28 +110,40 @@ export default function BoardTable({
   // ============================================================
   const boardRef = useRef(null);
 
-  // Horizontal group-header pinning via JS — confirmed CSS position:sticky
-  // genuinely does not stick on this axis on the reported device. A
-  // single continuous rAF loop reads the live scrollLeft every frame and
-  // mirrors it onto each .group-header-inner via transform. Verified via
-  // console-logged frame-by-frame data (appliedX tracked rawScrollLeft
-  // exactly, every frame, both scrolling and idle) — what looked like a
-  // "bounce" in manual testing was the tester's own back-and-forth scroll
-  // gesture being faithfully followed, not a defect in this loop.
+  // Horizontal group-header pinning via JS, mobile-only. Native CSS
+  // position:sticky on .group-title is confirmed (via computed-style
+  // inspection on the actual device) to be applied exactly as specified —
+  // yet still doesn't visually stick on this device's Android WebView,
+  // pointing to an engine-level limitation rather than a CSS/DOM bug.
+  // Desktop keeps pure CSS sticky (App.css blocks this transform there via
+  // !important); mobile gets this rAF-driven fallback instead, which
+  // doesn't depend on the browser's native sticky algorithm at all — it
+  // just mirrors scrollLeft onto a transform every frame. Earlier attempts
+  // to run this at the same time as .group-title's own native sticky
+  // caused visible "bouncing" (both mechanisms fighting to position the
+  // same element every frame) — App.css now disables .group-title's
+  // sticky specifically on mobile so only one mechanism is ever active.
   useEffect(() => {
     let rafId;
     let lastX = null;
     const tick = () => {
-      const container = document.querySelector('.board-scroll-container');
-      if (container) {
-        const max = container.scrollWidth - container.clientWidth;
-        const x = Math.min(Math.max(container.scrollLeft, 0), Math.max(max, 0));
-        if (x !== lastX) {
-          lastX = x;
-          container.querySelectorAll('.group-header-inner').forEach((el) => {
-            el.style.transform = `translateX(${x}px)`;
-          });
+      if (window.innerWidth <= 768) {
+        const container = document.querySelector('.board-scroll-container');
+        if (container) {
+          const max = container.scrollWidth - container.clientWidth;
+          const x = Math.min(Math.max(container.scrollLeft, 0), Math.max(max, 0));
+          if (x !== lastX) {
+            lastX = x;
+            container.querySelectorAll('.group-header-inner').forEach((el) => {
+              el.style.transform = `translateX(${x}px)`;
+            });
+          }
         }
+      } else if (lastX !== null) {
+        lastX = null;
+        document.querySelectorAll('.group-header-inner').forEach((el) => {
+          el.style.transform = '';
+        });
       }
       rafId = requestAnimationFrame(tick);
     };
