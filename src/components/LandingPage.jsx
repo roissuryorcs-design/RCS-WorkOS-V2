@@ -1,9 +1,20 @@
 import { useLanguage } from "../context/LanguageContext";
+import { useTheme } from "../context/ThemeContext";
 import Logo from "./Logo";
 
 const FEATURE_KEYS = ["feature1", "feature2", "feature3", "feature4"];
-const FEATURE_ICONS = { feature1: "🔄", feature2: "📊", feature3: "💬", feature4: "🌐" };
+const FEATURE_ICONS = { feature1: "🔄", feature3: "💬", feature4: "🌐" };
 const FEATURE_COLORS = { feature1: "#3b82f6", feature2: "#f59e0b", feature3: "#a855f7", feature4: "#16a34a" };
+
+// A tiny inline S-curve, instead of a generic chart emoji, for the S-Curve
+// feature card — same shape language as the SCurveMockup floating card.
+function SCurveIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 20 20">
+      <path d="M3,16 C3,11 7,11 10,10.5 C13,10 17,9 17,4" fill="none" stroke="#b45309" strokeWidth={2.5} strokeLinecap="round" />
+    </svg>
+  );
+}
 
 const primaryBtnStyle = {
   padding: "12px 26px",
@@ -19,6 +30,7 @@ const primaryBtnStyle = {
 
 export default function LandingPage({ onGetStarted }) {
   const { t, language, setLanguage } = useLanguage();
+  const { theme, toggleTheme } = useTheme();
 
   return (
     <div
@@ -49,6 +61,12 @@ export default function LandingPage({ onGetStarted }) {
           <Logo width={90} />
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <button
+            onClick={toggleTheme}
+            style={{ padding: "6px 10px", background: "var(--bg-hover)", border: "1px solid var(--border-dark)", borderRadius: 6, cursor: "pointer", fontSize: 12.5, color: "var(--text-primary)" }}
+          >
+            {theme === "dark" ? "☀️" : "🌙"}
+          </button>
           <button
             onClick={() => setLanguage(language === "id" ? "en" : "id")}
             style={{ padding: "6px 10px", background: "var(--bg-hover)", border: "1px solid var(--border-dark)", borderRadius: 6, cursor: "pointer", fontSize: 12.5, color: "var(--text-primary)" }}
@@ -100,8 +118,11 @@ export default function LandingPage({ onGetStarted }) {
           <div style={{ marginTop: 14, fontSize: 12.5, color: "var(--text-muted)" }}>{t("landing.microcopy")}</div>
         </div>
 
-        <div style={{ flex: "1 1 420px", minWidth: 300 }}>
+        <div style={{ flex: "1 1 420px", minWidth: 300, position: "relative", paddingBottom: 60 }}>
           <BoardMockup />
+          <div style={{ position: "absolute", right: -16, bottom: -40 }}>
+            <SCurveMockup t={t} label={t("landing.sCurveMockupLabel")} />
+          </div>
         </div>
       </div>
 
@@ -132,7 +153,7 @@ export default function LandingPage({ onGetStarted }) {
                 width: 42,
                 height: 42,
                 borderRadius: 10,
-                background: `${FEATURE_COLORS[key]}22`,
+                background: `${FEATURE_COLORS[key]}${key === "feature2" ? "40" : "22"}`,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -140,7 +161,7 @@ export default function LandingPage({ onGetStarted }) {
                 marginBottom: 14,
               }}
             >
-              {FEATURE_ICONS[key]}
+              {key === "feature2" ? <SCurveIcon /> : FEATURE_ICONS[key]}
             </div>
             <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 6 }}>{t(`landing.${key}Title`)}</div>
             <div style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.55 }}>{t(`landing.${key}Desc`)}</div>
@@ -157,17 +178,57 @@ export default function LandingPage({ onGetStarted }) {
 
 // Stylized, hand-built mock of the board table view (framed like a browser
 // window) — stands in for a real product screenshot without needing image
-// assets, using the same status-color language the actual app uses.
-function BoardMockup() {
-  const rows = [
-    { name: "UI Redesign", status: "Open", statusColor: "#3b82f6", progress: 65 },
-    { name: "API Integration", status: "Stuck", statusColor: "#ef4444", progress: 20 },
-    { name: "QA Testing", status: "On Hold", statusColor: "#f59e0b", progress: 40 },
-  ];
-  const rows2 = [
-    { name: "Client Handover", status: "Closed", statusColor: "#16a34a", progress: 100 },
-  ];
+// assets. Mirrors the real table's actual column set (Item/Progress/
+// Timeline/Status) plus the multi-level nested sub-item tree, with curved
+// connector lines sitting between Item and Progress — same spot and shape
+// as the real product's own tree lines, which visually tie each sub-item's
+// progress back up into its parent's rolled-up (Σ) total.
+const MOCK_TREE = [
+  {
+    name: "Task 1", progress: 46, timeline: "01 Aug → 30 Sep", status: "Open", statusColor: "#3b82f6",
+    children: [
+      {
+        name: "Sub Task A", progress: 76, timeline: "02 Aug → 19 Aug", status: "On Hold", statusColor: "#f59e0b",
+        children: [
+          {
+            name: "Sub Sub Task", progress: 90, timeline: "02 Aug → 07 Aug", status: "Open", statusColor: "#3b82f6",
+            children: [
+              { name: "Sub Sub Sub Task a", timeline: "02 Aug → 04 Aug", status: "Stuck", statusColor: "#ef4444", stage: "Execution", stageColor: "#f59e0b", stageProgress: 50 },
+              { name: "Sub Sub Sub Task b", timeline: "05 Aug → 07 Aug", status: "On Hold", statusColor: "#f59e0b", stage: "Review", stageColor: "#3b82f6", stageProgress: 80 },
+            ],
+          },
+        ],
+      },
+      { name: "Sub Task B", timeline: "13 Aug → 19 Aug", status: "Closed", statusColor: "#16a34a", stage: "Completed", stageColor: "#16a34a", stageProgress: 100 },
+    ],
+  },
+  { name: "Task 2", timeline: "18 Aug → 31 Aug", status: null, statusColor: null, stage: "Not Started", stageColor: "#6b7280", stageProgress: 0 },
+];
 
+// Flattens the tree into render order, annotating each row with its depth
+// and, per ancestor column, whether that ancestor still has a following
+// sibling below (so the row knows which columns need a straight pass-
+// through line vs. nothing) — the standard "tree printer" algorithm.
+// `hasChildren` decides the Progress cell's own display mode: a Σ roll-up
+// bar for parents, a stage pill for leaves — matching the real product,
+// where only aggregating rows show a percentage bar at all.
+function flattenTree(nodes, continues = []) {
+  const out = [];
+  nodes.forEach((node, i) => {
+    const isLast = i === nodes.length - 1;
+    const { children, ...rest } = node;
+    const hasChildren = !!(children && children.length > 0);
+    out.push({ ...rest, depth: continues.length, continues, isLast, hasChildren });
+    if (hasChildren) {
+      out.push(...flattenTree(children, [...continues, !isLast]));
+    }
+  });
+  return out;
+}
+
+const MOCK_ROWS = flattenTree(MOCK_TREE);
+
+function BoardMockup() {
   return (
     <div
       style={{
@@ -185,43 +246,151 @@ function BoardMockup() {
         <div style={{ flex: 1, marginLeft: 10, height: 18, borderRadius: 5, background: "var(--bg-hover)" }} />
       </div>
 
-      <div style={{ padding: 16 }}>
-        <GroupBlock color="#3b82f6" label="Engineering" rows={rows} />
-        <div style={{ height: 12 }} />
-        <GroupBlock color="#a855f7" label="Commissioning" rows={rows2} />
+      <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderBottom: "1px solid var(--border-color)" }}>
+        <span style={{ fontSize: 10, color: "var(--text-muted)" }}>▾</span>
+        <span style={{ width: 12, height: 12, borderRadius: 3, background: "#3b82f6" }} />
+        <span style={{ fontSize: 12, fontWeight: 700 }}>Default Group</span>
+      </div>
+
+      <div style={{ display: "flex", gap: 8, padding: "8px 14px 6px", fontSize: 9, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: 0.3 }}>
+        <span style={{ flex: "1 1 auto", textAlign: "center" }}>Item</span>
+        <span style={{ width: 130, flexShrink: 0, textAlign: "center" }}>Progress</span>
+        <span style={{ width: 84, flexShrink: 0, textAlign: "center" }}>Timeline</span>
+        <span style={{ width: 52, flexShrink: 0, textAlign: "center" }}>Status</span>
+      </div>
+
+      <div style={{ padding: "0 14px 12px" }}>
+        {MOCK_ROWS.map((r) => (
+          <MockRow key={r.name} {...r} />
+        ))}
       </div>
     </div>
   );
 }
 
-function GroupBlock({ color, label, rows }) {
+const ROW_HEIGHT = 28;
+const LEVEL_WIDTH = 14;
+// Tree-lane + progress-bar share one fixed total width per row, so the
+// bar's right edge always lands at the same x — the deeper the nesting,
+// the more of that shared width the tree lines eat into, so the bar
+// itself gets shorter (right-aligned "staircase"), matching the real
+// product's Progress column.
+const PROGRESS_COL_WIDTH = 130;
+
+// Graduated progress-bar fill by percentage level, matching the real
+// product's Progress column: low % reads as orange, working up through
+// yellow-green, to solid green once it's mostly done — not tied to the
+// row's own status color, since a bar's own level is what's meaningful
+// here (a stalled 90%-done task should still look "almost there").
+function progressLevelColor(pct) {
+  if (pct >= 80) return "#22c55e";
+  if (pct >= 50) return "#a3e635";
+  if (pct > 0) return "#f97316";
+  return "#6b7280";
+}
+
+function MockRow({ depth, continues, isLast, hasChildren, name, progress, timeline, status, statusColor, stage, stageColor, stageProgress }) {
+  const laneWidth = depth > 0 ? depth * LEVEL_WIDTH + 6 : 0;
+  const branchX = (depth - 1) * LEVEL_WIDTH + 7;
+  const barWidth = PROGRESS_COL_WIDTH - laneWidth;
+  // Parents show their rolled-up (Σ) total, colored by level; leaves show
+  // their own stage's fill amount, colored by that stage's own color —
+  // e.g. "Execution" at 50% isn't "half-good", it's just half through
+  // that stage, so it keeps the stage's identity color instead of the
+  // level gradient.
+  const fillPct = hasChildren ? progress : stageProgress;
+  const barColor = hasChildren ? progressLevelColor(progress) : stageColor;
+  const barLabel = hasChildren ? `Σ ${progress}%` : stage;
+
+  const LINE_STROKE = "var(--text-muted)";
+  const LINE_WIDTH = 1.5;
+
   return (
-    <div style={{ display: "flex" }}>
-      <div style={{ width: 4, borderRadius: 2, background: color, marginRight: 10, flexShrink: 0 }} />
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 12.5, fontWeight: 700, color, marginBottom: 8 }}>{label}</div>
-        {rows.map((r) => (
-          <div key={r.name} style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 0", borderBottom: "1px solid var(--border-color)" }}>
-            <span style={{ fontSize: 12.5, flex: "1 1 auto", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}</span>
-            <span
-              style={{
-                fontSize: 10.5,
-                fontWeight: 600,
-                color: "#fff",
-                background: r.statusColor,
-                borderRadius: 5,
-                padding: "3px 8px",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {r.status}
-            </span>
-            <div style={{ width: 60, height: 6, borderRadius: 3, background: "var(--bg-hover)", overflow: "hidden", flexShrink: 0 }}>
-              <div style={{ width: `${r.progress}%`, height: "100%", background: color }} />
-            </div>
+    <div style={{ display: "flex", alignItems: "center", gap: 6, height: ROW_HEIGHT, padding: "0", borderBottom: "1px solid var(--border-color)" }}>
+      <span style={{ flex: "1 1 auto", minWidth: 0, paddingLeft: depth * 12, fontSize: 11.5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        {name}
+      </span>
+      {laneWidth > 0 && (
+        // Extends 1px above/below the row's own height so each row's
+        // segment overlaps its neighbor by a hair instead of trying to
+        // land exactly edge-to-edge — that's what actually guarantees no
+        // visible gap where two rows' lines are meant to connect.
+        <svg width={laneWidth} height={ROW_HEIGHT + 2} style={{ flexShrink: 0, overflow: "visible", marginTop: -1, marginBottom: -1 }}>
+          {/* Only the outermost ancestor lane lines up with a real branch
+              column (the leftmost tree indent) — inner ones would land
+              between columns with nothing to connect to, so only that one
+              is drawn. */}
+          {continues[0] && depth > 1 && (
+            <line x1={7} y1={-1} x2={7} y2={ROW_HEIGHT + 1} stroke={LINE_STROKE} strokeWidth={LINE_WIDTH} />
+          )}
+          <path
+            d={`M ${branchX} -1 V 13 Q ${branchX} 15 ${branchX + 6} 15 H ${laneWidth}`}
+            fill="none"
+            stroke={LINE_STROKE}
+            strokeWidth={LINE_WIDTH}
+          />
+          {!isLast && <line x1={branchX} y1={15} x2={branchX} y2={ROW_HEIGHT + 1} stroke={LINE_STROKE} strokeWidth={LINE_WIDTH} />}
+        </svg>
+      )}
+      <div style={{ width: barWidth, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "flex-end" }}>
+        <div style={{ width: "100%", height: 18, borderRadius: 4, background: "var(--bg-hover)", overflow: "hidden" }}>
+          <div style={{ width: `${fillPct}%`, height: "100%", background: barColor, opacity: 0.9, display: "flex", alignItems: "center", paddingLeft: 5 }}>
+            <span style={{ fontSize: 8, fontWeight: 700, color: "#1a1a1a", whiteSpace: "nowrap" }}>{barLabel}</span>
           </div>
-        ))}
+        </div>
+      </div>
+      <span style={{ width: 84, flexShrink: 0, textAlign: "center", fontSize: 8.5, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        {timeline}
+      </span>
+      {status ? (
+        <span style={{ width: 52, flexShrink: 0, textAlign: "center", fontSize: 9, fontWeight: 600, color: "#fff", background: statusColor, borderRadius: 4, padding: "3px 0" }}>
+          {status}
+        </span>
+      ) : (
+        <span style={{ width: 52, flexShrink: 0, textAlign: "center", fontSize: 9, color: "var(--text-muted)", background: "var(--bg-hover)", borderRadius: 4, padding: "3px 0" }}>
+          –
+        </span>
+      )}
+    </div>
+  );
+}
+
+// Small floating card previewing the S-curve feature — same idea as the
+// board mockup (hand-built, no image asset), styled to overlap the main
+// mockup's corner the way monday.com's own landing page layers little
+// feature callouts over its main screenshot.
+function SCurveMockup({ t, label }) {
+  return (
+    <div
+      style={{
+        width: 210,
+        borderRadius: 12,
+        border: "1px solid var(--border-color)",
+        boxShadow: "0 16px 40px rgba(0,0,0,0.3)",
+        background: "var(--bg-modal)",
+        padding: "12px 14px 10px",
+      }}
+    >
+      <div style={{ fontSize: 10.5, fontWeight: 700, color: "var(--text-secondary)", marginBottom: 6 }}>{label}</div>
+      <svg width="100%" viewBox="0 0 180 90" style={{ display: "block" }}>
+        <path d="M8,80 C45,20 90,11 172,10" fill="none" stroke="#16a34a" strokeWidth={2.5} strokeLinecap="round" />
+        <path d="M8,80 C60,80 90,15 172,10" fill="none" stroke="#f59e0b" strokeWidth={2.5} strokeLinecap="round" />
+        <path d="M8,80 C115,80 135,20 172,10" fill="none" stroke="#ef4444" strokeWidth={2.5} strokeLinecap="round" />
+      </svg>
+      <div style={{ display: "flex", flexDirection: "column", gap: 3, marginTop: 6 }}>
+        <LegendSwatch color="#16a34a" label={t("landing.sCurveShapeGood")} />
+        <LegendSwatch color="#f59e0b" label={t("landing.sCurveShapeTypical")} />
+        <LegendSwatch color="#ef4444" label={t("landing.sCurveShapeRisk")} />
       </div>
     </div>
+  );
+}
+
+function LegendSwatch({ color, dashed, label }) {
+  return (
+    <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 9.5, color: "var(--text-muted)" }}>
+      <span style={{ width: 12, height: 0, borderTop: `2px ${dashed ? "dashed" : "solid"} ${color}` }} />
+      {label}
+    </span>
   );
 }
