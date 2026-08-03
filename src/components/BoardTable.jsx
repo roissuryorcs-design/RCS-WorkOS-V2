@@ -116,55 +116,50 @@ export default function BoardTable({
   const [scrollDebug, setScrollDebug] = useState(null);
 
   // Horizontal group-header pinning via JS — confirmed CSS position:sticky
-  // genuinely does not stick on this axis on the reported mobile browser
-  // (tested with the inline-style conflict fixed, and again with the
-  // nested-sticky redundancy removed; neither made it stick). The earlier
-  // version of this effect worked but was jittery from rubber-band
-  // overscroll dragging scrollLeft out of range — overscroll-behavior:
-  // contain on .board-scroll-container (still in App.css) fixes that
-  // independently of this, so this should now be both sticky and smooth.
+  // genuinely does not stick on this axis on the reported mobile browser.
+  // Earlier versions listened to "scroll" and/or "touchmove" events, but
+  // running two separate event-driven update paths caused visible
+  // back-and-forth flicker (each firing with a slightly different,
+  // independently-timed scrollLeft reading, so one would occasionally
+  // overwrite the other with a stale value). A single continuous rAF
+  // loop — one authoritative update path, always reading the live
+  // current value, synced to the display's own refresh — has no such
+  // conflict and is what native sticky/scroll-driven effects use anyway.
   useEffect(() => {
-    const applyFrom = (target) => {
-      if (!target || !target.classList || !target.classList.contains('board-scroll-container')) return;
-      const max = target.scrollWidth - target.clientWidth;
-      const x = Math.min(Math.max(target.scrollLeft, 0), Math.max(max, 0));
-      const headers = target.querySelectorAll('.group-header-inner');
-      headers.forEach((el) => {
-        el.style.transform = `translateX(${x}px)`;
-      });
-      setScrollDebug({
-        scrollLeft: Math.round(target.scrollLeft),
-        scrollWidth: target.scrollWidth,
-        clientWidth: target.clientWidth,
-        max,
-        appliedX: Math.round(x),
-        headerCount: headers.length,
-      });
+    let rafId;
+    let lastX = null;
+    let lastDebugAt = 0;
+    const tick = () => {
+      const container = document.querySelector('.board-scroll-container');
+      if (container) {
+        const max = container.scrollWidth - container.clientWidth;
+        const x = Math.min(Math.max(container.scrollLeft, 0), Math.max(max, 0));
+        if (x !== lastX) {
+          lastX = x;
+          container.querySelectorAll('.group-header-inner').forEach((el) => {
+            el.style.transform = `translateX(${x}px)`;
+          });
+        }
+        // Debug readout updates on its own slower cadence — a React
+        // state update on every single frame would add jank on top of
+        // exactly what this is trying to fix.
+        const now = performance.now();
+        if (now - lastDebugAt > 150) {
+          lastDebugAt = now;
+          setScrollDebug({
+            scrollLeft: Math.round(container.scrollLeft),
+            scrollWidth: container.scrollWidth,
+            clientWidth: container.clientWidth,
+            max,
+            appliedX: Math.round(x),
+            headerCount: container.querySelectorAll('.group-header-inner').length,
+          });
+        }
+      }
+      rafId = requestAnimationFrame(tick);
     };
-    const handleScroll = (e) => applyFrom(e.target);
-    // The "scroll" event alone visibly lags a real finger-drag on this
-    // device — mobile browsers throttle how often it actually dispatches
-    // during an active touch gesture, well below the ~60-120fps the
-    // native compositor scrolls at. "touchmove" fires far more densely,
-    // and scrollLeft itself is already live/current at any instant even
-    // between "scroll" events — so re-reading it on every touchmove
-    // closes most of that gap. rAF-throttled so it can't outpace paint.
-    let rafPending = false;
-    const handleTouchMove = () => {
-      if (rafPending) return;
-      rafPending = true;
-      requestAnimationFrame(() => {
-        rafPending = false;
-        const container = document.querySelector('.board-scroll-container');
-        if (container) applyFrom(container);
-      });
-    };
-    document.addEventListener('scroll', handleScroll, true);
-    document.addEventListener('touchmove', handleTouchMove, { passive: true });
-    return () => {
-      document.removeEventListener('scroll', handleScroll, true);
-      document.removeEventListener('touchmove', handleTouchMove);
-    };
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
   }, []);
 
   const saveNewOrder = useCallback(() => {
