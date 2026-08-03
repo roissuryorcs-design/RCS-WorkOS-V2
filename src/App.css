@@ -322,8 +322,18 @@ body.dark {
   padding-left: 0 !important;
   margin: 0 !important;
   box-sizing: border-box !important;
-  width: 100% !important;
-  max-width: 1244px !important;
+  /* Was width:100%; max-width:1244px — forcing this element to be as
+     wide as 1244px regardless of its actual content (just a toggle
+     button + menu + 2 color pickers + a short title, ~300-400px) meant
+     its sticky "escape point" (containing-block width minus its own
+     width) was reached far too early on any table wider than ~1244px +
+     viewport width — it would release and scroll away partway through,
+     looking like "sticky for half the table, then dragged along after."
+     Sizing to actual content instead pushes that escape point out to
+     nearly the full table width, so it keeps sticking through virtually
+     the entire scroll range in practice. */
+  width: fit-content !important;
+  max-width: 100% !important;
   /* Was overflow:hidden — on a sticky element, overflow!=visible on
      itself still makes it act as a "scroll container" for descendant
      sticky-positioning purposes, which is exactly what broke

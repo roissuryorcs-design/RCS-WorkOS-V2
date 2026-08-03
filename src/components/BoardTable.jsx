@@ -513,8 +513,8 @@ export default function BoardTable({
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      maxWidth: '1244px',
-                      width: '100%',
+                      maxWidth: '100%',
+                      width: 'fit-content',
                       height: '48px',
                       position: 'sticky',
                       left: 0,
