@@ -4,14 +4,19 @@ import Logo from "./Logo";
 
 const FEATURE_KEYS = ["feature1", "feature2", "feature3", "feature4"];
 const FEATURE_ICONS = { feature1: "🔄", feature3: "💬", feature4: "🌐" };
-const FEATURE_COLORS = { feature1: "#3b82f6", feature2: "#f59e0b", feature3: "#a855f7", feature4: "#16a34a" };
+const FEATURE_COLORS = { feature1: "#3b82f6", feature2: "#0ea5e9", feature3: "#a855f7", feature4: "#16a34a" };
 
-// A tiny inline S-curve, instead of a generic chart emoji, for the S-Curve
-// feature card — same shape language as the SCurveMockup floating card.
+// Line-chart icon (axis + connected data points trending up) for the
+// S-Curve feature card — reads more clearly as "progress chart" at a
+// glance than the earlier sigmoid squiggle did.
 function SCurveIcon() {
   return (
-    <svg width="22" height="22" viewBox="0 0 20 20">
-      <path d="M3,16 C3,11 7,11 10,10.5 C13,10 17,9 17,4" fill="none" stroke="#b45309" strokeWidth={2.5} strokeLinecap="round" />
+    <svg width="22" height="22" viewBox="0 0 24 24">
+      <path d="M3,1 V20 H23" fill="none" stroke="#1f2937" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+      <polyline points="5,18 10,9 16,13 21,4" fill="none" stroke="#2563eb" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+      {[[5, 18], [10, 9], [16, 13], [21, 4]].map(([cx, cy]) => (
+        <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r={1.8} fill="white" stroke="#2563eb" strokeWidth={1.8} />
+      ))}
     </svg>
   );
 }
@@ -38,11 +43,25 @@ export default function LandingPage({ onGetStarted }) {
         position: "fixed",
         inset: 0,
         overflowY: "auto",
+        overflowX: "hidden",
         background: "var(--bg-primary)",
         color: "var(--text-primary)",
         zIndex: 2000,
       }}
     >
+      {/* Mobile-specific overrides — kept as an actual stylesheet rule
+          (rather than JS width-detection) since these need to react to
+          real viewport width, including on resize/rotate, without a
+          re-render. Everything else on this page is inline-styled and
+          fine as-is at any width via flex-wrap. */}
+      <style>{`
+        @media (max-width: 640px) {
+          .rcs-landing-nav-actions { flex-wrap: wrap; justify-content: flex-end; row-gap: 8px; }
+          .rcs-landing-scurve-float { position: static !important; margin: 16px auto 0; right: auto !important; bottom: auto !important; }
+          .rcs-landing-mockup-col { padding-bottom: 0 !important; }
+        }
+      `}</style>
+
       {/* Nav bar */}
       <div
         style={{
@@ -52,6 +71,8 @@ export default function LandingPage({ onGetStarted }) {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
+          flexWrap: "wrap",
+          rowGap: 8,
           padding: "14px 24px",
           background: "var(--bg-primary)",
           borderBottom: "1px solid var(--border-color)",
@@ -60,7 +81,7 @@ export default function LandingPage({ onGetStarted }) {
         <div style={{ transform: "scale(0.7)", transformOrigin: "left center" }}>
           <Logo width={90} />
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div className="rcs-landing-nav-actions" style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <button
             onClick={toggleTheme}
             style={{ padding: "6px 10px", background: "var(--bg-hover)", border: "1px solid var(--border-dark)", borderRadius: 6, cursor: "pointer", fontSize: 12.5, color: "var(--text-primary)" }}
@@ -118,9 +139,15 @@ export default function LandingPage({ onGetStarted }) {
           <div style={{ marginTop: 14, fontSize: 12.5, color: "var(--text-muted)" }}>{t("landing.microcopy")}</div>
         </div>
 
-        <div style={{ flex: "1 1 420px", minWidth: 300, position: "relative", paddingBottom: 60 }}>
-          <BoardMockup />
-          <div style={{ position: "absolute", right: -16, bottom: -40 }}>
+        <div className="rcs-landing-mockup-col" style={{ flex: "1 1 420px", minWidth: 0, maxWidth: 460, position: "relative", paddingBottom: 60 }}>
+          {/* The mockup table has several fixed-width columns and doesn't
+              meaningfully compress below ~420px — rather than let it force
+              the whole page wider than the viewport on a phone, it scrolls
+              horizontally within its own card. */}
+          <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+            <BoardMockup />
+          </div>
+          <div className="rcs-landing-scurve-float" style={{ position: "absolute", right: -16, bottom: -40 }}>
             <SCurveMockup t={t} label={t("landing.sCurveMockupLabel")} />
           </div>
         </div>
@@ -153,7 +180,7 @@ export default function LandingPage({ onGetStarted }) {
                 width: 42,
                 height: 42,
                 borderRadius: 10,
-                background: `${FEATURE_COLORS[key]}${key === "feature2" ? "40" : "22"}`,
+                background: `${FEATURE_COLORS[key]}22`,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
