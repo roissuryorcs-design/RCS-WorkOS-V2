@@ -294,15 +294,15 @@ body.dark {
   width: fit-content !important;
   min-width: 100% !important;
   overflow: visible !important;
-  /* contain:layout previously fixed a "scrollWidth keeps growing" bug
-     caused by .group-header-inner's JS-driven transform leaking into
-     this element's size/overflow calculations. That transform is now
-     fully blocked at the CSS level (see .group-header-inner below), so
-     the leak this worked around can no longer happen — and contain:layout
-     turned out to itself break position:sticky resolution for this
-     element's descendants on Android WebView (confirmed: desktop laptop
-     stayed sticky and jitter-free, phone lost stickiness entirely once
-     this was added). Removed rather than kept as defensive dead weight. */
+  /* contain:layout is applied mobile-only now (see the max-width:768px
+     block below) — it fixes a real "scrollWidth keeps growing" bug
+     caused by .group-header-inner's JS-driven transform (mobile-only,
+     see BoardTable.jsx) leaking into this element's size/overflow
+     calculations, but it isn't needed on desktop (no JS transform runs
+     there — pure native sticky) and unscoped use previously appeared to
+     interfere with sticky resolution for descendants on Android WebView
+     back when mobile still relied on native sticky. Mobile no longer
+     does (JS-driven instead), so this is now safe to scope in. */
   padding: 0 !important;
   margin-bottom: 0 !important;
   min-height: 48px;
@@ -339,7 +339,7 @@ body.dark {
   border-left: 4px solid var(--group-color, #3b82f6) !important;
   min-height: 48px;
   transition: none !important;
-  will-change: left;
+  will-change: left, transform;
 }
 
 .group-header-inner > .group-toggle-btn {
@@ -907,6 +907,15 @@ th:hover .resize-handle {
     color: var(--text-primary);
     font-size: 17px;
     cursor: pointer;
+  }
+
+  .group-header {
+    /* Stops .group-header-inner's JS-driven transform (mobile-only) from
+       leaking into this element's own scrollWidth/overflow calculation —
+       without this, scrolling right kept "growing" how far you could
+       scroll, compounding every frame. Scoped to mobile only: desktop
+       never runs that transform, so it never had this leak to begin with. */
+    contain: layout;
   }
 
   .group-header-inner {
