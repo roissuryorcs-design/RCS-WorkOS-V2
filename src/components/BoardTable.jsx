@@ -5,6 +5,16 @@ import Popover from "./Popover";
 import { useColumns } from "../context/ColumnContext";
 import { useLanguage } from "../context/LanguageContext";
 import { getSubItemLabel } from "../i18n/defaults";
+import { parseDateValue } from "../utils/formulaEngine";
+
+const TIMELINE_MONTHS_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+// Matches TimelineCell's own stored string shape ("DD - Mon - YYYY") —
+// duplicated rather than imported since TimelineCell derives it from a
+// raw <input type="date"> string, not a Date object.
+function formatTimelineDate(d) {
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${day} - ${TIMELINE_MONTHS_SHORT[d.getMonth()]} - ${d.getFullYear()}`;
+}
 
 // Picks black or white text for a given background hex, whichever reads
 // better — used for the column-header row's text since its background is
@@ -56,6 +66,44 @@ export default function BoardTable({
     reorderColumns,
     visibleColumns,
   } = useColumns();
+
+  // ============================================================
+  // Self-heals Timeline data saved before the parent-range constraint
+  // existed: walks the tree once per items/columns change and clamps any
+  // child whose timeline sits outside its parent's into range. Only
+  // fires an update when a fix is actually needed, so once a board's
+  // data converges this becomes a no-op on every subsequent render (no
+  // update loop) — same reactive-repair pattern as the items auto-seed
+  // effect in ItemsContext.
+  // ============================================================
+  useEffect(() => {
+    const timelineColIds = columns.filter((c) => c.type === "timeline").map((c) => c.id);
+    if (timelineColIds.length === 0) return;
+
+    const walk = (list, parent) => {
+      for (const item of list) {
+        if (parent) {
+          for (const colId of timelineColIds) {
+            const child = item[colId];
+            const parentVal = parent[colId];
+            const cs = child && typeof child === "object" ? parseDateValue(child.start) : null;
+            const ce = child && typeof child === "object" ? parseDateValue(child.end) : null;
+            const ps = parentVal && typeof parentVal === "object" ? parseDateValue(parentVal.start) : null;
+            const pe = parentVal && typeof parentVal === "object" ? parseDateValue(parentVal.end) : null;
+            if (cs && ce && ps && pe) {
+              const ns = cs < ps ? ps : cs;
+              const ne = (ce > pe ? pe : ce) < ns ? ns : (ce > pe ? pe : ce);
+              if (ns.getTime() !== cs.getTime() || ne.getTime() !== ce.getTime()) {
+                onUpdateItem(item.id, colId, { start: formatTimelineDate(ns), end: formatTimelineDate(ne) });
+              }
+            }
+          }
+        }
+        if (item.children && item.children.length > 0) walk(item.children, item);
+      }
+    };
+    walk(items, null);
+  }, [items, columns, onUpdateItem]);
 
   // ============================================================
   // 🔥 DRAG & DROP GROUP - SIMPAN LANGSUNG NAMA GROUP
