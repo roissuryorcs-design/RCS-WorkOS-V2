@@ -898,6 +898,18 @@ th:hover .resize-handle {
   .add-item-sticky {
     left: 30px !important;
   }
+
+  /* The Item column keeps whatever width was set on desktop (often
+     200-300px+) — on a ~360-400px phone screen that alone can eat
+     nearly the whole viewport, leaving nothing visible after scrolling
+     right except the sticky Item column itself. Cap it so the rest of
+     the table has room to actually show once scrolled. */
+  .board-table th:nth-child(2),
+  .board-table td:nth-child(2) {
+    width: 140px !important;
+    min-width: 140px !important;
+    max-width: 140px !important;
+  }
 }
 
 /* ============================================================
