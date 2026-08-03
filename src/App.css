@@ -320,15 +320,14 @@ body.dark {
   max-width: 1244px !important;
   overflow: hidden !important;
   position: sticky !important;
-  /* Genuine CSS sticky on both axes — a JS scroll-linked transform was
-     tried instead (see git history) but a synchronous scroll handler
-     can't keep up with native touch-scroll frame rate, which showed up
-     as jitter/lag. Native sticky is compositor-driven and doesn't have
-     that problem; it only failed to visibly stick before because this
-     element's own inline JSX left:0 was being fought by a *different*,
-     now-fixed conflict (the outer .group-header used to also be sticky
-     on the same axis, which was the actual redundant/broken part). */
-  left: 0 !important;
+  /* Confirmed by direct A/B test on the reported device: real CSS
+     sticky-left does not stick here even with every inline/redundancy
+     conflict fixed — so horizontal pinning is done in JS instead (see
+     the effect in BoardTable.jsx), combined with overscroll-behavior:
+     contain on .board-scroll-container to stop the rubber-band jitter
+     that plagued the first JS attempt. Vertical (top:0) stays on real
+     sticky, which does work correctly. */
+  left: auto !important;
   top: 0 !important;
   z-index: 1001 !important;
   background-color: var(--bg-secondary) !important;

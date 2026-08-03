@@ -110,6 +110,28 @@ export default function BoardTable({
   // ============================================================
   const boardRef = useRef(null);
 
+  // Horizontal group-header pinning via JS — confirmed CSS position:sticky
+  // genuinely does not stick on this axis on the reported mobile browser
+  // (tested with the inline-style conflict fixed, and again with the
+  // nested-sticky redundancy removed; neither made it stick). The earlier
+  // version of this effect worked but was jittery from rubber-band
+  // overscroll dragging scrollLeft out of range — overscroll-behavior:
+  // contain on .board-scroll-container (still in App.css) fixes that
+  // independently of this, so this should now be both sticky and smooth.
+  useEffect(() => {
+    const handleScroll = (e) => {
+      const target = e.target;
+      if (!target || !target.classList || !target.classList.contains('board-scroll-container')) return;
+      const max = target.scrollWidth - target.clientWidth;
+      const x = Math.min(Math.max(target.scrollLeft, 0), Math.max(max, 0));
+      target.querySelectorAll('.group-header-inner').forEach((el) => {
+        el.style.transform = `translateX(${x}px)`;
+      });
+    };
+    document.addEventListener('scroll', handleScroll, true);
+    return () => document.removeEventListener('scroll', handleScroll, true);
+  }, []);
+
   const saveNewOrder = useCallback(() => {
     const container = boardRef.current;
     if (!container) return;
