@@ -317,7 +317,11 @@ body.dark {
   /* Horizontal is pinned manually via a scroll-linked transform in
      BoardTable.jsx (see the "Horizontal group-header pinning" effect) —
      CSS sticky-left never reliably worked here on mobile. Vertical
-     stays on sticky top:0, which does work. */
+     stays on sticky top:0, which does work. The JSX for this element
+     also sets an inline left:0 (non-important) — must explicitly cancel
+     it here with !important, or that inline value wins by default and
+     fights the transform (same bug class as the Item column's width). */
+  left: auto !important;
   top: 0 !important;
   z-index: 1001 !important;
   background-color: var(--bg-secondary) !important;
