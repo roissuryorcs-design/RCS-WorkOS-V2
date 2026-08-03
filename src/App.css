@@ -324,7 +324,13 @@ body.dark {
   box-sizing: border-box !important;
   width: 100% !important;
   max-width: 1244px !important;
-  overflow: hidden !important;
+  /* Was overflow:hidden — on a sticky element, overflow!=visible on
+     itself still makes it act as a "scroll container" for descendant
+     sticky-positioning purposes, which is exactly what broke
+     .group-title's now-removed nested sticky above. .group-title
+     already clips its own text via its own overflow:hidden+ellipsis,
+     so nothing here actually relied on this element's own clipping. */
+  overflow: visible !important;
   position: sticky !important;
   /* Reverted to pure CSS sticky-left after user-run DevTools testing
      found the JS transform approach was the actual source of visible
@@ -405,9 +411,16 @@ body.dark {
   font-size: 14px !important;
   font-weight: 600 !important;
   color: var(--group-color, #3b82f6) !important;
-  position: sticky !important;
-  left: 35px !important;
-  z-index: 1002 !important;
+  /* Not position:sticky — .group-header-inner (its direct parent) is
+     already sticky-left as one whole unit (icons + title together), so
+     this doesn't need to independently stick too. Nesting a second sticky
+     element inside a parent that has overflow:hidden (below) makes that
+     parent become *this* element's "nearest scrolling ancestor" for
+     sticky-offset purposes instead of the real scroller further up
+     (.board-scroll-container) — since the parent itself never actually
+     scrolls, the nested sticky child then never appears to move at all,
+     which is exactly the "not sticky at all on mobile" symptom reported. */
+  position: relative !important;
 }
 
 /* ============================================================
