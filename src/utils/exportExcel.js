@@ -1,31 +1,49 @@
-import { computeOwnProgress } from "./progressWeights";
+import {
+  computeOwnProgress,
+  computeCascadedDisplayPercent,
+  computeAbsoluteWeight,
+  resolveIndependentWeight,
+  resolveSelfWeight,
+} from "./progressWeights";
 
 const HEADER_FILL = "FF1F2937"; // slate-800
 const HEADER_FONT = "FFFFFFFF";
 const GROUP_FONT = "FFFFFFFF";
 
 // Flattens the item tree into render-order rows with a depth, a
-// numberPath ("1", "1.1", "1.1.1", …), and a `continues` array (one bool
-// per ancestor level: does that ancestor have a following sibling below,
-// i.e. does its vertical connector line keep going past this row) — the
-// same bookkeeping LandingPage.jsx's flattenTree() uses to draw the
-// mockup's SVG tree-line connectors, reused here to draw real ones with
-// Unicode box-drawing characters instead (Excel can't render arbitrary
-// line art inside a cell, but "│ ├─ └─" reads as an actual tree in any
-// spreadsheet app, not just an approximation specific to this codebase).
-function flattenItems(items) {
+// numberPath ("1", "1.1", "1.1.1", …), a `continues` array (one bool per
+// ancestor level: does that ancestor have a following sibling below, i.e.
+// does its vertical connector line keep going past this row — the same
+// bookkeeping LandingPage.jsx's flattenTree() uses for its mockup's SVG
+// lines, reused here to draw real ones with Unicode box-drawing
+// characters), and — per progress-type column id — this row's own
+// "absolute weight" chained down from the root. That last part mirrors
+// Row.jsx's own top-down pass exactly (parentAbsoluteWeights threaded
+// into each recursive call) since a child's cascaded/cumulative % needs
+// its parent's already-resolved absolute weight, not just its own.
+function flattenItems(items, progressColumnIds) {
   const rows = [];
-  const walk = (list, depth, prefix, continues) => {
+  const walk = (list, depth, prefix, continues, parentAbsoluteWeights) => {
     list.forEach((item, i) => {
       const isLast = i === list.length - 1;
       const numberPath = prefix ? `${prefix}.${i + 1}` : String(i + 1);
-      rows.push({ item, depth, numberPath, continues, isLast });
+
+      const myAbsoluteWeights = {};
+      progressColumnIds.forEach((colId) => {
+        const weightInfo = depth === 0
+          ? resolveIndependentWeight(item, colId)
+          : resolveSelfWeight(list, item.id, colId);
+        const parentAbsoluteWeight = parentAbsoluteWeights[colId] ?? 100;
+        myAbsoluteWeights[colId] = computeAbsoluteWeight(weightInfo.resolvedWeight, parentAbsoluteWeight);
+      });
+
+      rows.push({ item, depth, numberPath, continues, isLast, siblings: list, parentAbsoluteWeights });
       if (item.children && item.children.length > 0) {
-        walk(item.children, depth + 1, numberPath, [...continues, !isLast]);
+        walk(item.children, depth + 1, numberPath, [...continues, !isLast], myAbsoluteWeights);
       }
     });
   };
-  walk(items, 0, "", []);
+  walk(items, 0, "", [], {});
   return rows;
 }
 
@@ -94,25 +112,33 @@ function writeCell(cell, col, item, numberPath, tree) {
       return;
     }
     case "progress": {
-      // Mirrors what the board itself shows (BoardTable's "Σ XX%" for a
-      // parent, or the stage's own value for a leaf) — NOT item[col.id]
-      // directly. A parent item generally has no raw value of its own at
-      // all; its displayed % is entirely a weighted rollup computed from
-      // its children (computeWeightedProgress), so reading item[col.id]
-      // straight read as 0% for every non-leaf row.
-      const num = computeOwnProgress(item, col.id);
       if (!tree || tree.depth === 0) {
-        // Top-level rows only — the Data Bar conditional-formatting rule
-        // (added afterwards) targets exactly these cells specifically.
+        // Top-level rows: own weighted rollup (BoardTable's own "Σ XX%"
+        // for a parent, or the stage's own value if it's a childless
+        // top-level item) — NOT item[col.id] directly, which a parent
+        // generally has no raw value of its own for at all (its % is
+        // entirely a rollup computed from children). Data Bar conditional
+        // formatting (added afterwards) targets exactly these cells.
+        const num = computeOwnProgress(item, col.id);
         cell.value = num / 100;
         cell.numFmt = "0%";
         cell.alignment = { horizontal: "center" };
       } else {
-        // Sub-items: no data bar (by request — a bar that can't shrink to
-        // reflect depth the way the board's own progress bar does would
-        // misleadingly look identical at every level). Same tree-line
-        // prefix as the Item column instead, plus the plain percentage.
-        cell.value = `${treePrefix(tree.depth, tree.continues, tree.isLast)}${num}%`;
+        // Sub-items: the *cumulative* contribution to the whole board —
+        // own progress × this row's absolute weight (its true share of
+        // the whole tree, chaining every ancestor's relative weight) —
+        // same number Row.jsx computes as displayPercent, not the raw
+        // value sitting inside a leaf's own little stage/progress pill
+        // (which is what computeOwnProgress alone would give here, and
+        // reads as misleading out of context). No data bar (a bar that
+        // can't shrink with depth like the board's own would look
+        // identical at every level) — same tree-line prefix as the Item
+        // column instead, plus this cumulative percentage as plain text.
+        const ownProgress = computeOwnProgress(item, col.id);
+        const weightInfo = resolveSelfWeight(tree.siblings, item.id, col.id);
+        const parentAbsoluteWeight = tree.parentAbsoluteWeights[col.id] ?? 100;
+        const cumulative = computeCascadedDisplayPercent(ownProgress, weightInfo.resolvedWeight, parentAbsoluteWeight);
+        cell.value = `${treePrefix(tree.depth, tree.continues, tree.isLast)}${cumulative}%`;
         cell.font = { name: "Courier New" };
         cell.alignment = { horizontal: "left" };
       }
@@ -197,6 +223,7 @@ export async function exportBoardToExcel({ boardTitle, items, columns, groups, g
   // top-level-only rows are scattered between group headers and indented
   // sub-item rows, not one contiguous block.
   const topLevelRowsByProgressCol = {};
+  const progressColumnIds = columns.filter((c) => c.type === "progress").map((c) => c.id);
 
   for (const groupName of groups) {
     const groupItems = itemsByGroup[groupName] || [];
@@ -209,7 +236,7 @@ export async function exportBoardToExcel({ boardTitle, items, columns, groups, g
     groupRow.getCell(1).font = { color: { argb: GROUP_FONT }, bold: true, size: 12 };
     groupRow.getCell(1).alignment = { vertical: "middle" };
 
-    for (const { item, depth, numberPath, continues, isLast } of flattenItems(groupItems)) {
+    for (const { item, depth, numberPath, continues, isLast, siblings, parentAbsoluteWeights } of flattenItems(groupItems, progressColumnIds)) {
       const row = sheet.addRow({});
       // Native Excel outline grouping — gives sub-items real collapsible
       // +/- tree controls in the row gutter (Data > Group's own feature),
@@ -228,7 +255,7 @@ export async function exportBoardToExcel({ boardTitle, items, columns, groups, g
           // compatible suite (Excel, WPS, LibreOffice, Google Sheets).
           cell.font = { name: "Courier New" };
         } else {
-          writeCell(cell, col, item, numberPath, { depth, continues, isLast });
+          writeCell(cell, col, item, numberPath, { depth, continues, isLast, siblings, parentAbsoluteWeights });
           if (col.type === "progress" && depth === 0) {
             if (!topLevelRowsByProgressCol[i]) topLevelRowsByProgressCol[i] = [];
             topLevelRowsByProgressCol[i].push(row.number);
