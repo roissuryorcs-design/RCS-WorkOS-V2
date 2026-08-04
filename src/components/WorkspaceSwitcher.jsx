@@ -3,7 +3,6 @@ import { createPortal } from "react-dom";
 import { useBoards } from "../context/BoardsContext";
 import { useLanguage } from "../context/LanguageContext";
 import Popover from "./Popover";
-import MemberDirectory from "./MemberDirectory";
 
 const AVATAR_COLORS = ["#3b82f6", "#8b5cf6", "#ec4899", "#f59e0b", "#10b981", "#ef4444", "#06b6d4", "#6366f1"];
 
@@ -28,7 +27,8 @@ function WorkspaceAvatar({ workspace, size = 22 }) {
 
 // A native alert() can't be selected/copied reliably across browsers — this
 // gives the invite code its own small modal with a real Copy button instead.
-function InviteCodeModal({ code, onClose }) {
+// Exported so AccountMenu.jsx can reuse it for its own "Invite people" entry.
+export function InviteCodeModal({ code, onClose }) {
   const { t } = useLanguage();
   const [copied, setCopied] = useState(false);
 
@@ -136,13 +136,11 @@ export default function WorkspaceSwitcher() {
   const {
     workspaces,
     activeWorkspaceId,
-    isActiveWorkspaceOwner,
     recentWorkspaces,
     switchWorkspace,
     createWorkspace,
     renameWorkspace,
     deleteWorkspace,
-    createInviteCode,
     joinWorkspaceByCode,
   } = useBoards();
   const { t } = useLanguage();
@@ -151,8 +149,6 @@ export default function WorkspaceSwitcher() {
   const [search, setSearch] = useState("");
   const [openMenuId, setOpenMenuId] = useState(null);
   const [itemMenuAnchorEl, setItemMenuAnchorEl] = useState(null);
-  const [inviteCodeToShow, setInviteCodeToShow] = useState(null);
-  const [showMembersModal, setShowMembersModal] = useState(false);
   const switcherBtnRef = useRef(null);
 
   const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId) || workspaces[0];
@@ -191,12 +187,6 @@ export default function WorkspaceSwitcher() {
   const handleDelete = (workspace) => {
     deleteWorkspace(workspace.id);
     setOpenMenuId(null);
-  };
-
-  const handleInvite = async () => {
-    const code = await createInviteCode();
-    close();
-    if (code) setInviteCodeToShow(code);
   };
 
   const handleJoin = () => {
@@ -279,31 +269,17 @@ export default function WorkspaceSwitcher() {
           <div className="workspace-empty-search">{t("workspaceSwitcher.noWorkspacesFound")}</div>
         )}
 
+        {/* Invite/Manage members moved to AccountMenu (top-right avatar menu)
+            — this footer was cramming 5 buttons into a 280px popup and
+            visibly overflowing. Switching/creating/joining workspaces is
+            this popup's actual job; workspace-admin actions belong with
+            the other account-level actions instead. */}
         <div className="workspace-switcher-footer">
           <button className="workspace-footer-btn" onClick={handleAddWorkspace}>{t("workspaceSwitcher.addWorkspace")}</button>
           <button className="workspace-footer-btn" onClick={handleJoin}>{t("workspaceSwitcher.joinWorkspace")}</button>
-          {isActiveWorkspaceOwner && (
-            <button className="workspace-footer-btn" onClick={handleInvite}>{t("workspaceSwitcher.inviteBtn")}</button>
-          )}
-          <button
-            className="workspace-footer-btn"
-            onClick={() => {
-              close();
-              setShowMembersModal(true);
-            }}
-          >
-            {t("workspaceSwitcher.manageMembersBtn")}
-          </button>
           <button className="workspace-footer-btn" onClick={() => setSearch("")}>{t("workspaceSwitcher.browseAll")}</button>
         </div>
       </Popover>
-
-      {inviteCodeToShow && (
-        <InviteCodeModal code={inviteCodeToShow} onClose={() => setInviteCodeToShow(null)} />
-      )}
-      {showMembersModal && (
-        <MemberDirectory onClose={() => setShowMembersModal(false)} />
-      )}
     </div>
   );
 }
