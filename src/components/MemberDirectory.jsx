@@ -1,22 +1,25 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useBoards } from "../context/BoardsContext";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 import Avatar from "./Avatar";
+import Popover from "./Popover";
 
-// Simple table: who's in this workspace (photo + name) and which boards
-// each person can access. Full profile detail (job title/phone/hobby)
-// lives in each person's own Settings, not repeated here — kept per user
-// request to not over-detail this specific view.
+// Simple table: who's in this workspace (photo + name), which boards each
+// person can access, and their role (owner/admin/member). Full profile
+// detail (job title/phone/hobby) lives in each person's own Settings, not
+// repeated here — kept deliberately simple per user request.
 export default function MemberDirectory({ onClose }) {
   const { t } = useLanguage();
   const { user } = useAuth();
-  const { isActiveWorkspaceOwner, fetchWorkspaceMembers, fetchWorkspaceBoardAccessMap, removeMember } = useBoards();
+  const { isActiveWorkspaceOwner, fetchWorkspaceMembers, fetchWorkspaceBoardAccessMap, removeMember, updateMemberRole } = useBoards();
   const [members, setMembers] = useState([]);
   const [boardAccessMap, setBoardAccessMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [openMenuUserId, setOpenMenuUserId] = useState(null);
+  const menuAnchorsRef = useRef({});
 
   useEffect(() => {
     let cancelled = false;
@@ -33,6 +36,7 @@ export default function MemberDirectory({ onClose }) {
   }, []);
 
   const handleRemove = async (member) => {
+    setOpenMenuUserId(null);
     if (!confirm(t("membersModal.removeConfirm", { name: member.displayName || member.email }))) return;
     const { error } = await removeMember(member.userId);
     if (error) {
@@ -42,10 +46,23 @@ export default function MemberDirectory({ onClose }) {
     setMembers((prev) => prev.filter((m) => m.userId !== member.userId));
   };
 
+  const handleSetRole = async (member, role) => {
+    setOpenMenuUserId(null);
+    const { error } = await updateMemberRole(member.userId, role);
+    if (error) {
+      alert(t("memberDirectory.roleChangeFailed"));
+      return;
+    }
+    setMembers((prev) => prev.map((m) => (m.userId === member.userId ? { ...m, role } : m)));
+  };
+
   const query = search.trim().toLowerCase();
   const filteredMembers = query
     ? members.filter((m) => (m.displayName || m.email || "").toLowerCase().includes(query))
     : members;
+
+  const roleLabel = (role) =>
+    role === "owner" ? t("memberDirectory.roleOwner") : role === "admin" ? t("memberDirectory.roleAdmin") : t("memberDirectory.roleMember");
 
   return createPortal(
     <div
@@ -66,7 +83,7 @@ export default function MemberDirectory({ onClose }) {
           background: "var(--bg-modal)",
           borderRadius: 12,
           padding: 24,
-          maxWidth: 480,
+          maxWidth: 520,
           width: "92%",
           color: "var(--text-primary)",
           boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
@@ -106,6 +123,7 @@ export default function MemberDirectory({ onClose }) {
                 <tr style={{ borderBottom: "1px solid var(--border-color)" }}>
                   <th style={thStyle}>{t("membersModal.title")}</th>
                   <th style={thStyle}>{t("memberDirectory.boardsLabel")}</th>
+                  <th style={thStyle}>{t("memberDirectory.roleLabel")}</th>
                   <th style={{ ...thStyle, width: 1 }} />
                 </tr>
               </thead>
@@ -115,6 +133,7 @@ export default function MemberDirectory({ onClose }) {
                   const boardAccessLabel = access && access.length > 0
                     ? access.map((a) => a.boardName).filter(Boolean).join(", ")
                     : t("memberDirectory.allBoards");
+                  const isSelf = m.userId === user.id;
 
                   return (
                     <tr key={m.userId} style={{ borderBottom: "1px solid var(--border-color)" }}>
@@ -123,28 +142,50 @@ export default function MemberDirectory({ onClose }) {
                           <Avatar url={m.avatarUrl} name={m.displayName || m.email} size={30} />
                           <span style={{ fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                             {m.displayName || m.email}
-                            {m.userId === user.id ? ` (${t("membersModal.you")})` : ""}
+                            {isSelf ? ` (${t("membersModal.you")})` : ""}
                           </span>
                         </div>
                       </td>
                       <td style={{ ...tdStyle, fontSize: 12, color: "var(--text-secondary)" }}>{boardAccessLabel}</td>
                       <td style={tdStyle}>
-                        {isActiveWorkspaceOwner && m.userId !== user.id && (
-                          <button
-                            onClick={() => handleRemove(m)}
-                            style={{
-                              padding: "3px 10px",
-                              background: "transparent",
-                              color: "#ef4444",
-                              border: "1px solid #ef4444",
-                              borderRadius: 6,
-                              cursor: "pointer",
-                              fontSize: 11.5,
-                              whiteSpace: "nowrap",
-                            }}
-                          >
-                            {t("membersModal.removeBtn")}
-                          </button>
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, color: m.role === "owner" ? "#f59e0b" : "var(--text-secondary)" }}>
+                          {m.role === "owner" && "👑"}
+                          {roleLabel(m.role)}
+                        </span>
+                      </td>
+                      <td style={tdStyle}>
+                        {isActiveWorkspaceOwner && !isSelf && (
+                          <>
+                            <button
+                              ref={(el) => (menuAnchorsRef.current[m.userId] = el)}
+                              onClick={() => setOpenMenuUserId(openMenuUserId === m.userId ? null : m.userId)}
+                              style={{
+                                background: "none",
+                                border: "none",
+                                cursor: "pointer",
+                                fontSize: 16,
+                                color: "var(--text-secondary)",
+                                padding: "2px 8px",
+                              }}
+                            >
+                              ⋯
+                            </button>
+                            <Popover
+                              anchorRef={{ current: menuAnchorsRef.current[m.userId] }}
+                              isOpen={openMenuUserId === m.userId}
+                              onClose={() => setOpenMenuUserId(null)}
+                              placement="bottom-end"
+                              className="tree-node-popup"
+                            >
+                              {m.role !== "admin" && (
+                                <button onClick={() => handleSetRole(m, "admin")}>{t("memberDirectory.makeAdmin")}</button>
+                              )}
+                              {m.role !== "member" && (
+                                <button onClick={() => handleSetRole(m, "member")}>{t("memberDirectory.makeMember")}</button>
+                              )}
+                              <button onClick={() => handleRemove(m)}>{t("membersModal.removeBtn")}</button>
+                            </Popover>
+                          </>
                         )}
                       </td>
                     </tr>

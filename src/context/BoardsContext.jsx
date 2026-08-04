@@ -662,6 +662,18 @@ export function BoardsProvider({ children }) {
     return { error };
   };
 
+  // Owner-only (enforced by the RPC itself), same pattern as removeMember.
+  const updateMemberRole = async (userId, role) => {
+    if (!activeWorkspaceId) return { error: "no active workspace" };
+    const { error } = await supabase.rpc("set_member_role", {
+      _workspace_id: activeWorkspaceId,
+      _user_id: userId,
+      _role: role,
+    });
+    if (error) console.error("Error updating member role:", error);
+    return { error };
+  };
+
   // `restricted` is an explicit flag (boards.access_restricted), not
   // inferred from whether board_members has rows — an empty allowlist is
   // ambiguous between "never restricted" and "restricted to owner only,
@@ -746,6 +758,7 @@ export function BoardsProvider({ children }) {
         fetchWorkspaceMembers,
         fetchWorkspaceBoardAccessMap,
         removeMember,
+        updateMemberRole,
         fetchBoardAccess,
         setBoardAccess,
       }}
