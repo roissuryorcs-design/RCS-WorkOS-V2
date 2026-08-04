@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { useLanguage } from '../context/LanguageContext';
 import { useMobileNav } from '../context/MobileNavContext';
+import AccountMenu from './AccountMenu';
 
 // title/subtitle now live in the `boards` table (columns existed since
 // Phase 1 but were never wired up — this component was still 100%
@@ -131,61 +132,33 @@ const Header = ({ groups = [], boardId, isReady = true }) => {
   };
 
   return (
-    <div className="header-sticky" style={{ padding: '16px 24px' }}>
-      <button className="mobile-menu-btn" onClick={() => setSidebarOpen(true)} aria-label={t('sidebar.openMenu')}>
-        ☰
-      </button>
-      {/* TITLE */}
-      <h1
-        contentEditable={true}
-        suppressContentEditableWarning={true}
-        spellCheck={false}
-        onBlur={(e) => handleBlur(e, persistTitle, title)}
-        onKeyDown={handleKeyDown}
-        style={{
-          ...style,
-          fontSize: '24px',
-          fontWeight: 700,
-          color: 'var(--text-primary, #333)',
-        }}
-      >
-        {title}
-        <span
-          contentEditable={false}
-          style={{
-            fontSize: '14px',
-            color: '#8a94a6',
-            marginLeft: '8px',
-            fontWeight: 400,
-            opacity: 0.5,
-            display: 'inline-block',
-            pointerEvents: 'none',
-          }}
-        >
-          ✎
-        </span>
-      </h1>
-
-      {/* SUBTITLE */}
-      <div style={{ marginTop: '4px' }}>
-        <p
+    <div className="header-sticky" style={{ padding: '16px 24px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
+      <div style={{ minWidth: 0, flex: 1 }}>
+        <button className="mobile-menu-btn" onClick={() => setSidebarOpen(true)} aria-label={t('sidebar.openMenu')}>
+          ☰
+        </button>
+        {/* TITLE */}
+        <h1
           contentEditable={true}
           suppressContentEditableWarning={true}
           spellCheck={false}
-          onBlur={(e) => handleBlur(e, persistSubtitle, subtitle)}
+          onBlur={(e) => handleBlur(e, persistTitle, title)}
           onKeyDown={handleKeyDown}
           style={{
             ...style,
-            fontSize: '14px',
-            color: 'var(--text-secondary, #8a94a6)',
+            fontSize: '24px',
+            fontWeight: 700,
+            color: 'var(--text-primary, #333)',
           }}
         >
-          {subtitle}
+          {title}
           <span
             contentEditable={false}
             style={{
-              fontSize: '12px',
-              marginLeft: '6px',
+              fontSize: '14px',
+              color: '#8a94a6',
+              marginLeft: '8px',
+              fontWeight: 400,
               opacity: 0.5,
               display: 'inline-block',
               pointerEvents: 'none',
@@ -193,7 +166,45 @@ const Header = ({ groups = [], boardId, isReady = true }) => {
           >
             ✎
           </span>
-        </p>
+        </h1>
+
+        {/* SUBTITLE */}
+        <div style={{ marginTop: '4px' }}>
+          <p
+            contentEditable={true}
+            suppressContentEditableWarning={true}
+            spellCheck={false}
+            onBlur={(e) => handleBlur(e, persistSubtitle, subtitle)}
+            onKeyDown={handleKeyDown}
+            style={{
+              ...style,
+              fontSize: '14px',
+              color: 'var(--text-secondary, #8a94a6)',
+            }}
+          >
+            {subtitle}
+            <span
+              contentEditable={false}
+              style={{
+                fontSize: '12px',
+                marginLeft: '6px',
+                opacity: 0.5,
+                display: 'inline-block',
+                pointerEvents: 'none',
+              }}
+            >
+              ✎
+            </span>
+          </p>
+        </div>
+      </div>
+
+      {/* Top-right account entry point — consolidates what used to be a
+          Settings button + email/sign-out row buried in the sidebar
+          footer into one avatar-triggered menu, matching where most
+          collaborative apps (monday.com included) put it. */}
+      <div style={{ paddingTop: 2 }}>
+        <AccountMenu />
       </div>
     </div>
   );

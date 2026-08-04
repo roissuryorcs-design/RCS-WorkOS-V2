@@ -8,11 +8,10 @@ import { useMobileNav } from "../context/MobileNavContext";
 import WorkspaceSwitcher from "./WorkspaceSwitcher";
 import Popover from "./Popover";
 import BoardAccessModal from "./BoardAccessModal";
-import SettingsModal from "./SettingsModal";
 
 export default function Sidebar() {
   const { t } = useLanguage();
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const {
     nodes,
     archivedBoards,
@@ -33,7 +32,6 @@ export default function Sidebar() {
     isActiveWorkspaceOwner,
   } = useBoards();
   const [accessModalBoard, setAccessModalBoard] = useState(null);
-  const [showSettings, setShowSettings] = useState(false);
   const { sidebarOpen, setSidebarOpen } = useMobileNav();
 
   const [openMenuId, setOpenMenuId] = useState(null);
@@ -305,72 +303,6 @@ export default function Sidebar() {
         <div className="nav-item">{t("sidebar.automate")}</div>
       </div>
 
-      <div
-        className="sidebar-section"
-        style={{
-          marginTop: 16,
-          borderTop: "1px solid var(--border-color)",
-          paddingTop: 10,
-        }}
-      >
-        <button
-          onClick={() => setShowSettings(true)}
-          style={{
-            width: "100%",
-            marginBottom: 8,
-            padding: "6px 8px",
-            background: "none",
-            border: "1px solid var(--border-dark)",
-            borderRadius: 4,
-            fontSize: 11.5,
-            color: "var(--text-secondary)",
-            cursor: "pointer",
-            textAlign: "left",
-          }}
-        >
-          {t("sidebar.settingsBtn")}
-        </button>
-
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 8,
-            padding: "0 4px",
-          }}
-        >
-          <span
-            style={{
-              fontSize: 12,
-              color: "var(--text-secondary)",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-              minWidth: 0,
-            }}
-            title={user?.email}
-          >
-            {user?.email}
-          </span>
-          <button
-            onClick={signOut}
-            style={{
-              flexShrink: 0,
-              background: "none",
-              border: "1px solid var(--border-dark)",
-              borderRadius: 4,
-              padding: "3px 8px",
-              fontSize: 11.5,
-              color: "var(--text-secondary)",
-              cursor: "pointer",
-            }}
-          >
-            {t("auth.signOut")}
-          </button>
-        </div>
-      </div>
-
       {accessModalBoard && (
         <BoardAccessModal
           boardId={accessModalBoard.id}
@@ -378,8 +310,6 @@ export default function Sidebar() {
           onClose={() => setAccessModalBoard(null)}
         />
       )}
-
-      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
       </div>
     </>
   );
