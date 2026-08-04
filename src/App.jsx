@@ -15,6 +15,7 @@ import LoginScreen from "./components/LoginScreen";
 import LandingPage from "./components/LandingPage";
 import { getDefaultGroupName } from "./i18n/defaults";
 import { boardKey } from "./utils/boardStorage";
+import { exportBoardToExcel } from "./utils/exportExcel";
 import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
 import Toolbar from "./components/Toolbar";
@@ -43,7 +44,9 @@ function BoardWorkspace({ boardId }) {
   const [activeFormulaColumnId, setActiveFormulaColumnId] = useState(null);
   const [currentView, setCurrentView] = useState('table');
 
-  const { columns, addColumn, renameColumn, toggleColumn, deleteColumn, resetColumns, updateColumnStatuses, updateColumnStatusOrder, updateColumnFormula, updateColumnProgressStages } = useColumns();
+  const { columns, visibleColumns, addColumn, renameColumn, toggleColumn, deleteColumn, resetColumns, updateColumnStatuses, updateColumnStatusOrder, updateColumnFormula, updateColumnProgressStages } = useColumns();
+  const { nodes: allBoardNodes } = useBoards();
+  const boardTitle = allBoardNodes.find((n) => n.id === boardId)?.name;
 
   // Groups (name/color/header-color/order) live in Supabase via
   // GroupContext; items (below) live in Supabase via ItemsContext, keyed
@@ -164,14 +167,7 @@ function BoardWorkspace({ boardId }) {
   // EXPORT
   // ============================================================
   const exportData = () => {
-    const dataStr = JSON.stringify({ items, groupColors }, null, 2);
-    const blob = new Blob([dataStr], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "forel_data.json";
-    a.click();
-    URL.revokeObjectURL(url);
+    exportBoardToExcel({ boardTitle, items, columns: visibleColumns, groups, groupColors });
   };
 
   // ============================================================

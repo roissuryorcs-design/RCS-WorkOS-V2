@@ -118,7 +118,7 @@ export const translations = {
       footerPending: "Pending:",
       footerAutoSaved: "Auto-saved",
       viewTable: "Table",
-      viewDashboard: "Progress",
+      viewDashboard: "Dashboard",
     },
     dashboard: {
       totalItems: "Total Items",
@@ -637,7 +637,7 @@ export const translations = {
       footerPending: "Tertunda:",
       footerAutoSaved: "Tersimpan otomatis",
       viewTable: "Tabel",
-      viewDashboard: "Progres",
+      viewDashboard: "Dashboard",
     },
     dashboard: {
       totalItems: "Total Item",
