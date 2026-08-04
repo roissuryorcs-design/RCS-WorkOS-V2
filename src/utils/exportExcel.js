@@ -65,8 +65,10 @@ function columnLetter(n) {
 
 // Renders one cell's value into `cell` according to the column's type —
 // mirrors Row.jsx's renderCell switch, but producing plain/hyperlink
-// Excel values instead of React inputs.
-function writeCell(cell, col, item, numberPath) {
+// Excel values instead of React inputs. `tree` ({depth, continues, isLast})
+// is only used by the "progress" case, matching the Item column's own
+// tree-line treatment for non-top-level rows.
+function writeCell(cell, col, item, numberPath, tree) {
   const value = item[col.id];
   const type = col.type || "text";
 
@@ -99,14 +101,21 @@ function writeCell(cell, col, item, numberPath) {
       // its children (computeWeightedProgress), so reading item[col.id]
       // straight read as 0% for every non-leaf row.
       const num = computeOwnProgress(item, col.id);
-      cell.value = num / 100;
-      cell.numFmt = "0%";
-      // Visual fill (an actual in-cell bar whose width is proportional to
-      // the value, not just a flat color) is applied afterwards via a
-      // native Excel Data Bar conditional-formatting rule over the whole
-      // column — see addProgressDataBars below. A flat per-cell fill color
-      // can't represent "how much" the way a bar can from a single column.
-      cell.alignment = { horizontal: "center" };
+      if (!tree || tree.depth === 0) {
+        // Top-level rows only — the Data Bar conditional-formatting rule
+        // (added afterwards) targets exactly these cells specifically.
+        cell.value = num / 100;
+        cell.numFmt = "0%";
+        cell.alignment = { horizontal: "center" };
+      } else {
+        // Sub-items: no data bar (by request — a bar that can't shrink to
+        // reflect depth the way the board's own progress bar does would
+        // misleadingly look identical at every level). Same tree-line
+        // prefix as the Item column instead, plus the plain percentage.
+        cell.value = `${treePrefix(tree.depth, tree.continues, tree.isLast)}${num}%`;
+        cell.font = { name: "Courier New" };
+        cell.alignment = { horizontal: "left" };
+      }
       return;
     }
     case "checkbox": {
@@ -183,6 +192,12 @@ export async function exportBoardToExcel({ boardTitle, items, columns, groups, g
     itemsByGroup[g].push(item);
   }
 
+  // Row numbers of depth-0 items, per progress column index — the Data
+  // Bar rule only targets these specific cells (see below), since
+  // top-level-only rows are scattered between group headers and indented
+  // sub-item rows, not one contiguous block.
+  const topLevelRowsByProgressCol = {};
+
   for (const groupName of groups) {
     const groupItems = itemsByGroup[groupName] || [];
     if (groupItems.length === 0) continue;
@@ -213,38 +228,43 @@ export async function exportBoardToExcel({ boardTitle, items, columns, groups, g
           // compatible suite (Excel, WPS, LibreOffice, Google Sheets).
           cell.font = { name: "Courier New" };
         } else {
-          writeCell(cell, col, item, numberPath);
+          writeCell(cell, col, item, numberPath, { depth, continues, isLast });
+          if (col.type === "progress" && depth === 0) {
+            if (!topLevelRowsByProgressCol[i]) topLevelRowsByProgressCol[i] = [];
+            topLevelRowsByProgressCol[i].push(row.number);
+          }
         }
       });
     }
   }
 
   // Native Excel Data Bar — an actual in-cell bar whose fill width is
-  // proportional to each row's own percentage, layered under the "0%"
-  // text already set on the cell. Reads much closer to the app's real
-  // progress bar than a flat per-cell color ever could from one column,
-  // and needs the final row count so it runs after all rows exist.
-  // A single solid color, by request — an earlier red/yellow/green
-  // version was tried and the user preferred plain blue.
-  const lastRow = sheet.lastRow?.number;
-  if (lastRow && lastRow > 1) {
-    columns.forEach((col, i) => {
-      if (col.type !== "progress") return;
-      const letter = columnLetter(i + 1);
-      sheet.addConditionalFormatting({
-        ref: `${letter}2:${letter}${lastRow}`,
-        rules: [
-          {
-            type: "dataBar",
-            cfvo: [{ type: "num", value: 0 }, { type: "num", value: 1 }],
-            color: { argb: "FF3B82F6" },
-            showValue: true,
-            gradient: false,
-          },
-        ],
-      });
+  // proportional to the value, only on top-level item rows (by request —
+  // sub-item rows show the tree-line + plain % from writeCell above
+  // instead; a bar that can't shrink with depth like the board's own
+  // would look identical regardless of level, which reads as misleading
+  // rather than helpful). The ref is a space-separated union of each
+  // individual depth-0 row's cell, not a single contiguous range, since
+  // those rows are scattered between group headers and sub-items.
+  columns.forEach((col, i) => {
+    if (col.type !== "progress") return;
+    const rowNumbers = topLevelRowsByProgressCol[i];
+    if (!rowNumbers || rowNumbers.length === 0) return;
+    const letter = columnLetter(i + 1);
+    const ref = rowNumbers.map((r) => `${letter}${r}`).join(" ");
+    sheet.addConditionalFormatting({
+      ref,
+      rules: [
+        {
+          type: "dataBar",
+          cfvo: [{ type: "num", value: 0 }, { type: "num", value: 1 }],
+          color: { argb: "FF3B82F6" },
+          showValue: true,
+          gradient: false,
+        },
+      ],
     });
-  }
+  });
 
   const buffer = await workbook.xlsx.writeBuffer();
   const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
