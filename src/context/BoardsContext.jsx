@@ -745,6 +745,7 @@ export function BoardsProvider({ children }) {
         workspaces,
         activeWorkspaceId,
         isActiveWorkspaceOwner,
+        activeRole: activeMembership?.role,
         recentWorkspaces,
         switchWorkspace,
         createWorkspace,

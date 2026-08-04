@@ -2,14 +2,16 @@ import { useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useProfile } from "../context/ProfileContext";
 import { useLanguage } from "../context/LanguageContext";
+import { useBoards } from "../context/BoardsContext";
 import { uploadToCloudinary, FileTooLargeError } from "../utils/cloudinaryUpload";
 import Avatar from "./Avatar";
 
-// Same overlay/box treatment as MembersModal — kept consistent across every
-// modal in the app rather than introducing a new chrome pattern.
+// Same overlay/box treatment as MemberDirectory — kept consistent across
+// every modal in the app rather than introducing a new chrome pattern.
 export default function SettingsModal({ onClose }) {
   const { t } = useLanguage();
   const { profile, updateProfile } = useProfile();
+  const { workspaces, activeWorkspaceId } = useBoards();
   const fileInputRef = useRef(null);
 
   const [displayName, setDisplayName] = useState(profile?.display_name || "");
@@ -48,6 +50,11 @@ export default function SettingsModal({ onClose }) {
     setStatus(error ? "error" : "saved");
   };
 
+  const roleLabel = (role) =>
+    role === "owner" ? t("memberDirectory.roleOwner") : role === "admin" ? t("memberDirectory.roleAdmin") : t("memberDirectory.roleMember");
+
+  const activeRole = workspaces.find((w) => w.id === activeWorkspaceId)?.role;
+
   const inputStyle = {
     width: "100%",
     padding: "8px 10px",
@@ -79,8 +86,8 @@ export default function SettingsModal({ onClose }) {
           background: "var(--bg-modal)",
           borderRadius: 12,
           padding: 24,
-          maxWidth: 420,
-          width: "90%",
+          maxWidth: 460,
+          width: "92%",
           color: "var(--text-primary)",
           boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
           border: "1px solid var(--border-color)",
@@ -91,25 +98,56 @@ export default function SettingsModal({ onClose }) {
       >
         <h3 style={{ marginBottom: 16, fontSize: 16, fontWeight: 600 }}>{t("settingsModal.title")}</h3>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 18 }}>
-          <Avatar url={profile?.avatar_url} name={profile?.display_name || profile?.email} size={56} />
-          <div>
+        {/* Profile card — bigger avatar + name + role badge up top, same
+            idea as most account-settings pages (monday.com included). */}
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 16, marginBottom: 18 }}>
+          <div style={{ flexShrink: 0 }}>
+            <Avatar url={profile?.avatar_url} name={displayName || profile?.email} size={80} />
             <input ref={fileInputRef} type="file" accept="image/*" onChange={handlePhotoChange} style={{ display: "none" }} />
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
               style={{
-                padding: "6px 12px",
+                display: "block",
+                marginTop: 8,
+                width: 80,
+                padding: "5px 0",
                 borderRadius: 6,
                 border: "1px solid var(--border-dark)",
                 background: "var(--bg-hover)",
                 color: "var(--text-primary)",
                 cursor: uploading ? "default" : "pointer",
-                fontSize: 12.5,
+                fontSize: 11,
               }}
             >
               {uploading ? t("settingsModal.uploading") : t("settingsModal.uploadPhotoBtn")}
             </button>
+          </div>
+          <div style={{ minWidth: 0, paddingTop: 4 }}>
+            <div style={{ fontSize: 17, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {displayName || profile?.email}
+            </div>
+            <div style={{ fontSize: 12.5, color: "var(--text-secondary)", marginBottom: 8, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {profile?.email}
+            </div>
+            {activeRole && (
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 4,
+                  fontSize: 11.5,
+                  fontWeight: 600,
+                  padding: "3px 10px",
+                  borderRadius: 12,
+                  background: activeRole === "owner" ? "#f59e0b22" : "var(--bg-hover)",
+                  color: activeRole === "owner" ? "#f59e0b" : "var(--text-secondary)",
+                }}
+              >
+                {activeRole === "owner" && "👑"}
+                {roleLabel(activeRole)}
+              </span>
+            )}
           </div>
         </div>
 
@@ -142,10 +180,6 @@ export default function SettingsModal({ onClose }) {
             />
           </div>
           <div>
-            <label style={labelStyle}>{t("settingsModal.emailLabel")}</label>
-            <input style={{ ...inputStyle, opacity: 0.6 }} value={profile?.email || ""} disabled />
-          </div>
-          <div>
             <label style={labelStyle}>{t("settingsModal.hobbyLabel")}</label>
             <input
               style={inputStyle}
@@ -155,6 +189,36 @@ export default function SettingsModal({ onClose }) {
             />
           </div>
         </div>
+
+        {/* My workspaces — same idea as "My teams" in the reference, using
+            data BoardsContext already loads (no new query needed). */}
+        {workspaces.length > 0 && (
+          <div style={{ marginBottom: 18 }}>
+            <label style={labelStyle}>{t("settingsModal.myWorkspacesLabel")}</label>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {workspaces.map((w) => (
+                <div
+                  key={w.id}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "6px 10px",
+                    borderRadius: 6,
+                    background: "var(--bg-hover)",
+                    fontSize: 12.5,
+                  }}
+                >
+                  <span style={{ fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{w.name}</span>
+                  <span style={{ fontSize: 11, color: "var(--text-muted)", flexShrink: 0 }}>
+                    {w.role === "owner" && "👑 "}
+                    {roleLabel(w.role)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {status === "saved" && (
           <div style={{ fontSize: 12, color: "#16a34a", marginBottom: 10 }}>{t("settingsModal.saved")}</div>
