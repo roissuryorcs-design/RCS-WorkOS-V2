@@ -23,7 +23,7 @@ export function ProfileProvider({ children }) {
     setLoading(true);
     supabase
       .from("profiles")
-      .select("id, email, display_name, avatar_url, job_title, phone, hobby")
+      .select("id, email, display_name, avatar_url, job_title, phone, hobby, zoom_link")
       .eq("id", user.id)
       .single()
       .then(({ data, error }) => {

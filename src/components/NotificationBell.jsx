@@ -24,7 +24,7 @@ export default function NotificationBell() {
     if (missing.length === 0) return;
     supabase
       .from("profiles")
-      .select("id, display_name, email, avatar_url")
+      .select("id, display_name, email, avatar_url, zoom_link")
       .in("id", missing)
       .then(({ data, error }) => {
         if (error) {
@@ -44,7 +44,7 @@ export default function NotificationBell() {
     markRead(n.id);
     if (n.type === "dm") {
       const actor = actorsById[n.actor_id];
-      setDmTarget({ userId: n.actor_id, displayName: actor?.display_name || actor?.email, avatarUrl: actor?.avatar_url });
+      setDmTarget({ userId: n.actor_id, displayName: actor?.display_name || actor?.email, avatarUrl: actor?.avatar_url, zoomLink: actor?.zoom_link });
       setIsOpen(false);
     }
   };
@@ -177,6 +177,7 @@ export default function NotificationBell() {
           partnerId={dmTarget.userId}
           partnerName={dmTarget.displayName}
           partnerAvatarUrl={dmTarget.avatarUrl}
+          partnerZoomLink={dmTarget.zoomLink}
           onClose={() => setDmTarget(null)}
         />
       )}

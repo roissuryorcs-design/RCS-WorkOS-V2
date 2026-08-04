@@ -2,15 +2,41 @@ import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useDM } from "../context/DMContext";
 import { useAuth } from "../context/AuthContext";
+import { useProfile } from "../context/ProfileContext";
 import { useLanguage } from "../context/LanguageContext";
 import Avatar from "./Avatar";
+
+const URL_REGEX = /(https?:\/\/[^\s]+)/g;
+
+// Splits a message body on URLs and renders those as real clickable
+// links — needed for the auto-posted "started a video call: <link>"
+// message from handleStartCall below to actually be usable, not just
+// readable.
+function renderMessageBody(body, linkColor) {
+  // split() with a capturing-group regex interleaves the matched groups at
+  // odd indices ([text, url, text, url, …]) — checking that directly
+  // (rather than re-testing each part against URL_REGEX, whose /g flag
+  // carries mutable lastIndex state across calls and would give wrong
+  // results here) is what makes this reliable.
+  const parts = body.split(URL_REGEX);
+  return parts.map((part, i) =>
+    i % 2 === 1 ? (
+      <a key={i} href={part} target="_blank" rel="noopener noreferrer" style={{ color: linkColor, textDecoration: "underline" }}>
+        {part}
+      </a>
+    ) : (
+      <span key={i}>{part}</span>
+    )
+  );
+}
 
 // 1:1 chat panel for one conversation partner. Same overlay treatment as
 // every other modal in the app, just taller/narrower to read as a chat
 // window rather than a form.
-export default function DirectMessagePanel({ partnerId, partnerName, partnerAvatarUrl, onClose }) {
+export default function DirectMessagePanel({ partnerId, partnerName, partnerAvatarUrl, partnerZoomLink, onClose }) {
   const { t } = useLanguage();
   const { user } = useAuth();
+  const { profile } = useProfile();
   const { messagesWith, sendMessage, markConversationRead } = useDM();
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
@@ -34,6 +60,20 @@ export default function DirectMessagePanel({ partnerId, partnerName, partnerAvat
     setText("");
     await sendMessage(partnerId, trimmed);
     setSending(false);
+  };
+
+  // Prefers my own saved Zoom link (so I always land in a room I control)
+  // and falls back to the partner's if I haven't set one — either way the
+  // link gets posted into the chat too, so both sides know where to go
+  // without relying on a separate calendar invite/screenshare-the-link step.
+  const handleStartCall = () => {
+    const link = profile?.zoom_link || partnerZoomLink;
+    if (!link) {
+      alert(t("directMessage.noZoomLink"));
+      return;
+    }
+    window.open(link, "_blank", "noopener,noreferrer");
+    sendMessage(partnerId, `📹 ${t("directMessage.startedCall")}: ${link}`);
   };
 
   const handleKeyDown = (e) => {
@@ -80,6 +120,13 @@ export default function DirectMessagePanel({ partnerId, partnerName, partnerAvat
             {partnerName}
           </div>
           <button
+            onClick={handleStartCall}
+            title={t("directMessage.startCallBtn")}
+            style={{ background: "none", border: "none", cursor: "pointer", fontSize: 17, color: "var(--text-secondary)", padding: 4 }}
+          >
+            📹
+          </button>
+          <button
             onClick={onClose}
             style={{ background: "none", border: "none", cursor: "pointer", fontSize: 18, color: "var(--text-secondary)", padding: 4 }}
           >
@@ -111,7 +158,7 @@ export default function DirectMessagePanel({ partnerId, partnerName, partnerAvat
                     whiteSpace: "pre-wrap",
                   }}
                 >
-                  {m.body}
+                  {renderMessageBody(m.body, isMine ? "var(--btn-primary-text)" : "var(--btn-primary-bg)")}
                 </div>
               </div>
             );

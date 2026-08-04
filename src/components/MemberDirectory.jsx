@@ -247,6 +247,7 @@ export default function MemberDirectory({ onClose }) {
           partnerId={dmTarget.userId}
           partnerName={dmTarget.displayName || dmTarget.email}
           partnerAvatarUrl={dmTarget.avatarUrl}
+          partnerZoomLink={dmTarget.zoomLink}
           onClose={() => setDmTarget(null)}
         />
       )}

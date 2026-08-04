@@ -604,7 +604,7 @@ export function BoardsProvider({ children }) {
     if (!activeWorkspaceId) return [];
     const { data, error } = await supabase
       .from("workspace_members")
-      .select("user_id, role, profiles(id, email, display_name, avatar_url, job_title, phone, hobby)")
+      .select("user_id, role, profiles(id, email, display_name, avatar_url, job_title, phone, hobby, zoom_link)")
       .eq("workspace_id", activeWorkspaceId);
     if (error) {
       console.error("Error loading workspace members:", error);
@@ -621,6 +621,7 @@ export function BoardsProvider({ children }) {
         jobTitle: r.profiles.job_title,
         phone: r.profiles.phone,
         hobby: r.profiles.hobby,
+        zoomLink: r.profiles.zoom_link,
       }));
   };
 

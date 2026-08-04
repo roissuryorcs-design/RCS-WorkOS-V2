@@ -18,6 +18,7 @@ export default function SettingsModal({ onClose }) {
   const [jobTitle, setJobTitle] = useState(profile?.job_title || "");
   const [phone, setPhone] = useState(profile?.phone || "");
   const [hobby, setHobby] = useState(profile?.hobby || "");
+  const [zoomLink, setZoomLink] = useState(profile?.zoom_link || "");
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState(null); // null | "saved" | "error"
@@ -45,6 +46,7 @@ export default function SettingsModal({ onClose }) {
       job_title: jobTitle.trim() || null,
       phone: phone.trim() || null,
       hobby: hobby.trim() || null,
+      zoom_link: zoomLink.trim() || null,
     });
     setSaving(false);
     setStatus(error ? "error" : "saved");
@@ -186,6 +188,15 @@ export default function SettingsModal({ onClose }) {
               value={hobby}
               onChange={(e) => setHobby(e.target.value)}
               placeholder={t("settingsModal.hobbyPlaceholder")}
+            />
+          </div>
+          <div>
+            <label style={labelStyle}>{t("settingsModal.zoomLinkLabel")}</label>
+            <input
+              style={inputStyle}
+              value={zoomLink}
+              onChange={(e) => setZoomLink(e.target.value)}
+              placeholder={t("settingsModal.zoomLinkPlaceholder")}
             />
           </div>
         </div>
