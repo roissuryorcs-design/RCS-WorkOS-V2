@@ -8,6 +8,7 @@ import { useMobileNav } from "../context/MobileNavContext";
 import WorkspaceSwitcher from "./WorkspaceSwitcher";
 import Popover from "./Popover";
 import BoardAccessModal from "./BoardAccessModal";
+import SettingsModal from "./SettingsModal";
 
 export default function Sidebar() {
   const { t } = useLanguage();
@@ -32,6 +33,7 @@ export default function Sidebar() {
     isActiveWorkspaceOwner,
   } = useBoards();
   const [accessModalBoard, setAccessModalBoard] = useState(null);
+  const [showSettings, setShowSettings] = useState(false);
   const { sidebarOpen, setSidebarOpen } = useMobileNav();
 
   const [openMenuId, setOpenMenuId] = useState(null);
@@ -311,6 +313,24 @@ export default function Sidebar() {
           paddingTop: 10,
         }}
       >
+        <button
+          onClick={() => setShowSettings(true)}
+          style={{
+            width: "100%",
+            marginBottom: 8,
+            padding: "6px 8px",
+            background: "none",
+            border: "1px solid var(--border-dark)",
+            borderRadius: 4,
+            fontSize: 11.5,
+            color: "var(--text-secondary)",
+            cursor: "pointer",
+            textAlign: "left",
+          }}
+        >
+          {t("sidebar.settingsBtn")}
+        </button>
+
         <div
           style={{
             display: "flex",
@@ -358,6 +378,8 @@ export default function Sidebar() {
           onClose={() => setAccessModalBoard(null)}
         />
       )}
+
+      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
       </div>
     </>
   );

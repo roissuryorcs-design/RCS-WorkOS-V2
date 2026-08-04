@@ -3,6 +3,7 @@ import { Analytics } from "@vercel/analytics/react";
 import { ThemeProvider } from "./context/ThemeContext";
 import { LanguageProvider, useLanguage } from "./context/LanguageContext";
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import { ProfileProvider } from "./context/ProfileContext";
 import { ColumnProvider, useColumns } from "./context/ColumnContext";
 import { GroupProvider, useGroups } from "./context/GroupContext";
 import { ItemsProvider, useItems } from "./context/ItemsContext";
@@ -463,11 +464,13 @@ export default function App() {
       <ThemeProvider>
         <AuthProvider>
           <AuthGate>
-            <BoardsProvider>
-              <MobileNavProvider>
-                <AppShellInner />
-              </MobileNavProvider>
-            </BoardsProvider>
+            <ProfileProvider>
+              <BoardsProvider>
+                <MobileNavProvider>
+                  <AppShellInner />
+                </MobileNavProvider>
+              </BoardsProvider>
+            </ProfileProvider>
           </AuthGate>
         </AuthProvider>
       </ThemeProvider>
