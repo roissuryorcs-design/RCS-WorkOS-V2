@@ -4,18 +4,23 @@ const HEADER_FILL = "FF1F2937"; // slate-800
 const HEADER_FONT = "FFFFFFFF";
 const GROUP_FONT = "FFFFFFFF";
 
-// Flattens the item tree into render-order rows with a depth, same
-// traversal shape as the table itself (BoardTable groups by item.group at
-// the top level, children nest under their parent regardless of group).
+// Flattens the item tree into render-order rows with a depth and a
+// numberPath ("1", "1.1", "1.1.1", …) — same traversal shape and
+// numbering scheme as the table itself (BoardTable seeds numberPath as
+// String(taskIndex + 1) per top-level item, Row.jsx extends it per child
+// as `${numberPath}.${childIndex + 1}`). The Nomer column has no stored
+// value of its own — it's purely each item's position among its siblings,
+// computed the same way here.
 function flattenItems(items) {
   const rows = [];
-  const walk = (list, depth) => {
-    for (const item of list) {
-      rows.push({ item, depth });
-      if (item.children && item.children.length > 0) walk(item.children, depth + 1);
-    }
+  const walk = (list, depth, prefix) => {
+    list.forEach((item, i) => {
+      const numberPath = prefix ? `${prefix}.${i + 1}` : String(i + 1);
+      rows.push({ item, depth, numberPath });
+      if (item.children && item.children.length > 0) walk(item.children, depth + 1, numberPath);
+    });
   };
-  walk(items, 0);
+  walk(items, 0, "");
   return rows;
 }
 
@@ -46,11 +51,15 @@ function columnLetter(n) {
 // Renders one cell's value into `cell` according to the column's type —
 // mirrors Row.jsx's renderCell switch, but producing plain/hyperlink
 // Excel values instead of React inputs.
-function writeCell(cell, col, item) {
+function writeCell(cell, col, item, numberPath) {
   const value = item[col.id];
   const type = col.type || "text";
 
   switch (type) {
+    case "numbering":
+      cell.value = numberPath;
+      cell.alignment = { horizontal: "center" };
+      return;
     case "status": {
       const label = value || "";
       cell.value = label;
@@ -113,7 +122,6 @@ function writeCell(cell, col, item) {
       return;
     }
     case "formula":
-    case "numbering":
     case "priority":
     case "phone":
     case "people":
@@ -171,55 +179,47 @@ export async function exportBoardToExcel({ boardTitle, items, columns, groups, g
     groupRow.getCell(1).font = { color: { argb: GROUP_FONT }, bold: true, size: 12 };
     groupRow.getCell(1).alignment = { vertical: "middle" };
 
-    for (const { item, depth } of flattenItems(groupItems)) {
+    for (const { item, depth, numberPath } of flattenItems(groupItems)) {
       const row = sheet.addRow({});
+      // Native Excel outline grouping — gives sub-items real collapsible
+      // +/- tree controls in the row gutter (Data > Group's own feature),
+      // the closest thing Excel has to the board's own tree hierarchy.
+      // Depth 0 rows aren't grouped (nothing to collapse them under).
+      if (depth > 0) row.outlineLevel = depth;
       columns.forEach((col, i) => {
         const cell = row.getCell(i + 1);
         if (col.id === "item") {
-          cell.value = `${"    ".repeat(depth)}${depth > 0 ? "↳ " : ""}${item[col.id] || ""}`;
+          cell.value = item[col.id] || "";
+          // Native cell indent (Excel's own stepped-indent rendering,
+          // shows as an actual "├─"-style tree look with outline grouping
+          // enabled above) instead of hand-rolled leading spaces.
+          cell.alignment = { indent: depth * 2 };
         } else {
-          writeCell(cell, col, item);
+          writeCell(cell, col, item, numberPath);
         }
       });
     }
   }
 
-  // Native Excel Data Bars — an actual in-cell bar whose fill width is
+  // Native Excel Data Bar — an actual in-cell bar whose fill width is
   // proportional to each row's own percentage, layered under the "0%"
   // text already set on the cell. Reads much closer to the app's real
   // progress bar than a flat per-cell color ever could from one column,
   // and needs the final row count so it runs after all rows exist.
-  //
-  // The board's own per-stage colors (e.g. "Pengerjaan" = orange) don't
-  // translate to a data bar — those are tied to a status-like label, not
-  // a numeric threshold, and a data bar can only respond to the number.
-  // A red->yellow->green color scale is layered on top instead (same
-  // range, a second independent conditional-formatting rule) so low vs
-  // high completion is still visually obvious by color, just via a
-  // continuous gradient rather than the exact stage palette.
+  // A single solid color, by request — an earlier red/yellow/green
+  // version was tried and the user preferred plain blue.
   const lastRow = sheet.lastRow?.number;
   if (lastRow && lastRow > 1) {
     columns.forEach((col, i) => {
       if (col.type !== "progress") return;
       const letter = columnLetter(i + 1);
-      const ref = `${letter}2:${letter}${lastRow}`;
       sheet.addConditionalFormatting({
-        ref,
-        rules: [
-          {
-            type: "colorScale",
-            cfvo: [{ type: "min" }, { type: "percentile", value: 50 }, { type: "max" }],
-            color: [{ argb: "FFEF4444" }, { argb: "FFF59E0B" }, { argb: "FF22C55E" }],
-          },
-        ],
-      });
-      sheet.addConditionalFormatting({
-        ref,
+        ref: `${letter}2:${letter}${lastRow}`,
         rules: [
           {
             type: "dataBar",
             cfvo: [{ type: "num", value: 0 }, { type: "num", value: 1 }],
-            color: { argb: "FF1F2937" },
+            color: { argb: "FF3B82F6" },
             showValue: true,
             gradient: false,
           },
