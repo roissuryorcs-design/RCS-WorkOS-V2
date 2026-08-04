@@ -930,32 +930,20 @@ th:hover .resize-handle {
     cursor: pointer;
   }
 
-  .group-header {
-    /* Stops .group-header-inner's JS-driven transform (mobile-only) from
-       leaking into this element's own scrollWidth/overflow calculation —
-       without this, scrolling right kept "growing" how far you could
-       scroll, compounding every frame. Scoped to mobile only: desktop
-       never runs that transform, so it never had this leak to begin with. */
-    contain: layout;
-    /* left:auto (not left:0) turns OFF this element's own horizontal
-       sticky while leaving position:sticky + top:0 (vertical) intact —
-       sticky only activates on an axis that has an explicit offset. This
-       element's own left:0 sticky was apparently doing real work on this
-       device (unlike .group-title's, confirmed dead) and was silently
-       stacking with the JS transform below: both were compensating for
-       the same scroll amount at once, overshooting further right the
-       more you scrolled until the header ran off-screen entirely. Only
-       one mechanism should ever control horizontal position on mobile —
-       JS now owns it exclusively. */
-    left: auto !important;
-  }
-
   .group-header-inner {
     padding: 6px 8px;
     min-height: 40px;
     max-width: 100% !important;
-    /* Same double-compensation risk as .group-header above — turn off
-       this element's own horizontal sticky too, keep top:0 (vertical). */
+    /* left:auto (not left:0) turns OFF this element's own horizontal
+       sticky while leaving position:sticky + top:0 (vertical) intact —
+       sticky only activates on an axis that has an explicit offset.
+       .group-header (its parent, one level up, an unmodified plain
+       sticky element much like the Item column's sticky <td>) is now the
+       ONLY thing controlling horizontal position on mobile — no JS, no
+       second/third nested sticky fighting it. Keeping just one active
+       mechanism instead of stacking several is what actually settled
+       this after a long trial-and-error trail through JS transforms and
+       multiple nested sticky attempts. */
     left: auto !important;
   }
 
@@ -965,13 +953,9 @@ th:hover .resize-handle {
     /* .group-title's own native position:sticky is confirmed (via
        computed-style inspection on the actual failing device) to apply
        exactly as specified, yet still doesn't visually stick on this
-       Android WebView — an engine limitation, not a CSS bug. Disabling
-       it on mobile only and letting the JS rAF loop drive
-       .group-header-inner's transform instead avoids both the "doesn't
-       stick at all" symptom AND the earlier "bounces like a ball"
-       symptom (which came from this sticky and the JS transform both
-       fighting to position the same content at once). Desktop is
-       untouched — native sticky there is confirmed working. */
+       Android WebView — an engine limitation, not a CSS bug. Disabled on
+       mobile; it inherits its visual position for free from its now-
+       reliably-stuck ancestor (.group-header) instead. */
     position: relative !important;
     left: 0 !important;
   }
