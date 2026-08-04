@@ -56,6 +56,23 @@ function writeCell(cell, col, item) {
       const num = typeof value === "number" ? value : parseFloat(value) || 0;
       cell.value = num / 100;
       cell.numFmt = "0%";
+      // Same stage-color lookup the app itself uses for this column (via
+      // col.progressStages) — picks the highest stage whose threshold the
+      // value has reached, so the export's coloring matches whatever the
+      // user actually configured, not a hardcoded palette.
+      const stages = col.progressStages;
+      if (Array.isArray(stages) && stages.length > 0) {
+        const sorted = [...stages].sort((a, b) => a.value - b.value);
+        let matched = sorted[0];
+        for (const s of sorted) {
+          if (num >= s.value) matched = s;
+        }
+        if (matched?.color) {
+          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF" + matched.color.replace("#", "").toUpperCase() } };
+          cell.font = { color: { argb: "FFFFFFFF" }, bold: true };
+        }
+      }
+      cell.alignment = { horizontal: "center" };
       return;
     }
     case "checkbox": {

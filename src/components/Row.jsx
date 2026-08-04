@@ -219,7 +219,7 @@ export default function Row({
         return (
           <FileAttachment
             value={value}
-            onUpdate={onUpdate}
+            onUpdate={(colId, val) => onUpdate(item.id, colId, val)}
             columnId={col.id}
           />
         );
