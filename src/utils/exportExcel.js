@@ -1,3 +1,5 @@
+import { computeOwnProgress } from "./progressWeights";
+
 const HEADER_FILL = "FF1F2937"; // slate-800
 const HEADER_FONT = "FFFFFFFF";
 const GROUP_FONT = "FFFFFFFF";
@@ -66,7 +68,13 @@ function writeCell(cell, col, item) {
       return;
     }
     case "progress": {
-      const num = typeof value === "number" ? value : parseFloat(value) || 0;
+      // Mirrors what the board itself shows (BoardTable's "Σ XX%" for a
+      // parent, or the stage's own value for a leaf) — NOT item[col.id]
+      // directly. A parent item generally has no raw value of its own at
+      // all; its displayed % is entirely a weighted rollup computed from
+      // its children (computeWeightedProgress), so reading item[col.id]
+      // straight read as 0% for every non-leaf row.
+      const num = computeOwnProgress(item, col.id);
       cell.value = num / 100;
       cell.numFmt = "0%";
       // Visual fill (an actual in-cell bar whose width is proportional to
@@ -181,18 +189,37 @@ export async function exportBoardToExcel({ boardTitle, items, columns, groups, g
   // text already set on the cell. Reads much closer to the app's real
   // progress bar than a flat per-cell color ever could from one column,
   // and needs the final row count so it runs after all rows exist.
+  //
+  // The board's own per-stage colors (e.g. "Pengerjaan" = orange) don't
+  // translate to a data bar — those are tied to a status-like label, not
+  // a numeric threshold, and a data bar can only respond to the number.
+  // A red->yellow->green color scale is layered on top instead (same
+  // range, a second independent conditional-formatting rule) so low vs
+  // high completion is still visually obvious by color, just via a
+  // continuous gradient rather than the exact stage palette.
   const lastRow = sheet.lastRow?.number;
   if (lastRow && lastRow > 1) {
     columns.forEach((col, i) => {
       if (col.type !== "progress") return;
       const letter = columnLetter(i + 1);
+      const ref = `${letter}2:${letter}${lastRow}`;
       sheet.addConditionalFormatting({
-        ref: `${letter}2:${letter}${lastRow}`,
+        ref,
+        rules: [
+          {
+            type: "colorScale",
+            cfvo: [{ type: "min" }, { type: "percentile", value: 50 }, { type: "max" }],
+            color: [{ argb: "FFEF4444" }, { argb: "FFF59E0B" }, { argb: "FF22C55E" }],
+          },
+        ],
+      });
+      sheet.addConditionalFormatting({
+        ref,
         rules: [
           {
             type: "dataBar",
             cfvo: [{ type: "num", value: 0 }, { type: "num", value: 1 }],
-            color: { argb: "FF3B82F6" },
+            color: { argb: "FF1F2937" },
             showValue: true,
             gradient: false,
           },
