@@ -69,6 +69,13 @@ const Header = ({ groups = [], boardId, isReady = true }) => {
     supabase.from('boards').update({ title: val }).eq('id', boardId).then(({ error }) => {
       if (error) console.error('Error updating board title:', error);
     });
+    // Board title and the sidebar label are the same name, editable from
+    // either place — keep nodes.name in sync so they never silently
+    // diverge (BoardsContext's own nodes subscription picks this up and
+    // updates the sidebar live).
+    supabase.from('nodes').update({ name: val }).eq('id', boardId).then(({ error }) => {
+      if (error) console.error('Error syncing sidebar node name:', error);
+    });
   };
 
   const persistSubtitle = (val) => {

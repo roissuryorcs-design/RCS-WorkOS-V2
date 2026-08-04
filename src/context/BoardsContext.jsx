@@ -362,12 +362,20 @@ export function BoardsProvider({ children }) {
   const renameNode = async (id, name) => {
     const trimmed = (name || "").trim();
     if (!trimmed) return;
+    const node = allNodes.find((n) => n.id === id);
     setAllNodesByWorkspace((prev) => ({
       ...prev,
       [activeWorkspaceId]: (prev[activeWorkspaceId] || []).map((n) => (n.id === id ? { ...n, name: trimmed } : n)),
     }));
     const { error } = await supabase.from("nodes").update({ name: trimmed }).eq("id", id);
     if (error) console.error("Error renaming node:", error);
+    // Board name and the sidebar label are the same name, editable from
+    // either place — keep boards.title (what Header.jsx displays) in
+    // sync so they never silently diverge again.
+    if (node?.type === "board") {
+      const { error: titleError } = await supabase.from("boards").update({ title: trimmed }).eq("id", id);
+      if (titleError) console.error("Error syncing board title:", titleError);
+    }
   };
 
   // Drag-reorder: only takes effect when both nodes share the same parent.
