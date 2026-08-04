@@ -257,6 +257,12 @@ export const translations = {
       removeFailed: "Couldn't remove this member. Only the workspace owner can do this.",
       you: "you",
     },
+    memberDirectory: {
+      searchPlaceholder: "Search by name or job title…",
+      allBoards: "All boards in this workspace",
+      boardsLabel: "Boards",
+      noResults: "No members match your search.",
+    },
     settingsModal: {
       title: "Settings",
       photoLabel: "Photo",
@@ -743,6 +749,12 @@ export const translations = {
       removeConfirm: 'Keluarkan {{name}} dari workspace ini? Mereka akan kehilangan akses ke semua board di dalamnya.',
       removeFailed: "Gagal mengeluarkan member ini. Hanya owner workspace yang bisa melakukan ini.",
       you: "kamu",
+    },
+    memberDirectory: {
+      searchPlaceholder: "Cari berdasarkan nama atau jabatan…",
+      allBoards: "Semua board di workspace ini",
+      boardsLabel: "Board",
+      noResults: "Tidak ada member yang cocok.",
     },
     settingsModal: {
       title: "Pengaturan",

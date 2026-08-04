@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { useBoards } from "../context/BoardsContext";
 import { useLanguage } from "../context/LanguageContext";
 import Popover from "./Popover";
-import MembersModal from "./MembersModal";
+import MemberDirectory from "./MemberDirectory";
 
 const AVATAR_COLORS = ["#3b82f6", "#8b5cf6", "#ec4899", "#f59e0b", "#10b981", "#ef4444", "#06b6d4", "#6366f1"];
 
@@ -302,7 +302,7 @@ export default function WorkspaceSwitcher() {
         <InviteCodeModal code={inviteCodeToShow} onClose={() => setInviteCodeToShow(null)} />
       )}
       {showMembersModal && (
-        <MembersModal onClose={() => setShowMembersModal(false)} />
+        <MemberDirectory onClose={() => setShowMembersModal(false)} />
       )}
     </div>
   );

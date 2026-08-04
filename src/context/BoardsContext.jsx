@@ -604,7 +604,7 @@ export function BoardsProvider({ children }) {
     if (!activeWorkspaceId) return [];
     const { data, error } = await supabase
       .from("workspace_members")
-      .select("user_id, role, profiles(id, email, display_name)")
+      .select("user_id, role, profiles(id, email, display_name, avatar_url, job_title, phone, hobby)")
       .eq("workspace_id", activeWorkspaceId);
     if (error) {
       console.error("Error loading workspace members:", error);
@@ -612,7 +612,39 @@ export function BoardsProvider({ children }) {
     }
     return (data || [])
       .filter((r) => r.profiles)
-      .map((r) => ({ userId: r.user_id, role: r.role, email: r.profiles.email, displayName: r.profiles.display_name }));
+      .map((r) => ({
+        userId: r.user_id,
+        role: r.role,
+        email: r.profiles.email,
+        displayName: r.profiles.display_name,
+        avatarUrl: r.profiles.avatar_url,
+        jobTitle: r.profiles.job_title,
+        phone: r.profiles.phone,
+        hobby: r.profiles.hobby,
+      }));
+  };
+
+  // Per-member "which boards" for the directory — one query for the whole
+  // workspace rather than N+1 (one per member row). Members with no entry
+  // here have the default/unrestricted access (every board in the
+  // workspace) — board_members only ever holds rows for boards explicitly
+  // restricted (see fetchBoardAccess above).
+  const fetchWorkspaceBoardAccessMap = async () => {
+    if (!activeWorkspaceId) return {};
+    const { data, error } = await supabase
+      .from("board_members")
+      .select("user_id, board_id, nodes!inner(name, workspace_id)")
+      .eq("nodes.workspace_id", activeWorkspaceId);
+    if (error) {
+      console.error("Error loading workspace board access map:", error);
+      return {};
+    }
+    const map = {};
+    (data || []).forEach((row) => {
+      if (!map[row.user_id]) map[row.user_id] = [];
+      map[row.user_id].push({ boardId: row.board_id, boardName: row.nodes?.name });
+    });
+    return map;
   };
 
   // Owner-only (enforced by the RPC itself, not just the UI). Removing a
@@ -712,6 +744,7 @@ export function BoardsProvider({ children }) {
         createInviteCode,
         joinWorkspaceByCode,
         fetchWorkspaceMembers,
+        fetchWorkspaceBoardAccessMap,
         removeMember,
         fetchBoardAccess,
         setBoardAccess,
