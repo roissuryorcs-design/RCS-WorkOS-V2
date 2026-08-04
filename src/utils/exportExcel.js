@@ -4,24 +4,39 @@ const HEADER_FILL = "FF1F2937"; // slate-800
 const HEADER_FONT = "FFFFFFFF";
 const GROUP_FONT = "FFFFFFFF";
 
-// Flattens the item tree into render-order rows with a depth and a
-// numberPath ("1", "1.1", "1.1.1", …) — same traversal shape and
-// numbering scheme as the table itself (BoardTable seeds numberPath as
-// String(taskIndex + 1) per top-level item, Row.jsx extends it per child
-// as `${numberPath}.${childIndex + 1}`). The Nomer column has no stored
-// value of its own — it's purely each item's position among its siblings,
-// computed the same way here.
+// Flattens the item tree into render-order rows with a depth, a
+// numberPath ("1", "1.1", "1.1.1", …), and a `continues` array (one bool
+// per ancestor level: does that ancestor have a following sibling below,
+// i.e. does its vertical connector line keep going past this row) — the
+// same bookkeeping LandingPage.jsx's flattenTree() uses to draw the
+// mockup's SVG tree-line connectors, reused here to draw real ones with
+// Unicode box-drawing characters instead (Excel can't render arbitrary
+// line art inside a cell, but "│ ├─ └─" reads as an actual tree in any
+// spreadsheet app, not just an approximation specific to this codebase).
 function flattenItems(items) {
   const rows = [];
-  const walk = (list, depth, prefix) => {
+  const walk = (list, depth, prefix, continues) => {
     list.forEach((item, i) => {
+      const isLast = i === list.length - 1;
       const numberPath = prefix ? `${prefix}.${i + 1}` : String(i + 1);
-      rows.push({ item, depth, numberPath });
-      if (item.children && item.children.length > 0) walk(item.children, depth + 1, numberPath);
+      rows.push({ item, depth, numberPath, continues, isLast });
+      if (item.children && item.children.length > 0) {
+        walk(item.children, depth + 1, numberPath, [...continues, !isLast]);
+      }
     });
   };
-  walk(items, 0, "");
+  walk(items, 0, "", []);
   return rows;
+}
+
+// "│   " if that ancestor level still has more siblings coming (line
+// keeps going down past this row), "    " (blank) once it's the last
+// child at that level (nothing left below to connect to). The row's own
+// branch uses "├─ " (more siblings follow) or "└─ " (last child).
+function treePrefix(depth, continues, isLast) {
+  if (depth === 0) return "";
+  const lanes = continues.map((c) => (c ? "│   " : "    ")).join("");
+  return lanes + (isLast ? "└─ " : "├─ ");
 }
 
 function parseFiles(raw) {
@@ -179,21 +194,24 @@ export async function exportBoardToExcel({ boardTitle, items, columns, groups, g
     groupRow.getCell(1).font = { color: { argb: GROUP_FONT }, bold: true, size: 12 };
     groupRow.getCell(1).alignment = { vertical: "middle" };
 
-    for (const { item, depth, numberPath } of flattenItems(groupItems)) {
+    for (const { item, depth, numberPath, continues, isLast } of flattenItems(groupItems)) {
       const row = sheet.addRow({});
       // Native Excel outline grouping — gives sub-items real collapsible
       // +/- tree controls in the row gutter (Data > Group's own feature),
-      // the closest thing Excel has to the board's own tree hierarchy.
-      // Depth 0 rows aren't grouped (nothing to collapse them under).
+      // on top of the drawn tree-line prefix below. Depth 0 rows aren't
+      // grouped (nothing to collapse them under).
       if (depth > 0) row.outlineLevel = depth;
       columns.forEach((col, i) => {
         const cell = row.getCell(i + 1);
         if (col.id === "item") {
-          cell.value = item[col.id] || "";
-          // Native cell indent (Excel's own stepped-indent rendering,
-          // shows as an actual "├─"-style tree look with outline grouping
-          // enabled above) instead of hand-rolled leading spaces.
-          cell.alignment = { indent: depth * 2 };
+          cell.value = treePrefix(depth, continues, isLast) + (item[col.id] || "");
+          // Box-drawing characters only line up into clean vertical lines
+          // in a monospace font — a proportional font (Calibri/Arial, the
+          // usual defaults) renders "│" at a different width than letters,
+          // breaking the illusion after a couple of rows. Courier New is
+          // the one monospace font reliably bundled with every Office-
+          // compatible suite (Excel, WPS, LibreOffice, Google Sheets).
+          cell.font = { name: "Courier New" };
         } else {
           writeCell(cell, col, item, numberPath);
         }
