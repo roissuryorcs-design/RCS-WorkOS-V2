@@ -28,6 +28,19 @@ function parseFiles(raw) {
   }
 }
 
+// Standard base-26 column-index -> letter conversion (1 -> A, 27 -> AA, …) —
+// needed to build conditional-formatting range refs like "C2:C40" since
+// ExcelJS doesn't expose a ready helper for this on a bare column index.
+function columnLetter(n) {
+  let s = "";
+  while (n > 0) {
+    const rem = (n - 1) % 26;
+    s = String.fromCharCode(65 + rem) + s;
+    n = Math.floor((n - 1) / 26);
+  }
+  return s;
+}
+
 // Renders one cell's value into `cell` according to the column's type —
 // mirrors Row.jsx's renderCell switch, but producing plain/hyperlink
 // Excel values instead of React inputs.
@@ -56,22 +69,11 @@ function writeCell(cell, col, item) {
       const num = typeof value === "number" ? value : parseFloat(value) || 0;
       cell.value = num / 100;
       cell.numFmt = "0%";
-      // Same stage-color lookup the app itself uses for this column (via
-      // col.progressStages) — picks the highest stage whose threshold the
-      // value has reached, so the export's coloring matches whatever the
-      // user actually configured, not a hardcoded palette.
-      const stages = col.progressStages;
-      if (Array.isArray(stages) && stages.length > 0) {
-        const sorted = [...stages].sort((a, b) => a.value - b.value);
-        let matched = sorted[0];
-        for (const s of sorted) {
-          if (num >= s.value) matched = s;
-        }
-        if (matched?.color) {
-          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF" + matched.color.replace("#", "").toUpperCase() } };
-          cell.font = { color: { argb: "FFFFFFFF" }, bold: true };
-        }
-      }
+      // Visual fill (an actual in-cell bar whose width is proportional to
+      // the value, not just a flat color) is applied afterwards via a
+      // native Excel Data Bar conditional-formatting rule over the whole
+      // column — see addProgressDataBars below. A flat per-cell fill color
+      // can't represent "how much" the way a bar can from a single column.
       cell.alignment = { horizontal: "center" };
       return;
     }
@@ -172,6 +174,31 @@ export async function exportBoardToExcel({ boardTitle, items, columns, groups, g
         }
       });
     }
+  }
+
+  // Native Excel Data Bars — an actual in-cell bar whose fill width is
+  // proportional to each row's own percentage, layered under the "0%"
+  // text already set on the cell. Reads much closer to the app's real
+  // progress bar than a flat per-cell color ever could from one column,
+  // and needs the final row count so it runs after all rows exist.
+  const lastRow = sheet.lastRow?.number;
+  if (lastRow && lastRow > 1) {
+    columns.forEach((col, i) => {
+      if (col.type !== "progress") return;
+      const letter = columnLetter(i + 1);
+      sheet.addConditionalFormatting({
+        ref: `${letter}2:${letter}${lastRow}`,
+        rules: [
+          {
+            type: "dataBar",
+            cfvo: [{ type: "num", value: 0 }, { type: "num", value: 1 }],
+            color: { argb: "FF3B82F6" },
+            showValue: true,
+            gradient: false,
+          },
+        ],
+      });
+    });
   }
 
   const buffer = await workbook.xlsx.writeBuffer();
