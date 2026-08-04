@@ -440,7 +440,7 @@ body.dark {
   border-spacing: 0 !important;
 }
 
-.checkbox-header, 
+.checkbox-header,
 .row-checkbox-cell {
   position: sticky !important;
   left: 0 !important;
@@ -450,6 +450,14 @@ body.dark {
   border-right: 2px solid var(--border-color) !important;
   box-shadow: none !important;
   background-clip: padding-box !important;
+  /* Known Chromium quirk: sticky table cells can render 1-3px off from
+     the rest of the (also-scrolling) row during scroll, because the
+     browser sometimes rounds/re-snaps the sticky cell's position on its
+     own compositor layer independently of the table content beneath it.
+     Forcing this cell onto its own stable GPU layer up front avoids that
+     per-frame re-snapping. */
+  transform: translateZ(0);
+  will-change: transform;
 }
 
 .board-table th:nth-child(2),
@@ -464,6 +472,9 @@ body.dark {
      matikan border-right biasa (dari rule ".board-table th, td" umum)
      supaya tidak dobel/tumpuk dengan garis dari box-shadow tsb. */
   border-right: none !important;
+  /* Same sticky-table-cell subpixel jitter fix as .row-checkbox-cell above. */
+  transform: translateZ(0);
+  will-change: transform;
 }
 
 /* ============================================================
