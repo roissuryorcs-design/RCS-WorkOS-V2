@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 import Avatar from "./Avatar";
 import Popover from "./Popover";
+import DirectMessagePanel from "./DirectMessagePanel";
 
 // Simple table: who's in this workspace (photo + name), which boards each
 // person can access, and their role (owner/admin/member). Full profile
@@ -19,6 +20,7 @@ export default function MemberDirectory({ onClose }) {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [openMenuUserId, setOpenMenuUserId] = useState(null);
+  const [dmTarget, setDmTarget] = useState(null);
   const menuAnchorsRef = useRef({});
 
   useEffect(() => {
@@ -125,6 +127,7 @@ export default function MemberDirectory({ onClose }) {
                   <th style={thStyle}>{t("memberDirectory.boardsLabel")}</th>
                   <th style={thStyle}>{t("memberDirectory.roleLabel")}</th>
                   <th style={{ ...thStyle, width: 1 }} />
+                  <th style={{ ...thStyle, width: 1 }} />
                 </tr>
               </thead>
               <tbody>
@@ -152,6 +155,25 @@ export default function MemberDirectory({ onClose }) {
                           {m.role === "owner" && "👑"}
                           {roleLabel(m.role)}
                         </span>
+                      </td>
+                      <td style={tdStyle}>
+                        {!isSelf && (
+                          <button
+                            onClick={() => setDmTarget(m)}
+                            style={{
+                              padding: "3px 10px",
+                              background: "transparent",
+                              color: "var(--btn-primary-bg)",
+                              border: "1px solid var(--btn-primary-bg)",
+                              borderRadius: 6,
+                              cursor: "pointer",
+                              fontSize: 11.5,
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {t("directMessage.messageBtn")}
+                          </button>
+                        )}
                       </td>
                       <td style={tdStyle}>
                         {isActiveWorkspaceOwner && !isSelf && (
@@ -219,6 +241,15 @@ export default function MemberDirectory({ onClose }) {
           {t("common.close")}
         </button>
       </div>
+
+      {dmTarget && (
+        <DirectMessagePanel
+          partnerId={dmTarget.userId}
+          partnerName={dmTarget.displayName || dmTarget.email}
+          partnerAvatarUrl={dmTarget.avatarUrl}
+          onClose={() => setDmTarget(null)}
+        />
+      )}
     </div>,
     document.body
   );

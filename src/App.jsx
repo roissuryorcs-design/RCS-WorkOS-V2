@@ -4,6 +4,7 @@ import { ThemeProvider } from "./context/ThemeContext";
 import { LanguageProvider, useLanguage } from "./context/LanguageContext";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { ProfileProvider } from "./context/ProfileContext";
+import { DMProvider } from "./context/DMContext";
 import { ColumnProvider, useColumns } from "./context/ColumnContext";
 import { GroupProvider, useGroups } from "./context/GroupContext";
 import { ItemsProvider, useItems } from "./context/ItemsContext";
@@ -465,11 +466,13 @@ export default function App() {
         <AuthProvider>
           <AuthGate>
             <ProfileProvider>
-              <BoardsProvider>
-                <MobileNavProvider>
-                  <AppShellInner />
-                </MobileNavProvider>
-              </BoardsProvider>
+              <DMProvider>
+                <BoardsProvider>
+                  <MobileNavProvider>
+                    <AppShellInner />
+                  </MobileNavProvider>
+                </BoardsProvider>
+              </DMProvider>
             </ProfileProvider>
           </AuthGate>
         </AuthProvider>

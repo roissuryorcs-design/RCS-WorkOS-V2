@@ -271,6 +271,12 @@ export const translations = {
       roleChangeFailed: "Couldn't change role. Only the workspace owner can do this.",
       noResults: "No members match your search.",
     },
+    directMessage: {
+      empty: "No messages yet — say hello!",
+      placeholder: "Type a message…",
+      sendBtn: "Send",
+      messageBtn: "Message",
+    },
     settingsModal: {
       title: "Settings",
       photoLabel: "Photo",
@@ -772,6 +778,12 @@ export const translations = {
       makeMember: "Jadikan member",
       roleChangeFailed: "Gagal mengubah status. Hanya owner workspace yang bisa melakukan ini.",
       noResults: "Tidak ada member yang cocok.",
+    },
+    directMessage: {
+      empty: "Belum ada pesan — sapa dulu!",
+      placeholder: "Ketik pesan…",
+      sendBtn: "Kirim",
+      messageBtn: "Pesan",
     },
     settingsModal: {
       title: "Pengaturan",
