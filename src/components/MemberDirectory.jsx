@@ -177,6 +177,9 @@ export default function MemberDirectory({ onClose }) {
                               placement="bottom-end"
                               className="tree-node-popup"
                             >
+                              {m.role !== "owner" && (
+                                <button onClick={() => handleSetRole(m, "owner")}>{t("memberDirectory.makeOwner")}</button>
+                              )}
                               {m.role !== "admin" && (
                                 <button onClick={() => handleSetRole(m, "admin")}>{t("memberDirectory.makeAdmin")}</button>
                               )}

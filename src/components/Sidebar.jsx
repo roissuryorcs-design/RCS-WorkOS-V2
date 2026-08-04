@@ -30,7 +30,13 @@ export default function Sidebar() {
     favoriteBoards,
     toggleFavorite,
     isActiveWorkspaceOwner,
+    activeRole,
   } = useBoards();
+  // Members can see/rename/reorder/favorite what they have access to, but
+  // creating or deleting boards/folders is owner/admin-only (also enforced
+  // server-side via the nodes_insert/nodes_delete RLS policies — this is
+  // just the matching UI, not the actual security boundary).
+  const canManageStructure = activeRole !== "member";
   const [accessModalBoard, setAccessModalBoard] = useState(null);
   const { sidebarOpen, setSidebarOpen } = useMobileNav();
 
@@ -164,7 +170,7 @@ export default function Sidebar() {
           <button onClick={() => { setAccessModalBoard(node); closeMenu(); }}>{t("sidebar.manageAccess")}</button>
         )}
         <button onClick={() => handleArchive(node)}>{t("sidebar.archiveBoard")}</button>
-        <button onClick={() => handleDelete(node)}>{t("sidebar.deleteBoard")}</button>
+        {canManageStructure && <button onClick={() => handleDelete(node)}>{t("sidebar.deleteBoard")}</button>}
       </Popover>
     </div>
   );
@@ -205,12 +211,12 @@ export default function Sidebar() {
           placement="bottom-end"
           className="tree-node-popup"
         >
-          <button onClick={() => handleAddBoard(node.id)}>{t("sidebar.addBoard")}</button>
-          {isTopLevelFolder && (
+          {canManageStructure && <button onClick={() => handleAddBoard(node.id)}>{t("sidebar.addBoard")}</button>}
+          {canManageStructure && isTopLevelFolder && (
             <button onClick={() => handleAddFolder(node.id)}>{t("sidebar.addSubFolder")}</button>
           )}
           <button onClick={() => handleRename(node)}>{t("sidebar.renameFolder")}</button>
-          <button onClick={() => handleDelete(node)}>{t("sidebar.deleteFolder")}</button>
+          {canManageStructure && <button onClick={() => handleDelete(node)}>{t("sidebar.deleteFolder")}</button>}
         </Popover>
 
         {!node.collapsed && children.length > 0 && (
@@ -294,8 +300,12 @@ export default function Sidebar() {
         <div className="section-title">{t("sidebar.workspaceTitle")}</div>
         <WorkspaceSwitcher />
         {topLevelNodes.map((node) => (node.type === "folder" ? renderFolder(node) : renderBoard(node)))}
-        <div className="tree-add-btn" onClick={() => handleAddBoard(null)}>{t("sidebar.addBoardBtn")}</div>
-        <div className="tree-add-btn" onClick={() => handleAddFolder(null)}>{t("sidebar.addFolderBtn")}</div>
+        {canManageStructure && (
+          <>
+            <div className="tree-add-btn" onClick={() => handleAddBoard(null)}>{t("sidebar.addBoardBtn")}</div>
+            <div className="tree-add-btn" onClick={() => handleAddFolder(null)}>{t("sidebar.addFolderBtn")}</div>
+          </>
+        )}
       </div>
 
       <div className="sidebar-section">
