@@ -1,10 +1,18 @@
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
+import { supabase } from "../lib/supabaseClient";
 import { useDM } from "../context/DMContext";
 import { useAuth } from "../context/AuthContext";
 import { useProfile } from "../context/ProfileContext";
 import { useLanguage } from "../context/LanguageContext";
 import Avatar from "./Avatar";
+
+// dm_notes rows are keyed by the pair in canonical (user_a < user_b)
+// order so (A,B) and (B,A) always resolve to the same shared row —
+// every read/write has to sort the two ids the same way.
+function sortedPair(a, b) {
+  return a < b ? [a, b] : [b, a];
+}
 
 const URL_REGEX = /(https?:\/\/[^\s]+)/g;
 
@@ -40,6 +48,11 @@ export default function DirectMessagePanel({ partnerId, partnerName, partnerAvat
   const { messagesWith, sendMessage, markConversationRead } = useDM();
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
+  const [mode, setMode] = useState("chat"); // "chat" | "notes"
+  const [notes, setNotes] = useState("");
+  const [notesLoading, setNotesLoading] = useState(false);
+  const [notesSaving, setNotesSaving] = useState(false);
+  const [notesStatus, setNotesStatus] = useState(null); // null | "saved"
   const listRef = useRef(null);
 
   const messages = messagesWith(partnerId);
@@ -48,6 +61,48 @@ export default function DirectMessagePanel({ partnerId, partnerName, partnerAvat
     markConversationRead(partnerId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [partnerId]);
+
+  // Loaded lazily (only once notes mode is actually opened, not on every
+  // chat open) — no live Realtime sync for v1, notes are typically
+  // written by one person during/after a call rather than edited
+  // character-by-character by both sides at once.
+  useEffect(() => {
+    if (mode !== "notes" || !user?.id || !partnerId) return;
+    let cancelled = false;
+    setNotesLoading(true);
+    const [userA, userB] = sortedPair(user.id, partnerId);
+    supabase
+      .from("dm_notes")
+      .select("body")
+      .eq("user_a", userA)
+      .eq("user_b", userB)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error) console.error("Error loading notes:", error);
+        setNotes(data?.body || "");
+        setNotesLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, partnerId]);
+
+  const handleSaveNotes = async () => {
+    setNotesSaving(true);
+    setNotesStatus(null);
+    const [userA, userB] = sortedPair(user.id, partnerId);
+    const { error } = await supabase
+      .from("dm_notes")
+      .upsert(
+        { user_a: userA, user_b: userB, body: notes, updated_by: user.id, updated_at: new Date().toISOString() },
+        { onConflict: "user_a,user_b" }
+      );
+    setNotesSaving(false);
+    setNotesStatus(error ? "error" : "saved");
+    if (error) console.error("Error saving notes:", error);
+  };
 
   useEffect(() => {
     if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
@@ -127,6 +182,21 @@ export default function DirectMessagePanel({ partnerId, partnerName, partnerAvat
             📹
           </button>
           <button
+            onClick={() => setMode((prev) => (prev === "notes" ? "chat" : "notes"))}
+            title={t("directMessage.notesBtn")}
+            style={{
+              background: mode === "notes" ? "var(--bg-hover)" : "none",
+              border: "none",
+              borderRadius: 6,
+              cursor: "pointer",
+              fontSize: 16,
+              color: "var(--text-secondary)",
+              padding: 4,
+            }}
+          >
+            📝
+          </button>
+          <button
             onClick={onClose}
             style={{ background: "none", border: "none", cursor: "pointer", fontSize: 18, color: "var(--text-secondary)", padding: 4 }}
           >
@@ -134,74 +204,136 @@ export default function DirectMessagePanel({ partnerId, partnerName, partnerAvat
           </button>
         </div>
 
-        <div ref={listRef} style={{ flex: 1, overflowY: "auto", padding: "12px 14px", display: "flex", flexDirection: "column", gap: 8 }}>
-          {messages.length === 0 && (
-            <div style={{ fontSize: 12.5, color: "var(--text-muted)", textAlign: "center", marginTop: 20 }}>
-              {t("directMessage.empty")}
-            </div>
-          )}
-          {messages.map((m) => {
-            const isMine = m.sender_id === user.id;
-            return (
-              <div key={m.id} style={{ display: "flex", justifyContent: isMine ? "flex-end" : "flex-start" }}>
-                <div
-                  style={{
-                    maxWidth: "75%",
-                    padding: "7px 11px",
-                    borderRadius: 12,
-                    borderBottomRightRadius: isMine ? 3 : 12,
-                    borderBottomLeftRadius: isMine ? 12 : 3,
-                    background: isMine ? "var(--btn-primary-bg)" : "var(--bg-hover)",
-                    color: isMine ? "var(--btn-primary-text)" : "var(--text-primary)",
-                    fontSize: 13,
-                    wordBreak: "break-word",
-                    whiteSpace: "pre-wrap",
-                  }}
-                >
-                  {renderMessageBody(m.body, isMine ? "var(--btn-primary-text)" : "var(--btn-primary-bg)")}
+        {mode === "chat" ? (
+          <>
+            <div ref={listRef} style={{ flex: 1, overflowY: "auto", padding: "12px 14px", display: "flex", flexDirection: "column", gap: 8 }}>
+              {messages.length === 0 && (
+                <div style={{ fontSize: 12.5, color: "var(--text-muted)", textAlign: "center", marginTop: 20 }}>
+                  {t("directMessage.empty")}
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              )}
+              {messages.map((m) => {
+                const isMine = m.sender_id === user.id;
+                return (
+                  <div key={m.id} style={{ display: "flex", justifyContent: isMine ? "flex-end" : "flex-start" }}>
+                    <div
+                      style={{
+                        maxWidth: "75%",
+                        padding: "7px 11px",
+                        borderRadius: 12,
+                        borderBottomRightRadius: isMine ? 3 : 12,
+                        borderBottomLeftRadius: isMine ? 12 : 3,
+                        background: isMine ? "var(--btn-primary-bg)" : "var(--bg-hover)",
+                        color: isMine ? "var(--btn-primary-text)" : "var(--text-primary)",
+                        fontSize: 13,
+                        wordBreak: "break-word",
+                        whiteSpace: "pre-wrap",
+                      }}
+                    >
+                      {renderMessageBody(m.body, isMine ? "var(--btn-primary-text)" : "var(--btn-primary-bg)")}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
 
-        <div style={{ display: "flex", gap: 8, padding: "10px 12px", borderTop: "1px solid var(--border-color)" }}>
-          <textarea
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={t("directMessage.placeholder")}
-            rows={1}
-            style={{
-              flex: 1,
-              resize: "none",
-              padding: "8px 10px",
-              borderRadius: 6,
-              border: "1px solid var(--border-dark)",
-              background: "var(--bg-input)",
-              color: "var(--text-primary)",
-              fontSize: 13,
-              fontFamily: "inherit",
-            }}
-          />
-          <button
-            onClick={handleSend}
-            disabled={sending || !text.trim()}
-            style={{
-              padding: "0 16px",
-              background: "var(--btn-primary-bg)",
-              color: "var(--btn-primary-text)",
-              border: "none",
-              borderRadius: 6,
-              cursor: sending || !text.trim() ? "default" : "pointer",
-              fontWeight: 600,
-              fontSize: 13,
-              opacity: sending || !text.trim() ? 0.6 : 1,
-            }}
-          >
-            {t("directMessage.sendBtn")}
-          </button>
-        </div>
+            <div style={{ display: "flex", gap: 8, padding: "10px 12px", borderTop: "1px solid var(--border-color)" }}>
+              <textarea
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={t("directMessage.placeholder")}
+                rows={1}
+                style={{
+                  flex: 1,
+                  resize: "none",
+                  padding: "8px 10px",
+                  borderRadius: 6,
+                  border: "1px solid var(--border-dark)",
+                  background: "var(--bg-input)",
+                  color: "var(--text-primary)",
+                  fontSize: 13,
+                  fontFamily: "inherit",
+                }}
+              />
+              <button
+                onClick={handleSend}
+                disabled={sending || !text.trim()}
+                style={{
+                  padding: "0 16px",
+                  background: "var(--btn-primary-bg)",
+                  color: "var(--btn-primary-text)",
+                  border: "none",
+                  borderRadius: 6,
+                  cursor: sending || !text.trim() ? "default" : "pointer",
+                  fontWeight: 600,
+                  fontSize: 13,
+                  opacity: sending || !text.trim() ? 0.6 : 1,
+                }}
+              >
+                {t("directMessage.sendBtn")}
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div style={{ flex: 1, overflowY: "auto", padding: "12px 14px", display: "flex", flexDirection: "column" }}>
+              <label style={{ fontSize: 11, fontWeight: 600, color: "var(--text-secondary)", marginBottom: 6 }}>
+                {t("directMessage.notesLabel")}
+              </label>
+              {notesLoading ? (
+                <div style={{ fontSize: 12.5, color: "var(--text-muted)" }}>{t("membersModal.loading")}</div>
+              ) : (
+                <textarea
+                  value={notes}
+                  onChange={(e) => {
+                    setNotes(e.target.value);
+                    setNotesStatus(null);
+                  }}
+                  placeholder={t("directMessage.notesPlaceholder")}
+                  style={{
+                    flex: 1,
+                    resize: "none",
+                    padding: "10px",
+                    borderRadius: 6,
+                    border: "1px solid var(--border-dark)",
+                    background: "var(--bg-input)",
+                    color: "var(--text-primary)",
+                    fontSize: 13,
+                    fontFamily: "inherit",
+                    lineHeight: 1.5,
+                  }}
+                />
+              )}
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderTop: "1px solid var(--border-color)" }}>
+              {notesStatus === "saved" && (
+                <span style={{ fontSize: 11.5, color: "#16a34a" }}>{t("settingsModal.saved")}</span>
+              )}
+              {notesStatus === "error" && (
+                <span style={{ fontSize: 11.5, color: "#ef4444" }}>{t("settingsModal.saveFailed")}</span>
+              )}
+              <button
+                onClick={handleSaveNotes}
+                disabled={notesSaving || notesLoading}
+                style={{
+                  marginLeft: "auto",
+                  padding: "8px 18px",
+                  background: "var(--btn-primary-bg)",
+                  color: "var(--btn-primary-text)",
+                  border: "none",
+                  borderRadius: 6,
+                  cursor: notesSaving || notesLoading ? "default" : "pointer",
+                  fontWeight: 600,
+                  fontSize: 13,
+                  opacity: notesSaving || notesLoading ? 0.6 : 1,
+                }}
+              >
+                {t("settingsModal.saveBtn")}
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>,
     document.body

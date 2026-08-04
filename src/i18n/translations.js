@@ -279,6 +279,9 @@ export const translations = {
       startCallBtn: "Start video call",
       startedCall: "Started a video call",
       noZoomLink: "Add your Zoom link in Settings first to start a call.",
+      notesBtn: "Meeting notes",
+      notesLabel: "Shared notes for this conversation",
+      notesPlaceholder: "Write meeting notes here — visible to both of you…",
     },
     notifications: {
       title: "Notifications",
@@ -803,6 +806,9 @@ export const translations = {
       startCallBtn: "Mulai video call",
       startedCall: "Memulai video call",
       noZoomLink: "Isi link Zoom kamu di Settings dulu untuk mulai video call.",
+      notesBtn: "Notulen",
+      notesLabel: "Catatan bersama untuk percakapan ini",
+      notesPlaceholder: "Tulis notulen rapat di sini — bisa dilihat kalian berdua…",
     },
     notifications: {
       title: "Notifikasi",
