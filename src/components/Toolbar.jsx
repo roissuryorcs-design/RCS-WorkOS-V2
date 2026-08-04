@@ -1,6 +1,4 @@
-import { useTheme } from "../context/ThemeContext";
 import { useLanguage } from "../context/LanguageContext";
-import LanguageSwitcher from "./LanguageSwitcher";
 import "../css/toolbar.css";
 
 export default function Toolbar({
@@ -11,7 +9,6 @@ export default function Toolbar({
   canUndo,
   onOpenColumnManager, // ← Manage Columns tetap
 }) {
-  const { theme, toggleTheme } = useTheme();
   const { t } = useLanguage();
 
   return (
@@ -43,12 +40,6 @@ export default function Toolbar({
       <button className="toolbar-column-btn" onClick={onOpenColumnManager}>
         {t("toolbar.manageColumns")}
       </button>
-
-      <button onClick={toggleTheme} className="toolbar-theme-btn">
-        {theme === "light" ? t("toolbar.darkMode") : t("toolbar.lightMode")}
-      </button>
-
-      <LanguageSwitcher />
     </div>
   );
 }

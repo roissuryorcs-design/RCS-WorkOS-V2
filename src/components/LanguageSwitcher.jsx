@@ -2,14 +2,22 @@ import { useState, useRef } from "react";
 import { useLanguage } from "../context/LanguageContext";
 import Popover from "./Popover";
 
-export default function LanguageSwitcher() {
+// variant="menuItem" drops the compact toolbar-pill styling in favor of a
+// plain full-width row, so it sits consistently among other buttons when
+// nested inside a list-style menu (e.g. AccountMenu's dropdown) instead of
+// a horizontal toolbar.
+export default function LanguageSwitcher({ variant }) {
   const { language, setLanguage, languages, t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const btnRef = useRef(null);
 
   return (
     <>
-      <button ref={btnRef} className="toolbar-lang-btn" onClick={() => setIsOpen((prev) => !prev)}>
+      <button
+        ref={btnRef}
+        className={variant === "menuItem" ? undefined : "toolbar-lang-btn"}
+        onClick={() => setIsOpen((prev) => !prev)}
+      >
         {t(`languageSwitcher.${language}`)} ▾
       </button>
 

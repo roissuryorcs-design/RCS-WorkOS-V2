@@ -2,9 +2,11 @@ import { useState, useRef } from "react";
 import { useProfile } from "../context/ProfileContext";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
+import { useTheme } from "../context/ThemeContext";
 import Avatar from "./Avatar";
 import Popover from "./Popover";
 import SettingsModal from "./SettingsModal";
+import LanguageSwitcher from "./LanguageSwitcher";
 
 // Top-right account entry point — consolidates what used to be split
 // across the sidebar footer (email + sign-out button, Settings button)
@@ -15,6 +17,7 @@ export default function AccountMenu() {
   const { t } = useLanguage();
   const { profile } = useProfile();
   const { user, signOut } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const btnRef = useRef(null);
@@ -38,7 +41,12 @@ export default function AccountMenu() {
         }}
         aria-label={t("sidebar.settingsBtn")}
       >
-        <Avatar url={profile?.avatar_url} name={name} size={34} />
+        <Avatar
+          url={profile?.avatar_url}
+          name={name}
+          size={34}
+          style={{ border: "2px solid var(--btn-primary-bg)", boxSizing: "border-box" }}
+        />
       </button>
 
       <Popover
@@ -50,7 +58,12 @@ export default function AccountMenu() {
         style={{ minWidth: 220 }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 16px 10px" }}>
-          <Avatar url={profile?.avatar_url} name={name} size={38} />
+          <Avatar
+            url={profile?.avatar_url}
+            name={name}
+            size={38}
+            style={{ border: "2px solid var(--btn-primary-bg)", boxSizing: "border-box" }}
+          />
           <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {name}
@@ -69,6 +82,15 @@ export default function AccountMenu() {
         >
           {t("sidebar.settingsBtn")}
         </button>
+
+        {/* Moved here from the board Toolbar — quick app-wide preferences
+            belong in the account menu, not scattered across a per-board
+            toolbar. */}
+        <button onClick={toggleTheme}>
+          {theme === "light" ? t("toolbar.darkMode") : t("toolbar.lightMode")}
+        </button>
+        <LanguageSwitcher variant="menuItem" />
+
         <button onClick={signOut}>{t("auth.signOut")}</button>
       </Popover>
 
