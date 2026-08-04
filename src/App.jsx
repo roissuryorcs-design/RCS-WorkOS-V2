@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { Analytics } from "@vercel/analytics/react";
-import { supabase } from "./lib/supabaseClient";
 import { ThemeProvider } from "./context/ThemeContext";
 import { LanguageProvider, useLanguage } from "./context/LanguageContext";
 import { AuthProvider, useAuth } from "./context/AuthContext";
@@ -12,6 +11,7 @@ import { MobileNavProvider } from "./context/MobileNavContext";
 import LoginScreen from "./components/LoginScreen";
 import LandingPage from "./components/LandingPage";
 import { getDefaultGroupName } from "./i18n/defaults";
+import { boardKey } from "./utils/boardStorage";
 import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
 import Toolbar from "./components/Toolbar";
@@ -73,46 +73,22 @@ function BoardWorkspace({ boardId }) {
 
   const isInitialized = !groupsLoading && !itemsLoading;
 
-  // current_view lives in the `boards` table (existed since Phase 1 but
-  // was never wired up — Table/Dashboard mode never synced between
-  // collaborators). Loaded per boardId + kept live via Realtime.
-  useEffect(() => {
-    let cancelled = false;
-    supabase.from('boards').select('current_view').eq('id', boardId).single().then(({ data, error }) => {
-      if (cancelled) return;
-      if (error) {
-        console.error('Error loading board view mode:', error);
-        return;
-      }
-      if (data?.current_view) setCurrentView(data.current_view);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [boardId]);
-
+  // Table/Dashboard mode is per-device UI navigation state, not shared
+  // board content — syncing it via Supabase Realtime meant switching tabs
+  // on one device yanked every other session (including the *same*
+  // person's other device) into that same tab too, which reads as a bug
+  // to anyone used to how tab/view selection works in any other
+  // collaborative app. Kept local via localStorage instead, same
+  // per-board-key convention this project used pre-migration.
   useEffect(() => {
     if (!boardId) return;
-    const channel = supabase
-      .channel(`board-view:${boardId}`)
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'boards', filter: `id=eq.${boardId}` },
-        (payload) => {
-          if (payload.new.current_view) setCurrentView(payload.new.current_view);
-        }
-      )
-      .subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    const saved = localStorage.getItem(boardKey('forelCurrentView', boardId));
+    if (saved) setCurrentView(saved);
   }, [boardId]);
 
   const changeView = (view) => {
     setCurrentView(view);
-    supabase.from('boards').update({ current_view: view }).eq('id', boardId).then(({ error }) => {
-      if (error) console.error('Error updating board view mode:', error);
-    });
+    if (boardId) localStorage.setItem(boardKey('forelCurrentView', boardId), view);
   };
 
   // ============================================================
