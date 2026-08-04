@@ -5,10 +5,10 @@ import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 import Avatar from "./Avatar";
 
-// Richer successor to MembersModal — same remove-member action, but shows
-// the full profile (photo/job title/phone/hobby) and per-board access
-// instead of just name/email/role. Opened from the same "Manage Members"
-// entry point in WorkspaceSwitcher's footer.
+// Simple table: who's in this workspace (photo + name) and which boards
+// each person can access. Full profile detail (job title/phone/hobby)
+// lives in each person's own Settings, not repeated here — kept per user
+// request to not over-detail this specific view.
 export default function MemberDirectory({ onClose }) {
   const { t } = useLanguage();
   const { user } = useAuth();
@@ -44,11 +44,8 @@ export default function MemberDirectory({ onClose }) {
 
   const query = search.trim().toLowerCase();
   const filteredMembers = query
-    ? members.filter((m) => (m.displayName || "").toLowerCase().includes(query) || (m.jobTitle || "").toLowerCase().includes(query))
+    ? members.filter((m) => (m.displayName || m.email || "").toLowerCase().includes(query))
     : members;
-
-  const rowLabelStyle = { fontSize: 10.5, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: 0.3 };
-  const rowValueStyle = { fontSize: 12.5, color: "var(--text-primary)" };
 
   return createPortal(
     <div
@@ -69,7 +66,7 @@ export default function MemberDirectory({ onClose }) {
           background: "var(--bg-modal)",
           borderRadius: 12,
           padding: 24,
-          maxWidth: 560,
+          maxWidth: 480,
           width: "92%",
           color: "var(--text-primary)",
           boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
@@ -103,82 +100,58 @@ export default function MemberDirectory({ onClose }) {
         {loading ? (
           <div style={{ fontSize: 13, color: "var(--text-secondary)" }}>{t("membersModal.loading")}</div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 8, overflowY: "auto", marginBottom: 16 }}>
-            {filteredMembers.map((m) => {
-              const access = boardAccessMap[m.userId];
-              const boardAccessLabel = access && access.length > 0
-                ? access.map((a) => a.boardName).filter(Boolean).join(", ")
-                : t("memberDirectory.allBoards");
+          <div style={{ overflowY: "auto", marginBottom: 16 }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr style={{ borderBottom: "1px solid var(--border-color)" }}>
+                  <th style={thStyle}>{t("membersModal.title")}</th>
+                  <th style={thStyle}>{t("memberDirectory.boardsLabel")}</th>
+                  <th style={{ ...thStyle, width: 1 }} />
+                </tr>
+              </thead>
+              <tbody>
+                {filteredMembers.map((m) => {
+                  const access = boardAccessMap[m.userId];
+                  const boardAccessLabel = access && access.length > 0
+                    ? access.map((a) => a.boardName).filter(Boolean).join(", ")
+                    : t("memberDirectory.allBoards");
 
-              return (
-                <div
-                  key={m.userId}
-                  style={{
-                    display: "flex",
-                    gap: 12,
-                    padding: "10px 12px",
-                    borderRadius: 8,
-                    background: "var(--bg-hover)",
-                  }}
-                >
-                  <Avatar url={m.avatarUrl} name={m.displayName || m.email} size={44} style={{ marginTop: 2 }} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                      <span style={{ fontSize: 14, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {m.displayName || m.email}
-                        {m.userId === user.id ? ` (${t("membersModal.you")})` : ""}
-                      </span>
-                      {m.jobTitle && (
-                        <span style={{ fontSize: 11.5, color: "var(--text-secondary)", flexShrink: 0 }}>· {m.jobTitle}</span>
-                      )}
-                    </div>
-
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 12px", marginBottom: 6 }}>
-                      <div>
-                        <div style={rowLabelStyle}>{t("settingsModal.emailLabel")}</div>
-                        <div style={{ ...rowValueStyle, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.email}</div>
-                      </div>
-                      {m.phone && (
-                        <div>
-                          <div style={rowLabelStyle}>{t("settingsModal.phoneLabel")}</div>
-                          <div style={rowValueStyle}>{m.phone}</div>
+                  return (
+                    <tr key={m.userId} style={{ borderBottom: "1px solid var(--border-color)" }}>
+                      <td style={tdStyle}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+                          <Avatar url={m.avatarUrl} name={m.displayName || m.email} size={30} />
+                          <span style={{ fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {m.displayName || m.email}
+                            {m.userId === user.id ? ` (${t("membersModal.you")})` : ""}
+                          </span>
                         </div>
-                      )}
-                      {m.hobby && (
-                        <div>
-                          <div style={rowLabelStyle}>{t("settingsModal.hobbyLabel")}</div>
-                          <div style={rowValueStyle}>{m.hobby}</div>
-                        </div>
-                      )}
-                      <div>
-                        <div style={rowLabelStyle}>{t("memberDirectory.boardsLabel")}</div>
-                        <div style={rowValueStyle}>{boardAccessLabel}</div>
-                      </div>
-                    </div>
-
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                      <span style={{ fontSize: 10.5, color: "var(--text-muted)", textTransform: "capitalize" }}>{m.role}</span>
-                      {isActiveWorkspaceOwner && m.userId !== user.id && (
-                        <button
-                          onClick={() => handleRemove(m)}
-                          style={{
-                            padding: "3px 10px",
-                            background: "transparent",
-                            color: "#ef4444",
-                            border: "1px solid #ef4444",
-                            borderRadius: 6,
-                            cursor: "pointer",
-                            fontSize: 11.5,
-                          }}
-                        >
-                          {t("membersModal.removeBtn")}
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+                      </td>
+                      <td style={{ ...tdStyle, fontSize: 12, color: "var(--text-secondary)" }}>{boardAccessLabel}</td>
+                      <td style={tdStyle}>
+                        {isActiveWorkspaceOwner && m.userId !== user.id && (
+                          <button
+                            onClick={() => handleRemove(m)}
+                            style={{
+                              padding: "3px 10px",
+                              background: "transparent",
+                              color: "#ef4444",
+                              border: "1px solid #ef4444",
+                              borderRadius: 6,
+                              cursor: "pointer",
+                              fontSize: 11.5,
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {t("membersModal.removeBtn")}
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
             {filteredMembers.length === 0 && (
               <div style={{ fontSize: 13, color: "var(--text-secondary)", padding: "8px 4px" }}>
                 {t("memberDirectory.noResults")}
@@ -206,3 +179,17 @@ export default function MemberDirectory({ onClose }) {
     document.body
   );
 }
+
+const thStyle = {
+  textAlign: "left",
+  padding: "6px 8px",
+  fontSize: 10.5,
+  fontWeight: 700,
+  color: "var(--text-muted)",
+  textTransform: "uppercase",
+  letterSpacing: 0.3,
+};
+const tdStyle = {
+  padding: "8px",
+  verticalAlign: "middle",
+};
