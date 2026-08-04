@@ -109,16 +109,55 @@ export default function BoardTable({
   // 🔥 DRAG & DROP GROUP - SIMPAN LANGSUNG NAMA GROUP
   // ============================================================
   const boardRef = useRef(null);
+  const scrollContainerRef = useRef(null);
 
-  // No JS-driven horizontal pinning anymore. That approach could only
-  // mirror scrollLeft with up to ~30-50px of lag during fast/flung
-  // scrolls (native momentum scroll runs on the compositor thread; a
-  // main-thread rAF loop reading scrollLeft back always trails it) — a
-  // hard ceiling no amount of JS tuning could close. .group-header's own
-  // native position:sticky (App.css) turns out to genuinely work even on
-  // the Android WebView build that failed to stick .group-title's deeper-
-  // nested sticky — same simple, single-level pattern the Item column's
-  // sticky <td> already used successfully with only ~2-3px of jitter.
+  // Horizontal group-header pinning via JS, mobile-only. Native CSS
+  // position:sticky on .group-title is confirmed (via computed-style
+  // inspection on the actual device) to be applied exactly as specified —
+  // yet still doesn't visually stick on this device's Android WebView,
+  // pointing to an engine-level limitation rather than a CSS/DOM bug.
+  // Desktop keeps pure CSS sticky (App.css blocks this transform there via
+  // !important); mobile gets this rAF-driven fallback instead, which
+  // doesn't depend on the browser's native sticky algorithm at all — it
+  // just mirrors scrollLeft onto a transform every frame. Earlier attempts
+  // to run this at the same time as .group-title's own native sticky
+  // caused visible "bouncing" (both mechanisms fighting to position the
+  // same element every frame) — App.css now disables .group-title's
+  // sticky specifically on mobile so only one mechanism is ever active.
+  // Remaining jitter during fast/flung scrolls is inherent to this
+  // technique (native momentum scroll runs on the compositor thread;
+  // reading scrollLeft back on the main thread always trails it by up to
+  // a frame) — using a cached container ref (skips a DOM query every
+  // single frame) and translate3d (forces GPU compositing more reliably
+  // than translateX on older Android WebView builds) narrows that gap as
+  // far as a JS-only approach can go.
+  useEffect(() => {
+    let rafId;
+    let lastX = null;
+    const tick = () => {
+      if (window.innerWidth <= 768) {
+        const container = scrollContainerRef.current;
+        if (container) {
+          const max = container.scrollWidth - container.clientWidth;
+          const x = Math.min(Math.max(container.scrollLeft, 0), Math.max(max, 0));
+          if (x !== lastX) {
+            lastX = x;
+            container.querySelectorAll('.group-header-inner').forEach((el) => {
+              el.style.transform = `translate3d(${x}px, 0, 0)`;
+            });
+          }
+        }
+      } else if (lastX !== null) {
+        lastX = null;
+        scrollContainerRef.current?.querySelectorAll('.group-header-inner').forEach((el) => {
+          el.style.transform = '';
+        });
+      }
+      rafId = requestAnimationFrame(tick);
+    };
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
+  }, []);
 
   const saveNewOrder = useCallback(() => {
     const container = boardRef.current;
@@ -423,7 +462,7 @@ export default function BoardTable({
         </div>
       )}
 
-      <div className="board-scroll-container">
+      <div className="board-scroll-container" ref={scrollContainerRef}>
         <div
           className="board-scroll-content"
           ref={boardRef}
