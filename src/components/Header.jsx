@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabaseClient';
 import { useLanguage } from '../context/LanguageContext';
 import { useMobileNav } from '../context/MobileNavContext';
 import AccountMenu from './AccountMenu';
+import NotificationBell from './NotificationBell';
 
 // title/subtitle now live in the `boards` table (columns existed since
 // Phase 1 but were never wired up — this component was still 100%
@@ -203,7 +204,8 @@ const Header = ({ groups = [], boardId, isReady = true }) => {
           Settings button + email/sign-out row buried in the sidebar
           footer into one avatar-triggered menu, matching where most
           collaborative apps (monday.com included) put it. */}
-      <div style={{ paddingTop: 2 }}>
+      <div style={{ paddingTop: 2, display: 'flex', alignItems: 'center', gap: 10 }}>
+        <NotificationBell />
         <AccountMenu />
       </div>
     </div>

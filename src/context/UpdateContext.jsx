@@ -130,7 +130,7 @@ export function UpdateProvider({ children, boardId }) {
   const tree = useMemo(() => buildReplyTree(rows, authorsById), [rows, authorsById]);
 
   const addUpdate = async (itemId, text, files = []) => {
-    if (!text && files.length === 0) return;
+    if (!text && files.length === 0) return null;
     const { data, error } = await supabase
       .from("updates")
       .insert({ item_id: itemId, board_id: boardId, parent_id: null, author_id: user.id, text: text || "", files })
@@ -138,18 +138,19 @@ export function UpdateProvider({ children, boardId }) {
       .single();
     if (error) {
       console.error("Error adding update:", error);
-      return;
+      return null;
     }
     setRows((prev) => [...prev, data]);
+    return data;
   };
 
   // `updateId` is always the top-level update's id (UpdatePanel passes it
   // through even for nested replies); `parentReplyId` is the specific
   // reply being replied to, if any deeper than the top level.
   const addReply = async (updateId, replyData, parentReplyId = null) => {
-    if (!replyData || (!replyData.text && !(replyData.files && replyData.files.length > 0))) return;
+    if (!replyData || (!replyData.text && !(replyData.files && replyData.files.length > 0))) return null;
     const rootUpdate = rows.find((r) => r.id === updateId);
-    if (!rootUpdate) return;
+    if (!rootUpdate) return null;
     const { data, error } = await supabase
       .from("updates")
       .insert({
@@ -164,9 +165,10 @@ export function UpdateProvider({ children, boardId }) {
       .single();
     if (error) {
       console.error("Error adding reply:", error);
-      return;
+      return null;
     }
     setRows((prev) => [...prev, data]);
+    return data;
   };
 
   const editUpdate = async (updateId, newText, files = null) => {

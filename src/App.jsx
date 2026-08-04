@@ -5,6 +5,7 @@ import { LanguageProvider, useLanguage } from "./context/LanguageContext";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { ProfileProvider } from "./context/ProfileContext";
 import { DMProvider } from "./context/DMContext";
+import { NotificationProvider } from "./context/NotificationContext";
 import { ColumnProvider, useColumns } from "./context/ColumnContext";
 import { GroupProvider, useGroups } from "./context/GroupContext";
 import { ItemsProvider, useItems } from "./context/ItemsContext";
@@ -467,11 +468,13 @@ export default function App() {
           <AuthGate>
             <ProfileProvider>
               <DMProvider>
-                <BoardsProvider>
-                  <MobileNavProvider>
-                    <AppShellInner />
-                  </MobileNavProvider>
-                </BoardsProvider>
+                <NotificationProvider>
+                  <BoardsProvider>
+                    <MobileNavProvider>
+                      <AppShellInner />
+                    </MobileNavProvider>
+                  </BoardsProvider>
+                </NotificationProvider>
               </DMProvider>
             </ProfileProvider>
           </AuthGate>

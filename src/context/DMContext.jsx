@@ -63,6 +63,22 @@ export function DMProvider({ children }) {
       return { error };
     }
     setMessages((prev) => [...prev, data]);
+
+    // Best-effort — a failed notification insert shouldn't block the
+    // message itself from sending, so no error surfaced to the caller.
+    supabase
+      .from("notifications")
+      .insert({
+        user_id: recipientId,
+        actor_id: user.id,
+        type: "dm",
+        source_id: data.id,
+        preview: trimmed.slice(0, 120),
+      })
+      .then(({ error: notifError }) => {
+        if (notifError) console.error("Error creating DM notification:", notifError);
+      });
+
     return { error: null };
   };
 

@@ -1,16 +1,21 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useUpdates } from '../context/UpdateContext';
 import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
+import { useBoards } from '../context/BoardsContext';
+import { supabase } from '../lib/supabaseClient';
 import { uploadToCloudinary } from '../utils/cloudinaryUpload';
 import TranslateToggle from './TranslateToggle';
 
 const UpdatePanel = () => {
   const { t } = useLanguage();
+  const { user } = useAuth();
+  const { fetchWorkspaceMembers } = useBoards();
   const {
-    isPanelOpen, 
-    closePanel, 
-    selectedItem, 
-    getItemUpdates, 
+    isPanelOpen,
+    closePanel,
+    selectedItem,
+    getItemUpdates,
     addUpdate,
     addReply,
     editUpdate,
@@ -18,6 +23,35 @@ const UpdatePanel = () => {
     editReply,
     deleteReply,
   } = useUpdates();
+
+  // Resolves @word tokens against workspace members' display names (first
+  // word only — matches renderTextWithMentions' existing single-word @token
+  // regex below, so what lights up as a mention visually is exactly what
+  // can resolve to a real notification) and inserts one notifications row
+  // per matched member, excluding the author. Best-effort: a failed insert
+  // doesn't block the comment itself, which already sent successfully.
+  const notifyMentions = async (text, sourceId) => {
+    const tokens = [...text.matchAll(/@(\w+)/g)].map((m) => m[1].toLowerCase());
+    if (tokens.length === 0) return;
+    const members = await fetchWorkspaceMembers();
+    const matchedUserIds = new Set();
+    members.forEach((m) => {
+      if (m.userId === user.id) return;
+      const firstWord = (m.displayName || m.email || '').trim().split(/\s+/)[0]?.toLowerCase();
+      if (firstWord && tokens.includes(firstWord)) matchedUserIds.add(m.userId);
+    });
+    if (matchedUserIds.size === 0) return;
+    const { error } = await supabase.from('notifications').insert(
+      [...matchedUserIds].map((userId) => ({
+        user_id: userId,
+        actor_id: user.id,
+        type: 'mention',
+        source_id: sourceId,
+        preview: text.slice(0, 120),
+      }))
+    );
+    if (error) console.error('Error creating mention notifications:', error);
+  };
 
   const [newUpdate, setNewUpdate] = useState('');
   const [replyingTo, setReplyingTo] = useState(null);
@@ -184,7 +218,7 @@ const UpdatePanel = () => {
   // ============================================================
   // HANDLE SUBMIT UPDATE
   // ============================================================
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     // Guards against a race where hitting Enter/Kirim while a file is
     // still mid-upload sends the message before uploadedFiles has the
@@ -194,9 +228,10 @@ const UpdatePanel = () => {
     if (uploadingNew) return;
     const text = newUpdate.trim();
     if (text || uploadedFiles.length > 0) {
-      addUpdate(selectedItem, text, uploadedFiles);
+      const created = await addUpdate(selectedItem, text, uploadedFiles);
       setNewUpdate('');
       setUploadedFiles([]);
+      if (created && text) notifyMentions(text, created.id);
     }
   };
 
@@ -211,17 +246,16 @@ const UpdatePanel = () => {
   // ============================================================
   // HANDLE REPLY SUBMIT
   // ============================================================
-  const handleReplySubmit = () => {
+  const handleReplySubmit = async () => {
     if (uploadingReply) return;
     if (replyText.trim() || replyFiles.length > 0) {
-      const replyData = {
-        text: replyText.trim(),
-        files: replyFiles,
-      };
-      addReply(replyingTo.updateId, replyData, replyingTo.parentReplyId || null);
+      const text = replyText.trim();
+      const replyData = { text, files: replyFiles };
+      const created = await addReply(replyingTo.updateId, replyData, replyingTo.parentReplyId || null);
       setReplyText('');
       setReplyFiles([]);
       setReplyingTo(null);
+      if (created && text) notifyMentions(text, created.id);
     }
   };
 
