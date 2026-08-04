@@ -5,15 +5,28 @@ import { usePopoverPosition } from "../hooks/usePopoverPosition";
 import { useLanguage } from "../context/LanguageContext";
 import { uploadToCloudinary, FileTooLargeError } from "../utils/cloudinaryUpload";
 
+function parseFilesValue(value) {
+  try {
+    return value ? JSON.parse(value) : [];
+  } catch {
+    return value ? [{ url: value, name: value.split("/").pop() || "file" }] : [];
+  }
+}
+
 export default function FileAttachment({ value, onUpdate, columnId }) {
   const { t } = useLanguage();
-  const [files, setFiles] = useState(() => {
-    try {
-      return value ? JSON.parse(value) : [];
-    } catch {
-      return value ? [{ url: value, name: value.split("/").pop() || "file" }] : [];
-    }
-  });
+  const [files, setFiles] = useState(() => parseFilesValue(value));
+
+  // The initializer above only runs once, at mount — without this, a
+  // change to `value` that didn't originate from this component's own
+  // saveFiles() (another collaborator's edit arriving via Realtime, or
+  // even just this item's row being reconciled after the initial insert)
+  // never reached local state, so the file list only ever caught up after
+  // a full page refresh forced a remount.
+  useEffect(() => {
+    setFiles(parseFilesValue(value));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
   const [showPopup, setShowPopup] = useState(false);
   const [showFileManager, setShowFileManager] = useState(false);
   const [uploading, setUploading] = useState(false);
