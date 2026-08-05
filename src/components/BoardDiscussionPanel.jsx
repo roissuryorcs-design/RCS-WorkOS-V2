@@ -15,6 +15,18 @@ import Avatar from "./Avatar";
 const TOKEN_REGEX = /(https?:\/\/[^\s]+|@\w+|\[\[(?:board|item):[a-zA-Z0-9_-]+\|[^\]]+\]\])/g;
 const REF_TOKEN_REGEX = /^\[\[(board|item):([a-zA-Z0-9_-]+)\|([^\]]+)\]\]$/;
 
+// Item names are only unique within their own group — the same "Tugas 1"
+// name commonly exists in several groups (different phases/batches of the
+// same recurring task), so the picker/token label needs the group name
+// too or two different items become indistinguishable once referenced in
+// chat. Square brackets/pipes are stripped since they're the token
+// grammar's own delimiters.
+function itemRefLabel(it) {
+  const name = (it.item || "").replace(/[|[\]]/g, "");
+  const group = (it.group || "").replace(/[|[\]]/g, "");
+  return group ? `${name} (${group})` : name;
+}
+
 function flattenItems(items) {
   const out = [];
   const walk = (arr) => {
@@ -324,7 +336,7 @@ export default function BoardDiscussionPanel({ boardId, boardTitle, onClose }) {
         return;
       }
       if (itemMatches.length > 0) {
-        insertRef("item", itemMatches[0].id, itemMatches[0].item);
+        insertRef("item", itemMatches[0].id, itemRefLabel(itemMatches[0]));
         return;
       }
       handleSend();
@@ -534,12 +546,17 @@ export default function BoardDiscussionPanel({ boardId, boardTitle, onClose }) {
                     key={`itm-${it.id}`}
                     onMouseDown={(e) => {
                       e.preventDefault();
-                      insertRef("item", it.id, it.item);
+                      insertRef("item", it.id, itemRefLabel(it));
                     }}
                     style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 10px", cursor: "pointer" }}
                   >
                     <span style={{ fontSize: 14 }}>🔖</span>
-                    <span style={{ fontSize: 12.5 }}>{it.item}</span>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: 12.5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{it.item}</div>
+                      {it.group && (
+                        <div style={{ fontSize: 10, color: "var(--text-muted)" }}>{it.group}</div>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
