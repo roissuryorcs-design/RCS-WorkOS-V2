@@ -147,6 +147,22 @@ const UpdatePanel = () => {
     );
   };
 
+  // Auto-grows the comment/reply textareas as you type, up to 5 lines,
+  // then switches to an internal scrollbar instead of growing further —
+  // matches the explicit lineHeight set on these textareas below, so the
+  // 5-line cap lands exactly instead of drifting with the browser's
+  // default line-height.
+  const AUTO_GROW_MAX_LINES = 5;
+  const AUTO_GROW_LINE_HEIGHT = 19;
+  const AUTO_GROW_V_PADDING = 16; // 8px top + 8px bottom
+  const autoGrowTextarea = (el) => {
+    if (!el) return;
+    el.style.height = 'auto';
+    const maxHeight = AUTO_GROW_LINE_HEIGHT * AUTO_GROW_MAX_LINES + AUTO_GROW_V_PADDING;
+    el.style.height = `${Math.min(el.scrollHeight, maxHeight)}px`;
+    el.style.overflowY = el.scrollHeight > maxHeight ? 'auto' : 'hidden';
+  };
+
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [replyFiles, setReplyFiles] = useState([]);
   const [uploadingNew, setUploadingNew] = useState(false);
@@ -322,6 +338,7 @@ const UpdatePanel = () => {
       const created = await addUpdate(selectedItem, text, uploadedFiles);
       setNewUpdate('');
       setUploadedFiles([]);
+      if (inputRef.current) inputRef.current.style.height = '';
       if (created && text) notifyMentions(text, created);
     }
   };
@@ -330,6 +347,7 @@ const UpdatePanel = () => {
     setNewUpdate('');
     setUploadedFiles([]);
     if (inputRef.current) {
+      inputRef.current.style.height = '';
       inputRef.current.focus();
     }
   };
@@ -862,6 +880,7 @@ const UpdatePanel = () => {
                       onChange={(e) => {
                         setReplyText(e.target.value);
                         handleMentionTextChange('reply', e.target.value, e.target.selectionStart);
+                        autoGrowTextarea(e.target);
                       }}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && !e.shiftKey) {
@@ -888,10 +907,12 @@ const UpdatePanel = () => {
                         border: '2px solid var(--border-dark)',
                         borderRadius: '6px',
                         fontSize: '13px',
+                        lineHeight: '19px',
                         outline: 'none',
                         fontFamily: 'inherit',
-                        resize: 'vertical',
+                        resize: 'none',
                         minHeight: '44px',
+                        overflowY: 'hidden',
                         backgroundColor: 'var(--bg-input)',
                         color: 'var(--text-primary)',
                         transition: 'border-color 0.2s',
@@ -1162,6 +1183,7 @@ const UpdatePanel = () => {
               onChange={(e) => {
                 setNewUpdate(e.target.value);
                 handleMentionTextChange('new', e.target.value, e.target.selectionStart);
+                autoGrowTextarea(e.target);
               }}
               placeholder={t('updatePanel.newUpdatePlaceholder')}
               rows={2}
@@ -1171,10 +1193,12 @@ const UpdatePanel = () => {
                 border: '2px solid var(--border-dark)',
                 borderRadius: '6px',
                 fontSize: '13px',
+                lineHeight: '19px',
                 outline: 'none',
                 fontFamily: 'inherit',
-                resize: 'vertical',
+                resize: 'none',
                 minHeight: '36px',
+                overflowY: 'hidden',
                 transition: 'border-color 0.2s',
                 backgroundColor: 'var(--bg-input)',
                 color: 'var(--text-primary)',
@@ -1590,6 +1614,7 @@ const UpdatePanel = () => {
                             onChange={(e) => {
                               setReplyText(e.target.value);
                               handleMentionTextChange('reply', e.target.value, e.target.selectionStart);
+                              autoGrowTextarea(e.target);
                             }}
                             onKeyDown={(e) => {
                               if (e.key === 'Enter' && !e.shiftKey) {
@@ -1616,10 +1641,12 @@ const UpdatePanel = () => {
                               border: '2px solid var(--border-dark)',
                               borderRadius: '6px',
                               fontSize: '13px',
+                              lineHeight: '19px',
                               outline: 'none',
                               fontFamily: 'inherit',
-                              resize: 'vertical',
+                              resize: 'none',
                               minHeight: '44px',
+                              overflowY: 'hidden',
                               backgroundColor: 'var(--bg-input)',
                               color: 'var(--text-primary)',
                               transition: 'border-color 0.2s',
