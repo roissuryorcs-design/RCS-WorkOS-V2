@@ -43,6 +43,7 @@ export default function BoardTable({
   onDeleteItem,
   onAddGroup,
   onDeleteGroup,
+  onArchiveGroup,
   onAddItem,
   onAddSubItem,
   onOpenStatusManager,
@@ -692,6 +693,16 @@ export default function BoardTable({
                       }}
                     >
                       {t("toolbar.manageColumns")}
+                    </button>
+                  )}
+                  {onArchiveGroup && (
+                    <button
+                      onClick={() => {
+                        onArchiveGroup(groupName);
+                        closePopup();
+                      }}
+                    >
+                      {t("boardTable.archiveGroupBtn")}
                     </button>
                   )}
                   <button

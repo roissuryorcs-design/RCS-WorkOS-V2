@@ -18,6 +18,8 @@ function mapGroup(row) {
     color: row.color,
     headerColor: row.header_color,
     position: row.position,
+    archivedAt: row.archived_at,
+    deletedAt: row.deleted_at,
   };
 }
 
@@ -105,16 +107,23 @@ export function GroupProvider({ children, boardId }) {
     };
   }, [boardId]);
 
-  const groups = groupRows.map((g) => g.name);
-  const groupColors = Object.fromEntries(groupRows.map((g) => [g.name, g.color]));
+  // groupRows itself holds every row fetched (including archived/trashed —
+  // same "fetch everything, filter client-side" approach BoardsContext
+  // uses for boards) so Realtime updates land correctly either way; every
+  // *visible* derived shape below excludes archived/trashed groups.
+  const visibleGroupRows = groupRows.filter((g) => !g.archivedAt && !g.deletedAt);
+  const archivedGroupRows = groupRows.filter((g) => g.archivedAt && !g.deletedAt);
+
+  const groups = visibleGroupRows.map((g) => g.name);
+  const groupColors = Object.fromEntries(visibleGroupRows.map((g) => [g.name, g.color]));
   const groupHeaderColors = Object.fromEntries(
-    groupRows.filter((g) => g.headerColor).map((g) => [g.name, g.headerColor])
+    visibleGroupRows.filter((g) => g.headerColor).map((g) => [g.name, g.headerColor])
   );
   // Exposed so ItemsContext can translate between the group *names* the
   // rest of the app still works with and the `group_id` FK items are
   // actually stored against.
-  const groupIdByName = Object.fromEntries(groupRows.map((g) => [g.name, g.id]));
-  const groupNameById = Object.fromEntries(groupRows.map((g) => [g.id, g.name]));
+  const groupIdByName = Object.fromEntries(visibleGroupRows.map((g) => [g.name, g.id]));
+  const groupNameById = Object.fromEntries(visibleGroupRows.map((g) => [g.id, g.name]));
 
   // Returns the new group's id so callers (ItemsContext's addGroup) can
   // insert items referencing it immediately, without waiting for this
@@ -146,12 +155,30 @@ export function GroupProvider({ children, boardId }) {
     if (error) console.error("Error renaming group:", error);
   };
 
+  // Soft-delete — moves the group to Trash (15-day restore window) instead
+  // of permanently destroying it and every item inside it immediately.
+  // Items aren't touched here; they just go along for the ride, hidden
+  // from view because their group is hidden, and come back automatically
+  // once the group is restored.
   const removeGroup = async (name) => {
     const row = groupRows.find((g) => g.name === name);
     if (!row) return;
-    setGroupRows((prev) => prev.filter((g) => g.name !== name));
-    const { error } = await supabase.from("groups").delete().eq("id", row.id);
-    if (error) console.error("Error deleting group:", error);
+    const deletedAt = new Date().toISOString();
+    setGroupRows((prev) => prev.map((g) => (g.name === name ? { ...g, deletedAt } : g)));
+    const { error } = await supabase.from("groups").update({ deleted_at: deletedAt }).eq("id", row.id);
+    if (error) console.error("Error trashing group:", error);
+  };
+
+  // Archive — a group-only soft-hide, distinct from trash: stays fully
+  // intact and doesn't expire, just filtered out of the board view until
+  // restored. Same idea as BoardsContext's archiveBoard/restoreBoard.
+  const archiveGroup = async (name) => {
+    const row = groupRows.find((g) => g.name === name);
+    if (!row) return;
+    const archivedAt = new Date().toISOString();
+    setGroupRows((prev) => prev.map((g) => (g.name === name ? { ...g, archivedAt } : g)));
+    const { error } = await supabase.from("groups").update({ archived_at: archivedAt }).eq("id", row.id);
+    if (error) console.error("Error archiving group:", error);
   };
 
   // Drag-reorder: persists by renumbering every group's `position` to match
@@ -199,6 +226,8 @@ export function GroupProvider({ children, boardId }) {
         createGroup,
         renameGroupEntry,
         removeGroup,
+        archiveGroup,
+        archivedGroupRows,
         reorderGroups,
         updateGroupColor,
         updateGroupHeaderColor,

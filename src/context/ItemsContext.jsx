@@ -286,14 +286,6 @@ export function ItemsProvider({ children, boardId }) {
     });
   };
 
-  // Optimistic local cleanup for a group about to be deleted — the DB
-  // cascade (items.group_id references groups(id) on delete cascade)
-  // removes the rows server-side regardless, this just avoids a lingering
-  // flash of the doomed group's items before the realtime DELETE arrives.
-  const removeItemsByGroupId = (groupId) => {
-    setItemRows((prev) => prev.filter((r) => r.group_id !== groupId));
-  };
-
   // Atomically claims the right to seed a group's starter items: flips
   // `seeded` false->true in one UPDATE ... WHERE seeded = false. Postgres
   // guarantees only one concurrent UPDATE can match+affect that row, so
@@ -350,7 +342,6 @@ export function ItemsProvider({ children, boardId }) {
         addSubItem,
         updateItem,
         deleteItem,
-        removeItemsByGroupId,
       }}
     >
       {children}

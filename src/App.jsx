@@ -60,6 +60,7 @@ function BoardWorkspace({ boardId }) {
     createGroup,
     renameGroupEntry,
     removeGroup,
+    archiveGroup,
     reorderGroups: persistGroupOrder,
     updateGroupColor,
     updateGroupHeaderColor,
@@ -74,7 +75,6 @@ function BoardWorkspace({ boardId }) {
     addSubItem,
     updateItem,
     deleteItem,
-    removeItemsByGroupId,
   } = useItems();
 
   const isInitialized = !groupsLoading && !itemsLoading;
@@ -118,8 +118,10 @@ function BoardWorkspace({ boardId }) {
       return;
     }
     if (!confirm(t("app.deleteGroupConfirm", { name: groupName }))) return;
-    const groupId = groupIdByName[groupName];
-    if (groupId) removeItemsByGroupId(groupId);
+    // removeGroup soft-deletes the group row (Trash, 15-day restore) —
+    // its items just go along for the ride, hidden because their group is
+    // hidden, and reappear on their own once the group is restored. No
+    // separate item-side cleanup needed anymore.
     removeGroup(groupName);
   };
 
@@ -277,6 +279,7 @@ function BoardWorkspace({ boardId }) {
               onDeleteItem={deleteItem}
               onAddGroup={addGroup}
               onDeleteGroup={deleteGroup}
+              onArchiveGroup={archiveGroup}
               onAddItem={addItem}
               onAddSubItem={addSubItem}
               onOpenStatusManager={openStatusManager}

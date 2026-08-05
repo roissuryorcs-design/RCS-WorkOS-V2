@@ -5,6 +5,8 @@ import { useLanguage } from "../context/LanguageContext";
 import { useBoards } from "../context/BoardsContext";
 import { uploadToCloudinary, FileTooLargeError } from "../utils/cloudinaryUpload";
 import Avatar from "./Avatar";
+import ArchiveModal from "./ArchiveModal";
+import TrashModal from "./TrashModal";
 
 // Same overlay/box treatment as MemberDirectory — kept consistent across
 // every modal in the app rather than introducing a new chrome pattern.
@@ -22,6 +24,8 @@ export default function SettingsModal({ onClose }) {
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState(null); // null | "saved" | "error"
+  const [showArchive, setShowArchive] = useState(false);
+  const [showTrash, setShowTrash] = useState(false);
 
   const handlePhotoChange = async (e) => {
     const file = e.target.files?.[0];
@@ -231,6 +235,21 @@ export default function SettingsModal({ onClose }) {
           </div>
         )}
 
+        <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
+          <button
+            onClick={() => setShowArchive(true)}
+            style={{ flex: 1, padding: "8px", background: "var(--bg-hover)", border: "1px solid var(--border-dark)", borderRadius: 6, cursor: "pointer", color: "var(--text-primary)", fontSize: 12.5 }}
+          >
+            📦 {t("settingsModal.viewArchiveBtn")}
+          </button>
+          <button
+            onClick={() => setShowTrash(true)}
+            style={{ flex: 1, padding: "8px", background: "var(--bg-hover)", border: "1px solid var(--border-dark)", borderRadius: 6, cursor: "pointer", color: "var(--text-primary)", fontSize: 12.5 }}
+          >
+            🗑️ {t("settingsModal.viewTrashBtn")}
+          </button>
+        </div>
+
         {status === "saved" && (
           <div style={{ fontSize: 12, color: "#16a34a", marginBottom: 10 }}>{t("settingsModal.saved")}</div>
         )}
@@ -272,6 +291,9 @@ export default function SettingsModal({ onClose }) {
           </button>
         </div>
       </div>
+
+      {showArchive && <ArchiveModal onClose={() => setShowArchive(false)} />}
+      {showTrash && <TrashModal onClose={() => setShowTrash(false)} />}
     </div>,
     document.body
   );

@@ -38,6 +38,7 @@ function mapNode(row) {
     collapsed: row.collapsed,
     createdBy: row.created_by,
     archivedAt: row.archived_at,
+    deletedAt: row.deleted_at,
   };
 }
 
@@ -219,8 +220,9 @@ export function BoardsProvider({ children }) {
   // `nodes` (fed to the sidebar tree) excludes archived boards — those are
   // surfaced separately via `archivedBoards` instead. Everything else in
   // this file still reads from the unfiltered `allNodes`.
-  const nodes = allNodes.filter((n) => !n.archivedAt);
-  const archivedBoards = allNodes.filter((n) => n.type === "board" && n.archivedAt);
+  const nodes = allNodes.filter((n) => !n.archivedAt && !n.deletedAt);
+  const archivedBoards = allNodes.filter((n) => n.type === "board" && n.archivedAt && !n.deletedAt);
+  const trashedBoards = allNodes.filter((n) => n.type === "board" && n.deletedAt && !n.archivedAt);
 
   const activeMembership = workspaces.find((w) => w.id === activeWorkspaceId);
   const isActiveWorkspaceOwner = activeMembership?.role === "owner";
@@ -423,33 +425,74 @@ export function BoardsProvider({ children }) {
     );
   };
 
+  // Folders still hard-delete (guarded to only ever fire on an empty
+  // folder, so there's nothing meaningful to recover). Boards go to Trash
+  // instead — same soft-hide idea as archive, just with a 15-day countdown
+  // before permanentlyDeleteBoard actually removes the row.
   const deleteNode = async (id) => {
     const node = allNodes.find((n) => n.id === id);
     if (!node) return;
 
-    if (node.type === "folder") {
-      const hasChildren = allNodes.some((n) => n.parentId === id);
-      if (hasChildren) {
-        alert(t("boardsContext.folderNotEmpty"));
-        return;
-      }
+    if (node.type === "board") {
+      await trashBoard(id);
+      return;
+    }
+
+    const hasChildren = allNodes.some((n) => n.parentId === id);
+    if (hasChildren) {
+      alert(t("boardsContext.folderNotEmpty"));
+      return;
     }
 
     setAllNodesByWorkspace((prev) => ({
       ...prev,
       [activeWorkspaceId]: (prev[activeWorkspaceId] || []).filter((n) => n.id !== id),
     }));
+    setFavoriteBoardIds((prev) => prev.filter((f) => f !== id));
+    setFavoriteBoardsMeta((prev) => prev.filter((f) => f.id !== id));
+
+    const { error } = await supabase.from("nodes").delete().eq("id", id);
+    if (error) console.error("Error deleting node:", error);
+  };
+
+  const trashBoard = async (id) => {
+    const node = allNodes.find((n) => n.id === id);
+    if (!node || node.type !== "board") return;
+    const deletedAt = new Date().toISOString();
+    setAllNodesByWorkspace((prev) => ({
+      ...prev,
+      [activeWorkspaceId]: (prev[activeWorkspaceId] || []).map((n) => (n.id === id ? { ...n, deletedAt } : n)),
+    }));
     if (activeBoardId === id) {
-      const remaining = allNodes.filter((n) => n.id !== id && n.type === "board");
+      const remaining = allNodes.filter((n) => n.id !== id && n.type === "board" && !n.archivedAt && !n.deletedAt);
       updatePrefs({ activeBoardId: remaining[0]?.id ?? null });
     }
     setFavoriteBoardIds((prev) => prev.filter((f) => f !== id));
     setFavoriteBoardsMeta((prev) => prev.filter((f) => f.id !== id));
+    const { error } = await supabase.from("nodes").update({ deleted_at: deletedAt }).eq("id", id);
+    if (error) console.error("Error trashing board:", error);
+  };
 
-    // ON DELETE CASCADE on `boards`/`columns`/`groups`/`items`/`updates`
-    // (all FK'd to nodes.id) handles cleanup of everything downstream.
+  const restoreBoardFromTrash = async (id) => {
+    setAllNodesByWorkspace((prev) => ({
+      ...prev,
+      [activeWorkspaceId]: (prev[activeWorkspaceId] || []).map((n) => (n.id === id ? { ...n, deletedAt: null } : n)),
+    }));
+    const { error } = await supabase.from("nodes").update({ deleted_at: null }).eq("id", id);
+    if (error) console.error("Error restoring board from trash:", error);
+  };
+
+  // Real, permanent removal — used both for a manual "delete forever" and
+  // for auto-purging anything past the 15-day trash window (no server
+  // cron in this setup, so the purge happens lazily whenever the Trash
+  // view is opened instead).
+  const permanentlyDeleteBoard = async (id) => {
+    setAllNodesByWorkspace((prev) => ({
+      ...prev,
+      [activeWorkspaceId]: (prev[activeWorkspaceId] || []).filter((n) => n.id !== id),
+    }));
     const { error } = await supabase.from("nodes").delete().eq("id", id);
-    if (error) console.error("Error deleting node:", error);
+    if (error) console.error("Error permanently deleting board:", error);
   };
 
   // Archive/Restore — a board-only soft-hide, distinct from delete: the
@@ -465,7 +508,7 @@ export function BoardsProvider({ children }) {
       [activeWorkspaceId]: (prev[activeWorkspaceId] || []).map((n) => (n.id === id ? { ...n, archivedAt } : n)),
     }));
     if (activeBoardId === id) {
-      const remaining = allNodes.filter((n) => n.id !== id && n.type === "board" && !n.archivedAt);
+      const remaining = allNodes.filter((n) => n.id !== id && n.type === "board" && !n.archivedAt && !n.deletedAt);
       updatePrefs({ activeBoardId: remaining[0]?.id ?? null });
     }
     const { error } = await supabase.from("nodes").update({ archived_at: archivedAt }).eq("id", id);
@@ -560,6 +603,58 @@ export function BoardsProvider({ children }) {
     if (activeWorkspaceId === id) {
       const nextActiveWorkspaceId = remainingRecent[0] || remainingWorkspaces[0].id;
       await activateWorkspace(nextActiveWorkspaceId);
+    } else if (remainingRecent.length !== recentWorkspaceIds.length) {
+      updatePrefs({ recentWorkspaceIds: remainingRecent.length ? remainingRecent : [activeWorkspaceId] });
+    }
+  };
+
+  // Actually destroys the workspace row (owner-only) — cascades via FK to
+  // every node/board/group/item/etc underneath it for every member, with
+  // no trash/recovery. Distinct from deleteWorkspace() above, which only
+  // removes the *caller's own* membership ("leave"). Requires typing the
+  // workspace's exact name as a stronger confirmation than a plain
+  // confirm() dialog, given the blast radius.
+  const deleteWorkspacePermanently = async (id) => {
+    const target = workspaces.find((w) => w.id === id);
+    if (!target) return;
+    if (target.role !== "owner") {
+      alert(t("boardsContext.onlyOwnerCanDeleteWorkspace"));
+      return;
+    }
+    if (workspaces.length <= 1) {
+      alert(t("boardsContext.needAtLeastOneWorkspace"));
+      return;
+    }
+    const typed = prompt(t("boardsContext.deleteWorkspacePermanentlyPrompt", { name: target.name }));
+    if (typed === null) return;
+    if (typed !== target.name) {
+      alert(t("boardsContext.deleteWorkspaceNameMismatch"));
+      return;
+    }
+
+    const { error } = await supabase.from("workspaces").delete().eq("id", id);
+    if (error) {
+      console.error("Error deleting workspace:", error);
+      alert(t("boardsContext.deleteWorkspaceFailed"));
+      return;
+    }
+
+    const remainingWorkspaces = workspaces.filter((w) => w.id !== id);
+    const remainingRecent = recentWorkspaceIds.filter((w) => w !== id);
+    const remainingFavorites = favoriteBoardsMeta.filter((f) => f.workspaceId !== id);
+
+    setWorkspaces(remainingWorkspaces);
+    setFavoriteBoardIds(remainingFavorites.map((f) => f.id));
+    setFavoriteBoardsMeta(remainingFavorites);
+    setAllNodesByWorkspace((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+
+    if (activeWorkspaceId === id) {
+      const nextActiveWorkspaceId = remainingRecent[0] || remainingWorkspaces[0]?.id;
+      if (nextActiveWorkspaceId) await activateWorkspace(nextActiveWorkspaceId);
     } else if (remainingRecent.length !== recentWorkspaceIds.length) {
       updatePrefs({ recentWorkspaceIds: remainingRecent.length ? remainingRecent : [activeWorkspaceId] });
     }
@@ -754,9 +849,14 @@ export function BoardsProvider({ children }) {
       value={{
         loading,
         nodes,
+        allNodes,
         archivedBoards,
         archiveBoard,
         restoreBoard,
+        trashedBoards,
+        trashBoard,
+        restoreBoardFromTrash,
+        permanentlyDeleteBoard,
         activeBoardId,
         switchBoard,
         goToBoard,
@@ -780,6 +880,7 @@ export function BoardsProvider({ children }) {
         createWorkspace,
         renameWorkspace,
         deleteWorkspace,
+        deleteWorkspacePermanently,
         favoriteBoardIds,
         favoriteBoards: favoriteBoardsMeta,
         toggleFavorite,

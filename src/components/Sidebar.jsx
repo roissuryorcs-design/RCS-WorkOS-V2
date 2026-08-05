@@ -104,8 +104,11 @@ export default function Sidebar() {
   };
 
   const handleDelete = (node) => {
-    const type = node.type === "folder" ? t("sidebar.nodeTypeFolder") : t("sidebar.nodeTypeBoard");
-    if (confirm(t("sidebar.deleteConfirm", { type, name: node.name }))) {
+    const confirmMessage =
+      node.type === "board"
+        ? t("sidebar.deleteBoardConfirm", { name: node.name })
+        : t("sidebar.deleteConfirm", { type: t("sidebar.nodeTypeFolder"), name: node.name });
+    if (confirm(confirmMessage)) {
       deleteNode(node.id);
     }
     closeMenu();

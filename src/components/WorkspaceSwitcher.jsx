@@ -141,6 +141,7 @@ export default function WorkspaceSwitcher() {
     createWorkspace,
     renameWorkspace,
     deleteWorkspace,
+    deleteWorkspacePermanently,
     joinWorkspaceByCode,
   } = useBoards();
   const { t } = useLanguage();
@@ -189,6 +190,11 @@ export default function WorkspaceSwitcher() {
     setOpenMenuId(null);
   };
 
+  const handleDeletePermanently = (workspace) => {
+    deleteWorkspacePermanently(workspace.id);
+    setOpenMenuId(null);
+  };
+
   const handleJoin = () => {
     const code = prompt(t("workspaceSwitcher.joinWorkspacePrompt"));
     if (code && code.trim()) joinWorkspaceByCode(code.trim());
@@ -230,6 +236,14 @@ export default function WorkspaceSwitcher() {
       >
         <button onClick={(e) => { e.stopPropagation(); handleRename(workspace); }}>{t("workspaceSwitcher.renameWorkspaceBtn")}</button>
         <button onClick={(e) => { e.stopPropagation(); handleDelete(workspace); }}>{t("workspaceSwitcher.deleteWorkspaceBtn")}</button>
+        {workspace.role === "owner" && (
+          <button
+            onClick={(e) => { e.stopPropagation(); handleDeletePermanently(workspace); }}
+            style={{ color: "#ef4444" }}
+          >
+            {t("workspaceSwitcher.deleteWorkspacePermanentlyBtn")}
+          </button>
+        )}
       </Popover>
     </div>
     );
