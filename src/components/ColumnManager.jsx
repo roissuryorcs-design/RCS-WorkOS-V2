@@ -5,8 +5,8 @@ import { useLanguage } from "../context/LanguageContext";
 
 // Matches ColumnContext.jsx's getDefaultColumns() ids exactly — kept as a
 // plain id list here (rather than importing the full default-column
-// factory) since this component only needs to know which ids are
-// protected/non-deletable, not their labels or full config.
+// factory) purely to drive the informational DEFAULT badge below; these
+// columns are deletable like any other except "item" itself.
 const DEFAULT_COLUMN_IDS = ["item", "document", "people", "status", "dueDate", "rev"];
 
 export default function ColumnManager({
@@ -21,7 +21,6 @@ export default function ColumnManager({
   const [editLabel, setEditLabel] = useState("");
 
   const startRename = (col) => {
-    if (col.id === "item") return;
     setEditingId(col.id);
     setEditLabel(col.label);
   };
@@ -155,14 +154,14 @@ export default function ColumnManager({
                     style={{
                       flex: 1,
                       fontSize: 14,
-                      cursor: isItem ? "default" : "pointer",
-                      color: isItem ? "var(--text-muted)" : "var(--text-primary)",
+                      cursor: "pointer",
+                      color: "var(--text-primary)",
                       display: "flex",
                       alignItems: "center",
                       gap: 6,
                     }}
                     onClick={() => startRename(col)}
-                    title={isItem ? t("columnManager.cannotRenameFixed") : t("columnManager.clickToRename")}
+                    title={t("columnManager.clickToRename")}
                   >
                     {col.label || col.id}
                     {isItem && <span style={{ fontSize: 10, color: "var(--text-muted)" }}>{t("columnManager.fixedTag")}</span>}
@@ -187,8 +186,8 @@ export default function ColumnManager({
                   </span>
                 )}
 
-                {/* Tombol delete (hanya untuk non-default & non-item) */}
-                {!isItem && !isDefault && onDeleteColumn && (
+                {/* Tombol delete — semua kolom boleh dihapus kecuali ITEM */}
+                {!isItem && onDeleteColumn && (
                   <button
                     onClick={() => {
                       if (confirm(t("columnManager.deleteColumnConfirm", { name: col.label || col.id }))) {
@@ -236,21 +235,6 @@ export default function ColumnManager({
         >
           {t("columnManager.close")}
         </button>
-
-        {/* Info default columns */}
-        <div
-          style={{
-            marginTop: 12,
-            padding: "8px 12px",
-            background: "rgba(76, 175, 80, 0.06)",
-            borderRadius: 4,
-            borderLeft: "3px solid #4CAF50",
-            fontSize: 11,
-            color: "var(--text-muted)",
-          }}
-        >
-          💡 {t("columnManager.defaultInfo")}
-        </div>
       </div>
     </div>
   );
