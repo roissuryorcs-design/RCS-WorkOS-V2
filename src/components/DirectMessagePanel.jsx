@@ -4,6 +4,7 @@ import { supabase } from "../lib/supabaseClient";
 import { useDM } from "../context/DMContext";
 import { useAuth } from "../context/AuthContext";
 import { useProfile } from "../context/ProfileContext";
+import { useBoards } from "../context/BoardsContext";
 import { useLanguage } from "../context/LanguageContext";
 import Avatar from "./Avatar";
 
@@ -14,28 +15,42 @@ function sortedPair(a, b) {
   return a < b ? [a, b] : [b, a];
 }
 
-const URL_REGEX = /(https?:\/\/[^\s]+)/g;
+// Matches URLs and @mention tokens in one pass so both can be picked out
+// of the interleaved split() result below.
+const TOKEN_REGEX = /(https?:\/\/[^\s]+|@\w+)/g;
 
-// Splits a message body on URLs and renders those as real clickable
-// links — needed for the auto-posted "started a video call: <link>"
-// message from handleStartCall below to actually be usable, not just
-// readable.
-function renderMessageBody(body, linkColor) {
+// Splits a message body on URLs/@mentions and renders URLs as real
+// clickable links (needed for the auto-posted "started a video call:
+// <link>" message from handleStartCall below to actually be usable) and
+// @mentions as highlighted text. Mentions here are cosmetic only — unlike
+// UpdatePanel's board-comment mentions, a DM's recipient already gets a
+// notification for the message itself, and notifying some third party
+// that they were "mentioned" inside someone else's private conversation
+// (which they have no way to open) would leak private context to them.
+function renderMessageBody(body, linkColor, mentionColor) {
   // split() with a capturing-group regex interleaves the matched groups at
-  // odd indices ([text, url, text, url, …]) — checking that directly
-  // (rather than re-testing each part against URL_REGEX, whose /g flag
+  // odd indices ([text, token, text, token, …]) — checking that directly
+  // (rather than re-testing each part against TOKEN_REGEX, whose /g flag
   // carries mutable lastIndex state across calls and would give wrong
   // results here) is what makes this reliable.
-  const parts = body.split(URL_REGEX);
-  return parts.map((part, i) =>
-    i % 2 === 1 ? (
-      <a key={i} href={part} target="_blank" rel="noopener noreferrer" style={{ color: linkColor, textDecoration: "underline" }}>
-        {part}
-      </a>
-    ) : (
-      <span key={i}>{part}</span>
-    )
-  );
+  const parts = body.split(TOKEN_REGEX);
+  return parts.map((part, i) => {
+    if (i % 2 === 1) {
+      if (part.startsWith("@")) {
+        return (
+          <span key={i} style={{ color: mentionColor, fontWeight: 700 }}>
+            {part}
+          </span>
+        );
+      }
+      return (
+        <a key={i} href={part} target="_blank" rel="noopener noreferrer" style={{ color: linkColor, textDecoration: "underline" }}>
+          {part}
+        </a>
+      );
+    }
+    return <span key={i}>{part}</span>;
+  });
 }
 
 // 1:1 chat panel for one conversation partner. Same overlay treatment as
@@ -46,6 +61,7 @@ export default function DirectMessagePanel({ partnerId, partnerName, partnerAvat
   const { user } = useAuth();
   const { profile } = useProfile();
   const { messagesWith, sendMessage, markConversationRead } = useDM();
+  const { fetchWorkspaceMembers } = useBoards();
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [mode, setMode] = useState("chat"); // "chat" | "notes"
@@ -53,7 +69,10 @@ export default function DirectMessagePanel({ partnerId, partnerName, partnerAvat
   const [notesLoading, setNotesLoading] = useState(false);
   const [notesSaving, setNotesSaving] = useState(false);
   const [notesStatus, setNotesStatus] = useState(null); // null | "saved"
+  const [members, setMembers] = useState([]);
+  const [mentionQuery, setMentionQuery] = useState(null); // null when no active "@token"
   const listRef = useRef(null);
+  const textareaRef = useRef(null);
 
   const messages = messagesWith(partnerId);
 
@@ -113,9 +132,50 @@ export default function DirectMessagePanel({ partnerId, partnerName, partnerAvat
     if (!trimmed || sending) return;
     setSending(true);
     setText("");
+    setMentionQuery(null);
     await sendMessage(partnerId, trimmed);
     setSending(false);
   };
+
+  // Detects an in-progress "@token" right before the cursor and, on first
+  // use, lazy-loads the workspace member list to filter against — same
+  // lazy-fetch idea as the notes panel above.
+  const handleTextChange = (e) => {
+    const val = e.target.value;
+    setText(val);
+    const cursor = e.target.selectionStart;
+    const match = val.slice(0, cursor).match(/@(\w*)$/);
+    if (match) {
+      setMentionQuery(match[1].toLowerCase());
+      if (members.length === 0) fetchWorkspaceMembers().then(setMembers);
+    } else {
+      setMentionQuery(null);
+    }
+  };
+
+  const insertMention = (member) => {
+    const firstName = (member.displayName || member.email || "").trim().split(/\s+/)[0] || "";
+    const el = textareaRef.current;
+    const cursor = el ? el.selectionStart : text.length;
+    const before = text.slice(0, cursor).replace(/@\w*$/, `@${firstName} `);
+    const after = text.slice(cursor);
+    const newText = before + after;
+    setText(newText);
+    setMentionQuery(null);
+    requestAnimationFrame(() => {
+      if (!el) return;
+      el.focus();
+      el.setSelectionRange(before.length, before.length);
+    });
+  };
+
+  const mentionMatches =
+    mentionQuery === null
+      ? []
+      : members
+          .filter((m) => m.userId !== user.id)
+          .filter((m) => !mentionQuery || (m.displayName || m.email || "").toLowerCase().startsWith(mentionQuery))
+          .slice(0, 5);
 
   // Prefers my own saved Zoom link (so I always land in a room I control)
   // and falls back to the partner's if I haven't set one — either way the
@@ -134,7 +194,13 @@ export default function DirectMessagePanel({ partnerId, partnerName, partnerAvat
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
+      if (mentionMatches.length > 0) {
+        insertMention(mentionMatches[0]);
+        return;
+      }
       handleSend();
+    } else if (e.key === "Escape" && mentionQuery !== null) {
+      setMentionQuery(null);
     }
   };
 
@@ -230,17 +296,48 @@ export default function DirectMessagePanel({ partnerId, partnerName, partnerAvat
                         whiteSpace: "pre-wrap",
                       }}
                     >
-                      {renderMessageBody(m.body, isMine ? "var(--btn-primary-text)" : "var(--btn-primary-bg)")}
+                      {renderMessageBody(m.body, isMine ? "var(--btn-primary-text)" : "var(--btn-primary-bg)", "#f59e0b")}
                     </div>
                   </div>
                 );
               })}
             </div>
 
-            <div style={{ display: "flex", gap: 8, padding: "10px 12px", borderTop: "1px solid var(--border-color)" }}>
+            <div style={{ position: "relative", display: "flex", gap: 8, padding: "10px 12px", borderTop: "1px solid var(--border-color)" }}>
+              {mentionMatches.length > 0 && (
+                <div
+                  style={{
+                    position: "absolute",
+                    bottom: "100%",
+                    left: 12,
+                    right: 12,
+                    marginBottom: 4,
+                    background: "var(--bg-modal)",
+                    border: "1px solid var(--border-color)",
+                    borderRadius: 8,
+                    boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
+                    overflow: "hidden",
+                  }}
+                >
+                  {mentionMatches.map((m) => (
+                    <div
+                      key={m.userId}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        insertMention(m);
+                      }}
+                      style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 10px", cursor: "pointer" }}
+                    >
+                      <Avatar url={m.avatarUrl} name={m.displayName || m.email} size={22} />
+                      <span style={{ fontSize: 12.5 }}>{m.displayName || m.email}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
               <textarea
+                ref={textareaRef}
                 value={text}
-                onChange={(e) => setText(e.target.value)}
+                onChange={handleTextChange}
                 onKeyDown={handleKeyDown}
                 placeholder={t("directMessage.placeholder")}
                 rows={1}

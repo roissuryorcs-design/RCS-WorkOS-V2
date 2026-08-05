@@ -6,6 +6,7 @@ import { useLanguage } from "../context/LanguageContext";
 import Avatar from "./Avatar";
 import Popover from "./Popover";
 import DirectMessagePanel from "./DirectMessagePanel";
+import { InviteCodeModal } from "./WorkspaceSwitcher";
 
 // Simple table: who's in this workspace (photo + name), which boards each
 // person can access, and their role (owner/admin/member). Full profile
@@ -14,14 +15,20 @@ import DirectMessagePanel from "./DirectMessagePanel";
 export default function MemberDirectory({ onClose }) {
   const { t } = useLanguage();
   const { user } = useAuth();
-  const { isActiveWorkspaceOwner, fetchWorkspaceMembers, fetchWorkspaceBoardAccessMap, removeMember, updateMemberRole } = useBoards();
+  const { isActiveWorkspaceOwner, fetchWorkspaceMembers, fetchWorkspaceBoardAccessMap, removeMember, updateMemberRole, createInviteCode } = useBoards();
   const [members, setMembers] = useState([]);
   const [boardAccessMap, setBoardAccessMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [openMenuUserId, setOpenMenuUserId] = useState(null);
   const [dmTarget, setDmTarget] = useState(null);
+  const [inviteCodeToShow, setInviteCodeToShow] = useState(null);
   const menuAnchorsRef = useRef({});
+
+  const handleInvite = async () => {
+    const code = await createInviteCode();
+    if (code) setInviteCodeToShow(code);
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -96,7 +103,26 @@ export default function MemberDirectory({ onClose }) {
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 style={{ marginBottom: 14, fontSize: 16, fontWeight: 600 }}>{t("membersModal.title")}</h3>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+          <h3 style={{ fontSize: 16, fontWeight: 600 }}>{t("membersModal.title")}</h3>
+          {isActiveWorkspaceOwner && (
+            <button
+              onClick={handleInvite}
+              style={{
+                padding: "5px 12px",
+                background: "transparent",
+                color: "var(--btn-primary-bg)",
+                border: "1px solid var(--btn-primary-bg)",
+                borderRadius: 6,
+                cursor: "pointer",
+                fontSize: 12,
+                whiteSpace: "nowrap",
+              }}
+            >
+              {t("workspaceSwitcher.inviteBtn")}
+            </button>
+          )}
+        </div>
 
         <input
           type="text"
@@ -251,6 +277,7 @@ export default function MemberDirectory({ onClose }) {
           onClose={() => setDmTarget(null)}
         />
       )}
+      {inviteCodeToShow && <InviteCodeModal code={inviteCodeToShow} onClose={() => setInviteCodeToShow(null)} />}
     </div>,
     document.body
   );

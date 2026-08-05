@@ -295,6 +295,18 @@ export const translations = {
       hoursAgo: "{{count}}h ago",
       daysAgo: "{{count}}d ago",
     },
+    header: {
+      discussionLabel: "Board Discussion",
+      teamLabel: "Team",
+    },
+    conversations: {
+      title: "Messages",
+      newMessageBtn: "+ New message",
+      empty: "No conversations yet. Start one from Team or tap + New message.",
+      pickTitle: "Start a conversation",
+      noMembersFound: "No matching members.",
+      backBtn: "← Back",
+    },
     settingsModal: {
       title: "Settings",
       photoLabel: "Photo",
@@ -822,6 +834,18 @@ export const translations = {
       minutesAgo: "{{count}} menit lalu",
       hoursAgo: "{{count}} jam lalu",
       daysAgo: "{{count}} hari lalu",
+    },
+    header: {
+      discussionLabel: "Diskusi Board",
+      teamLabel: "Team",
+    },
+    conversations: {
+      title: "Pesan",
+      newMessageBtn: "+ Pesan baru",
+      empty: "Belum ada percakapan. Mulai dari Team atau tap + Pesan baru.",
+      pickTitle: "Mulai percakapan",
+      noMembersFound: "Tidak ada member yang cocok.",
+      backBtn: "← Kembali",
     },
     settingsModal: {
       title: "Pengaturan",
