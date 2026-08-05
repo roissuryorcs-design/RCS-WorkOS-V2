@@ -7,7 +7,6 @@ export default function Toolbar({
   onUndo,
   onExport,
   canUndo,
-  onOpenColumnManager, // ← Manage Columns tetap
 }) {
   const { t } = useLanguage();
 
@@ -34,11 +33,6 @@ export default function Toolbar({
 
       <button className="toolbar-export-btn" onClick={onExport}>
         {t("toolbar.export")}
-      </button>
-
-      {/* Manage Columns - TETAP */}
-      <button className="toolbar-column-btn" onClick={onOpenColumnManager}>
-        {t("toolbar.manageColumns")}
       </button>
     </div>
   );

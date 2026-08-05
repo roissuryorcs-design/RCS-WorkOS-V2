@@ -51,6 +51,7 @@ export default function BoardTable({
   onRenameGroup,
   onReorderGroups,
   onOpenAddColumn,
+  onOpenColumnManager,
   // Always passed explicitly by App.jsx now (the current language's
   // default group name); this literal is only a last-resort fallback for
   // any future caller that forgets to.
@@ -683,6 +684,16 @@ export default function BoardTable({
                   >
                     {t("boardTable.renameGroup")}
                   </button>
+                  {onOpenColumnManager && (
+                    <button
+                      onClick={() => {
+                        onOpenColumnManager();
+                        closePopup();
+                      }}
+                    >
+                      {t("toolbar.manageColumns")}
+                    </button>
+                  )}
                   <button
                     onClick={() => {
                       if (confirm(t("boardTable.deleteGroupConfirm", { name: groupName }))) {

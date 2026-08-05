@@ -44,7 +44,7 @@ function BoardWorkspace({ boardId }) {
   const [activeFormulaColumnId, setActiveFormulaColumnId] = useState(null);
   const [currentView, setCurrentView] = useState('table');
 
-  const { columns, visibleColumns, addColumn, renameColumn, toggleColumn, deleteColumn, resetColumns, updateColumnStatuses, updateColumnStatusOrder, updateColumnFormula, updateColumnProgressStages } = useColumns();
+  const { columns, visibleColumns, addColumn, renameColumn, toggleColumn, deleteColumn, updateColumnStatuses, updateColumnStatusOrder, updateColumnFormula, updateColumnProgressStages } = useColumns();
   const { nodes: allBoardNodes } = useBoards();
   const boardTitle = allBoardNodes.find((n) => n.id === boardId)?.name;
 
@@ -263,7 +263,6 @@ function BoardWorkspace({ boardId }) {
               onSearchChange={setSearch}
               onAddGroup={addGroup}
               onExport={exportData}
-              onOpenColumnManager={() => setShowColumnManager(true)}
             />
 
             <BoardTable
@@ -286,6 +285,7 @@ function BoardWorkspace({ boardId }) {
               onRenameGroup={renameGroup}
               onReorderGroups={reorderGroups}
               onOpenAddColumn={() => setShowAddColumnPopup(true)}
+              onOpenColumnManager={() => setShowColumnManager(true)}
             />
 
             <div className="board-footer">
@@ -340,7 +340,6 @@ function BoardWorkspace({ boardId }) {
           onDeleteColumn={deleteColumn}
           onToggleColumn={toggleColumn}
           onRenameColumn={renameColumn}
-          onResetColumns={resetColumns}
           onClose={() => setShowColumnManager(false)}
         />
       )}

@@ -14,13 +14,11 @@ export default function ColumnManager({
   onToggleColumn,
   onRenameColumn,
   onDeleteColumn,
-  onResetColumns,
   onClose,
 }) {
   const { t } = useLanguage();
   const [editingId, setEditingId] = useState(null);
   const [editLabel, setEditLabel] = useState("");
-  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   const startRename = (col) => {
     if (col.id === "item") return;
@@ -45,20 +43,6 @@ export default function ColumnManager({
     if (col.id === "item") return;
     onToggleColumn(col.id);
   };
-
-  const handleReset = () => {
-    if (onResetColumns) {
-      onResetColumns();
-      setShowResetConfirm(false);
-    }
-  };
-
-  // Cek apakah ada kolom default yang hilang
-  const missingDefaultColumns = DEFAULT_COLUMN_IDS.filter(
-    id => !columns.some(c => c.id === id)
-  );
-
-  const hasMissingDefaults = missingDefaultColumns.length > 0;
 
   return (
     <div
@@ -103,23 +87,6 @@ export default function ColumnManager({
         <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 4 }}>
           {t("columnManager.hint")}
         </p>
-
-        {/* Indikator default columns */}
-        {hasMissingDefaults && (
-          <div
-            style={{
-              background: "rgba(255, 152, 0, 0.1)",
-              borderLeft: "3px solid #FF9800",
-              padding: "8px 12px",
-              borderRadius: 4,
-              marginBottom: 12,
-              fontSize: 12,
-              color: "var(--text-secondary)",
-            }}
-          >
-            ⚠️ {t("columnManager.missingDefaultsWarning")}
-          </div>
-        )}
 
         <div style={{ marginBottom: 16 }}>
           {columns.map((col) => {
@@ -249,82 +216,6 @@ export default function ColumnManager({
             );
           })}
         </div>
-
-        {/* Tombol Reset Default */}
-        {onResetColumns && (
-          <div style={{ marginBottom: 12 }}>
-            {showResetConfirm ? (
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  padding: "8px 12px",
-                  background: "rgba(255, 152, 0, 0.1)",
-                  borderRadius: 6,
-                  border: "1px solid #FF9800",
-                }}
-              >
-                <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>
-                  {t("columnManager.resetConfirm")}
-                </span>
-                <button
-                  onClick={handleReset}
-                  style={{
-                    background: "#FF9800",
-                    color: "white",
-                    border: "none",
-                    padding: "4px 14px",
-                    borderRadius: 4,
-                    cursor: "pointer",
-                    fontSize: 12,
-                    fontWeight: 500,
-                  }}
-                >
-                  {t("columnManager.yes")}
-                </button>
-                <button
-                  onClick={() => setShowResetConfirm(false)}
-                  style={{
-                    background: "transparent",
-                    border: "1px solid var(--border-color)",
-                    padding: "4px 14px",
-                    borderRadius: 4,
-                    cursor: "pointer",
-                    fontSize: 12,
-                    color: "var(--text-secondary)",
-                  }}
-                >
-                  {t("common.cancel")}
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={() => setShowResetConfirm(true)}
-                style={{
-                  width: "100%",
-                  padding: "8px",
-                  background: "rgba(255, 152, 0, 0.08)",
-                  border: "2px dashed #FF9800",
-                  borderRadius: 6,
-                  cursor: "pointer",
-                  fontSize: 13,
-                  color: "#FF9800",
-                  transition: "all 0.2s",
-                  fontWeight: 500,
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "rgba(255, 152, 0, 0.15)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "rgba(255, 152, 0, 0.08)";
-                }}
-              >
-                {t("columnManager.resetColumnsBtn")}
-              </button>
-            )}
-          </div>
-        )}
 
         {/* Tombol Close */}
         <button
