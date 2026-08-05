@@ -288,7 +288,7 @@ export const translations = {
       title: "Notifications",
       empty: "No notifications yet.",
       markAllRead: "Mark all read",
-      mentionedYou: "mentioned you in a comment",
+      mentionedYou: "mentioned you",
       sentMessage: "sent you a message",
       justNow: "just now",
       minutesAgo: "{{count}}m ago",
@@ -298,6 +298,10 @@ export const translations = {
     header: {
       discussionLabel: "Board Discussion",
       teamLabel: "Team",
+    },
+    boardDiscussion: {
+      placeholder: "Message the whole board team…",
+      empty: "No messages yet — start the discussion!",
     },
     conversations: {
       title: "Messages",
@@ -828,7 +832,7 @@ export const translations = {
       title: "Notifikasi",
       empty: "Belum ada notifikasi.",
       markAllRead: "Tandai semua terbaca",
-      mentionedYou: "menyebut kamu di komentar",
+      mentionedYou: "menyebut kamu",
       sentMessage: "mengirim pesan ke kamu",
       justNow: "baru saja",
       minutesAgo: "{{count}} menit lalu",
@@ -838,6 +842,10 @@ export const translations = {
     header: {
       discussionLabel: "Diskusi Board",
       teamLabel: "Team",
+    },
+    boardDiscussion: {
+      placeholder: "Kirim pesan ke seluruh tim board ini…",
+      empty: "Belum ada pesan — mulai diskusinya!",
     },
     conversations: {
       title: "Pesan",

@@ -2,10 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { useLanguage } from '../context/LanguageContext';
 import { useMobileNav } from '../context/MobileNavContext';
-import { useDM } from '../context/DMContext';
 import AccountMenu from './AccountMenu';
 import NotificationBell from './NotificationBell';
-import ConversationsList from './ConversationsList';
+import BoardDiscussionPanel from './BoardDiscussionPanel';
 import MemberDirectory from './MemberDirectory';
 
 // title/subtitle now live in the `boards` table (columns existed since
@@ -16,10 +15,9 @@ import MemberDirectory from './MemberDirectory';
 const Header = ({ groups = [], boardId, isReady = true }) => {
   const { t } = useLanguage();
   const { setSidebarOpen } = useMobileNav();
-  const { totalUnreadCount } = useDM();
   const [title, setTitle] = useState(t('defaults.boardTitle'));
   const [subtitle, setSubtitle] = useState(t('defaults.boardSubtitle'));
-  const [showConversations, setShowConversations] = useState(false);
+  const [showDiscussion, setShowDiscussion] = useState(false);
   const [showTeam, setShowTeam] = useState(false);
 
   // 🔥 FLAG UNTUK MENCEGAH RESET SAAT REFRESH
@@ -210,41 +208,19 @@ const Header = ({ groups = [], boardId, isReady = true }) => {
           Settings button + email/sign-out row buried in the sidebar
           footer into one avatar-triggered menu, matching where most
           collaborative apps (monday.com included) put it. The two icons
-          before the bell are dedicated entry points for chat (previously
-          only reachable via Manage Members → per-row Message) and the
-          workspace's member list + invite (previously buried in the
-          account menu). */}
+          before the bell are dedicated entry points for this board's group
+          discussion (💬 — everyone with board access can see it, distinct
+          from the private 1:1 messaging still reachable via Team →
+          per-row Message) and the workspace's member list + invite
+          (👥 — previously buried in the account menu). */}
       <div style={{ paddingTop: 2, display: 'flex', alignItems: 'center', gap: 10 }}>
         <button
-          onClick={() => setShowConversations(true)}
+          onClick={() => setShowDiscussion(true)}
           title={t('header.discussionLabel')}
           aria-label={t('header.discussionLabel')}
-          style={{ position: 'relative', background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--text-secondary)', padding: 6 }}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--text-secondary)', padding: 6 }}
         >
           💬
-          {totalUnreadCount > 0 && (
-            <span
-              style={{
-                position: 'absolute',
-                top: 0,
-                right: 0,
-                minWidth: 15,
-                height: 15,
-                padding: '0 3px',
-                borderRadius: 8,
-                background: '#ef4444',
-                color: '#fff',
-                fontSize: 9.5,
-                fontWeight: 700,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                lineHeight: 1,
-              }}
-            >
-              {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
-            </span>
-          )}
         </button>
         <button
           onClick={() => setShowTeam(true)}
@@ -258,7 +234,7 @@ const Header = ({ groups = [], boardId, isReady = true }) => {
         <AccountMenu />
       </div>
 
-      {showConversations && <ConversationsList onClose={() => setShowConversations(false)} />}
+      {showDiscussion && <BoardDiscussionPanel boardId={boardId} boardTitle={title} onClose={() => setShowDiscussion(false)} />}
       {showTeam && <MemberDirectory onClose={() => setShowTeam(false)} />}
     </div>
   );
