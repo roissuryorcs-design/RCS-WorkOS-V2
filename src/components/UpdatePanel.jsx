@@ -884,14 +884,12 @@ const UpdatePanel = () => {
                         autoGrowTextarea(e.target);
                       }}
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault();
+                        if (e.key === 'Enter') {
                           const matches = mentionMatches('reply');
                           if (matches.length > 0) {
+                            e.preventDefault();
                             insertMentionInto(matches[0], replyTextareaRef, replyText, setReplyText);
-                            return;
                           }
-                          handleReplySubmit();
                         } else if (e.key === 'Escape') {
                           if (mentionTarget === 'reply' && mentionQuery !== null) {
                             setMentionQuery(null);
@@ -1208,14 +1206,16 @@ const UpdatePanel = () => {
               onFocus={(e) => e.currentTarget.style.borderColor = 'var(--btn-primary-bg)'}
               onBlur={(e) => e.currentTarget.style.borderColor = 'var(--border-dark)'}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
+                // Enter alone just inserts a newline (like every other
+                // textarea) — sending is Kirim-only now; the one exception
+                // is picking a highlighted @mention match, which still
+                // needs to intercept Enter.
+                if (e.key === 'Enter') {
                   const matches = mentionMatches('new');
                   if (matches.length > 0) {
+                    e.preventDefault();
                     insertMentionInto(matches[0], inputRef, newUpdate, setNewUpdate);
-                    return;
                   }
-                  handleSubmit(e);
                 } else if (e.key === 'Escape' && mentionTarget === 'new' && mentionQuery !== null) {
                   setMentionQuery(null);
                 }
@@ -1619,14 +1619,12 @@ const UpdatePanel = () => {
                               autoGrowTextarea(e.target);
                             }}
                             onKeyDown={(e) => {
-                              if (e.key === 'Enter' && !e.shiftKey) {
-                                e.preventDefault();
+                              if (e.key === 'Enter') {
                                 const matches = mentionMatches('reply');
                                 if (matches.length > 0) {
+                                  e.preventDefault();
                                   insertMentionInto(matches[0], replyTextareaRef, replyText, setReplyText);
-                                  return;
                                 }
-                                handleReplySubmit();
                               } else if (e.key === 'Escape') {
                                 if (mentionTarget === 'reply' && mentionQuery !== null) {
                                   setMentionQuery(null);
