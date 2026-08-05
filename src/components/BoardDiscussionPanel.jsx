@@ -237,7 +237,9 @@ export default function BoardDiscussionPanel({ boardId, boardTitle, onClose }) {
         user_id: userId,
         actor_id: user.id,
         type: "mention",
+        source_type: "board_message",
         source_id: sourceId,
+        board_id: boardId,
         preview: body.slice(0, 120),
       }))
     );

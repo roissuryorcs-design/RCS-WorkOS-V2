@@ -1,19 +1,22 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { useNotifications } from "../context/NotificationContext";
+import { useBoards } from "../context/BoardsContext";
 import { useLanguage } from "../context/LanguageContext";
 import Popover from "./Popover";
 import Avatar from "./Avatar";
 import DirectMessagePanel from "./DirectMessagePanel";
 
 // Bell icon + unread badge, placed in Header.jsx's nav row. Dropdown lists
-// recent notifications (mentions + DMs); clicking one marks it read and,
-// for a DM notification, opens that conversation — mentions don't deep-link
-// anywhere yet (would need board/comment routing that doesn't exist in
-// this app), they just mark read.
+// recent notifications (mentions + DMs); clicking one marks it read and
+// deep-links to where it happened: a DM opens that conversation, an
+// item-comment mention opens the item's comment panel (switching board
+// first if needed via requestBoardNavigation), a board-chat mention opens
+// that board's discussion channel.
 export default function NotificationBell() {
   const { t } = useLanguage();
   const { notifications, unreadCount, markRead, markAllRead } = useNotifications();
+  const { requestBoardNavigation } = useBoards();
   const [isOpen, setIsOpen] = useState(false);
   const [actorsById, setActorsById] = useState({});
   const [dmTarget, setDmTarget] = useState(null);
@@ -42,10 +45,16 @@ export default function NotificationBell() {
 
   const handleClickNotification = (n) => {
     markRead(n.id);
+    setIsOpen(false);
     if (n.type === "dm") {
       const actor = actorsById[n.actor_id];
       setDmTarget({ userId: n.actor_id, displayName: actor?.display_name || actor?.email, avatarUrl: actor?.avatar_url, zoomLink: actor?.zoom_link });
-      setIsOpen(false);
+    } else if (n.type === "mention" && n.board_id) {
+      if (n.source_type === "update" && n.item_id) {
+        requestBoardNavigation({ boardId: n.board_id, type: "item", itemId: n.item_id });
+      } else if (n.source_type === "board_message") {
+        requestBoardNavigation({ boardId: n.board_id, type: "discussion" });
+      }
     }
   };
 

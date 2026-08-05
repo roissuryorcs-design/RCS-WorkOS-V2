@@ -72,6 +72,7 @@ export function DMProvider({ children }) {
         user_id: recipientId,
         actor_id: user.id,
         type: "dm",
+        source_type: "dm",
         source_id: data.id,
         preview: trimmed.slice(0, 120),
       })

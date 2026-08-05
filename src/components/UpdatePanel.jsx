@@ -30,7 +30,10 @@ const UpdatePanel = () => {
   // can resolve to a real notification) and inserts one notifications row
   // per matched member, excluding the author. Best-effort: a failed insert
   // doesn't block the comment itself, which already sent successfully.
-  const notifyMentions = async (text, sourceId) => {
+  // board_id/item_id are denormalized onto the notification (same idea as
+  // updates.board_id) so the bell can deep-link straight back to this
+  // item's comment thread without an extra lookup at click time.
+  const notifyMentions = async (text, createdRow) => {
     const tokens = [...text.matchAll(/@(\w+)/g)].map((m) => m[1].toLowerCase());
     if (tokens.length === 0) return;
     const members = await fetchWorkspaceMembers();
@@ -46,7 +49,10 @@ const UpdatePanel = () => {
         user_id: userId,
         actor_id: user.id,
         type: 'mention',
-        source_id: sourceId,
+        source_type: 'update',
+        source_id: createdRow.id,
+        board_id: createdRow.board_id,
+        item_id: createdRow.item_id,
         preview: text.slice(0, 120),
       }))
     );
@@ -231,7 +237,7 @@ const UpdatePanel = () => {
       const created = await addUpdate(selectedItem, text, uploadedFiles);
       setNewUpdate('');
       setUploadedFiles([]);
-      if (created && text) notifyMentions(text, created.id);
+      if (created && text) notifyMentions(text, created);
     }
   };
 
@@ -255,7 +261,7 @@ const UpdatePanel = () => {
       setReplyText('');
       setReplyFiles([]);
       setReplyingTo(null);
-      if (created && text) notifyMentions(text, created.id);
+      if (created && text) notifyMentions(text, created);
     }
   };
 

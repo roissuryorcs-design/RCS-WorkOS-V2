@@ -273,6 +273,22 @@ export function BoardsProvider({ children }) {
     });
   };
 
+  // A "go straight to X" action that can't be fulfilled from here — e.g.
+  // the notification bell wants to open a specific item's comment panel
+  // or the board discussion channel, but those live inside per-board
+  // providers (UpdateProvider/Header) that get freshly (re)mounted on a
+  // board switch. Stashing the intent here and letting Header.jsx's own
+  // effect pick it up once its boardId prop matches is what survives that
+  // remount without needing real URL routing.
+  const [pendingBoardAction, setPendingBoardAction] = useState(null); // { boardId, type: 'item' | 'discussion', itemId? }
+
+  const requestBoardNavigation = (action) => {
+    setPendingBoardAction(action);
+    goToBoard(action.boardId);
+  };
+
+  const clearPendingBoardAction = () => setPendingBoardAction(null);
+
   const toggleFavorite = async (id) => {
     const isFav = favoriteBoardIds.includes(id);
     if (isFav) {
@@ -737,6 +753,9 @@ export function BoardsProvider({ children }) {
         activeBoardId,
         switchBoard,
         goToBoard,
+        pendingBoardAction,
+        requestBoardNavigation,
+        clearPendingBoardAction,
         createFolder,
         createBoard,
         renameNode,

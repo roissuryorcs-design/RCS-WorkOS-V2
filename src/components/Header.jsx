@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { useLanguage } from '../context/LanguageContext';
 import { useMobileNav } from '../context/MobileNavContext';
+import { useBoards } from '../context/BoardsContext';
+import { useUpdates } from '../context/UpdateContext';
 import AccountMenu from './AccountMenu';
 import NotificationBell from './NotificationBell';
 import BoardDiscussionPanel from './BoardDiscussionPanel';
@@ -15,10 +17,28 @@ import MemberDirectory from './MemberDirectory';
 const Header = ({ groups = [], boardId, isReady = true }) => {
   const { t } = useLanguage();
   const { setSidebarOpen } = useMobileNav();
+  const { pendingBoardAction, clearPendingBoardAction } = useBoards();
+  const { openPanel } = useUpdates();
   const [title, setTitle] = useState(t('defaults.boardTitle'));
   const [subtitle, setSubtitle] = useState(t('defaults.boardSubtitle'));
   const [showDiscussion, setShowDiscussion] = useState(false);
   const [showTeam, setShowTeam] = useState(false);
+
+  // Fulfills a notification-bell deep-link once this board actually
+  // becomes the active one — requestBoardNavigation() (BoardsContext) may
+  // have just triggered a board switch, which remounts this whole
+  // component tree, so this effect is what survives that remount and
+  // completes the "go straight to X" intent instead of just landing on
+  // the board with nothing else happening.
+  useEffect(() => {
+    if (!pendingBoardAction || pendingBoardAction.boardId !== boardId) return;
+    if (pendingBoardAction.type === 'discussion') {
+      setShowDiscussion(true);
+    } else if (pendingBoardAction.type === 'item') {
+      openPanel(pendingBoardAction.itemId);
+    }
+    clearPendingBoardAction();
+  }, [pendingBoardAction, boardId, openPanel, clearPendingBoardAction]);
 
   // 🔥 FLAG UNTUK MENCEGAH RESET SAAT REFRESH
   const isInitial = useRef(true);
