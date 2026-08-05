@@ -306,6 +306,8 @@ export const translations = {
       replyBtn: "Reply",
       replyingTo: "Replying to {{name}}",
       pickItemHint: "Click an item in the table to reference it, or keep typing to search",
+      editedLabel: "(edited)",
+      deleteConfirm: "Delete this message?",
     },
     conversations: {
       title: "Messages",
@@ -854,6 +856,8 @@ export const translations = {
       replyBtn: "Balas",
       replyingTo: "Membalas {{name}}",
       pickItemHint: "Klik item di tabel untuk sisipkan, atau lanjut ketik untuk cari",
+      editedLabel: "(diedit)",
+      deleteConfirm: "Hapus pesan ini?",
     },
     conversations: {
       title: "Pesan",

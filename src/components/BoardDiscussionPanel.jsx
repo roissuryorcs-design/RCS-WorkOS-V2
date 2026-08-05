@@ -6,6 +6,7 @@ import { useBoards } from "../context/BoardsContext";
 import { useItems } from "../context/ItemsContext";
 import { useUpdates } from "../context/UpdateContext";
 import { useLanguage } from "../context/LanguageContext";
+import { uploadToCloudinary } from "../utils/cloudinaryUpload";
 import Avatar from "./Avatar";
 
 // Matches, in one pass: URLs, @mentions, and [[board:id|Label]] /
@@ -100,6 +101,28 @@ function renderMessageBody(body, linkColor, mentionColor, refBg, onRefClick) {
   });
 }
 
+// File attachments on a sent message — same compact numbered-link list as
+// UpdatePanel's renderFiles, just colored to match whichever side of the
+// conversation the bubble is on.
+function renderChatFiles(files, linkColor) {
+  if (!files || files.length === 0) return null;
+  return (
+    <div style={{ marginTop: 4, display: "flex", flexDirection: "column", gap: 2 }}>
+      {files.map((file, index) => (
+        <a
+          key={file.id}
+          href={file.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ fontSize: 12, color: linkColor, textDecoration: "underline", wordBreak: "break-all" }}
+        >
+          📎 {index + 1}. {file.name}
+        </a>
+      ))}
+    </div>
+  );
+}
+
 // Group chat for this specific board — every message is visible to anyone
 // who can access the board (RLS via can_access_board()), unlike
 // DirectMessagePanel which is private 1:1. Opened from the header's 💬
@@ -122,9 +145,14 @@ export default function BoardDiscussionPanel({ boardId, boardTitle, onClose }) {
   const [refQuery, setRefQuery] = useState(null);
   const [replyingTo, setReplyingTo] = useState(null);
   const [highlightedId, setHighlightedId] = useState(null);
+  const [uploadedFiles, setUploadedFiles] = useState([]);
+  const [uploadingFiles, setUploadingFiles] = useState(false);
+  const [editingMessageId, setEditingMessageId] = useState(null);
+  const [editText, setEditText] = useState("");
   const listRef = useRef(null);
   const textareaRef = useRef(null);
   const messageRefs = useRef({});
+  const fileInputRef = useRef(null);
 
   const flatItems = useMemo(() => flattenItems(items), [items]);
 
@@ -213,7 +241,7 @@ export default function BoardDiscussionPanel({ boardId, boardTitle, onClose }) {
 
   const handleSend = async () => {
     const trimmed = text.trim();
-    if (!trimmed || sending) return;
+    if ((!trimmed && uploadedFiles.length === 0) || sending) return;
     setSending(true);
     setText("");
     if (textareaRef.current) textareaRef.current.style.height = "";
@@ -221,18 +249,79 @@ export default function BoardDiscussionPanel({ boardId, boardTitle, onClose }) {
     setRefQuery(null);
     const replyToId = replyingTo?.id ?? null;
     setReplyingTo(null);
+    const filesToSend = uploadedFiles;
+    setUploadedFiles([]);
     const { data, error } = await supabase
       .from("board_messages")
-      .insert({ board_id: boardId, sender_id: user.id, body: trimmed, reply_to_id: replyToId })
+      .insert({ board_id: boardId, sender_id: user.id, body: trimmed, reply_to_id: replyToId, files: filesToSend })
       .select()
       .single();
     if (error) {
       console.error("Error sending board message:", error);
     } else {
       setMessages((prev) => (prev.some((m) => m.id === data.id) ? prev : [...prev, data]));
-      notifyMentions(trimmed, data.id);
+      if (trimmed) notifyMentions(trimmed, data.id);
     }
     setSending(false);
+  };
+
+  const handleFileUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    if (files.length === 0) return;
+    setUploadingFiles(true);
+    try {
+      const uploaded = await Promise.all(files.map((f) => uploadToCloudinary(f)));
+      setUploadedFiles((prev) => [...prev, ...uploaded.map((u) => ({ ...u, id: u.url }))]);
+    } catch (err) {
+      console.error("Upload failed:", err);
+      alert(t("fileAttachment.uploadFailed"));
+    } finally {
+      setUploadingFiles(false);
+    }
+  };
+
+  const removeUploadedFile = (fileId) => {
+    setUploadedFiles((prev) => prev.filter((f) => f.id !== fileId));
+  };
+
+  const handleEditStart = (m) => {
+    setEditingMessageId(m.id);
+    setEditText(m.body);
+  };
+
+  const handleEditCancel = () => {
+    setEditingMessageId(null);
+    setEditText("");
+  };
+
+  const handleEditSave = async () => {
+    const trimmed = editText.trim();
+    if (!trimmed) return;
+    const editedAt = new Date().toISOString();
+    const { data, error } = await supabase
+      .from("board_messages")
+      .update({ body: trimmed, edited_at: editedAt })
+      .eq("id", editingMessageId)
+      .select()
+      .single();
+    if (error) {
+      console.error("Error editing board message:", error);
+      return;
+    }
+    setMessages((prev) => prev.map((m) => (m.id === data.id ? data : m)));
+    setEditingMessageId(null);
+    setEditText("");
+  };
+
+  const handleDelete = async (m) => {
+    if (!confirm(t("boardDiscussion.deleteConfirm"))) return;
+    const { error } = await supabase.from("board_messages").delete().eq("id", m.id);
+    if (error) {
+      console.error("Error deleting board message:", error);
+      return;
+    }
+    setMessages((prev) => prev.filter((x) => x.id !== m.id));
   };
 
   // Unlike DirectMessagePanel's cosmetic-only mentions, everyone tagged
@@ -443,6 +532,7 @@ export default function BoardDiscussionPanel({ boardId, boardTitle, onClose }) {
             const sender = profilesById[m.sender_id];
             const senderName = sender?.display_name || sender?.email || "";
             const quoted = m.reply_to_id ? messages.find((x) => x.id === m.reply_to_id) : null;
+            const isEditing = editingMessageId === m.id;
             return (
               <div
                 key={m.id}
@@ -463,61 +553,144 @@ export default function BoardDiscussionPanel({ boardId, boardTitle, onClose }) {
                   {!isMine && (
                     <span style={{ fontSize: 10.5, fontWeight: 700, color: "var(--text-secondary)", marginBottom: 2 }}>{senderName}</span>
                   )}
-                  <div
-                    style={{
-                      padding: "7px 11px",
-                      borderRadius: 12,
-                      borderBottomRightRadius: isMine ? 3 : 12,
-                      borderBottomLeftRadius: isMine ? 12 : 3,
-                      background: isMine ? "var(--btn-primary-bg)" : "var(--bg-hover)",
-                      color: isMine ? "var(--btn-primary-text)" : "var(--text-primary)",
-                      fontSize: 13,
-                      wordBreak: "break-word",
-                      whiteSpace: "pre-wrap",
-                    }}
-                  >
-                    {quoted && (
-                      <div
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          scrollToMessage(quoted.id);
+                  {isEditing ? (
+                    <div style={{ width: 220 }}>
+                      <textarea
+                        autoFocus
+                        value={editText}
+                        onChange={(e) => setEditText(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault();
+                            handleEditSave();
+                          } else if (e.key === "Escape") {
+                            handleEditCancel();
+                          }
                         }}
+                        rows={2}
                         style={{
-                          cursor: "pointer",
-                          borderLeft: `3px solid ${isMine ? "rgba(255,255,255,0.6)" : "var(--btn-primary-bg)"}`,
-                          paddingLeft: 6,
-                          marginBottom: 4,
-                          opacity: 0.85,
+                          width: "100%",
+                          resize: "none",
+                          padding: "7px 10px",
+                          borderRadius: 10,
+                          border: "2px solid var(--btn-primary-bg)",
+                          background: "var(--bg-input)",
+                          color: "var(--text-primary)",
+                          fontSize: 13,
+                          fontFamily: "inherit",
+                          boxSizing: "border-box",
                         }}
-                      >
-                        <div style={{ fontSize: 10, fontWeight: 700 }}>{senderNameOf(quoted)}</div>
-                        <div style={{ fontSize: 11, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 180 }}>
-                          {quoted.body}
-                        </div>
+                      />
+                      <div style={{ display: "flex", gap: 6, justifyContent: "flex-end", marginTop: 4 }}>
+                        <button
+                          onClick={handleEditCancel}
+                          style={{ background: "none", border: "none", cursor: "pointer", fontSize: 11.5, color: "var(--text-secondary)" }}
+                        >
+                          {t("updatePanel.cancel")}
+                        </button>
+                        <button
+                          onClick={handleEditSave}
+                          disabled={!editText.trim()}
+                          style={{
+                            background: "var(--btn-primary-bg)",
+                            color: "var(--btn-primary-text)",
+                            border: "none",
+                            borderRadius: 6,
+                            padding: "3px 10px",
+                            cursor: editText.trim() ? "pointer" : "default",
+                            opacity: editText.trim() ? 1 : 0.6,
+                            fontSize: 11.5,
+                            fontWeight: 600,
+                          }}
+                        >
+                          {t("settingsModal.saveBtn")}
+                        </button>
                       </div>
-                    )}
-                    {renderMessageBody(
-                      m.body,
-                      isMine ? "var(--btn-primary-text)" : "var(--btn-primary-bg)",
-                      "#f59e0b",
-                      "var(--btn-primary-bg)",
-                      handleRefClick
+                    </div>
+                  ) : (
+                    <div
+                      style={{
+                        padding: "7px 11px",
+                        borderRadius: 12,
+                        borderBottomRightRadius: isMine ? 3 : 12,
+                        borderBottomLeftRadius: isMine ? 12 : 3,
+                        background: isMine ? "var(--btn-primary-bg)" : "var(--bg-hover)",
+                        color: isMine ? "var(--btn-primary-text)" : "var(--text-primary)",
+                        fontSize: 13,
+                        wordBreak: "break-word",
+                        whiteSpace: "pre-wrap",
+                      }}
+                    >
+                      {quoted && (
+                        <div
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            scrollToMessage(quoted.id);
+                          }}
+                          style={{
+                            cursor: "pointer",
+                            borderLeft: `3px solid ${isMine ? "rgba(255,255,255,0.6)" : "var(--btn-primary-bg)"}`,
+                            paddingLeft: 6,
+                            marginBottom: 4,
+                            opacity: 0.85,
+                          }}
+                        >
+                          <div style={{ fontSize: 10, fontWeight: 700 }}>{senderNameOf(quoted)}</div>
+                          <div style={{ fontSize: 11, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 180 }}>
+                            {quoted.body}
+                          </div>
+                        </div>
+                      )}
+                      {m.body &&
+                        renderMessageBody(
+                          m.body,
+                          isMine ? "var(--btn-primary-text)" : "var(--btn-primary-bg)",
+                          "#f59e0b",
+                          "var(--btn-primary-bg)",
+                          handleRefClick
+                        )}
+                      {renderChatFiles(m.files, isMine ? "var(--btn-primary-text)" : "var(--btn-primary-bg)")}
+                      {m.edited_at && (
+                        <div style={{ fontSize: 9.5, opacity: 0.7, marginTop: 2 }}>{t("boardDiscussion.editedLabel")}</div>
+                      )}
+                    </div>
+                  )}
+                </div>
+                {!isEditing && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 2, flexShrink: 0 }}>
+                    <button
+                      onClick={() => setReplyingTo(m)}
+                      title={t("boardDiscussion.replyBtn")}
+                      style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, color: "var(--text-muted)", padding: 4 }}
+                    >
+                      ↩
+                    </button>
+                    {isMine && (
+                      <>
+                        <button
+                          onClick={() => handleEditStart(m)}
+                          title={t("updatePanel.edit")}
+                          style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, color: "var(--text-muted)", padding: 4 }}
+                        >
+                          ✎
+                        </button>
+                        <button
+                          onClick={() => handleDelete(m)}
+                          title={t("updatePanel.delete")}
+                          style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, color: "var(--text-muted)", padding: 4 }}
+                        >
+                          🗑
+                        </button>
+                      </>
                     )}
                   </div>
-                </div>
-                <button
-                  onClick={() => setReplyingTo(m)}
-                  title={t("boardDiscussion.replyBtn")}
-                  style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, color: "var(--text-muted)", padding: 4, flexShrink: 0 }}
-                >
-                  ↩
-                </button>
+                )}
               </div>
             );
           })}
         </div>
 
-        <div style={{ padding: "10px 12px 16px", borderTop: "1px solid var(--border-color)" }}>
+        <div style={{ padding: "10px 12px 20px", borderTop: "1px solid var(--border-color)" }}>
           {replyingTo && (
             <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", background: "var(--bg-hover)", borderRadius: 6, marginBottom: 8 }}>
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -543,7 +716,36 @@ export default function BoardDiscussionPanel({ boardId, boardTitle, onClose }) {
             </div>
           )}
 
-          <div style={{ position: "relative", display: "flex", gap: 8 }}>
+          {uploadedFiles.length > 0 && (
+            <div style={{ marginBottom: 6, display: "flex", flexWrap: "wrap", gap: 4 }}>
+              {uploadedFiles.map((file, idx) => (
+                <div
+                  key={file.id}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 4,
+                    padding: "2px 8px",
+                    background: "var(--bg-hover)",
+                    borderRadius: 4,
+                    border: "1px solid var(--border-dark)",
+                    fontSize: 11,
+                  }}
+                >
+                  <span style={{ color: "var(--btn-primary-bg)" }}>{idx + 1}.</span>
+                  <span style={{ color: "var(--btn-primary-bg)", textDecoration: "underline", wordBreak: "break-all" }}>{file.name}</span>
+                  <button
+                    onClick={() => removeUploadedFile(file.id)}
+                    style={{ background: "none", border: "none", cursor: "pointer", color: "#ef4444", fontSize: 13, fontWeight: 700, padding: "0 2px" }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div style={{ position: "relative" }}>
             {(mentionMatches.length > 0 || boardMatches.length > 0 || itemMatches.length > 0) && (
               <div
                 style={{
@@ -617,7 +819,7 @@ export default function BoardDiscussionPanel({ boardId, boardTitle, onClose }) {
               placeholder={t("boardDiscussion.placeholder")}
               rows={2}
               style={{
-                flex: 1,
+                width: "100%",
                 resize: "none",
                 padding: "8px 10px",
                 borderRadius: 6,
@@ -631,24 +833,54 @@ export default function BoardDiscussionPanel({ boardId, boardTitle, onClose }) {
                 boxSizing: "border-box",
               }}
             />
+          </div>
+
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 6 }}>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadingFiles}
+              title={t("updatePanel.uploadFile")}
+              style={{
+                background: "none",
+                border: "none",
+                fontSize: 16,
+                cursor: uploadingFiles ? "default" : "pointer",
+                padding: "2px 6px",
+                borderRadius: 4,
+                color: "var(--text-secondary)",
+                opacity: uploadingFiles ? 0.5 : 1,
+              }}
+            >
+              {uploadingFiles ? "⏳" : "📎"}
+            </button>
             <button
               onClick={handleSend}
-              disabled={sending || !text.trim()}
+              disabled={sending || (!text.trim() && uploadedFiles.length === 0)}
               style={{
                 padding: "0 16px",
+                height: 30,
                 background: "var(--btn-primary-bg)",
                 color: "var(--btn-primary-text)",
                 border: "none",
                 borderRadius: 6,
-                cursor: sending || !text.trim() ? "default" : "pointer",
+                cursor: sending || (!text.trim() && uploadedFiles.length === 0) ? "default" : "pointer",
                 fontWeight: 600,
                 fontSize: 13,
-                opacity: sending || !text.trim() ? 0.6 : 1,
+                opacity: sending || (!text.trim() && uploadedFiles.length === 0) ? 0.6 : 1,
               }}
             >
               {t("directMessage.sendBtn")}
             </button>
           </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+            onChange={handleFileUpload}
+            style={{ display: "none" }}
+          />
         </div>
     </div>,
     document.body
