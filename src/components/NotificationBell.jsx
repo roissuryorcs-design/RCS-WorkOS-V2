@@ -124,7 +124,14 @@ export default function NotificationBell() {
           maxHeight: 420,
           display: "flex",
           flexDirection: "column",
-          zIndex: 1200,
+          // No explicit zIndex here on purpose — usePopoverPosition already
+          // returns zIndex:3000, safely above Popover.jsx's own click-
+          // outside overlay (z-index 1999, .tree-node-popup-overlay in
+          // sidebar.css). This dropdown used to hardcode 1200, which sat
+          // *below* that overlay: every click on a notification row was
+          // actually landing on the invisible overlay instead of the row
+          // (closing the popover, no error, no navigation, no markRead —
+          // exactly the reported "just closes" symptom).
         }}
       >
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", borderBottom: "1px solid var(--border-color)" }}>
