@@ -125,6 +125,12 @@
   opacity: 0.5;
 }
 
+.tree-folder-header.drop-target {
+  background: rgba(59, 130, 246, 0.18);
+  outline: 1px dashed var(--btn-primary-bg, #3b82f6);
+  outline-offset: -1px;
+}
+
 .tree-folder-chevron {
   flex-shrink: 0;
   width: 14px;

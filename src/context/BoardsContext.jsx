@@ -425,6 +425,31 @@ export function BoardsProvider({ children }) {
     );
   };
 
+  // Drag a board into a folder (folderId) or back out to the top level
+  // (folderId = null) — reorderNode above only ever reorders *within* the
+  // same parent, this is the "actually change the parent" move. Board-only
+  // for now (no folder-into-folder dragging, to sidestep the nesting-depth/
+  // cycle bookkeeping that would need).
+  const moveBoardToFolder = async (boardId, folderId) => {
+    const node = allNodes.find((n) => n.id === boardId);
+    if (!node || node.type !== "board") return;
+    if (node.parentId === folderId) return;
+    if (folderId) {
+      const folder = allNodes.find((n) => n.id === folderId);
+      if (!folder || folder.type !== "folder") return;
+    }
+    const position = allNodes.filter((n) => n.parentId === folderId && n.id !== boardId).length;
+
+    setAllNodesByWorkspace((prev) => ({
+      ...prev,
+      [activeWorkspaceId]: (prev[activeWorkspaceId] || []).map((n) =>
+        n.id === boardId ? { ...n, parentId: folderId, position } : n
+      ),
+    }));
+    const { error } = await supabase.from("nodes").update({ parent_id: folderId, position }).eq("id", boardId);
+    if (error) console.error("Error moving board into folder:", error);
+  };
+
   // Folders still hard-delete (guarded to only ever fire on an empty
   // folder, so there's nothing meaningful to recover). Boards go to Trash
   // instead — same soft-hide idea as archive, just with a 15-day countdown
@@ -869,6 +894,7 @@ export function BoardsProvider({ children }) {
         createBoard,
         renameNode,
         reorderNode,
+        moveBoardToFolder,
         deleteNode,
         toggleFolderCollapsed,
         workspaces,

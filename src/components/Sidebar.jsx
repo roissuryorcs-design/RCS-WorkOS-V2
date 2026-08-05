@@ -14,9 +14,7 @@ export default function Sidebar() {
   const { user } = useAuth();
   const {
     nodes,
-    archivedBoards,
     archiveBoard,
-    restoreBoard,
     activeBoardId,
     switchBoard,
     goToBoard,
@@ -24,6 +22,7 @@ export default function Sidebar() {
     createBoard,
     renameNode,
     reorderNode,
+    moveBoardToFolder,
     deleteNode,
     toggleFolderCollapsed,
     favoriteBoardIds,
@@ -56,13 +55,19 @@ export default function Sidebar() {
   };
 
   const [draggedId, setDraggedId] = useState(null);
+  const [dragOverFolderId, setDragOverFolderId] = useState(null);
 
   const topLevelNodes = nodes.filter((n) => !n.parentId);
   const childrenOf = (id) => nodes.filter((n) => n.parentId === id);
 
-  // Drag-reorder is constrained to siblings under the same parent — dropping
-  // onto a node with a different parent shows a "not allowed" cursor and is
-  // a no-op (reorderNode itself also guards this, as a second line of defense).
+  // Three drag outcomes, decided per drop target:
+  //  - dropping a board directly onto a folder (any nesting level) moves it
+  //    inside that folder;
+  //  - dropping a board that's currently inside a folder onto a top-level
+  //    node (or the empty tree area) moves it back out to the top level;
+  //  - dropping onto a same-parent sibling (the original behavior) just
+  //    reorders. Folders are never re-parented by drag — only boards — to
+  //    sidestep the nesting-depth/cycle bookkeeping that would need.
   const handleDragStart = (e, node) => {
     e.stopPropagation();
     setDraggedId(node.id);
@@ -77,24 +82,62 @@ export default function Sidebar() {
   const handleDragOver = (e, node) => {
     if (!draggedId || draggedId === node.id) return;
     const dragged = nodes.find((n) => n.id === draggedId);
-    if (!dragged || dragged.parentId !== node.parentId) {
+    if (!dragged) return;
+
+    const movingIntoFolder = dragged.type === "board" && node.type === "folder" && dragged.parentId !== node.id;
+    const movingToTopLevel = dragged.type === "board" && dragged.parentId !== null && node.parentId === null;
+    const sameParentReorder = dragged.parentId === node.parentId;
+
+    if (movingIntoFolder || movingToTopLevel || sameParentReorder) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+    } else {
       e.dataTransfer.dropEffect = "none";
-      return;
     }
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
   };
 
   const handleDrop = (e, node) => {
     e.preventDefault();
     e.stopPropagation();
     if (draggedId && draggedId !== node.id) {
-      reorderNode(draggedId, node.id);
+      const dragged = nodes.find((n) => n.id === draggedId);
+      if (dragged?.type === "board" && node.type === "folder" && dragged.parentId !== node.id) {
+        moveBoardToFolder(draggedId, node.id);
+      } else if (dragged?.type === "board" && dragged.parentId !== null && node.parentId === null) {
+        moveBoardToFolder(draggedId, null);
+      } else {
+        reorderNode(draggedId, node.id);
+      }
     }
     setDraggedId(null);
   };
 
-  const handleDragEnd = () => setDraggedId(null);
+  const handleDragEnd = () => {
+    setDraggedId(null);
+    setDragOverFolderId(null);
+  };
+
+  // Fallback drop zone for pulling a board out of a folder when there's no
+  // other top-level node to drop it onto — a drop that lands directly on
+  // the tree container (not bubbled from a node's own handler, which
+  // stopPropagation()s) means "empty space", i.e. the top level itself.
+  const handleTreeContainerDragOver = (e) => {
+    if (!draggedId) return;
+    const dragged = nodes.find((n) => n.id === draggedId);
+    if (!dragged || dragged.type !== "board" || dragged.parentId === null) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleTreeContainerDrop = (e) => {
+    e.preventDefault();
+    if (!draggedId) return;
+    const dragged = nodes.find((n) => n.id === draggedId);
+    if (dragged?.type === "board" && dragged.parentId !== null) {
+      moveBoardToFolder(draggedId, null);
+    }
+    setDraggedId(null);
+  };
 
   const handleRename = (node) => {
     const type = node.type === "folder" ? t("sidebar.nodeTypeFolder") : t("sidebar.nodeTypeBoard");
@@ -185,11 +228,19 @@ export default function Sidebar() {
     return (
       <div key={node.id} className="tree-folder">
         <div
-          className={`tree-folder-header${draggedId === node.id ? " dragging" : ""}`}
+          className={`tree-folder-header${draggedId === node.id ? " dragging" : ""}${dragOverFolderId === node.id ? " drop-target" : ""}`}
           draggable
           onDragStart={(e) => handleDragStart(e, node)}
           onDragOver={(e) => handleDragOver(e, node)}
-          onDrop={(e) => handleDrop(e, node)}
+          onDragEnter={() => {
+            const dragged = nodes.find((n) => n.id === draggedId);
+            if (dragged?.type === "board" && dragged.parentId !== node.id) setDragOverFolderId(node.id);
+          }}
+          onDragLeave={() => setDragOverFolderId((prev) => (prev === node.id ? null : prev))}
+          onDrop={(e) => {
+            setDragOverFolderId(null);
+            handleDrop(e, node);
+          }}
           onDragEnd={handleDragEnd}
           onClick={() => toggleFolderCollapsed(node.id)}
         >
@@ -265,41 +316,11 @@ export default function Sidebar() {
         )}
       </div>
 
-      {archivedBoards.length > 0 && (
-        <div className="sidebar-section">
-          <div className="section-title">{t("sidebar.archivedTitle")}</div>
-          {archivedBoards.map((board) => (
-            <div
-              key={board.id}
-              className="favorite-item"
-              style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6 }}
-            >
-              <span style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
-                <span>📦</span>
-                <span className="tree-node-label">{board.name}</span>
-              </span>
-              <button
-                onClick={() => restoreBoard(board.id)}
-                title={t("sidebar.restoreBoard")}
-                style={{
-                  background: "none",
-                  border: "1px solid var(--border-dark)",
-                  borderRadius: 4,
-                  padding: "2px 8px",
-                  fontSize: 11,
-                  color: "var(--text-secondary)",
-                  cursor: "pointer",
-                  flexShrink: 0,
-                }}
-              >
-                {t("sidebar.restoreBoard")}
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <div className="sidebar-section">
+      <div
+        className="sidebar-section"
+        onDragOver={handleTreeContainerDragOver}
+        onDrop={handleTreeContainerDrop}
+      >
         <div className="section-title">{t("sidebar.workspaceTitle")}</div>
         <WorkspaceSwitcher />
         {topLevelNodes.map((node) => (node.type === "folder" ? renderFolder(node) : renderBoard(node)))}
