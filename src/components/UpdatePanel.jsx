@@ -723,6 +723,7 @@ const UpdatePanel = () => {
                   color: 'var(--text-primary)',
                   fontWeight: 400,
                   lineHeight: 1.4,
+                  whiteSpace: 'pre-wrap',
                 }}>
                   {renderTextWithMentions(reply.text)}
                 </p>
@@ -1457,6 +1458,7 @@ const UpdatePanel = () => {
                         wordWrap: 'break-word',
                         fontWeight: 400,
                         lineHeight: 1.5,
+                        whiteSpace: 'pre-wrap',
                       }}>
                         {renderTextWithMentions(update.text)}
                       </p>
