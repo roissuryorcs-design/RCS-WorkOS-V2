@@ -477,6 +477,19 @@ body.dark {
   will-change: transform;
 }
 
+/* "Jump to this item" highlight (Row.jsx's isMentionHighlighted, set when
+   this row's comment panel was opened via a board-chat item reference or
+   a notification deep-link) — needs its own rule because the sticky
+   checkbox/item cells above lock their background with !important for a
+   Chromium rendering fix, which no inline style can ever beat. Extra
+   class on .row-checkbox-cell/td:nth-child(2) gives this higher
+   specificity than the plain selectors above, so it wins regardless of
+   source order. */
+.row-mention-highlighted .row-checkbox-cell,
+.board-table tr.row-mention-highlighted td:nth-child(2) {
+  background-color: rgba(245, 158, 11, 0.22) !important;
+}
+
 /* ============================================================
    PERBAIKAN TABLE-CELL UNTUK KOLOM ITEM
    ============================================================ */

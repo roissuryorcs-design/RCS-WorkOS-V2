@@ -308,9 +308,14 @@ export default function Row({
   const defaultGroupBorderColor = groupColor;
   const paddingLeft = depth * 14 + 8;
 
-  // Distinct from the isSelected (checkbox multi-select) tint so both can
-  // never be mistaken for each other.
-  const rowBg = isSelected ? 'var(--bg-hover)' : isMentionHighlighted ? 'rgba(59,130,246,0.16)' : 'var(--bg-secondary)';
+  // Amber, not blue — distinct from the isSelected (checkbox multi-select)
+  // tint so both can never be mistaken for each other, and picked to
+  // still read clearly against a dark theme. This inline value covers
+  // every *non*-sticky cell; the sticky checkbox/item cells have their own
+  // background locked in with !important in App.css (a Chromium sticky-
+  // cell rendering fix), which no inline style can beat — those get the
+  // matching amber via the .row-mention-highlighted class below instead.
+  const rowBg = isSelected ? 'var(--bg-hover)' : isMentionHighlighted ? 'rgba(245,158,11,0.22)' : 'var(--bg-secondary)';
 
   const itemCellStyle = {
     display: 'table-cell',
@@ -362,7 +367,11 @@ export default function Row({
 
   return (
     <>
-      <tr ref={rowRef} className={isSelected ? "row-selected" : ""} style={{ transition: 'background 0.4s' }}>
+      <tr
+        ref={rowRef}
+        className={[isSelected && "row-selected", isMentionHighlighted && "row-mention-highlighted"].filter(Boolean).join(" ")}
+        style={{ transition: 'background 0.4s' }}
+      >
         <td 
           className="row-checkbox-cell" 
           style={{ 
