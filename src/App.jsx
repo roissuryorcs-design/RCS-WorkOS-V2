@@ -27,6 +27,7 @@ import ProgressStageManager from "./components/ProgressStageManager";
 import ColumnManager from "./components/ColumnManager";
 import AddColumnPopup from "./components/AddColumnPopup";
 import FormulaEditor from "./components/FormulaEditor";
+import FolderOverview from "./components/FolderOverview";
 import "./App.css";
 import { UpdateProvider } from './context/UpdateContext';
 import UpdatePanel from './components/UpdatePanel';
@@ -387,7 +388,7 @@ function EmptyWorkspaceState() {
 }
 
 function AppShellInner() {
-  const { activeBoardId, loading } = useBoards();
+  const { activeBoardId, activeFolderId, loading } = useBoards();
 
   return (
     <div className="app-container">
@@ -406,6 +407,8 @@ function AppShellInner() {
         >
           …
         </div>
+      ) : activeFolderId ? (
+        <FolderOverview folderId={activeFolderId} />
       ) : activeBoardId ? (
         <ColumnProvider key={activeBoardId} boardId={activeBoardId}>
           <GroupProvider boardId={activeBoardId}>

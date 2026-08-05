@@ -25,6 +25,7 @@ export default function Sidebar() {
     moveBoardToFolder,
     deleteNode,
     toggleFolderCollapsed,
+    viewFolder,
     favoriteBoardIds,
     favoriteBoards,
     toggleFavorite,
@@ -242,9 +243,17 @@ export default function Sidebar() {
             handleDrop(e, node);
           }}
           onDragEnd={handleDragEnd}
-          onClick={() => toggleFolderCollapsed(node.id)}
+          onClick={() => viewFolder(node.id)}
         >
-          <span className="tree-folder-chevron">{node.collapsed ? "▶" : "▼"}</span>
+          <span
+            className="tree-folder-chevron"
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleFolderCollapsed(node.id);
+            }}
+          >
+            {node.collapsed ? "▶" : "▼"}
+          </span>
           <span className="tree-folder-icon">📁</span>
           <span className="tree-node-label">{node.name}</span>
           <button

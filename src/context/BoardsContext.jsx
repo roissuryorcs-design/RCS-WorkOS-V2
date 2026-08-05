@@ -55,6 +55,11 @@ export function BoardsProvider({ children }) {
   const [favoriteBoardIds, setFavoriteBoardIds] = useState([]);
   const [favoriteBoardsMeta, setFavoriteBoardsMeta] = useState([]); // resolved {id,name,workspaceId}
   const [loading, setLoading] = useState(true);
+  // Which folder's contents are being browsed in the main panel — purely
+  // ephemeral navigation state (not persisted like activeBoardId), and
+  // takes precedence over it in App.jsx's render logic while set. Cleared
+  // whenever a board is actually opened.
+  const [activeFolderId, setActiveFolderId] = useState(null);
 
   const [prefs, setPrefs] = useState(() => loadPrefs(user.id));
   const { activeWorkspaceId, activeBoardId, recentWorkspaceIds } = prefs;
@@ -240,6 +245,7 @@ export function BoardsProvider({ children }) {
       setAllNodesByWorkspace((prev) => ({ ...prev, [id]: nodesForWs }));
     }
     const boardsInWs = nodesForWs.filter((n) => n.type === "board");
+    setActiveFolderId(null);
     updatePrefs({
       activeWorkspaceId: id,
       activeBoardId: boardsInWs[0]?.id ?? null,
@@ -252,6 +258,7 @@ export function BoardsProvider({ children }) {
   // ------------------------------------------------------------
   const switchBoard = (id) => {
     if (!allNodes.some((n) => n.id === id && n.type === "board")) return;
+    setActiveFolderId(null);
     updatePrefs({ activeBoardId: id });
   };
 
@@ -265,6 +272,7 @@ export function BoardsProvider({ children }) {
       setAllNodesByWorkspace((prev) => ({ ...prev, [targetWorkspaceId]: (data || []).map(mapNode) }));
     }
 
+    setActiveFolderId(null);
     updatePrefs({
       activeWorkspaceId: targetWorkspaceId,
       activeBoardId: id,
@@ -273,6 +281,12 @@ export function BoardsProvider({ children }) {
         MAX_RECENT_WORKSPACES
       ),
     });
+  };
+
+  // Opens the folder-contents overview in the main panel — id=null closes
+  // it (falls back to whatever board was active).
+  const viewFolder = (id) => {
+    setActiveFolderId(id);
   };
 
   // A "go straight to X" action that can't be fulfilled from here — e.g.
@@ -885,6 +899,8 @@ export function BoardsProvider({ children }) {
         activeBoardId,
         switchBoard,
         goToBoard,
+        activeFolderId,
+        viewFolder,
         pendingBoardAction,
         requestBoardNavigation,
         clearPendingBoardAction,

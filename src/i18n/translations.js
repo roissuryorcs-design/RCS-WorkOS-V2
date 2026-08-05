@@ -311,6 +311,10 @@ export const translations = {
       editedLabel: "(edited)",
       deleteConfirm: "Delete this message?",
     },
+    folderOverview: {
+      itemCount: "{{count}} item(s)",
+      empty: "This folder is empty.",
+    },
     archiveModal: {
       title: "Archive",
       boardsSection: "Boards",
@@ -887,6 +891,10 @@ export const translations = {
       pickItemHint: "Klik item di tabel untuk sisipkan, atau lanjut ketik untuk cari",
       editedLabel: "(diedit)",
       deleteConfirm: "Hapus pesan ini?",
+    },
+    folderOverview: {
+      itemCount: "{{count}} item",
+      empty: "Folder ini masih kosong.",
     },
     archiveModal: {
       title: "Arsip",
