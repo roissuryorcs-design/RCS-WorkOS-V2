@@ -62,6 +62,91 @@ const UpdatePanel = () => {
   const [newUpdate, setNewUpdate] = useState('');
   const [replyingTo, setReplyingTo] = useState(null);
   const [replyText, setReplyText] = useState('');
+
+  // @mention autocomplete — same dropdown-while-typing UX already built for
+  // Board Discussion/DM chat, added here too since board comments only had
+  // resolve-on-submit (matching an exact "@FirstName" typed blind) with no
+  // help actually typing the right name. mentionTarget disambiguates which
+  // textarea (new comment vs reply) the query/matches apply to, since both
+  // share this one piece of state rather than duplicating it per field.
+  const [mentionQuery, setMentionQuery] = useState(null);
+  const [mentionTarget, setMentionTarget] = useState(null); // 'new' | 'reply'
+  const [mentionMembers, setMentionMembers] = useState([]);
+
+  const detectMentionQuery = (value, cursor) => {
+    const match = value.slice(0, cursor).match(/@(\w*)$/);
+    return match ? match[1].toLowerCase() : null;
+  };
+
+  const handleMentionTextChange = (target, value, cursor) => {
+    const q = detectMentionQuery(value, cursor);
+    if (q !== null) {
+      setMentionQuery(q);
+      setMentionTarget(target);
+      if (mentionMembers.length === 0) fetchWorkspaceMembers().then(setMentionMembers);
+    } else if (mentionTarget === target) {
+      setMentionQuery(null);
+    }
+  };
+
+  const insertMentionInto = (member, targetRef, value, setValue) => {
+    const firstName = (member.displayName || member.email || '').trim().split(/\s+/)[0] || '';
+    const el = targetRef.current;
+    const cursor = el ? el.selectionStart : value.length;
+    const before = value.slice(0, cursor).replace(/@\w*$/, `@${firstName} `);
+    const after = value.slice(cursor);
+    setValue(before + after);
+    setMentionQuery(null);
+    requestAnimationFrame(() => {
+      if (!el) return;
+      el.focus();
+      el.setSelectionRange(before.length, before.length);
+    });
+  };
+
+  const mentionMatches = (target) =>
+    mentionQuery === null || mentionTarget !== target
+      ? []
+      : mentionMembers
+          .filter((m) => m.userId !== user.id)
+          .filter((m) => !mentionQuery || (m.displayName || m.email || '').toLowerCase().startsWith(mentionQuery))
+          .slice(0, 5);
+
+  const renderMentionDropdown = (target, targetRef, value, setValue) => {
+    const matches = mentionMatches(target);
+    if (matches.length === 0) return null;
+    return (
+      <div
+        style={{
+          position: 'absolute',
+          bottom: '100%',
+          left: 0,
+          right: 0,
+          marginBottom: 4,
+          background: 'var(--bg-modal)',
+          border: '1px solid var(--border-color)',
+          borderRadius: 8,
+          boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
+          overflow: 'hidden',
+          zIndex: 10,
+        }}
+      >
+        {matches.map((m) => (
+          <div
+            key={m.userId}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              insertMentionInto(m, targetRef, value, setValue);
+            }}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', cursor: 'pointer', fontSize: 12.5 }}
+          >
+            {m.displayName || m.email}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [replyFiles, setReplyFiles] = useState([]);
   const [uploadingNew, setUploadingNew] = useState(false);
@@ -769,17 +854,30 @@ const UpdatePanel = () => {
                   )}
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ position: 'relative' }}>
+                    {renderMentionDropdown('reply', replyTextareaRef, replyText, setReplyText)}
                     <textarea
                       ref={replyTextareaRef}
                       value={replyText}
-                      onChange={(e) => setReplyText(e.target.value)}
+                      onChange={(e) => {
+                        setReplyText(e.target.value);
+                        handleMentionTextChange('reply', e.target.value, e.target.selectionStart);
+                      }}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && !e.shiftKey) {
                           e.preventDefault();
+                          const matches = mentionMatches('reply');
+                          if (matches.length > 0) {
+                            insertMentionInto(matches[0], replyTextareaRef, replyText, setReplyText);
+                            return;
+                          }
                           handleReplySubmit();
-                        }
-                        if (e.key === 'Escape') {
-                          handleCancelReply();
+                        } else if (e.key === 'Escape') {
+                          if (mentionTarget === 'reply' && mentionQuery !== null) {
+                            setMentionQuery(null);
+                          } else {
+                            handleCancelReply();
+                          }
                         }
                       }}
                       placeholder={t('updatePanel.replyToReplyPlaceholder')}
@@ -797,10 +895,12 @@ const UpdatePanel = () => {
                         backgroundColor: 'var(--bg-input)',
                         color: 'var(--text-primary)',
                         transition: 'border-color 0.2s',
+                        boxSizing: 'border-box',
                       }}
                       onFocus={(e) => e.currentTarget.style.borderColor = 'var(--btn-primary-bg)'}
                       onBlur={(e) => e.currentTarget.style.borderColor = 'var(--border-dark)'}
                     />
+                    </div>
 
                     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
                       <input
@@ -1054,10 +1154,15 @@ const UpdatePanel = () => {
               style={{ display: 'none' }}
             />
 
+            <div style={{ position: 'relative' }}>
+            {renderMentionDropdown('new', inputRef, newUpdate, setNewUpdate)}
             <textarea
               ref={inputRef}
               value={newUpdate}
-              onChange={(e) => setNewUpdate(e.target.value)}
+              onChange={(e) => {
+                setNewUpdate(e.target.value);
+                handleMentionTextChange('new', e.target.value, e.target.selectionStart);
+              }}
               placeholder={t('updatePanel.newUpdatePlaceholder')}
               rows={2}
               style={{
@@ -1073,16 +1178,25 @@ const UpdatePanel = () => {
                 transition: 'border-color 0.2s',
                 backgroundColor: 'var(--bg-input)',
                 color: 'var(--text-primary)',
+                boxSizing: 'border-box',
               }}
               onFocus={(e) => e.currentTarget.style.borderColor = 'var(--btn-primary-bg)'}
               onBlur={(e) => e.currentTarget.style.borderColor = 'var(--border-dark)'}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
+                  const matches = mentionMatches('new');
+                  if (matches.length > 0) {
+                    insertMentionInto(matches[0], inputRef, newUpdate, setNewUpdate);
+                    return;
+                  }
                   handleSubmit(e);
+                } else if (e.key === 'Escape' && mentionTarget === 'new' && mentionQuery !== null) {
+                  setMentionQuery(null);
                 }
               }}
             />
+            </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '4px' }}>
               <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
@@ -1468,17 +1582,30 @@ const UpdatePanel = () => {
                         )}
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          <div style={{ position: 'relative' }}>
+                          {renderMentionDropdown('reply', replyTextareaRef, replyText, setReplyText)}
                           <textarea
                             ref={replyTextareaRef}
                             value={replyText}
-                            onChange={(e) => setReplyText(e.target.value)}
+                            onChange={(e) => {
+                              setReplyText(e.target.value);
+                              handleMentionTextChange('reply', e.target.value, e.target.selectionStart);
+                            }}
                             onKeyDown={(e) => {
                               if (e.key === 'Enter' && !e.shiftKey) {
                                 e.preventDefault();
+                                const matches = mentionMatches('reply');
+                                if (matches.length > 0) {
+                                  insertMentionInto(matches[0], replyTextareaRef, replyText, setReplyText);
+                                  return;
+                                }
                                 handleReplySubmit();
-                              }
-                              if (e.key === 'Escape') {
-                                handleCancelReply();
+                              } else if (e.key === 'Escape') {
+                                if (mentionTarget === 'reply' && mentionQuery !== null) {
+                                  setMentionQuery(null);
+                                } else {
+                                  handleCancelReply();
+                                }
                               }
                             }}
                             placeholder={t('updatePanel.replyPlaceholder')}
@@ -1496,10 +1623,12 @@ const UpdatePanel = () => {
                               backgroundColor: 'var(--bg-input)',
                               color: 'var(--text-primary)',
                               transition: 'border-color 0.2s',
+                              boxSizing: 'border-box',
                             }}
                             onFocus={(e) => e.currentTarget.style.borderColor = 'var(--btn-primary-bg)'}
                             onBlur={(e) => e.currentTarget.style.borderColor = 'var(--border-dark)'}
                           />
+                          </div>
 
                           <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
                             <input
