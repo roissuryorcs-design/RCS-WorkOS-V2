@@ -282,6 +282,7 @@ export const translations = {
       notesBtn: "Meeting notes",
       notesLabel: "Shared notes for this conversation",
       notesPlaceholder: "Write meeting notes here — visible to both of you…",
+      backToChatBtn: "Back to chat",
     },
     notifications: {
       title: "Notifications",
@@ -809,6 +810,7 @@ export const translations = {
       notesBtn: "Notulen",
       notesLabel: "Catatan bersama untuk percakapan ini",
       notesPlaceholder: "Tulis notulen rapat di sini — bisa dilihat kalian berdua…",
+      backToChatBtn: "Kembali ke chat",
     },
     notifications: {
       title: "Notifikasi",

@@ -278,6 +278,26 @@ export default function DirectMessagePanel({ partnerId, partnerName, partnerAvat
         ) : (
           <>
             <div style={{ flex: 1, overflowY: "auto", padding: "12px 14px", display: "flex", flexDirection: "column" }}>
+              <button
+                onClick={() => setMode("chat")}
+                style={{
+                  alignSelf: "flex-start",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 5,
+                  marginBottom: 10,
+                  padding: "5px 10px",
+                  background: "var(--bg-hover)",
+                  border: "1px solid var(--border-dark)",
+                  borderRadius: 6,
+                  cursor: "pointer",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  color: "var(--text-primary)",
+                }}
+              >
+                ← {t("directMessage.backToChatBtn")}
+              </button>
               <label style={{ fontSize: 11, fontWeight: 600, color: "var(--text-secondary)", marginBottom: 6 }}>
                 {t("directMessage.notesLabel")}
               </label>
