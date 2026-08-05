@@ -216,6 +216,7 @@ export default function BoardDiscussionPanel({ boardId, boardTitle, onClose }) {
     if (!trimmed || sending) return;
     setSending(true);
     setText("");
+    if (textareaRef.current) textareaRef.current.style.height = "";
     setMentionQuery(null);
     setRefQuery(null);
     const replyToId = replyingTo?.id ?? null;
@@ -264,9 +265,24 @@ export default function BoardDiscussionPanel({ boardId, boardTitle, onClose }) {
     if (error) console.error("Error creating board chat mention notifications:", error);
   };
 
+  // Same auto-grow-up-to-5-lines behavior as the item comment box
+  // (UpdatePanel) — grows with content via scrollHeight, then switches to
+  // an internal scrollbar instead of growing further.
+  const AUTO_GROW_MAX_LINES = 5;
+  const AUTO_GROW_LINE_HEIGHT = 19;
+  const AUTO_GROW_V_PADDING = 16; // 8px top + 8px bottom
+  const autoGrowTextarea = (el) => {
+    if (!el) return;
+    el.style.height = "auto";
+    const maxHeight = AUTO_GROW_LINE_HEIGHT * AUTO_GROW_MAX_LINES + AUTO_GROW_V_PADDING;
+    el.style.height = `${Math.min(el.scrollHeight, maxHeight)}px`;
+    el.style.overflowY = el.scrollHeight > maxHeight ? "auto" : "hidden";
+  };
+
   const handleTextChange = (e) => {
     const val = e.target.value;
     setText(val);
+    autoGrowTextarea(e.target);
     const cursor = e.target.selectionStart;
     const uptoCursor = val.slice(0, cursor);
     const mentionMatch = uptoCursor.match(/@(\w*)$/);
@@ -442,7 +458,7 @@ export default function BoardDiscussionPanel({ boardId, boardTitle, onClose }) {
                   padding: 2,
                 }}
               >
-                <Avatar url={sender?.avatar_url} name={senderName} size={26} style={{ flexShrink: 0, marginBottom: 2 }} />
+                <Avatar url={sender?.avatar_url} name={senderName} size={26} style={{ flexShrink: 0, marginBottom: 6 }} />
                 <div style={{ display: "flex", flexDirection: "column", alignItems: isMine ? "flex-end" : "flex-start", maxWidth: "75%" }}>
                   {!isMine && (
                     <span style={{ fontSize: 10.5, fontWeight: 700, color: "var(--text-secondary)", marginBottom: 2 }}>{senderName}</span>
@@ -599,7 +615,7 @@ export default function BoardDiscussionPanel({ boardId, boardTitle, onClose }) {
               onChange={handleTextChange}
               onKeyDown={handleKeyDown}
               placeholder={t("boardDiscussion.placeholder")}
-              rows={1}
+              rows={2}
               style={{
                 flex: 1,
                 resize: "none",
@@ -609,7 +625,10 @@ export default function BoardDiscussionPanel({ boardId, boardTitle, onClose }) {
                 background: "var(--bg-input)",
                 color: "var(--text-primary)",
                 fontSize: 13,
+                lineHeight: "19px",
                 fontFamily: "inherit",
+                overflowY: "hidden",
+                boxSizing: "border-box",
               }}
             />
             <button
