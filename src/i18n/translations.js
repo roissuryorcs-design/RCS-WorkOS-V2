@@ -300,8 +300,10 @@ export const translations = {
       teamLabel: "Team",
     },
     boardDiscussion: {
-      placeholder: "Message the whole board team…",
+      placeholder: "Message the whole board team… (@ to mention, # to link a board/item)",
       empty: "No messages yet — start the discussion!",
+      replyBtn: "Reply",
+      replyingTo: "Replying to {{name}}",
     },
     conversations: {
       title: "Messages",
@@ -844,8 +846,10 @@ export const translations = {
       teamLabel: "Team",
     },
     boardDiscussion: {
-      placeholder: "Kirim pesan ke seluruh tim board ini…",
+      placeholder: "Kirim pesan ke seluruh tim board ini… (@ untuk mention, # untuk link board/item)",
       empty: "Belum ada pesan — mulai diskusinya!",
+      replyBtn: "Balas",
+      replyingTo: "Membalas {{name}}",
     },
     conversations: {
       title: "Pesan",
