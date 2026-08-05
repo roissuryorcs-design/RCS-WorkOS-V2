@@ -3,12 +3,6 @@
 import { useState } from "react";
 import { useLanguage } from "../context/LanguageContext";
 
-// Matches ColumnContext.jsx's getDefaultColumns() ids exactly — kept as a
-// plain id list here (rather than importing the full default-column
-// factory) purely to drive the informational DEFAULT badge below; these
-// columns are deletable like any other except "item" itself.
-const DEFAULT_COLUMN_IDS = ["item", "document", "people", "status", "dueDate", "rev"];
-
 export default function ColumnManager({
   columns,
   onToggleColumn,
@@ -90,7 +84,6 @@ export default function ColumnManager({
         <div style={{ marginBottom: 16 }}>
           {columns.map((col) => {
             const isItem = col.id === "item";
-            const isDefault = DEFAULT_COLUMN_IDS.includes(col.id);
             const isVisible = col.visible !== false;
 
             return (
@@ -102,9 +95,6 @@ export default function ColumnManager({
                   gap: 8,
                   padding: "6px 0",
                   borderBottom: "1px solid var(--border-light)",
-                  background: isDefault && !isItem ? "rgba(76, 175, 80, 0.05)" : "transparent",
-                  borderRadius: 4,
-                  paddingLeft: isDefault && !isItem ? 4 : 0,
                 }}
               >
                 {/* Tombol Collapse/Expand */}
@@ -165,7 +155,7 @@ export default function ColumnManager({
                   >
                     {col.label || col.id}
                     {isItem && <span style={{ fontSize: 10, color: "var(--text-muted)" }}>{t("columnManager.fixedTag")}</span>}
-                    {isDefault && !isItem && (
+                    {!isVisible && (
                       <span
                         style={{
                           fontSize: 9,
@@ -177,11 +167,8 @@ export default function ColumnManager({
                           letterSpacing: 0.3,
                         }}
                       >
-                        {t("columnManager.defaultTag")}
+                        {t("columnManager.hiddenTag")}
                       </span>
-                    )}
-                    {!isVisible && (
-                      <span style={{ fontSize: 11, color: "var(--text-muted)" }}>{t("columnManager.hiddenTag")}</span>
                     )}
                   </span>
                 )}
