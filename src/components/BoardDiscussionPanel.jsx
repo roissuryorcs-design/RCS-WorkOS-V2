@@ -373,21 +373,21 @@ export default function BoardDiscussionPanel({ boardId, boardTitle, onClose }) {
       : flatItems.filter((it) => !refQuery || (it.item || "").toLowerCase().includes(refQuery)).slice(0, 4);
 
   const handleKeyDown = (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
+    // Enter alone just inserts a newline now — sending is Kirim-only,
+    // matching the item comment box. The one carve-out: Enter still picks
+    // a highlighted @mention/#board/#item match when that dropdown is
+    // open, same as before.
+    if (e.key === "Enter") {
       if (mentionMatches.length > 0) {
+        e.preventDefault();
         insertMention(mentionMatches[0]);
-        return;
-      }
-      if (boardMatches.length > 0) {
+      } else if (boardMatches.length > 0) {
+        e.preventDefault();
         insertRef("board", boardMatches[0].id, boardMatches[0].name);
-        return;
-      }
-      if (itemMatches.length > 0) {
+      } else if (itemMatches.length > 0) {
+        e.preventDefault();
         insertRef("item", itemMatches[0].id, itemRefLabel(itemMatches[0]));
-        return;
       }
-      handleSend();
     } else if (e.key === "Escape" && (mentionQuery !== null || refQuery !== null)) {
       setMentionQuery(null);
       setRefQuery(null);
@@ -517,7 +517,7 @@ export default function BoardDiscussionPanel({ boardId, boardTitle, onClose }) {
           })}
         </div>
 
-        <div style={{ padding: "10px 12px", borderTop: "1px solid var(--border-color)" }}>
+        <div style={{ padding: "10px 12px 16px", borderTop: "1px solid var(--border-color)" }}>
           {replyingTo && (
             <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", background: "var(--bg-hover)", borderRadius: 6, marginBottom: 8 }}>
               <div style={{ flex: 1, minWidth: 0 }}>
