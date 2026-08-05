@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import StatusCell from "./StatusCell";
 import FileAttachment from "./FileAttachment";
 import DateCell from "./DateCell";
@@ -11,6 +11,8 @@ import UpdateBubble from './UpdateBubble';
 import { evaluateFormula } from "../utils/formulaEngine";
 import { resolveSelfWeight, resolveIndependentWeight, weightKeyFor, computeOwnProgress, computeCascadedDisplayPercent, computeAbsoluteWeight } from "../utils/progressWeights";
 import { useLanguage } from "../context/LanguageContext";
+import { useUpdates } from "../context/UpdateContext";
+import { useBoards } from "../context/BoardsContext";
 import { getPeoplePlaceholder } from "../i18n/defaults";
 
 // Same mobile cap as ResizableHeader.jsx's applyWidth — that one only
@@ -56,9 +58,27 @@ export default function Row({
   }
 
   const { t } = useLanguage();
+  const { selectedItem } = useUpdates();
+  const { itemPickRequest } = useBoards();
   const [expanded, setExpanded] = useState(item.isExpanded !== false);
   const [isEditing, setIsEditing] = useState(false);
   const [tempName, setTempName] = useState(item.item || '');
+  const rowRef = useRef(null);
+
+  // Ties this row's background to whichever item currently has its
+  // comment panel open (selectedItem) — covers both a normal click on
+  // this row AND being routed here from elsewhere (a board-chat item
+  // reference, a notification deep-link), since both paths go through the
+  // same openPanel(itemId) call. Scrolls into view so a reference from
+  // outside the table (e.g. a chat link) doesn't just open the panel
+  // without showing *where* the item actually lives in the grid.
+  const isMentionHighlighted = selectedItem === item.id;
+  useEffect(() => {
+    if (isMentionHighlighted && rowRef.current) {
+      rowRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMentionHighlighted]);
 
   // ✅ GUARD: Pastikan children adalah array
   const children = item.children && Array.isArray(item.children) ? item.children : [];
@@ -288,6 +308,10 @@ export default function Row({
   const defaultGroupBorderColor = groupColor;
   const paddingLeft = depth * 14 + 8;
 
+  // Distinct from the isSelected (checkbox multi-select) tint so both can
+  // never be mistaken for each other.
+  const rowBg = isSelected ? 'var(--bg-hover)' : isMentionHighlighted ? 'rgba(59,130,246,0.16)' : 'var(--bg-secondary)';
+
   const itemCellStyle = {
     display: 'table-cell',
     verticalAlign: 'middle',
@@ -297,7 +321,7 @@ export default function Row({
     position: 'sticky',
     left: '36px',
     zIndex: 100,
-    backgroundColor: isSelected ? 'var(--bg-hover)' : 'var(--bg-secondary)',
+    backgroundColor: rowBg,
     boxShadow: 'inset -2px 0 0 0 var(--border-color)',
     height: 'auto',
   };
@@ -338,7 +362,7 @@ export default function Row({
 
   return (
     <>
-      <tr className={isSelected ? "row-selected" : ""}>
+      <tr ref={rowRef} className={isSelected ? "row-selected" : ""} style={{ transition: 'background 0.4s' }}>
         <td 
           className="row-checkbox-cell" 
           style={{ 
@@ -346,7 +370,7 @@ export default function Row({
             position: 'sticky',
             left: 0,
             zIndex: 100,
-            background: isSelected ? 'var(--bg-hover)' : 'var(--bg-secondary)',
+            background: rowBg,
             width: '36px',
             minWidth: '36px',
             maxWidth: '36px',
@@ -452,10 +476,10 @@ export default function Row({
                       }}
                     />
                   ) : (
-                    <span 
-                      style={{ 
+                    <span
+                      style={{
                         flex: 1,
-                        cursor: 'text',
+                        cursor: itemPickRequest ? 'pointer' : 'text',
                         whiteSpace: 'nowrap',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
@@ -463,18 +487,21 @@ export default function Row({
                         fontWeight: depth === 0 ? 600 : 400,
                         color: depth === 0 ? 'var(--text-primary)' : 'var(--text-secondary)',
                         fontSize: '13px',
+                        outline: itemPickRequest ? '1px dashed var(--btn-primary-bg)' : 'none',
+                        outlineOffset: -1,
+                        borderRadius: 2,
                       }}
-                      onClick={handleStartEdit}
+                      onClick={itemPickRequest ? () => itemPickRequest.onPick(item) : handleStartEdit}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'var(--bg-hover)';
+                        e.currentTarget.style.background = itemPickRequest ? 'rgba(59,130,246,0.14)' : 'var(--bg-hover)';
                         e.currentTarget.style.borderRadius = '2px';
                       }}
                       onMouseLeave={(e) => {
                         e.currentTarget.style.background = 'transparent';
                       }}
-                      title={t("row.clickToEdit")}
+                      title={itemPickRequest ? t("row.clickToReference") : t("row.clickToEdit")}
                     >
-                      {item.item || placeholder}
+                      {itemPickRequest ? '🔖 ' : ''}{item.item || placeholder}
                     </span>
                   )}
 
@@ -532,7 +559,7 @@ export default function Row({
                 maxWidth: `${col.width}px`,
                 borderRight: isLast ? "none" : "2px solid var(--border-color)",
                 borderBottom: '2px solid var(--border-color)',
-                background: isSelected ? 'var(--bg-hover)' : 'var(--bg-secondary)',
+                background: rowBg,
                 // Progress columns get no vertical padding so their tree
                 // guide lines (rendered full-height inside ProgressCell)
                 // touch the row border above/below instead of leaving a
@@ -564,7 +591,7 @@ export default function Row({
           style={{
             display: 'table-cell',
             verticalAlign: 'middle',
-            background: isSelected ? 'var(--bg-hover)' : 'var(--bg-secondary)',
+            background: rowBg,
             width: '50px',
             minWidth: '50px',
             maxWidth: '50px',

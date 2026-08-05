@@ -195,6 +195,7 @@ export const translations = {
       deleteItemConfirm: 'Delete item "{{name}}"?',
       untitled: "untitled",
       clickToEdit: "Click to edit",
+      clickToReference: "Click to reference this item in the chat",
       maxLevelReached: "Maximum level reached",
       addSubItem: "Add sub item",
     },
@@ -304,6 +305,7 @@ export const translations = {
       empty: "No messages yet — start the discussion!",
       replyBtn: "Reply",
       replyingTo: "Replying to {{name}}",
+      pickItemHint: "Click an item in the table to reference it, or keep typing to search",
     },
     conversations: {
       title: "Messages",
@@ -741,6 +743,7 @@ export const translations = {
       deleteItemConfirm: 'Hapus item "{{name}}"?',
       untitled: "tanpa judul",
       clickToEdit: "Klik untuk edit",
+      clickToReference: "Klik untuk sisipkan item ini ke chat",
       maxLevelReached: "Level maksimal tercapai",
       addSubItem: "Tambah sub item",
     },
@@ -850,6 +853,7 @@ export const translations = {
       empty: "Belum ada pesan — mulai diskusinya!",
       replyBtn: "Balas",
       replyingTo: "Membalas {{name}}",
+      pickItemHint: "Klik item di tabel untuk sisipkan, atau lanjut ketik untuk cari",
     },
     conversations: {
       title: "Pesan",

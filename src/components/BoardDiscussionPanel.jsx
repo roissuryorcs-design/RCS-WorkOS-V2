@@ -15,27 +15,33 @@ import Avatar from "./Avatar";
 const TOKEN_REGEX = /(https?:\/\/[^\s]+|@\w+|\[\[(?:board|item):[a-zA-Z0-9_-]+\|[^\]]+\]\])/g;
 const REF_TOKEN_REGEX = /^\[\[(board|item):([a-zA-Z0-9_-]+)\|([^\]]+)\]\]$/;
 
-// Item names are only unique within their own group — the same "Tugas 1"
-// name commonly exists in several groups (different phases/batches of the
-// same recurring task), so the picker/token label needs the group name
-// too or two different items become indistinguishable once referenced in
-// chat. Square brackets/pipes are stripped since they're the token
-// grammar's own delimiters.
+// Item names are only unique within their own group/parent — the same
+// "Tugas 1" commonly exists in several groups, and a sub-item's name alone
+// doesn't say which parent task it belongs to either. addressOf() builds
+// the full "Group › Parent › …" breadcrumb so the picker and the token
+// label both show exactly where the item lives, not just its bare name.
+function addressOf(it) {
+  const parts = [it.group, ...(it.ancestorNames || [])].filter(Boolean).map((s) => s.replace(/[|[\]]/g, ""));
+  return parts.join(" › ");
+}
+
+// Square brackets/pipes are stripped since they're the token grammar's own
+// delimiters.
 function itemRefLabel(it) {
   const name = (it.item || "").replace(/[|[\]]/g, "");
-  const group = (it.group || "").replace(/[|[\]]/g, "");
-  return group ? `${name} (${group})` : name;
+  const address = addressOf(it);
+  return address ? `${name} (${address})` : name;
 }
 
 function flattenItems(items) {
   const out = [];
-  const walk = (arr) => {
+  const walk = (arr, ancestorNames) => {
     for (const it of arr) {
-      out.push(it);
-      if (it.children?.length) walk(it.children);
+      out.push({ ...it, ancestorNames });
+      if (it.children?.length) walk(it.children, [...ancestorNames, it.item]);
     }
   };
-  walk(items);
+  walk(items, []);
   return out;
 }
 
@@ -103,7 +109,7 @@ function renderMessageBody(body, linkColor, mentionColor, refBg, onRefClick) {
 export default function BoardDiscussionPanel({ boardId, boardTitle, onClose }) {
   const { t } = useLanguage();
   const { user } = useAuth();
-  const { fetchWorkspaceMembers, nodes, goToBoard } = useBoards();
+  const { fetchWorkspaceMembers, nodes, goToBoard, setItemPickRequest } = useBoards();
   const { items } = useItems();
   const { openPanel } = useUpdates();
   const [messages, setMessages] = useState([]);
@@ -303,6 +309,32 @@ export default function BoardDiscussionPanel({ boardId, boardTitle, onClose }) {
     insertAtTrigger("#", `[[${refType}:${id}|${label}]]`);
   };
 
+  // itemPickRequest.onPick is a stable function handed to BoardsContext
+  // (and from there to every Row), but insertRef closes over `text`/the
+  // textarea's live cursor — a plain useEffect-provided closure would go
+  // stale the moment the user kept typing after opening "#" mode. Routing
+  // the actual call through a ref that's refreshed every render keeps it
+  // current without re-publishing the request on every keystroke.
+  const insertRefLive = useRef(insertRef);
+  insertRefLive.current = insertRef;
+
+  useEffect(() => {
+    if (refQuery !== null) {
+      setItemPickRequest({
+        boardId,
+        onPick: (item) => insertRefLive.current("item", item.id, itemRefLabel(item)),
+      });
+    } else {
+      setItemPickRequest((prev) => (prev && prev.boardId === boardId ? null : prev));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refQuery, boardId]);
+
+  useEffect(() => {
+    return () => setItemPickRequest((prev) => (prev && prev.boardId === boardId ? null : prev));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const mentionMatches =
     mentionQuery === null
       ? []
@@ -347,36 +379,28 @@ export default function BoardDiscussionPanel({ boardId, boardTitle, onClose }) {
   };
 
   return createPortal(
+    // Docked to the right edge instead of a centered modal-with-backdrop —
+    // deliberately, so the board table stays visible and clickable behind
+    // it (needed for the "# then click an item in the table" picker
+    // instead of only being able to search by typing).
     <div
       style={{
         position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,0.5)",
+        top: 0,
+        right: 0,
+        bottom: 0,
+        width: 380,
+        maxWidth: "92vw",
+        background: "var(--bg-modal)",
+        borderLeft: "1px solid var(--border-color)",
+        boxShadow: "-8px 0 32px rgba(0,0,0,0.25)",
+        color: "var(--text-primary)",
         zIndex: 1000,
         display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        backdropFilter: "blur(4px)",
+        flexDirection: "column",
+        overflow: "hidden",
       }}
-      onClick={onClose}
     >
-      <div
-        style={{
-          background: "var(--bg-modal)",
-          borderRadius: 12,
-          width: "92%",
-          maxWidth: 460,
-          height: "72vh",
-          maxHeight: 600,
-          color: "var(--text-primary)",
-          boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
-          border: "1px solid var(--border-color)",
-          display: "flex",
-          flexDirection: "column",
-          overflow: "hidden",
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
         <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 16px", borderBottom: "1px solid var(--border-color)" }}>
           <div style={{ fontSize: 14, fontWeight: 700, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             💬 {t("header.discussionLabel")}
@@ -497,6 +521,12 @@ export default function BoardDiscussionPanel({ boardId, boardTitle, onClose }) {
             </div>
           )}
 
+          {refQuery !== null && (
+            <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 6 }}>
+              {t("boardDiscussion.pickItemHint")}
+            </div>
+          )}
+
           <div style={{ position: "relative", display: "flex", gap: 8 }}>
             {(mentionMatches.length > 0 || boardMatches.length > 0 || itemMatches.length > 0) && (
               <div
@@ -553,8 +583,10 @@ export default function BoardDiscussionPanel({ boardId, boardTitle, onClose }) {
                     <span style={{ fontSize: 14 }}>🔖</span>
                     <div style={{ minWidth: 0 }}>
                       <div style={{ fontSize: 12.5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{it.item}</div>
-                      {it.group && (
-                        <div style={{ fontSize: 10, color: "var(--text-muted)" }}>{it.group}</div>
+                      {addressOf(it) && (
+                        <div style={{ fontSize: 10, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {addressOf(it)}
+                        </div>
                       )}
                     </div>
                   </div>
@@ -599,7 +631,6 @@ export default function BoardDiscussionPanel({ boardId, boardTitle, onClose }) {
             </button>
           </div>
         </div>
-      </div>
     </div>,
     document.body
   );

@@ -289,6 +289,13 @@ export function BoardsProvider({ children }) {
 
   const clearPendingBoardAction = () => setPendingBoardAction(null);
 
+  // While the board discussion chat has an in-progress "#" reference
+  // search, this lets Row.jsx offer "click this item instead of typing
+  // its name" — set/cleared by BoardDiscussionPanel itself, read by every
+  // Row in the currently open board (they're always the same board, since
+  // the discussion panel only exists for whatever board is active).
+  const [itemPickRequest, setItemPickRequest] = useState(null); // { boardId, onPick: (item) => void } | null
+
   const toggleFavorite = async (id) => {
     const isFav = favoriteBoardIds.includes(id);
     if (isFav) {
@@ -756,6 +763,8 @@ export function BoardsProvider({ children }) {
         pendingBoardAction,
         requestBoardNavigation,
         clearPendingBoardAction,
+        itemPickRequest,
+        setItemPickRequest,
         createFolder,
         createBoard,
         renameNode,
