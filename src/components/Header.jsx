@@ -157,7 +157,7 @@ const Header = ({ groups = [], boardId, isReady = true }) => {
   };
 
   return (
-    <div className="header-sticky" style={{ padding: '16px 24px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
+    <div className="header-sticky" style={{ padding: '10px 24px', marginBottom: 8, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
       <div style={{ minWidth: 0, flex: 1 }}>
         <button className="mobile-menu-btn" onClick={() => setSidebarOpen(true)} aria-label={t('sidebar.openMenu')}>
           ☰
