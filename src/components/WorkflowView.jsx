@@ -277,6 +277,8 @@ function EditNodePanel({ node, onClose }) {
         borderRadius: 8,
         padding: 10,
         width: 200,
+        maxHeight: "calc(100% - 28px)",
+        overflowY: "auto",
         boxShadow: "0 6px 20px rgba(0,0,0,0.35)",
         textAlign: "left",
       }}
