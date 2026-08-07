@@ -182,10 +182,25 @@ function WorkflowEdge({ id, sourceX, sourceY, targetX, targetY, style, markerEnd
   // top handle, so an arrowhead landing exactly on that handle disappears
   // underneath it. When the target sits on that top handle and has an
   // icon, stop the path short — right at the icon circle's edge — so the
-  // arrowhead stays visible instead of being hidden under the badge.
+  // arrowhead stays visible instead of being hidden under the badge. The
+  // final approach is horizontal when the elbow (bendX,targetY) sits to
+  // one side of the target, vertical when it's directly above/below, so
+  // the circle-boundary intersection is computed for whichever direction
+  // actually applies instead of always assuming a straight drop.
   const targetClearsIcon = data?.targetHasIcon && data?.targetHandle?.startsWith("top-");
-  const adjTargetY = targetClearsIcon ? targetY - 22 : targetY;
-  const path = `M ${sourceX},${sourceY} L ${sourceX},${bendY} L ${bendX},${bendY} L ${bendX},${adjTargetY} L ${targetX},${adjTargetY}`;
+  let adjTargetX = targetX;
+  let adjTargetY = targetY;
+  if (targetClearsIcon) {
+    const iconCenterY = targetY - 5;
+    const iconRadius = 17;
+    if (bendX !== targetX) {
+      const dx = Math.sqrt(Math.max(iconRadius * iconRadius - (targetY - iconCenterY) ** 2, 0));
+      adjTargetX = targetX + (bendX < targetX ? -dx : dx);
+    } else {
+      adjTargetY = bendY <= targetY ? targetY - iconRadius - 5 : targetY + iconRadius - 5;
+    }
+  }
+  const path = `M ${sourceX},${sourceY} L ${sourceX},${bendY} L ${bendX},${bendY} L ${bendX},${adjTargetY} L ${adjTargetX},${adjTargetY}`;
 
   const onPointerDown = (e) => {
     e.stopPropagation();
