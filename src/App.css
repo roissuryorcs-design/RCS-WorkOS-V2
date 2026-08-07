@@ -414,9 +414,9 @@ body.dark {
   text-overflow: ellipsis !important;
   padding: 0 10px !important;
   margin: 0 !important;
-  font-size: 14px !important;
+  font-size: 16px !important;
   font-weight: 600 !important;
-  color: var(--group-color, #3b82f6) !important;
+  color: var(--group-color, #7515d5) !important;
   /* Turns out .group-header-inner's own sticky-left wasn't actually the
      thing holding this in view — removing this element's OWN independent
      sticky broke it on desktop too (previously only reported broken on

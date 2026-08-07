@@ -646,7 +646,7 @@ export default function BoardTable({
                           textOverflow: 'ellipsis',
                           padding: '0 10px',
                           margin: 0,
-                          fontSize: '14px',
+                          fontSize: '16px',
                           fontWeight: 600,
                           color: groupColor,
                           position: 'sticky',
