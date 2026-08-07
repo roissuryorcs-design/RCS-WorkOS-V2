@@ -234,11 +234,27 @@ function EditNodePanel({ node, onClose }) {
   const { updateNodeLabel, updateNodeColor, updateNodeShape, updateNodeIcon, updateNodeDescription, deleteNode } = useWorkflow();
   const [text, setText] = useState(node.label);
   const [description, setDescription] = useState(node.description || "");
+  const descriptionRef = useRef(null);
 
   useEffect(() => {
     setText(node.label);
     setDescription(node.description || "");
   }, [node.id, node.label, node.description]);
+
+  // Grows from 3 lines up to 10 lines to fit content, then switches to a
+  // vertical scrollbar instead of growing further.
+  useEffect(() => {
+    const el = descriptionRef.current;
+    if (!el) return;
+    const lineHeight = 16;
+    const verticalPadding = 10;
+    const minHeight = lineHeight * 3 + verticalPadding;
+    const maxHeight = lineHeight * 10 + verticalPadding;
+    el.style.height = "auto";
+    const next = Math.min(Math.max(el.scrollHeight, minHeight), maxHeight);
+    el.style.height = `${next}px`;
+    el.style.overflowY = el.scrollHeight > maxHeight ? "auto" : "hidden";
+  }, [description]);
 
   const commitLabel = () => {
     const trimmed = text.trim();
@@ -285,6 +301,7 @@ function EditNodePanel({ node, onClose }) {
 
       <div style={{ fontSize: 10.5, fontWeight: 700, color: "#8a94a6", marginBottom: 3 }}>Deskripsi</div>
       <textarea
+        ref={descriptionRef}
         value={description}
         onChange={(e) => setDescription(e.target.value)}
         onBlur={commitDescription}
@@ -296,9 +313,10 @@ function EditNodePanel({ node, onClose }) {
           borderRadius: 4,
           border: "1px solid #ddd",
           fontSize: 12.5,
+          lineHeight: "16px",
           fontFamily: "inherit",
           boxSizing: "border-box",
-          resize: "vertical",
+          resize: "none",
           marginBottom: 10,
         }}
       />
