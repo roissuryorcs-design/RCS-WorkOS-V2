@@ -181,30 +181,21 @@ function WorkflowEdge({ id, sourceX, sourceY, targetX, targetY, style, markerEnd
   // A node's icon badge floats above its top edge and paints over the
   // top handle, so an arrowhead landing exactly on that handle disappears
   // underneath it. When the target sits on that top handle and has an
-  // icon, stop the path short — right at the icon circle's edge — so the
-  // arrowhead stays visible instead of being hidden under the badge. The
-  // final approach is horizontal when the elbow (bendX,targetY) sits to
-  // one side of the target, vertical when it's directly above/below, so
-  // the circle-boundary intersection is computed for whichever direction
-  // actually applies instead of always assuming a straight drop.
+  // icon, force the final approach to be a straight vertical drop into
+  // the icon's circle boundary (regardless of where the bend point sits)
+  // instead of trying to infer the approach direction from the bend —
+  // that inference was fragile (small drag imprecision flipped it
+  // between "horizontal" and "vertical" and produced a tilted arrowhead)
+  // and a forced vertical entry always points cleanly at the node.
   const targetClearsIcon = data?.targetHasIcon && data?.targetHandle?.startsWith("top-");
-  let adjTargetX = targetX;
-  let adjTargetY = targetY;
-  if (targetClearsIcon) {
-    const iconCenterY = targetY - 5;
-    const iconRadius = 17;
-    // A dragged bend point is rarely pixel-exact even when it's meant to
-    // sit straight above/below the target, so treat anything within a
-    // few px of targetX as the vertical-approach case rather than
-    // requiring an exact match.
-    if (Math.abs(bendX - targetX) > 3) {
-      const dx = Math.sqrt(Math.max(iconRadius * iconRadius - (targetY - iconCenterY) ** 2, 0));
-      adjTargetX = targetX + (bendX < targetX ? -dx : dx);
-    } else {
-      adjTargetY = bendY <= targetY ? targetY - iconRadius - 5 : targetY + iconRadius - 5;
-    }
-  }
-  const path = `M ${sourceX},${sourceY} L ${sourceX},${bendY} L ${bendX},${bendY} L ${bendX},${adjTargetY} L ${adjTargetX},${adjTargetY}`;
+  const path = targetClearsIcon
+    ? (() => {
+        const iconRadius = 17;
+        const approachFromAbove = bendY <= targetY;
+        const clearY = approachFromAbove ? targetY - iconRadius - 5 : targetY + iconRadius - 5;
+        return `M ${sourceX},${sourceY} L ${sourceX},${bendY} L ${bendX},${bendY} L ${targetX},${bendY} L ${targetX},${clearY}`;
+      })()
+    : `M ${sourceX},${sourceY} L ${sourceX},${bendY} L ${bendX},${bendY} L ${bendX},${targetY} L ${targetX},${targetY}`;
 
   const onPointerDown = (e) => {
     e.stopPropagation();
