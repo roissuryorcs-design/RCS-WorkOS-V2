@@ -165,37 +165,57 @@ function WorkflowNode({ id, data }) {
 
 const nodeTypes = { workflow: WorkflowNode };
 
+function sideOf(handleId) {
+  if (!handleId) return null;
+  if (handleId.startsWith("top")) return "top";
+  if (handleId.startsWith("bottom")) return "bottom";
+  if (handleId.startsWith("left")) return "left";
+  if (handleId.startsWith("right")) return "right";
+  return null;
+}
+
 // A step-path edge with a draggable "bend" handle (the yellow dot),
 // visible only while the edge is selected. The path is built by hand
 // (not getSmoothStepPath's centerX/centerY, which turned out not to
-// reliably pin the route to that point) as a Z-shaped 3-segment path that
-// always passes exactly through (bendX, bendY) — guaranteeing the line
-// and the dot never disagree about where the bend is. EdgeLabelRenderer
-// is what lets the drag handle be plain HTML positioned in flow space
-// (handles pan/zoom for us) instead of raw SVG.
+// reliably pin the route to that point).
+//
+// The final stretch into the target is always forced perpendicular to
+// whichever side it's entering — vertical into top/bottom handles,
+// horizontal into left/right — and always approaches from that side's
+// outward direction, never doubling back through the node (which reads
+// as a backwards arrow). The user's dragged bend point still controls
+// the free axis (how far out the elbow sits); only the axis that
+// determines entry side gets clamped, and only just enough to stay on
+// the correct side — no extra padding beyond what's needed. A node's
+// icon badge additionally needs the arrowhead to stop short of its
+// circle (only relevant for "top", since icons only ever float above a
+// node) instead of disappearing underneath it.
+// The dot is rendered at this same clamped point (not the raw dragged
+// one), so it's always guaranteed to sit ON the line instead of
+// drifting off it when a drag gets clamped.
 function WorkflowEdge({ id, sourceX, sourceY, targetX, targetY, style, markerEnd, selected, data }) {
   const { screenToFlowPosition } = useReactFlow();
 
-  const bendX = data?.bendX ?? (sourceX + targetX) / 2;
-  const bendY = data?.bendY ?? (sourceY + targetY) / 2;
-  // A node's icon badge floats above its top edge and paints over the
-  // top handle, so an arrowhead landing exactly on that handle disappears
-  // underneath it. When the target sits on that top handle and has an
-  // icon, force the final approach to always come from ABOVE, pointing
-  // down into the icon's circle boundary — a "top" handle should always
-  // read as an arrow entering from the top, so even when the bend point
-  // sits below the target, the path loops up and over rather than
-  // sneaking in from underneath with an upward-pointing arrowhead (which
-  // reads as backwards regardless of how precisely it touches the icon).
-  const targetClearsIcon = data?.targetHasIcon && data?.targetHandle?.startsWith("top-");
-  const path = targetClearsIcon
-    ? (() => {
-        const iconRadius = 17;
-        const clearY = targetY - iconRadius - 5;
-        const approachY = Math.min(bendY, clearY - 30);
-        return `M ${sourceX},${sourceY} L ${sourceX},${approachY} L ${bendX},${approachY} L ${targetX},${approachY} L ${targetX},${clearY}`;
-      })()
-    : `M ${sourceX},${sourceY} L ${sourceX},${bendY} L ${bendX},${bendY} L ${bendX},${targetY} L ${targetX},${targetY}`;
+  const rawBendX = data?.bendX ?? (sourceX + targetX) / 2;
+  const rawBendY = data?.bendY ?? (sourceY + targetY) / 2;
+  const targetSide = sideOf(data?.targetHandle) || "top";
+  const iconClearance = data?.targetHasIcon && targetSide === "top" ? 22 : 0;
+
+  let bendX = rawBendX;
+  let bendY = rawBendY;
+  let path;
+
+  if (targetSide === "top" || targetSide === "bottom") {
+    const outward = targetSide === "top" ? -1 : 1;
+    const entryY = targetY + outward * iconClearance;
+    bendY = outward < 0 ? Math.min(rawBendY, entryY) : Math.max(rawBendY, entryY);
+    path = `M ${sourceX},${sourceY} L ${sourceX},${bendY} L ${bendX},${bendY} L ${targetX},${bendY} L ${targetX},${entryY} L ${targetX},${targetY}`;
+  } else {
+    const outward = targetSide === "left" ? -1 : 1;
+    const entryX = targetX + outward * iconClearance;
+    bendX = outward < 0 ? Math.min(rawBendX, entryX) : Math.max(rawBendX, entryX);
+    path = `M ${sourceX},${sourceY} L ${sourceX},${bendY} L ${bendX},${bendY} L ${bendX},${targetY} L ${entryX},${targetY} L ${targetX},${targetY}`;
+  }
 
   const onPointerDown = (e) => {
     e.stopPropagation();
