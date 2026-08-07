@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ReactFlow,
   ReactFlowProvider,
@@ -16,123 +16,199 @@ import { useWorkflow } from "../context/WorkflowContext";
 import { useLanguage } from "../context/LanguageContext";
 
 const COLOR_PALETTE = ["#fdab3d", "#e2445c", "#00c875", "#c4c4c4", "#579bfc", "#a25ddc", "#333333"];
+const SHAPES = [
+  { id: "rectangle", icon: "▭", label: "Kotak" },
+  { id: "diamond", icon: "◇", label: "Diamond" },
+  { id: "circle", icon: "○", label: "Lingkaran" },
+  { id: "parallelogram", icon: "▱", label: "Jajar genjang" },
+];
 
-// A single flowchart box — colored rounded rect, double-click to rename
-// inline, small swatch/delete buttons that only reveal on hover so they
-// don't visually compete with the label at a glance.
+// Outer box always keeps a plain rect footprint (so Handle position math
+// and ReactFlow's own hit-testing stay simple) — the *visual* shape is a
+// clip-path/border-radius on top of that box, not an actual resize, so
+// diamond/parallelogram need extra padding to keep the label clear of the
+// corners getting clipped away.
+function shapeStyle(shape) {
+  switch (shape) {
+    case "diamond":
+      return { clipPath: "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)", padding: "30px 38px", minWidth: 190 };
+    case "circle":
+      return { borderRadius: "50%", padding: 26, minWidth: 130, minHeight: 130, display: "flex", alignItems: "center", justifyContent: "center" };
+    case "parallelogram":
+      return { clipPath: "polygon(16% 0%, 100% 0%, 84% 100%, 0% 100%)", padding: "12px 34px", minWidth: 170 };
+    default:
+      return { borderRadius: 8, padding: "10px 18px", minWidth: 150 };
+  }
+}
+
+// A single flowchart box. A small "⋮" button is always visible (not just
+// on hover — hover-only controls turned out not to be discoverable) and
+// opens a menu with rename/color/shape/delete, all in one place instead
+// of scattered hover targets.
 function WorkflowNode({ id, data }) {
-  const { updateNodeLabel, updateNodeColor, deleteNode } = useWorkflow();
-  const [editing, setEditing] = useState(false);
+  const { updateNodeLabel, updateNodeColor, updateNodeShape, deleteNode } = useWorkflow();
+  const [menuOpen, setMenuOpen] = useState(false);
   const [text, setText] = useState(data.label);
-  const [showColors, setShowColors] = useState(false);
-  const [hovering, setHovering] = useState(false);
+  const wrapperRef = useRef(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleOutside = (e) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) setMenuOpen(false);
+    };
+    document.addEventListener("mousedown", handleOutside);
+    return () => document.removeEventListener("mousedown", handleOutside);
+  }, [menuOpen]);
 
   const commitLabel = () => {
-    setEditing(false);
     const trimmed = text.trim();
     if (trimmed && trimmed !== data.label) updateNodeLabel(id, trimmed);
     else setText(data.label);
   };
 
   return (
-    <div
-      onMouseEnter={() => setHovering(true)}
-      onMouseLeave={() => {
-        setHovering(false);
-        setShowColors(false);
-      }}
-      style={{
-        background: data.color,
-        color: "#fff",
-        padding: "10px 18px",
-        borderRadius: 8,
-        minWidth: 150,
-        textAlign: "center",
-        fontWeight: 600,
-        fontSize: 13,
-        boxShadow: "0 2px 6px rgba(0,0,0,0.3)",
-        position: "relative",
-      }}
-    >
-      <Handle type="target" position={Position.Top} style={{ background: "#fff", width: 8, height: 8 }} />
-      {editing ? (
-        <input
-          autoFocus
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onBlur={commitLabel}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") e.currentTarget.blur();
-            if (e.key === "Escape") {
-              setText(data.label);
-              setEditing(false);
-            }
-          }}
-          style={{
-            width: "100%",
-            background: "rgba(255,255,255,0.25)",
-            border: "none",
-            borderRadius: 4,
-            color: "#fff",
-            textAlign: "center",
-            fontSize: 13,
-            fontWeight: 600,
-            outline: "none",
-            padding: "2px 4px",
-            boxSizing: "border-box",
-          }}
-        />
-      ) : (
-        <span onDoubleClick={() => setEditing(true)}>{data.label}</span>
-      )}
-      <Handle type="source" position={Position.Bottom} style={{ background: "#fff", width: 8, height: 8 }} />
+    <div ref={wrapperRef} style={{ position: "relative" }}>
+      <div
+        style={{
+          background: data.color,
+          color: "#fff",
+          textAlign: "center",
+          fontWeight: 600,
+          fontSize: 13,
+          boxShadow: "0 2px 6px rgba(0,0,0,0.3)",
+          boxSizing: "border-box",
+          ...shapeStyle(data.shape),
+        }}
+      >
+        {/* One source + one target handle stacked at each of the 4 sides —
+            lets a connection start or land on whichever side keeps the
+            diagram tidiest, instead of always routing top-to-bottom. */}
+        <Handle type="target" id="top-t" position={Position.Top} style={{ background: "#fff", width: 8, height: 8 }} />
+        <Handle type="source" id="top-s" position={Position.Top} style={{ background: "#fff", width: 8, height: 8 }} />
+        <Handle type="target" id="bottom-t" position={Position.Bottom} style={{ background: "#fff", width: 8, height: 8 }} />
+        <Handle type="source" id="bottom-s" position={Position.Bottom} style={{ background: "#fff", width: 8, height: 8 }} />
+        <Handle type="target" id="left-t" position={Position.Left} style={{ background: "#fff", width: 8, height: 8 }} />
+        <Handle type="source" id="left-s" position={Position.Left} style={{ background: "#fff", width: 8, height: 8 }} />
+        <Handle type="target" id="right-t" position={Position.Right} style={{ background: "#fff", width: 8, height: 8 }} />
+        <Handle type="source" id="right-s" position={Position.Right} style={{ background: "#fff", width: 8, height: 8 }} />
+        <span style={{ display: "inline-block", maxWidth: "100%" }} onDoubleClick={() => setMenuOpen(true)}>
+          {data.label}
+        </span>
+      </div>
 
-      {hovering && (
-        <div style={{ position: "absolute", top: -10, right: -8, display: "flex", gap: 3 }}>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowColors((p) => !p);
-            }}
-            style={{ width: 18, height: 18, borderRadius: "50%", border: "2px solid #fff", background: data.color, cursor: "pointer", padding: 0 }}
-          />
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              deleteNode(id);
-            }}
-            style={{ width: 18, height: 18, borderRadius: "50%", border: "none", background: "#333", color: "#fff", fontSize: 10, cursor: "pointer", padding: 0, lineHeight: 1 }}
-          >
-            ✕
-          </button>
-        </div>
-      )}
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          setMenuOpen((p) => !p);
+        }}
+        title="Menu"
+        style={{
+          position: "absolute",
+          top: -8,
+          right: -8,
+          width: 20,
+          height: 20,
+          borderRadius: "50%",
+          border: "2px solid #fff",
+          background: "#333",
+          color: "#fff",
+          fontSize: 11,
+          fontWeight: 700,
+          cursor: "pointer",
+          padding: 0,
+          lineHeight: 1,
+          boxShadow: "0 1px 4px rgba(0,0,0,0.4)",
+        }}
+      >
+        ⋮
+      </button>
 
-      {showColors && (
+      {menuOpen && (
         <div
+          onClick={(e) => e.stopPropagation()}
           style={{
             position: "absolute",
-            top: -40,
-            right: -8,
-            display: "flex",
-            gap: 4,
+            top: "100%",
+            right: 0,
+            marginTop: 6,
             background: "#fff",
-            padding: 5,
-            borderRadius: 6,
-            boxShadow: "0 4px 14px rgba(0,0,0,0.35)",
+            borderRadius: 8,
+            padding: 10,
+            width: 200,
+            boxShadow: "0 6px 20px rgba(0,0,0,0.35)",
+            zIndex: 20,
+            textAlign: "left",
           }}
         >
-          {COLOR_PALETTE.map((c) => (
-            <button
-              key={c}
-              onClick={(e) => {
-                e.stopPropagation();
-                updateNodeColor(id, c);
-                setShowColors(false);
-              }}
-              style={{ width: 16, height: 16, borderRadius: "50%", background: c, border: "none", cursor: "pointer", padding: 0 }}
-            />
-          ))}
+          <div style={{ fontSize: 10.5, fontWeight: 700, color: "#8a94a6", marginBottom: 3 }}>Nama</div>
+          <input
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onBlur={commitLabel}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") e.currentTarget.blur();
+            }}
+            style={{ width: "100%", padding: "5px 7px", borderRadius: 4, border: "1px solid #ddd", fontSize: 12.5, boxSizing: "border-box", marginBottom: 10 }}
+          />
+
+          <div style={{ fontSize: 10.5, fontWeight: 700, color: "#8a94a6", marginBottom: 4 }}>Warna</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 10 }}>
+            {COLOR_PALETTE.map((c) => (
+              <button
+                key={c}
+                onClick={() => updateNodeColor(id, c)}
+                style={{
+                  width: 18,
+                  height: 18,
+                  borderRadius: "50%",
+                  background: c,
+                  border: data.color === c ? "2px solid #333" : "1px solid #ddd",
+                  cursor: "pointer",
+                  padding: 0,
+                }}
+              />
+            ))}
+          </div>
+
+          <div style={{ fontSize: 10.5, fontWeight: 700, color: "#8a94a6", marginBottom: 4 }}>Bentuk</div>
+          <div style={{ display: "flex", gap: 5, marginBottom: 10 }}>
+            {SHAPES.map((s) => (
+              <button
+                key={s.id}
+                title={s.label}
+                onClick={() => updateNodeShape(id, s.id)}
+                style={{
+                  flex: 1,
+                  padding: "5px 0",
+                  fontSize: 15,
+                  borderRadius: 4,
+                  border: (data.shape || "rectangle") === s.id ? "2px solid #333" : "1px solid #ddd",
+                  background: "#fafafa",
+                  cursor: "pointer",
+                  color: "#333",
+                }}
+              >
+                {s.icon}
+              </button>
+            ))}
+          </div>
+
+          <button
+            onClick={() => deleteNode(id)}
+            style={{
+              width: "100%",
+              padding: "6px 0",
+              background: "#fdecea",
+              color: "#e2445c",
+              border: "none",
+              borderRadius: 5,
+              cursor: "pointer",
+              fontWeight: 600,
+              fontSize: 12,
+            }}
+          >
+            🗑 Hapus
+          </button>
         </div>
       )}
     </div>
@@ -159,7 +235,7 @@ function WorkflowCanvas() {
         id: n.id,
         type: "workflow",
         position: { x: n.x, y: n.y },
-        data: { label: n.label, color: n.color },
+        data: { label: n.label, color: n.color, shape: n.shape },
       }))
     );
   }, [workflowNodes]);
@@ -170,6 +246,12 @@ function WorkflowCanvas() {
         id: e.id,
         source: e.source,
         target: e.target,
+        // "smoothstep" auto-routes with right-angle bends around the
+        // straight line between two points, instead of cutting straight
+        // through whatever sits between them — the closest built-in
+        // equivalent to "find a clean path automatically" once the
+        // diagram has more than a couple of nodes.
+        type: "smoothstep",
         markerEnd: { type: MarkerType.ArrowClosed },
         style: { stroke: "#8a94a6", strokeWidth: 1.5 },
       }))
@@ -226,6 +308,7 @@ function WorkflowCanvas() {
         onEdgesDelete={onEdgesDelete}
         onNodesDelete={onNodesDelete}
         deleteKeyCode={["Backspace", "Delete"]}
+        connectionMode="loose"
         fitView
       >
         <Background variant="dots" gap={16} size={1} />
