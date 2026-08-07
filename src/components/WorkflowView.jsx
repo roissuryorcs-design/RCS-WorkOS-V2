@@ -59,13 +59,13 @@ const ICONS = [
 function shapeStyle(shape) {
   switch (shape) {
     case "diamond":
-      return { clipPath: "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)", padding: "30px 38px", minWidth: 190 };
+      return { clipPath: "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)", padding: "30px 38px", width: 190 };
     case "circle":
-      return { borderRadius: "50%", padding: 26, minWidth: 130, minHeight: 130, display: "flex", alignItems: "center", justifyContent: "center" };
+      return { borderRadius: "50%", padding: 26, width: 130, height: 130, display: "flex", alignItems: "center", justifyContent: "center" };
     case "parallelogram":
-      return { clipPath: "polygon(16% 0%, 100% 0%, 84% 100%, 0% 100%)", padding: "12px 34px", minWidth: 170 };
+      return { clipPath: "polygon(16% 0%, 100% 0%, 84% 100%, 0% 100%)", padding: "12px 34px", width: 170 };
     default:
-      return { borderRadius: 8, padding: "10px 18px", minWidth: 150 };
+      return { borderRadius: 8, padding: "10px 18px", width: 150 };
   }
 }
 
@@ -104,6 +104,7 @@ function WorkflowNode({ id, data }) {
         </div>
       )}
       <div
+        title={data.description || undefined}
         style={{
           background: data.color,
           color: "#fff",
@@ -129,7 +130,7 @@ function WorkflowNode({ id, data }) {
         <Handle type="source" id="left-s" position={Position.Left} style={{ background: "#fff", width: 8, height: 8 }} />
         <Handle type="target" id="right-t" position={Position.Right} style={{ background: "#fff", width: 8, height: 8 }} />
         <Handle type="source" id="right-s" position={Position.Right} style={{ background: "#fff", width: 8, height: 8 }} />
-        <span style={{ display: "inline-block", maxWidth: "100%" }}>{data.label}</span>
+        <span style={{ display: "block", width: "100%", whiteSpace: "normal", wordBreak: "break-word", overflowWrap: "break-word" }}>{data.label}</span>
       </div>
 
       <button
@@ -230,17 +231,23 @@ const edgeTypes = { workflow: WorkflowEdge };
 // node is currently selected. Mirrors EdgePanel below so both controls
 // live in the same predictable spot instead of following the mouse.
 function EditNodePanel({ node, onClose }) {
-  const { updateNodeLabel, updateNodeColor, updateNodeShape, updateNodeIcon, deleteNode } = useWorkflow();
+  const { updateNodeLabel, updateNodeColor, updateNodeShape, updateNodeIcon, updateNodeDescription, deleteNode } = useWorkflow();
   const [text, setText] = useState(node.label);
+  const [description, setDescription] = useState(node.description || "");
 
   useEffect(() => {
     setText(node.label);
-  }, [node.id, node.label]);
+    setDescription(node.description || "");
+  }, [node.id, node.label, node.description]);
 
   const commitLabel = () => {
     const trimmed = text.trim();
     if (trimmed && trimmed !== node.label) updateNodeLabel(node.id, trimmed);
     else setText(node.label);
+  };
+
+  const commitDescription = () => {
+    if (description !== (node.description || "")) updateNodeDescription(node.id, description || null);
   };
 
   return (
@@ -274,6 +281,26 @@ function EditNodePanel({ node, onClose }) {
           if (e.key === "Enter") e.currentTarget.blur();
         }}
         style={{ width: "100%", padding: "5px 7px", borderRadius: 4, border: "1px solid #ddd", fontSize: 12.5, boxSizing: "border-box", marginBottom: 10 }}
+      />
+
+      <div style={{ fontSize: 10.5, fontWeight: 700, color: "#8a94a6", marginBottom: 3 }}>Deskripsi</div>
+      <textarea
+        value={description}
+        onChange={(e) => setDescription(e.target.value)}
+        onBlur={commitDescription}
+        placeholder="Keterangan untuk node ini..."
+        rows={3}
+        style={{
+          width: "100%",
+          padding: "5px 7px",
+          borderRadius: 4,
+          border: "1px solid #ddd",
+          fontSize: 12.5,
+          fontFamily: "inherit",
+          boxSizing: "border-box",
+          resize: "vertical",
+          marginBottom: 10,
+        }}
       />
 
       <div style={{ fontSize: 10.5, fontWeight: 700, color: "#8a94a6", marginBottom: 4 }}>Warna</div>
@@ -487,7 +514,7 @@ function WorkflowCanvas() {
         id: n.id,
         type: "workflow",
         position: { x: n.x, y: n.y },
-        data: { label: n.label, color: n.color, shape: n.shape, icon: n.icon, isEditing: n.id === editingNodeId, onOpenMenu: handleOpenNodeMenu },
+        data: { label: n.label, color: n.color, shape: n.shape, icon: n.icon, description: n.description, isEditing: n.id === editingNodeId, onOpenMenu: handleOpenNodeMenu },
       }))
     );
   }, [workflowNodes, editingNodeId, handleOpenNodeMenu]);
