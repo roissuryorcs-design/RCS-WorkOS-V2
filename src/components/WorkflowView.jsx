@@ -193,7 +193,11 @@ function WorkflowEdge({ id, sourceX, sourceY, targetX, targetY, style, markerEnd
   if (targetClearsIcon) {
     const iconCenterY = targetY - 5;
     const iconRadius = 17;
-    if (bendX !== targetX) {
+    // A dragged bend point is rarely pixel-exact even when it's meant to
+    // sit straight above/below the target, so treat anything within a
+    // few px of targetX as the vertical-approach case rather than
+    // requiring an exact match.
+    if (Math.abs(bendX - targetX) > 3) {
       const dx = Math.sqrt(Math.max(iconRadius * iconRadius - (targetY - iconCenterY) ** 2, 0));
       adjTargetX = targetX + (bendX < targetX ? -dx : dx);
     } else {
