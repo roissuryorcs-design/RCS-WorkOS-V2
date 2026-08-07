@@ -53,13 +53,13 @@ export function GroupProvider({ children, boardId }) {
         const defaultName = getDefaultGroupName(t);
         const { data: inserted, error: insertError } = await supabase
           .from("groups")
-          .insert({ board_id: boardId, name: defaultName, color: "#7515d5", position: 0 })
+          .insert({ board_id: boardId, name: defaultName, color: "#f4a701", position: 0 })
           .select()
           .single();
         if (cancelled) return;
         if (insertError) {
           console.error("Error seeding default group:", insertError);
-          setGroupRows([{ id: null, name: defaultName, color: "#7515d5", headerColor: null, position: 0 }]);
+          setGroupRows([{ id: null, name: defaultName, color: "#f4a701", headerColor: null, position: 0 }]);
         } else {
           setGroupRows([mapGroup(inserted)]);
         }
@@ -132,7 +132,7 @@ export function GroupProvider({ children, boardId }) {
     const position = groupRows.length;
     const { data, error } = await supabase
       .from("groups")
-      .insert({ board_id: boardId, name, color: "#7515d5", position })
+      .insert({ board_id: boardId, name, color: "#f4a701", position })
       .select()
       .single();
     if (error) {

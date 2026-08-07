@@ -473,7 +473,7 @@ export default function BoardTable({
             const tasks = grouped[groupName] || [];
             const isCollapsed = collapsed[groupName] || false;
             const isDefault = groupName === defaultGroupName;
-            const groupColor = groupColors[groupName] || '#7515d5';
+            const groupColor = groupColors[groupName] || '#f4a701';
             const headerBgColor = (groupHeaderColors && groupHeaderColors[groupName]) || null;
             const headerTextColor = getHeaderTextColor(headerBgColor || '#7515d5');
             const displayTitle = getDisplayTitle(groupName);

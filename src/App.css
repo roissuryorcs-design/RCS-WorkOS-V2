@@ -416,7 +416,7 @@ body.dark {
   margin: 0 !important;
   font-size: 16px !important;
   font-weight: 600 !important;
-  color: var(--group-color, #7515d5) !important;
+  color: var(--group-color, #f4a701) !important;
   /* Turns out .group-header-inner's own sticky-left wasn't actually the
      thing holding this in view — removing this element's OWN independent
      sticky broke it on desktop too (previously only reported broken on
