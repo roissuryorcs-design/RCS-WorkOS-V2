@@ -10,6 +10,7 @@ function mapNode(row) {
     color: row.color,
     shape: row.shape,
     icon: row.icon,
+    iconPosition: row.icon_position,
     description: row.description,
     x: row.pos_x,
     y: row.pos_y,
@@ -140,6 +141,13 @@ export function WorkflowProvider({ children, boardId }) {
     });
   };
 
+  const updateNodeIconPosition = (id, iconPosition) => {
+    setNodeRows((prev) => prev.map((n) => (n.id === id ? { ...n, iconPosition } : n)));
+    supabase.from("workflow_nodes").update({ icon_position: iconPosition }).eq("id", id).then(({ error }) => {
+      if (error) console.error("Error moving workflow node icon:", error);
+    });
+  };
+
   const updateNodeDescription = (id, description) => {
     setNodeRows((prev) => prev.map((n) => (n.id === id ? { ...n, description } : n)));
     supabase.from("workflow_nodes").update({ description }).eq("id", id).then(({ error }) => {
@@ -214,6 +222,7 @@ export function WorkflowProvider({ children, boardId }) {
     updateNodeColor,
     updateNodeShape,
     updateNodeIcon,
+    updateNodeIconPosition,
     updateNodeDescription,
     deleteNode,
     addEdge,

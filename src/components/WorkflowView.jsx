@@ -24,6 +24,12 @@ const SHAPES = [
   { id: "circle", icon: "○", label: "Lingkaran" },
   { id: "parallelogram", icon: "▱", label: "Jajar genjang" },
 ];
+const ICON_POSITIONS = [
+  { id: "top", icon: "⬆", label: "Atas" },
+  { id: "bottom", icon: "⬇", label: "Bawah" },
+  { id: "left", icon: "⬅", label: "Kiri" },
+  { id: "right", icon: "➡", label: "Kanan" },
+];
 
 // Pictogram badge options — covers the kind of process-flow steps seen in
 // reference workflow diagrams (inquiry call, quotation, design, approval,
@@ -77,16 +83,31 @@ function shapeStyle(shape) {
 // tells the parent which node to edit. Being the currently-edited node
 // gets a brightness bump + raised shadow so it's obvious which one the
 // panel refers to.
+// Where the icon badge floats can be moved to whichever side of the node
+// isn't being used by a connector — an incoming arrow only needs to
+// avoid the badge, not be routed specially around it, if the badge
+// itself can just get out of the way.
+const ICON_POSITION_STYLE = {
+  top: { top: -22, left: "50%", transform: "translateX(-50%)" },
+  bottom: { bottom: -22, left: "50%", transform: "translateX(-50%)" },
+  left: { left: -22, top: "50%", transform: "translateY(-50%)" },
+  right: { right: -22, top: "50%", transform: "translateY(-50%)" },
+};
+const ICON_MARGIN_STYLE = {
+  top: { marginTop: 16 },
+  bottom: { marginBottom: 16 },
+  left: { marginLeft: 16 },
+  right: { marginRight: 16 },
+};
+
 function WorkflowNode({ id, data }) {
+  const iconPosition = data.iconPosition || "top";
   return (
-    <div style={{ position: "relative", marginTop: data.icon ? 16 : 0 }}>
+    <div style={{ position: "relative", ...(data.icon ? ICON_MARGIN_STYLE[iconPosition] : {}) }}>
       {data.icon && (
         <div
           style={{
             position: "absolute",
-            top: -22,
-            left: "50%",
-            transform: "translateX(-50%)",
             width: 34,
             height: 34,
             borderRadius: "50%",
@@ -98,6 +119,7 @@ function WorkflowNode({ id, data }) {
             fontSize: 16,
             boxShadow: "0 2px 6px rgba(0,0,0,0.25)",
             zIndex: 2,
+            ...ICON_POSITION_STYLE[iconPosition],
           }}
         >
           {data.icon}
@@ -165,63 +187,22 @@ function WorkflowNode({ id, data }) {
 
 const nodeTypes = { workflow: WorkflowNode };
 
-function sideOf(handleId) {
-  if (!handleId) return null;
-  if (handleId.startsWith("top")) return "top";
-  if (handleId.startsWith("bottom")) return "bottom";
-  if (handleId.startsWith("left")) return "left";
-  if (handleId.startsWith("right")) return "right";
-  return null;
-}
-
 // A step-path edge with a draggable "bend" handle (the yellow dot),
 // visible only while the edge is selected. The path is built by hand
 // (not getSmoothStepPath's centerX/centerY, which turned out not to
-// reliably pin the route to that point).
-//
-// The final stretch into the target is always forced perpendicular to
-// whichever side it's entering — vertical into top/bottom handles,
-// horizontal into left/right — and always approaches from that side's
-// outward direction, never doubling back through the node (which reads
-// as a backwards arrow). The user's dragged bend point still controls
-// the free axis (how far out the elbow sits); only the axis that
-// determines entry side gets clamped, and only just enough to stay on
-// the correct side — no extra padding beyond what's needed. A node's
-// icon badge additionally needs the arrowhead to stop short of its
-// circle (only relevant for "top", since icons only ever float above a
-// node) instead of disappearing underneath it.
-// The dot is rendered at this same clamped point (not the raw dragged
-// one), so it's always guaranteed to sit ON the line instead of
-// drifting off it when a drag gets clamped.
+// reliably pin the route to that point) as a Z-shaped 3-segment path that
+// always passes exactly through (bendX, bendY) — guaranteeing the line
+// and the dot never disagree about where the bend is. Simple by design:
+// an icon badge that would otherwise sit in an arrow's way can just be
+// moved to a different side of the node (see EditNodePanel's "Posisi
+// Ikon"), instead of the edge itself trying to detect and route around
+// it.
 function WorkflowEdge({ id, sourceX, sourceY, targetX, targetY, style, markerEnd, selected, data }) {
   const { screenToFlowPosition } = useReactFlow();
 
-  const rawBendX = data?.bendX ?? (sourceX + targetX) / 2;
-  const rawBendY = data?.bendY ?? (sourceY + targetY) / 2;
-  const targetSide = sideOf(data?.targetHandle) || "top";
-  // Every side gets at least a short perpendicular stub — without one, a
-  // side/bottom entry could end in a zero-length final segment (when the
-  // bend already lines up with the target), which leaves the arrowhead's
-  // marker orientation to fall back on the previous (wrong-direction)
-  // segment instead of pointing straight into the node.
-  const STUB = 14;
-  const iconClearance = data?.targetHasIcon && targetSide === "top" ? 22 : STUB;
-
-  let bendX = rawBendX;
-  let bendY = rawBendY;
-  let path;
-
-  if (targetSide === "top" || targetSide === "bottom") {
-    const outward = targetSide === "top" ? -1 : 1;
-    const entryY = targetY + outward * iconClearance;
-    bendY = outward < 0 ? Math.min(rawBendY, entryY) : Math.max(rawBendY, entryY);
-    path = `M ${sourceX},${sourceY} L ${sourceX},${bendY} L ${bendX},${bendY} L ${targetX},${bendY} L ${targetX},${entryY} L ${targetX},${targetY}`;
-  } else {
-    const outward = targetSide === "left" ? -1 : 1;
-    const entryX = targetX + outward * iconClearance;
-    bendX = outward < 0 ? Math.min(rawBendX, entryX) : Math.max(rawBendX, entryX);
-    path = `M ${sourceX},${sourceY} L ${sourceX},${bendY} L ${bendX},${bendY} L ${bendX},${targetY} L ${entryX},${targetY} L ${targetX},${targetY}`;
-  }
+  const bendX = data?.bendX ?? (sourceX + targetX) / 2;
+  const bendY = data?.bendY ?? (sourceY + targetY) / 2;
+  const path = `M ${sourceX},${sourceY} L ${sourceX},${bendY} L ${bendX},${bendY} L ${bendX},${targetY} L ${targetX},${targetY}`;
 
   const onPointerDown = (e) => {
     e.stopPropagation();
@@ -274,7 +255,8 @@ const edgeTypes = { workflow: WorkflowEdge };
 // node is currently selected. Mirrors EdgePanel below so both controls
 // live in the same predictable spot instead of following the mouse.
 function EditNodePanel({ node, onClose }) {
-  const { updateNodeLabel, updateNodeColor, updateNodeShape, updateNodeIcon, updateNodeDescription, deleteNode } = useWorkflow();
+  const { updateNodeLabel, updateNodeColor, updateNodeShape, updateNodeIcon, updateNodeIconPosition, updateNodeDescription, deleteNode } =
+    useWorkflow();
   const [text, setText] = useState(node.label);
   const [description, setDescription] = useState(node.description || "");
   const descriptionRef = useRef(null);
@@ -446,6 +428,33 @@ function EditNodePanel({ node, onClose }) {
         ))}
       </div>
 
+      {node.icon && (
+        <>
+          <div style={{ fontSize: 10.5, fontWeight: 700, color: "#8a94a6", marginBottom: 4 }}>Posisi Ikon</div>
+          <div style={{ display: "flex", gap: 5, marginBottom: 10 }}>
+            {ICON_POSITIONS.map((p) => (
+              <button
+                key={p.id}
+                title={p.label}
+                onClick={() => updateNodeIconPosition(node.id, p.id)}
+                style={{
+                  flex: 1,
+                  padding: "5px 0",
+                  fontSize: 13,
+                  borderRadius: 4,
+                  border: (node.iconPosition || "top") === p.id ? "2px solid #333" : "1px solid #ddd",
+                  background: "#fafafa",
+                  cursor: "pointer",
+                  color: "#333",
+                }}
+              >
+                {p.icon}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+
       <button
         onClick={() => {
           deleteNode(node.id);
@@ -577,44 +586,43 @@ function WorkflowCanvas() {
         id: n.id,
         type: "workflow",
         position: { x: n.x, y: n.y },
-        data: { label: n.label, color: n.color, shape: n.shape, icon: n.icon, description: n.description, isEditing: n.id === editingNodeId, onOpenMenu: handleOpenNodeMenu },
+        data: {
+          label: n.label,
+          color: n.color,
+          shape: n.shape,
+          icon: n.icon,
+          iconPosition: n.iconPosition,
+          description: n.description,
+          isEditing: n.id === editingNodeId,
+          onOpenMenu: handleOpenNodeMenu,
+        },
       }))
     );
   }, [workflowNodes, editingNodeId, handleOpenNodeMenu]);
 
   useEffect(() => {
     setEdges(
-      workflowEdges.map((e) => {
-        const targetHandle = e.targetHandle || "top-t";
-        return {
-          id: e.id,
-          source: e.source,
-          target: e.target,
-          // Whichever handle was actually dragged from/to when the
-          // connection was made — manual, not auto-recomputed as nodes
-          // move (see addEdge in WorkflowContext).
-          sourceHandle: e.sourceHandle || "bottom-s",
-          targetHandle,
-          type: "workflow",
-          selected: e.id === selectedEdgeId,
-          markerEnd: { type: MarkerType.ArrowClosed, color: e.color || "#8a94a6" },
-          style: {
-            stroke: e.color || "#8a94a6",
-            strokeWidth: e.id === selectedEdgeId ? 2.5 : 1.5,
-            strokeDasharray: e.dashed ? "6 4" : undefined,
-          },
-          data: {
-            bendX: e.bendX,
-            bendY: e.bendY,
-            targetHandle,
-            targetHasIcon: !!workflowNodes.find((n) => n.id === e.target)?.icon,
-            onDragBend: handleDragBend,
-            onCommitBend: handleCommitBend,
-          },
-        };
-      })
+      workflowEdges.map((e) => ({
+        id: e.id,
+        source: e.source,
+        target: e.target,
+        // Whichever handle was actually dragged from/to when the
+        // connection was made — manual, not auto-recomputed as nodes
+        // move (see addEdge in WorkflowContext).
+        sourceHandle: e.sourceHandle || "bottom-s",
+        targetHandle: e.targetHandle || "top-t",
+        type: "workflow",
+        selected: e.id === selectedEdgeId,
+        markerEnd: { type: MarkerType.ArrowClosed, color: e.color || "#8a94a6" },
+        style: {
+          stroke: e.color || "#8a94a6",
+          strokeWidth: e.id === selectedEdgeId ? 2.5 : 1.5,
+          strokeDasharray: e.dashed ? "6 4" : undefined,
+        },
+        data: { bendX: e.bendX, bendY: e.bendY, onDragBend: handleDragBend, onCommitBend: handleCommitBend },
+      }))
     );
-  }, [workflowEdges, workflowNodes, selectedEdgeId, handleDragBend, handleCommitBend]);
+  }, [workflowEdges, selectedEdgeId, handleDragBend, handleCommitBend]);
 
   const onNodesChange = useCallback((changes) => setNodes((nds) => applyNodeChanges(changes, nds)), []);
   const onEdgesChange = useCallback((changes) => setEdges((eds) => applyEdgeChanges(changes, eds)), []);
