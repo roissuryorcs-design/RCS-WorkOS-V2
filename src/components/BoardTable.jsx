@@ -473,9 +473,9 @@ export default function BoardTable({
             const tasks = grouped[groupName] || [];
             const isCollapsed = collapsed[groupName] || false;
             const isDefault = groupName === defaultGroupName;
-            const groupColor = groupColors[groupName] || '#3b82f6';
+            const groupColor = groupColors[groupName] || '#7515d5';
             const headerBgColor = (groupHeaderColors && groupHeaderColors[groupName]) || null;
-            const headerTextColor = getHeaderTextColor(headerBgColor || '#6b7280');
+            const headerTextColor = getHeaderTextColor(headerBgColor || '#7515d5');
             const displayTitle = getDisplayTitle(groupName);
             const groupId = index + 1;
 
@@ -619,7 +619,7 @@ export default function BoardTable({
 
                       <input
                         type="color"
-                        value={headerBgColor || '#6b7280'}
+                        value={headerBgColor || '#7515d5'}
                         onChange={(e) => handleUpdateGroupHeaderColor(groupName, e.target.value)}
                         className="group-header-color-picker"
                         title={t("boardTable.headerColorPickerTitle")}

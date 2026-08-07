@@ -22,7 +22,7 @@ body.light {
   --bg-active: #c7ccd6;
   --bg-sidebar-hover: #c9cdd6;
   --bg-input: #f5f6f8;
-  --bg-table-header: #6b7280;
+  --bg-table-header: #7515d5;
   --bg-modal: #ffffff;
   --bg-card: #f5f6f8;
 
@@ -67,7 +67,7 @@ body.dark {
   --bg-active: #363c50;
   --bg-sidebar-hover: #2a2d3a;
   --bg-input: #252837;
-  --bg-table-header: #232635;
+  --bg-table-header: #7515d5;
   --bg-modal: #242838;
   --bg-card: #1a1d27;
 

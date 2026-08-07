@@ -52,7 +52,7 @@ body.light {
      bg-secondary supaya jadi pita gelap yang jelas terpisah dari baris
      Group Title tepat di atasnya — warna/teks group title jadi lebih
      menonjol karena kontras dengan pita header di bawahnya. */
-  --bg-table-header: #6b7280;
+  --bg-table-header: #7515d5;
   /* Popover/modal sedikit lebih terang dari bg-secondary supaya
      kelihatan "mengambang" di atas tabel, bukan menyatu. */
   --bg-modal: #ffffff;
@@ -108,7 +108,7 @@ body.dark {
   /* Sedikit lebih terang dari bg-secondary — di dark theme, elevasi
      biasanya dibaca lewat permukaan yang lebih terang, bukan lebih
      gelap (kebalikan dari light theme). */
-  --bg-table-header: #232635;
+  --bg-table-header: #7515d5;
   /* Popover/modal sedikit lebih terang dari bg-secondary supaya
      kelihatan "mengambang" di atas tabel, bukan menyatu. */
   --bg-modal: #242838;

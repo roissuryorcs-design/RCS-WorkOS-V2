@@ -210,7 +210,7 @@ function GroupBreakdownCard({ items, groups, groupColors, t }) {
                 style={{
                   width: `${((counts[g] || 0) / maxCount) * 100}%`,
                   height: "100%",
-                  background: groupColors[g] || "#3b82f6",
+                  background: groupColors[g] || "#7515d5",
                   transition: "width 0.3s",
                 }}
               />
