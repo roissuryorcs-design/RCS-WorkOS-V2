@@ -119,6 +119,7 @@ export const translations = {
       footerAutoSaved: "Auto-saved",
       viewTable: "Table",
       viewDashboard: "Dashboard",
+      viewWorkflow: "Workflow",
     },
     dashboard: {
       totalItems: "Total Items",
@@ -314,6 +315,10 @@ export const translations = {
     folderOverview: {
       itemCount: "{{count}} item(s)",
       empty: "This folder is empty.",
+    },
+    workflowView: {
+      newNodeBtn: "New task",
+      newNodeLabel: "New task",
     },
     archiveModal: {
       title: "Archive",
@@ -700,6 +705,7 @@ export const translations = {
       footerAutoSaved: "Tersimpan otomatis",
       viewTable: "Tabel",
       viewDashboard: "Dashboard",
+      viewWorkflow: "Alur Kerja",
     },
     dashboard: {
       totalItems: "Total Item",
@@ -895,6 +901,10 @@ export const translations = {
     folderOverview: {
       itemCount: "{{count}} item",
       empty: "Folder ini masih kosong.",
+    },
+    workflowView: {
+      newNodeBtn: "Tugas baru",
+      newNodeLabel: "Tugas baru",
     },
     archiveModal: {
       title: "Arsip",

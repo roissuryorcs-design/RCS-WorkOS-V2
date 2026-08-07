@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { Analytics } from "@vercel/analytics/react";
 import { ThemeProvider } from "./context/ThemeContext";
 import { LanguageProvider, useLanguage } from "./context/LanguageContext";
@@ -9,6 +9,7 @@ import { NotificationProvider } from "./context/NotificationContext";
 import { ColumnProvider, useColumns } from "./context/ColumnContext";
 import { GroupProvider, useGroups } from "./context/GroupContext";
 import { ItemsProvider, useItems } from "./context/ItemsContext";
+import { WorkflowProvider } from "./context/WorkflowContext";
 import { BoardsProvider, useBoards } from "./context/BoardsContext";
 import { MobileNavProvider } from "./context/MobileNavContext";
 import LoginScreen from "./components/LoginScreen";
@@ -28,6 +29,10 @@ import ColumnManager from "./components/ColumnManager";
 import AddColumnPopup from "./components/AddColumnPopup";
 import FormulaEditor from "./components/FormulaEditor";
 import FolderOverview from "./components/FolderOverview";
+// @xyflow/react is a sizable dependency only the Workflow tab needs — code
+// split it the same way exceljs is lazy-loaded for exports, so everyone
+// who never opens that tab never downloads it.
+const WorkflowView = lazy(() => import("./components/WorkflowView"));
 import "./App.css";
 import { UpdateProvider } from './context/UpdateContext';
 import UpdatePanel from './components/UpdatePanel';
@@ -259,6 +264,12 @@ function BoardWorkspace({ boardId }) {
           <div style={{ padding: "0 24px", flex: 1, minHeight: 0, overflowY: "auto" }}>
             <Dashboard boardId={boardId} items={items} columns={columns} groups={allGroups} groupColors={groupColors} />
           </div>
+        ) : currentView === "workflow" ? (
+          <WorkflowProvider boardId={boardId}>
+            <Suspense fallback={<div style={{ flex: 1 }} />}>
+              <WorkflowView />
+            </Suspense>
+          </WorkflowProvider>
         ) : (
           <>
             <Toolbar

@@ -3,6 +3,7 @@ import { useLanguage } from "../context/LanguageContext";
 const TABS = [
   { id: "table", icon: "📋" },
   { id: "dashboard", icon: "📊" },
+  { id: "workflow", icon: "🔀" },
 ];
 
 export default function ViewTabs({ currentView, onChange }) {
