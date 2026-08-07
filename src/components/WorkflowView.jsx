@@ -187,22 +187,41 @@ function WorkflowNode({ id, data }) {
 
 const nodeTypes = { workflow: WorkflowNode };
 
+function sideOf(handleId) {
+  if (!handleId) return null;
+  if (handleId.startsWith("top")) return "top";
+  if (handleId.startsWith("bottom")) return "bottom";
+  if (handleId.startsWith("left")) return "left";
+  if (handleId.startsWith("right")) return "right";
+  return null;
+}
+
 // A step-path edge with a draggable "bend" handle (the yellow dot),
 // visible only while the edge is selected. The path is built by hand
 // (not getSmoothStepPath's centerX/centerY, which turned out not to
-// reliably pin the route to that point) as a Z-shaped 3-segment path that
-// always passes exactly through (bendX, bendY) — guaranteeing the line
-// and the dot never disagree about where the bend is. Simple by design:
-// an icon badge that would otherwise sit in an arrow's way can just be
-// moved to a different side of the node (see EditNodePanel's "Posisi
-// Ikon"), instead of the edge itself trying to detect and route around
-// it.
-function WorkflowEdge({ id, sourceX, sourceY, targetX, targetY, style, markerEnd, selected, data }) {
+// reliably pin the route to that point). Simple by design: an icon badge
+// that would otherwise sit in an arrow's way can just be moved to a
+// different side of the node (see EditNodePanel's "Posisi Ikon"), instead
+// of the edge itself trying to detect and route around it.
+//
+// The one thing this still enforces: the final stretch into the target
+// is always aligned with whichever side it's entering — vertical for a
+// top/bottom handle, horizontal for left/right — so the arrowhead never
+// looks tilted. Everything else about the route (the elbow position) is
+// exactly what the user dragged.
+function WorkflowEdge({ id, sourceX, sourceY, targetX, targetY, targetHandleId, style, markerEnd, selected, data }) {
   const { screenToFlowPosition } = useReactFlow();
 
-  const bendX = data?.bendX ?? (sourceX + targetX) / 2;
-  const bendY = data?.bendY ?? (sourceY + targetY) / 2;
-  const path = `M ${sourceX},${sourceY} L ${sourceX},${bendY} L ${bendX},${bendY} L ${bendX},${targetY} L ${targetX},${targetY}`;
+  const rawBendX = data?.bendX ?? (sourceX + targetX) / 2;
+  const rawBendY = data?.bendY ?? (sourceY + targetY) / 2;
+  const targetSide = sideOf(targetHandleId) || "top";
+  const vertical = targetSide === "top" || targetSide === "bottom";
+
+  const bendX = vertical ? targetX : rawBendX;
+  const bendY = rawBendY;
+  const path = vertical
+    ? `M ${sourceX},${sourceY} L ${sourceX},${bendY} L ${targetX},${bendY} L ${targetX},${targetY}`
+    : `M ${sourceX},${sourceY} L ${sourceX},${bendY} L ${bendX},${bendY} L ${bendX},${targetY} L ${targetX},${targetY}`;
 
   const onPointerDown = (e) => {
     e.stopPropagation();
