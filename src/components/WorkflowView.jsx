@@ -4,7 +4,6 @@ import {
   ReactFlowProvider,
   Background,
   Controls,
-  MiniMap,
   Handle,
   Position,
   MarkerType,
@@ -21,6 +20,29 @@ const SHAPES = [
   { id: "diamond", icon: "◇", label: "Diamond" },
   { id: "circle", icon: "○", label: "Lingkaran" },
   { id: "parallelogram", icon: "▱", label: "Jajar genjang" },
+];
+
+// Pictogram badge options — covers the kind of process-flow steps seen in
+// reference workflow diagrams (inquiry call, quotation, design, approval,
+// material, fabrication, testing, shipping, report, …) without needing
+// any custom illustration assets.
+const ICONS = [
+  { emoji: "🧑‍💻", label: "Kerja/Desain" },
+  { emoji: "📞", label: "Inquiry" },
+  { emoji: "💰", label: "Quotation" },
+  { emoji: "📐", label: "Engineering" },
+  { emoji: "✅", label: "Approval" },
+  { emoji: "📦", label: "Material" },
+  { emoji: "🔧", label: "Fabrication" },
+  { emoji: "🔩", label: "Assembly" },
+  { emoji: "🧪", label: "Testing" },
+  { emoji: "📋", label: "Packing" },
+  { emoji: "🚚", label: "Shipping" },
+  { emoji: "🏭", label: "Commissioning" },
+  { emoji: "📊", label: "Report" },
+  { emoji: "📄", label: "Dokumen" },
+  { emoji: "⚠️", label: "Hold/Issue" },
+  { emoji: "🎯", label: "Target" },
 ];
 
 // Outer box always keeps a plain rect footprint (so Handle position math
@@ -46,7 +68,7 @@ function shapeStyle(shape) {
 // opens a menu with rename/color/shape/delete, all in one place instead
 // of scattered hover targets.
 function WorkflowNode({ id, data }) {
-  const { updateNodeLabel, updateNodeColor, updateNodeShape, deleteNode } = useWorkflow();
+  const { updateNodeLabel, updateNodeColor, updateNodeShape, updateNodeIcon, deleteNode } = useWorkflow();
   const [menuOpen, setMenuOpen] = useState(false);
   const [text, setText] = useState(data.label);
   const wrapperRef = useRef(null);
@@ -67,7 +89,30 @@ function WorkflowNode({ id, data }) {
   };
 
   return (
-    <div ref={wrapperRef} style={{ position: "relative" }}>
+    <div ref={wrapperRef} style={{ position: "relative", marginTop: data.icon ? 16 : 0 }}>
+      {data.icon && (
+        <div
+          style={{
+            position: "absolute",
+            top: -22,
+            left: "50%",
+            transform: "translateX(-50%)",
+            width: 34,
+            height: 34,
+            borderRadius: "50%",
+            background: "#fff",
+            border: `2px solid ${data.color}`,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: 16,
+            boxShadow: "0 2px 6px rgba(0,0,0,0.25)",
+            zIndex: 2,
+          }}
+        >
+          {data.icon}
+        </div>
+      )}
       <div
         style={{
           background: data.color,
@@ -193,6 +238,44 @@ function WorkflowNode({ id, data }) {
             ))}
           </div>
 
+          <div style={{ fontSize: 10.5, fontWeight: 700, color: "#8a94a6", marginBottom: 4 }}>Ikon</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 10, maxHeight: 90, overflowY: "auto" }}>
+            <button
+              title="Tanpa ikon"
+              onClick={() => updateNodeIcon(id, null)}
+              style={{
+                width: 24,
+                height: 24,
+                fontSize: 11,
+                borderRadius: 4,
+                border: !data.icon ? "2px solid #333" : "1px solid #ddd",
+                background: "#fafafa",
+                cursor: "pointer",
+                color: "#999",
+              }}
+            >
+              ✕
+            </button>
+            {ICONS.map((ic) => (
+              <button
+                key={ic.emoji}
+                title={ic.label}
+                onClick={() => updateNodeIcon(id, ic.emoji)}
+                style={{
+                  width: 24,
+                  height: 24,
+                  fontSize: 13,
+                  borderRadius: 4,
+                  border: data.icon === ic.emoji ? "2px solid #333" : "1px solid #ddd",
+                  background: "#fafafa",
+                  cursor: "pointer",
+                }}
+              >
+                {ic.emoji}
+              </button>
+            ))}
+          </div>
+
           <button
             onClick={() => deleteNode(id)}
             style={{
@@ -254,7 +337,7 @@ function WorkflowCanvas() {
         id: n.id,
         type: "workflow",
         position: { x: n.x, y: n.y },
-        data: { label: n.label, color: n.color, shape: n.shape },
+        data: { label: n.label, color: n.color, shape: n.shape, icon: n.icon },
       }))
     );
   }, [workflowNodes]);
@@ -342,7 +425,6 @@ function WorkflowCanvas() {
       >
         <Background variant="dots" gap={16} size={1} />
         <Controls />
-        <MiniMap pannable zoomable style={{ background: "var(--bg-secondary)" }} />
       </ReactFlow>
     </div>
   );
