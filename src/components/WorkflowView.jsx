@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   ReactFlow,
   ReactFlowProvider,
@@ -13,7 +13,6 @@ import {
 import "@xyflow/react/dist/style.css";
 import { useWorkflow } from "../context/WorkflowContext";
 import { useLanguage } from "../context/LanguageContext";
-import Popover from "./Popover";
 
 const COLOR_PALETTE = ["#fdab3d", "#e2445c", "#00c875", "#c4c4c4", "#579bfc", "#a25ddc", "#333333"];
 const SHAPES = [
@@ -67,22 +66,15 @@ function shapeStyle(shape) {
   }
 }
 
-// A single flowchart box. A small "⋮" button is always visible (not just
-// on hover — hover-only controls turned out not to be discoverable) and
-// opens a menu with rename/color/shape/delete, all in one place instead
-// of scattered hover targets.
+// A single flowchart box. Editing (rename/color/shape/icon/delete) is
+// handled by ONE fixed panel owned by the parent canvas (see
+// EditNodePanel below) rather than a per-node popup — a per-node popup
+// either scaled with canvas zoom or jumped around depending on which node
+// was clicked; a single fixed panel sidesteps both. Clicking "⋮" just
+// tells the parent which node to edit. Being the currently-edited node
+// gets a brightness bump + raised shadow so it's obvious which one the
+// panel refers to.
 function WorkflowNode({ id, data }) {
-  const { updateNodeLabel, updateNodeColor, updateNodeShape, updateNodeIcon, deleteNode } = useWorkflow();
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [text, setText] = useState(data.label);
-  const btnRef = useRef(null);
-
-  const commitLabel = () => {
-    const trimmed = text.trim();
-    if (trimmed && trimmed !== data.label) updateNodeLabel(id, trimmed);
-    else setText(data.label);
-  };
-
   return (
     <div style={{ position: "relative", marginTop: data.icon ? 16 : 0 }}>
       {data.icon && (
@@ -115,8 +107,11 @@ function WorkflowNode({ id, data }) {
           textAlign: "center",
           fontWeight: 600,
           fontSize: 13,
-          boxShadow: "0 2px 6px rgba(0,0,0,0.3)",
           boxSizing: "border-box",
+          transition: "filter 0.15s, box-shadow 0.15s, transform 0.15s",
+          filter: data.isEditing ? "brightness(1.2)" : "none",
+          boxShadow: data.isEditing ? "0 8px 18px rgba(0,0,0,0.45)" : "0 2px 6px rgba(0,0,0,0.3)",
+          transform: data.isEditing ? "translateY(-2px)" : "none",
           ...shapeStyle(data.shape),
         }}
       >
@@ -131,16 +126,13 @@ function WorkflowNode({ id, data }) {
         <Handle type="source" id="left-s" position={Position.Left} style={{ background: "#fff", width: 8, height: 8 }} />
         <Handle type="target" id="right-t" position={Position.Right} style={{ background: "#fff", width: 8, height: 8 }} />
         <Handle type="source" id="right-s" position={Position.Right} style={{ background: "#fff", width: 8, height: 8 }} />
-        <span style={{ display: "inline-block", maxWidth: "100%" }} onDoubleClick={() => setMenuOpen(true)}>
-          {data.label}
-        </span>
+        <span style={{ display: "inline-block", maxWidth: "100%" }}>{data.label}</span>
       </div>
 
       <button
-        ref={btnRef}
         onClick={(e) => {
           e.stopPropagation();
-          setMenuOpen((p) => !p);
+          data.onOpenMenu(id);
         }}
         title="Menu"
         style={{
@@ -163,163 +155,250 @@ function WorkflowNode({ id, data }) {
       >
         ⋮
       </button>
-
-      <Popover
-        anchorRef={btnRef}
-        isOpen={menuOpen}
-        onClose={() => setMenuOpen(false)}
-        placement="bottom-end"
-        style={{
-          background: "#fff",
-          borderRadius: 8,
-          padding: 10,
-          width: 200,
-          boxShadow: "0 6px 20px rgba(0,0,0,0.35)",
-          textAlign: "left",
-        }}
-      >
-          <div style={{ fontSize: 10.5, fontWeight: 700, color: "#8a94a6", marginBottom: 3 }}>Nama</div>
-          <input
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            onBlur={commitLabel}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") e.currentTarget.blur();
-            }}
-            style={{ width: "100%", padding: "5px 7px", borderRadius: 4, border: "1px solid #ddd", fontSize: 12.5, boxSizing: "border-box", marginBottom: 10 }}
-          />
-
-          <div style={{ fontSize: 10.5, fontWeight: 700, color: "#8a94a6", marginBottom: 4 }}>Warna</div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 10 }}>
-            {COLOR_PALETTE.map((c) => (
-              <button
-                key={c}
-                onClick={() => updateNodeColor(id, c)}
-                style={{
-                  width: 18,
-                  height: 18,
-                  borderRadius: "50%",
-                  background: c,
-                  border: data.color === c ? "2px solid #333" : "1px solid #ddd",
-                  cursor: "pointer",
-                  padding: 0,
-                }}
-              />
-            ))}
-          </div>
-
-          <div style={{ fontSize: 10.5, fontWeight: 700, color: "#8a94a6", marginBottom: 4 }}>Bentuk</div>
-          <div style={{ display: "flex", gap: 5, marginBottom: 10 }}>
-            {SHAPES.map((s) => (
-              <button
-                key={s.id}
-                title={s.label}
-                onClick={() => updateNodeShape(id, s.id)}
-                style={{
-                  flex: 1,
-                  padding: "5px 0",
-                  fontSize: 15,
-                  borderRadius: 4,
-                  border: (data.shape || "rectangle") === s.id ? "2px solid #333" : "1px solid #ddd",
-                  background: "#fafafa",
-                  cursor: "pointer",
-                  color: "#333",
-                }}
-              >
-                {s.icon}
-              </button>
-            ))}
-          </div>
-
-          <div style={{ fontSize: 10.5, fontWeight: 700, color: "#8a94a6", marginBottom: 4 }}>Ikon</div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 10, maxHeight: 90, overflowY: "auto" }}>
-            <button
-              title="Tanpa ikon"
-              onClick={() => updateNodeIcon(id, null)}
-              style={{
-                width: 24,
-                height: 24,
-                fontSize: 11,
-                borderRadius: 4,
-                border: !data.icon ? "2px solid #333" : "1px solid #ddd",
-                background: "#fafafa",
-                cursor: "pointer",
-                color: "#999",
-              }}
-            >
-              ✕
-            </button>
-            {ICONS.map((ic) => (
-              <button
-                key={ic.emoji}
-                title={ic.label}
-                onClick={() => updateNodeIcon(id, ic.emoji)}
-                style={{
-                  width: 24,
-                  height: 24,
-                  fontSize: 13,
-                  borderRadius: 4,
-                  border: data.icon === ic.emoji ? "2px solid #333" : "1px solid #ddd",
-                  background: "#fafafa",
-                  cursor: "pointer",
-                }}
-              >
-                {ic.emoji}
-              </button>
-            ))}
-          </div>
-
-          <button
-            onClick={() => deleteNode(id)}
-            style={{
-              width: "100%",
-              padding: "6px 0",
-              background: "#fdecea",
-              color: "#e2445c",
-              border: "none",
-              borderRadius: 5,
-              cursor: "pointer",
-              fontWeight: 600,
-              fontSize: 12,
-            }}
-          >
-            🗑 Hapus
-          </button>
-      </Popover>
     </div>
   );
 }
 
 const nodeTypes = { workflow: WorkflowNode };
 
-// Picks whichever side-pair points the two nodes most directly at each
-// other, based on their current center offset — the practical fix for
-// edges always defaulting to the first-declared handle (top) regardless
-// of where the other node actually is. Re-run on every position change
-// (including mid-drag), so routing keeps re-shortening itself live as
-// nodes move, not just after a connection is first drawn.
-function pickHandles(sourceNode, targetNode) {
-  const dx = (targetNode.position.x + 75) - (sourceNode.position.x + 75);
-  const dy = (targetNode.position.y + 20) - (sourceNode.position.y + 20);
-  if (Math.abs(dx) > Math.abs(dy)) {
-    return dx >= 0
-      ? { sourceHandle: "right-s", targetHandle: "left-t" }
-      : { sourceHandle: "left-s", targetHandle: "right-t" };
-  }
-  return dy >= 0
-    ? { sourceHandle: "bottom-s", targetHandle: "top-t" }
-    : { sourceHandle: "top-s", targetHandle: "bottom-t" };
+// Fixed top-right panel (screen pixels, not part of ReactFlow's zoomed/
+// panned canvas — so it never scales or drifts) for editing whichever
+// node is currently selected. Mirrors EdgePanel below so both controls
+// live in the same predictable spot instead of following the mouse.
+function EditNodePanel({ node, onClose }) {
+  const { updateNodeLabel, updateNodeColor, updateNodeShape, updateNodeIcon, deleteNode } = useWorkflow();
+  const [text, setText] = useState(node.label);
+
+  useEffect(() => {
+    setText(node.label);
+  }, [node.id, node.label]);
+
+  const commitLabel = () => {
+    const trimmed = text.trim();
+    if (trimmed && trimmed !== node.label) updateNodeLabel(node.id, trimmed);
+    else setText(node.label);
+  };
+
+  return (
+    <div
+      style={{
+        position: "absolute",
+        top: 14,
+        right: 14,
+        zIndex: 6,
+        background: "#fff",
+        borderRadius: 8,
+        padding: 10,
+        width: 200,
+        boxShadow: "0 6px 20px rgba(0,0,0,0.35)",
+        textAlign: "left",
+      }}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+        <span style={{ fontSize: 11.5, fontWeight: 700, color: "#333" }}>Edit node</span>
+        <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#8a94a6", fontSize: 14, padding: 0 }}>
+          ✕
+        </button>
+      </div>
+
+      <div style={{ fontSize: 10.5, fontWeight: 700, color: "#8a94a6", marginBottom: 3 }}>Nama</div>
+      <input
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        onBlur={commitLabel}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") e.currentTarget.blur();
+        }}
+        style={{ width: "100%", padding: "5px 7px", borderRadius: 4, border: "1px solid #ddd", fontSize: 12.5, boxSizing: "border-box", marginBottom: 10 }}
+      />
+
+      <div style={{ fontSize: 10.5, fontWeight: 700, color: "#8a94a6", marginBottom: 4 }}>Warna</div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 10 }}>
+        {COLOR_PALETTE.map((c) => (
+          <button
+            key={c}
+            onClick={() => updateNodeColor(node.id, c)}
+            style={{
+              width: 18,
+              height: 18,
+              borderRadius: "50%",
+              background: c,
+              border: node.color === c ? "2px solid #333" : "1px solid #ddd",
+              cursor: "pointer",
+              padding: 0,
+            }}
+          />
+        ))}
+      </div>
+
+      <div style={{ fontSize: 10.5, fontWeight: 700, color: "#8a94a6", marginBottom: 4 }}>Bentuk</div>
+      <div style={{ display: "flex", gap: 5, marginBottom: 10 }}>
+        {SHAPES.map((s) => (
+          <button
+            key={s.id}
+            title={s.label}
+            onClick={() => updateNodeShape(node.id, s.id)}
+            style={{
+              flex: 1,
+              padding: "5px 0",
+              fontSize: 15,
+              borderRadius: 4,
+              border: (node.shape || "rectangle") === s.id ? "2px solid #333" : "1px solid #ddd",
+              background: "#fafafa",
+              cursor: "pointer",
+              color: "#333",
+            }}
+          >
+            {s.icon}
+          </button>
+        ))}
+      </div>
+
+      <div style={{ fontSize: 10.5, fontWeight: 700, color: "#8a94a6", marginBottom: 4 }}>Ikon</div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 10, maxHeight: 90, overflowY: "auto" }}>
+        <button
+          title="Tanpa ikon"
+          onClick={() => updateNodeIcon(node.id, null)}
+          style={{
+            width: 24,
+            height: 24,
+            fontSize: 11,
+            borderRadius: 4,
+            border: !node.icon ? "2px solid #333" : "1px solid #ddd",
+            background: "#fafafa",
+            cursor: "pointer",
+            color: "#999",
+          }}
+        >
+          ✕
+        </button>
+        {ICONS.map((ic) => (
+          <button
+            key={ic.emoji}
+            title={ic.label}
+            onClick={() => updateNodeIcon(node.id, ic.emoji)}
+            style={{
+              width: 24,
+              height: 24,
+              fontSize: 13,
+              borderRadius: 4,
+              border: node.icon === ic.emoji ? "2px solid #333" : "1px solid #ddd",
+              background: "#fafafa",
+              cursor: "pointer",
+            }}
+          >
+            {ic.emoji}
+          </button>
+        ))}
+      </div>
+
+      <button
+        onClick={() => {
+          deleteNode(node.id);
+          onClose();
+        }}
+        style={{
+          width: "100%",
+          padding: "6px 0",
+          background: "#fdecea",
+          color: "#e2445c",
+          border: "none",
+          borderRadius: 5,
+          cursor: "pointer",
+          fontWeight: 600,
+          fontSize: 12,
+        }}
+      >
+        🗑 Hapus
+      </button>
+    </div>
+  );
+}
+
+// Same fixed-panel idea as EditNodePanel, for whichever edge is selected.
+function EditEdgePanel({ edge, onClose }) {
+  const { updateEdgeColor, updateEdgeDashed } = useWorkflow();
+  return (
+    <div
+      style={{
+        position: "absolute",
+        top: 14,
+        right: 14,
+        zIndex: 6,
+        display: "flex",
+        alignItems: "center",
+        gap: 6,
+        background: "#fff",
+        padding: "7px 9px",
+        borderRadius: 8,
+        boxShadow: "0 2px 8px rgba(0,0,0,0.25)",
+      }}
+    >
+      <span style={{ fontSize: 11, color: "#8a94a6", fontWeight: 600, marginRight: 2 }}>Panah</span>
+      {COLOR_PALETTE.concat("#8a94a6").map((c) => (
+        <button
+          key={c}
+          onClick={() => updateEdgeColor(edge.id, c)}
+          style={{
+            width: 18,
+            height: 18,
+            borderRadius: "50%",
+            background: c,
+            border: (edge.color || "#8a94a6") === c ? "2px solid #333" : "1px solid #ddd",
+            cursor: "pointer",
+            padding: 0,
+          }}
+        />
+      ))}
+      <button
+        onClick={() => updateEdgeDashed(edge.id, !edge.dashed)}
+        title={edge.dashed ? "Jadikan garis penuh" : "Jadikan garis putus-putus"}
+        style={{
+          padding: "3px 8px",
+          fontSize: 11,
+          borderRadius: 5,
+          border: "1px solid #ddd",
+          background: edge.dashed ? "#eef2ff" : "#fafafa",
+          color: "#333",
+          cursor: "pointer",
+          marginLeft: 4,
+        }}
+      >
+        {edge.dashed ? "┅┅" : "───"}
+      </button>
+      <button
+        onClick={onClose}
+        style={{ background: "none", border: "none", cursor: "pointer", color: "#8a94a6", fontSize: 13, padding: "0 2px", marginLeft: 2 }}
+      >
+        ✕
+      </button>
+    </div>
+  );
 }
 
 function WorkflowCanvas() {
   const { t } = useLanguage();
-  const { workflowNodes, workflowEdges, addNode, updateNodePosition, addEdge: addWorkflowEdge, deleteEdge, updateEdgeColor, deleteNode } = useWorkflow();
+  const {
+    workflowNodes,
+    workflowEdges,
+    addNode,
+    updateNodePosition,
+    addEdge: addWorkflowEdge,
+    deleteEdge,
+    deleteNode,
+  } = useWorkflow();
   const [nodes, setNodes] = useState([]);
   const [edges, setEdges] = useState([]);
   const [selectedEdgeId, setSelectedEdgeId] = useState(null);
+  const [editingNodeId, setEditingNodeId] = useState(null);
+
+  const handleOpenNodeMenu = useCallback((id) => {
+    setEditingNodeId(id);
+    setSelectedEdgeId(null);
+  }, []);
 
   // Synced from context (initial load + Realtime updates from other
-  // sessions) into ReactFlow's own node/edge shape. A node being actively
+  // sessions) into ReactFlow's own node shape. A node being actively
   // dragged keeps its own local position via onNodesChange in the
   // meantime; this effect re-running on every context update doesn't
   // fight that, since drag position only ever gets written back to
@@ -330,38 +409,32 @@ function WorkflowCanvas() {
         id: n.id,
         type: "workflow",
         position: { x: n.x, y: n.y },
-        data: { label: n.label, color: n.color, shape: n.shape, icon: n.icon },
+        data: { label: n.label, color: n.color, shape: n.shape, icon: n.icon, isEditing: n.id === editingNodeId, onOpenMenu: handleOpenNodeMenu },
       }))
     );
-  }, [workflowNodes]);
+  }, [workflowNodes, editingNodeId, handleOpenNodeMenu]);
 
-  // Depends on `nodes` (live positions, updated continuously while
-  // dragging) as well as `workflowEdges`, so the source/target handle
-  // choice below keeps re-shortening as nodes move, not just once when
-  // the connection is first made.
   useEffect(() => {
     setEdges(
-      workflowEdges.map((e) => {
-        const sourceNode = nodes.find((n) => n.id === e.source);
-        const targetNode = nodes.find((n) => n.id === e.target);
-        const handles = sourceNode && targetNode ? pickHandles(sourceNode, targetNode) : {};
-        return {
-          id: e.id,
-          source: e.source,
-          target: e.target,
-          ...handles,
-          // "smoothstep" auto-routes with right-angle bends around the
-          // straight line between two points, instead of cutting straight
-          // through whatever sits between them — the closest built-in
-          // equivalent to "find a clean path automatically" once the
-          // diagram has more than a couple of nodes.
-          type: "smoothstep",
-          markerEnd: { type: MarkerType.ArrowClosed, color: e.color || "#8a94a6" },
-          style: { stroke: e.color || "#8a94a6", strokeWidth: e.id === selectedEdgeId ? 2.5 : 1.5 },
-        };
-      })
+      workflowEdges.map((e) => ({
+        id: e.id,
+        source: e.source,
+        target: e.target,
+        // Whichever handle was actually dragged from/to when the
+        // connection was made — manual, not auto-recomputed as nodes
+        // move (see addEdge in WorkflowContext).
+        sourceHandle: e.sourceHandle || "bottom-s",
+        targetHandle: e.targetHandle || "top-t",
+        type: "smoothstep",
+        markerEnd: { type: MarkerType.ArrowClosed, color: e.color || "#8a94a6" },
+        style: {
+          stroke: e.color || "#8a94a6",
+          strokeWidth: e.id === selectedEdgeId ? 2.5 : 1.5,
+          strokeDasharray: e.dashed ? "6 4" : undefined,
+        },
+      }))
     );
-  }, [workflowEdges, nodes, selectedEdgeId]);
+  }, [workflowEdges, selectedEdgeId]);
 
   const onNodesChange = useCallback((changes) => setNodes((nds) => applyNodeChanges(changes, nds)), []);
   const onEdgesChange = useCallback((changes) => setEdges((eds) => applyEdgeChanges(changes, eds)), []);
@@ -371,7 +444,13 @@ function WorkflowCanvas() {
     [updateNodePosition]
   );
 
-  const onConnect = useCallback((connection) => addWorkflowEdge(connection.source, connection.target), [addWorkflowEdge]);
+  // Persists exactly the handle the user dragged from/to — manual, per
+  // the earlier auto-shortest-path attempt turning out less predictable
+  // than just respecting what was actually drawn.
+  const onConnect = useCallback(
+    (connection) => addWorkflowEdge(connection.source, connection.target, connection.sourceHandle, connection.targetHandle),
+    [addWorkflowEdge]
+  );
 
   const onEdgesDelete = useCallback(
     (deleted) => {
@@ -380,18 +459,31 @@ function WorkflowCanvas() {
     },
     [deleteEdge]
   );
-  const onNodesDelete = useCallback((deleted) => deleted.forEach((n) => deleteNode(n.id)), [deleteNode]);
+  const onNodesDelete = useCallback(
+    (deleted) => {
+      deleted.forEach((n) => deleteNode(n.id));
+      setEditingNodeId((prev) => (deleted.some((n) => n.id === prev) ? null : prev));
+    },
+    [deleteNode]
+  );
   const onEdgeClick = useCallback((event, edge) => {
     event.stopPropagation();
     setSelectedEdgeId(edge.id);
+    setEditingNodeId(null);
   }, []);
-  const onPaneClick = useCallback(() => setSelectedEdgeId(null), []);
+  const onPaneClick = useCallback(() => {
+    setSelectedEdgeId(null);
+    setEditingNodeId(null);
+  }, []);
 
   const handleAddNode = () => {
     const x = 80 + Math.random() * 240;
     const y = 80 + Math.random() * 200;
     addNode(t("workflowView.newNodeLabel"), "#579bfc", x, y);
   };
+
+  const editingNode = editingNodeId ? workflowNodes.find((n) => n.id === editingNodeId) : null;
+  const selectedEdge = selectedEdgeId ? workflowEdges.find((e) => e.id === selectedEdgeId) : null;
 
   return (
     <div style={{ flex: 1, minHeight: 0, position: "relative" }}>
@@ -414,38 +506,8 @@ function WorkflowCanvas() {
         </button>
       </div>
 
-      {selectedEdgeId && (
-        <div
-          style={{
-            position: "absolute",
-            top: 14,
-            right: 14,
-            zIndex: 5,
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-            background: "#fff",
-            padding: "7px 9px",
-            borderRadius: 8,
-            boxShadow: "0 2px 8px rgba(0,0,0,0.25)",
-          }}
-        >
-          <span style={{ fontSize: 11, color: "#8a94a6", fontWeight: 600, marginRight: 2 }}>Warna panah</span>
-          {COLOR_PALETTE.concat("#8a94a6").map((c) => (
-            <button
-              key={c}
-              onClick={() => updateEdgeColor(selectedEdgeId, c)}
-              style={{ width: 18, height: 18, borderRadius: "50%", background: c, border: "1px solid #ddd", cursor: "pointer", padding: 0 }}
-            />
-          ))}
-          <button
-            onClick={() => setSelectedEdgeId(null)}
-            style={{ background: "none", border: "none", cursor: "pointer", color: "#8a94a6", fontSize: 13, padding: "0 2px", marginLeft: 2 }}
-          >
-            ✕
-          </button>
-        </div>
-      )}
+      {editingNode && <EditNodePanel node={editingNode} onClose={() => setEditingNodeId(null)} />}
+      {!editingNode && selectedEdge && <EditEdgePanel edge={selectedEdge} onClose={() => setSelectedEdgeId(null)} />}
 
       <ReactFlow
         nodes={nodes}

@@ -21,6 +21,9 @@ function mapEdge(row) {
     source: row.source_id,
     target: row.target_id,
     color: row.color,
+    sourceHandle: row.source_handle,
+    targetHandle: row.target_handle,
+    dashed: row.dashed,
   };
 }
 
@@ -141,12 +144,16 @@ export function WorkflowProvider({ children, boardId }) {
     if (error) console.error("Error deleting workflow node:", error);
   };
 
-  const addEdge = async (sourceId, targetId) => {
+  // sourceHandle/targetHandle are whichever handle the user actually
+  // dragged from/to (which side of each node) — persisted as-is, not
+  // recomputed later, so the connection stays exactly where it was
+  // manually drawn even as nodes get moved around.
+  const addEdge = async (sourceId, targetId, sourceHandle, targetHandle) => {
     if (sourceId === targetId) return;
     if (edgeRows.some((e) => e.source === sourceId && e.target === targetId)) return;
     const { data, error } = await supabase
       .from("workflow_edges")
-      .insert({ board_id: boardId, source_id: sourceId, target_id: targetId })
+      .insert({ board_id: boardId, source_id: sourceId, target_id: targetId, source_handle: sourceHandle, target_handle: targetHandle })
       .select()
       .single();
     if (error) {
@@ -170,6 +177,13 @@ export function WorkflowProvider({ children, boardId }) {
     });
   };
 
+  const updateEdgeDashed = (id, dashed) => {
+    setEdgeRows((prev) => prev.map((e) => (e.id === id ? { ...e, dashed } : e)));
+    supabase.from("workflow_edges").update({ dashed }).eq("id", id).then(({ error }) => {
+      if (error) console.error("Error changing workflow edge line style:", error);
+    });
+  };
+
   const value = {
     loading,
     workflowNodes: nodeRows,
@@ -184,6 +198,7 @@ export function WorkflowProvider({ children, boardId }) {
     addEdge,
     deleteEdge,
     updateEdgeColor,
+    updateEdgeDashed,
   };
 
   return <WorkflowContext.Provider value={value}>{children}</WorkflowContext.Provider>;
