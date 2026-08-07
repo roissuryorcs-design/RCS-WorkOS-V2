@@ -1391,3 +1391,23 @@ body.dark .board-table tbody td {
   opacity: 0.6 !important;
   background: var(--btn-primary-bg) !important;
 }
+
+/* ============================================================
+   WORKFLOW VIEW — react-flow's zoom/fit/lock controls ship with
+   fixed light-theme colors (white button, dark icon), so on the
+   Workflow tab's dark canvas they were nearly invisible. Force them
+   to follow the app's own theme tokens instead.
+   ============================================================ */
+.react-flow__controls-button {
+  background: var(--bg-card) !important;
+  border-bottom: 1px solid var(--border-color) !important;
+}
+.react-flow__controls-button svg {
+  fill: var(--text-primary) !important;
+}
+.react-flow__controls-button:hover {
+  background: var(--bg-hover) !important;
+}
+body.dark .react-flow__controls {
+  box-shadow: 0 0 0 1px var(--border-color);
+}
