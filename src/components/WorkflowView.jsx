@@ -178,7 +178,14 @@ function WorkflowEdge({ id, sourceX, sourceY, targetX, targetY, style, markerEnd
 
   const bendX = data?.bendX ?? (sourceX + targetX) / 2;
   const bendY = data?.bendY ?? (sourceY + targetY) / 2;
-  const path = `M ${sourceX},${sourceY} L ${sourceX},${bendY} L ${bendX},${bendY} L ${bendX},${targetY} L ${targetX},${targetY}`;
+  // A node's icon badge floats above its top edge and paints over the
+  // top handle, so an arrowhead landing exactly on that handle disappears
+  // underneath it. When the target sits on that top handle and has an
+  // icon, stop the path short — right at the icon circle's edge — so the
+  // arrowhead stays visible instead of being hidden under the badge.
+  const targetClearsIcon = data?.targetHasIcon && data?.targetHandle?.startsWith("top-");
+  const adjTargetY = targetClearsIcon ? targetY - 22 : targetY;
+  const path = `M ${sourceX},${sourceY} L ${sourceX},${bendY} L ${bendX},${bendY} L ${bendX},${adjTargetY} L ${targetX},${adjTargetY}`;
 
   const onPointerDown = (e) => {
     e.stopPropagation();
@@ -541,27 +548,37 @@ function WorkflowCanvas() {
 
   useEffect(() => {
     setEdges(
-      workflowEdges.map((e) => ({
-        id: e.id,
-        source: e.source,
-        target: e.target,
-        // Whichever handle was actually dragged from/to when the
-        // connection was made — manual, not auto-recomputed as nodes
-        // move (see addEdge in WorkflowContext).
-        sourceHandle: e.sourceHandle || "bottom-s",
-        targetHandle: e.targetHandle || "top-t",
-        type: "workflow",
-        selected: e.id === selectedEdgeId,
-        markerEnd: { type: MarkerType.ArrowClosed, color: e.color || "#8a94a6" },
-        style: {
-          stroke: e.color || "#8a94a6",
-          strokeWidth: e.id === selectedEdgeId ? 2.5 : 1.5,
-          strokeDasharray: e.dashed ? "6 4" : undefined,
-        },
-        data: { bendX: e.bendX, bendY: e.bendY, onDragBend: handleDragBend, onCommitBend: handleCommitBend },
-      }))
+      workflowEdges.map((e) => {
+        const targetHandle = e.targetHandle || "top-t";
+        return {
+          id: e.id,
+          source: e.source,
+          target: e.target,
+          // Whichever handle was actually dragged from/to when the
+          // connection was made — manual, not auto-recomputed as nodes
+          // move (see addEdge in WorkflowContext).
+          sourceHandle: e.sourceHandle || "bottom-s",
+          targetHandle,
+          type: "workflow",
+          selected: e.id === selectedEdgeId,
+          markerEnd: { type: MarkerType.ArrowClosed, color: e.color || "#8a94a6" },
+          style: {
+            stroke: e.color || "#8a94a6",
+            strokeWidth: e.id === selectedEdgeId ? 2.5 : 1.5,
+            strokeDasharray: e.dashed ? "6 4" : undefined,
+          },
+          data: {
+            bendX: e.bendX,
+            bendY: e.bendY,
+            targetHandle,
+            targetHasIcon: !!workflowNodes.find((n) => n.id === e.target)?.icon,
+            onDragBend: handleDragBend,
+            onCommitBend: handleCommitBend,
+          },
+        };
+      })
     );
-  }, [workflowEdges, selectedEdgeId, handleDragBend, handleCommitBend]);
+  }, [workflowEdges, workflowNodes, selectedEdgeId, handleDragBend, handleCommitBend]);
 
   const onNodesChange = useCallback((changes) => setNodes((nds) => applyNodeChanges(changes, nds)), []);
   const onEdgesChange = useCallback((changes) => setEdges((eds) => applyEdgeChanges(changes, eds)), []);
