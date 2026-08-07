@@ -77,7 +77,7 @@ export default function LoginScreen({ initialMode = "signIn", onBack }) {
         }}
       >
         <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
-          <Logo width={110} />
+          <Logo width={210} />
         </div>
 
         {onBack && (

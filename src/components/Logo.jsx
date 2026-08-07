@@ -8,26 +8,12 @@ export default function Logo({ width = 130 }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-      <div style={{ position: "relative", width, aspectRatio: "200 / 122", lineHeight: 0 }}>
+      <div style={{ position: "relative", width, aspectRatio: "948 / 278", lineHeight: 0 }}>
         <img
           src={src}
           alt="RCS"
           style={{ width: "100%", height: "auto", display: "block", objectFit: "contain" }}
         />
-        <span
-          style={{
-            position: "absolute",
-            left: "50%",
-            top: "calc(78% + 11.5px)",
-            transform: "translate(-50%, -50%)",
-            fontSize: Math.round(width * 0.13),
-            fontWeight: 800,
-            letterSpacing: 0.5,
-            color: "var(--text-primary)",
-          }}
-        >
-          RCS
-        </span>
       </div>
       <span
         style={{

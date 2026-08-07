@@ -153,7 +153,7 @@ export default function LandingPage({ onGetStarted }) {
         }}
       >
         <div style={{ transform: "scale(0.7)", transformOrigin: "left center" }}>
-          <Logo width={90} />
+          <Logo width={140} />
         </div>
         <div className="rcs-landing-nav-actions" style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <button

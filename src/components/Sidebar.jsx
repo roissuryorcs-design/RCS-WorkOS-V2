@@ -302,7 +302,7 @@ export default function Sidebar() {
           ✕
         </button>
       <div className="sidebar-header">
-        <Logo width={150} />
+        <Logo width={230} />
       </div>
 
       <div className="nav-section">
