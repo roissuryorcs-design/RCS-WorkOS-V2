@@ -181,19 +181,19 @@ function WorkflowEdge({ id, sourceX, sourceY, targetX, targetY, style, markerEnd
   // A node's icon badge floats above its top edge and paints over the
   // top handle, so an arrowhead landing exactly on that handle disappears
   // underneath it. When the target sits on that top handle and has an
-  // icon, force the final approach to be a straight vertical drop into
-  // the icon's circle boundary (regardless of where the bend point sits)
-  // instead of trying to infer the approach direction from the bend —
-  // that inference was fragile (small drag imprecision flipped it
-  // between "horizontal" and "vertical" and produced a tilted arrowhead)
-  // and a forced vertical entry always points cleanly at the node.
+  // icon, force the final approach to always come from ABOVE, pointing
+  // down into the icon's circle boundary — a "top" handle should always
+  // read as an arrow entering from the top, so even when the bend point
+  // sits below the target, the path loops up and over rather than
+  // sneaking in from underneath with an upward-pointing arrowhead (which
+  // reads as backwards regardless of how precisely it touches the icon).
   const targetClearsIcon = data?.targetHasIcon && data?.targetHandle?.startsWith("top-");
   const path = targetClearsIcon
     ? (() => {
         const iconRadius = 17;
-        const approachFromAbove = bendY <= targetY;
-        const clearY = approachFromAbove ? targetY - iconRadius - 5 : targetY + iconRadius - 5;
-        return `M ${sourceX},${sourceY} L ${sourceX},${bendY} L ${bendX},${bendY} L ${targetX},${bendY} L ${targetX},${clearY}`;
+        const clearY = targetY - iconRadius - 5;
+        const approachY = Math.min(bendY, clearY - 30);
+        return `M ${sourceX},${sourceY} L ${sourceX},${approachY} L ${bendX},${approachY} L ${targetX},${approachY} L ${targetX},${clearY}`;
       })()
     : `M ${sourceX},${sourceY} L ${sourceX},${bendY} L ${bendX},${bendY} L ${bendX},${targetY} L ${targetX},${targetY}`;
 
