@@ -217,6 +217,25 @@ function WorkflowNode({ id, data }) {
 
 const nodeTypes = { workflow: WorkflowNode };
 
+// Picks whichever side-pair points the two nodes most directly at each
+// other, based on their current center offset — the practical fix for
+// edges always defaulting to the first-declared handle (top) regardless
+// of where the other node actually is. Re-run on every position change
+// (including mid-drag), so routing keeps re-shortening itself live as
+// nodes move, not just after a connection is first drawn.
+function pickHandles(sourceNode, targetNode) {
+  const dx = (targetNode.position.x + 75) - (sourceNode.position.x + 75);
+  const dy = (targetNode.position.y + 20) - (sourceNode.position.y + 20);
+  if (Math.abs(dx) > Math.abs(dy)) {
+    return dx >= 0
+      ? { sourceHandle: "right-s", targetHandle: "left-t" }
+      : { sourceHandle: "left-s", targetHandle: "right-t" };
+  }
+  return dy >= 0
+    ? { sourceHandle: "bottom-s", targetHandle: "top-t" }
+    : { sourceHandle: "top-s", targetHandle: "bottom-t" };
+}
+
 function WorkflowCanvas() {
   const { t } = useLanguage();
   const { workflowNodes, workflowEdges, addNode, updateNodePosition, addEdge: addWorkflowEdge, deleteEdge, deleteNode } = useWorkflow();
@@ -240,23 +259,33 @@ function WorkflowCanvas() {
     );
   }, [workflowNodes]);
 
+  // Depends on `nodes` (live positions, updated continuously while
+  // dragging) as well as `workflowEdges`, so the source/target handle
+  // choice below keeps re-shortening as nodes move, not just once when
+  // the connection is first made.
   useEffect(() => {
     setEdges(
-      workflowEdges.map((e) => ({
-        id: e.id,
-        source: e.source,
-        target: e.target,
-        // "smoothstep" auto-routes with right-angle bends around the
-        // straight line between two points, instead of cutting straight
-        // through whatever sits between them — the closest built-in
-        // equivalent to "find a clean path automatically" once the
-        // diagram has more than a couple of nodes.
-        type: "smoothstep",
-        markerEnd: { type: MarkerType.ArrowClosed },
-        style: { stroke: "#8a94a6", strokeWidth: 1.5 },
-      }))
+      workflowEdges.map((e) => {
+        const sourceNode = nodes.find((n) => n.id === e.source);
+        const targetNode = nodes.find((n) => n.id === e.target);
+        const handles = sourceNode && targetNode ? pickHandles(sourceNode, targetNode) : {};
+        return {
+          id: e.id,
+          source: e.source,
+          target: e.target,
+          ...handles,
+          // "smoothstep" auto-routes with right-angle bends around the
+          // straight line between two points, instead of cutting straight
+          // through whatever sits between them — the closest built-in
+          // equivalent to "find a clean path automatically" once the
+          // diagram has more than a couple of nodes.
+          type: "smoothstep",
+          markerEnd: { type: MarkerType.ArrowClosed },
+          style: { stroke: "#8a94a6", strokeWidth: 1.5 },
+        };
+      })
     );
-  }, [workflowEdges]);
+  }, [workflowEdges, nodes]);
 
   const onNodesChange = useCallback((changes) => setNodes((nds) => applyNodeChanges(changes, nds)), []);
   const onEdgesChange = useCallback((changes) => setEdges((eds) => applyEdgeChanges(changes, eds)), []);
