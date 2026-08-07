@@ -7,6 +7,10 @@ import {
   Handle,
   Position,
   MarkerType,
+  BaseEdge,
+  EdgeLabelRenderer,
+  getSmoothStepPath,
+  useReactFlow,
   applyNodeChanges,
   applyEdgeChanges,
 } from "@xyflow/react";
@@ -160,6 +164,75 @@ function WorkflowNode({ id, data }) {
 }
 
 const nodeTypes = { workflow: WorkflowNode };
+
+// A step-path edge with a draggable "bend" handle (the yellow dot) — lets
+// the route be manually reshaped instead of always taking the
+// auto-computed midpoint bend. getSmoothStepPath's centerX/centerY
+// override is what lets the bend be pinned to a specific point rather
+// than always centered; EdgeLabelRenderer is what lets the drag handle be
+// plain HTML positioned in flow space (handles pan/zoom for us) instead
+// of raw SVG.
+function WorkflowEdge({ id, sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition, style, markerEnd, data }) {
+  const { screenToFlowPosition } = useReactFlow();
+
+  const [path, autoLabelX, autoLabelY] = getSmoothStepPath({
+    sourceX,
+    sourceY,
+    sourcePosition,
+    targetX,
+    targetY,
+    targetPosition,
+    borderRadius: 6,
+    centerX: data?.bendX ?? undefined,
+    centerY: data?.bendY ?? undefined,
+  });
+
+  const handleX = data?.bendX ?? autoLabelX;
+  const handleY = data?.bendY ?? autoLabelY;
+
+  const onPointerDown = (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const onMove = (ev) => {
+      const pos = screenToFlowPosition({ x: ev.clientX, y: ev.clientY });
+      data.onDragBend(id, pos.x, pos.y);
+    };
+    const onUp = (ev) => {
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerup", onUp);
+      const pos = screenToFlowPosition({ x: ev.clientX, y: ev.clientY });
+      data.onCommitBend(id, pos.x, pos.y);
+    };
+    document.addEventListener("pointermove", onMove);
+    document.addEventListener("pointerup", onUp);
+  };
+
+  return (
+    <>
+      <BaseEdge id={id} path={path} style={style} markerEnd={markerEnd} />
+      <EdgeLabelRenderer>
+        <div
+          onPointerDown={onPointerDown}
+          title="Geser untuk atur jalur"
+          style={{
+            position: "absolute",
+            transform: `translate(-50%, -50%) translate(${handleX}px, ${handleY}px)`,
+            width: 12,
+            height: 12,
+            borderRadius: "50%",
+            background: "#fbbf24",
+            border: "2px solid #fff",
+            boxShadow: "0 1px 4px rgba(0,0,0,0.4)",
+            cursor: "grab",
+            pointerEvents: "all",
+          }}
+        />
+      </EdgeLabelRenderer>
+    </>
+  );
+}
+
+const edgeTypes = { workflow: WorkflowEdge };
 
 // Fixed top-right panel (screen pixels, not part of ReactFlow's zoomed/
 // panned canvas — so it never scales or drifts) for editing whichever
@@ -385,12 +458,24 @@ function WorkflowCanvas() {
     updateNodePosition,
     addEdge: addWorkflowEdge,
     deleteEdge,
+    updateEdgeBend,
     deleteNode,
   } = useWorkflow();
   const [nodes, setNodes] = useState([]);
   const [edges, setEdges] = useState([]);
   const [selectedEdgeId, setSelectedEdgeId] = useState(null);
   const [editingNodeId, setEditingNodeId] = useState(null);
+
+  // Live drag feedback for the bend-point handle updates local edge state
+  // directly (bypassing context/DB on every pointermove); only the drop
+  // persists via updateEdgeBend.
+  const handleDragBend = useCallback((edgeId, x, y) => {
+    setEdges((eds) => eds.map((e) => (e.id === edgeId ? { ...e, data: { ...e.data, bendX: x, bendY: y } } : e)));
+  }, []);
+  const handleCommitBend = useCallback(
+    (edgeId, x, y) => updateEdgeBend(edgeId, x, y),
+    [updateEdgeBend]
+  );
 
   const handleOpenNodeMenu = useCallback((id) => {
     setEditingNodeId(id);
@@ -425,16 +510,17 @@ function WorkflowCanvas() {
         // move (see addEdge in WorkflowContext).
         sourceHandle: e.sourceHandle || "bottom-s",
         targetHandle: e.targetHandle || "top-t",
-        type: "smoothstep",
+        type: "workflow",
         markerEnd: { type: MarkerType.ArrowClosed, color: e.color || "#8a94a6" },
         style: {
           stroke: e.color || "#8a94a6",
           strokeWidth: e.id === selectedEdgeId ? 2.5 : 1.5,
           strokeDasharray: e.dashed ? "6 4" : undefined,
         },
+        data: { bendX: e.bendX, bendY: e.bendY, onDragBend: handleDragBend, onCommitBend: handleCommitBend },
       }))
     );
-  }, [workflowEdges, selectedEdgeId]);
+  }, [workflowEdges, selectedEdgeId, handleDragBend, handleCommitBend]);
 
   const onNodesChange = useCallback((changes) => setNodes((nds) => applyNodeChanges(changes, nds)), []);
   const onEdgesChange = useCallback((changes) => setEdges((eds) => applyEdgeChanges(changes, eds)), []);
@@ -476,9 +562,13 @@ function WorkflowCanvas() {
     setEditingNodeId(null);
   }, []);
 
+  // Lands predictably below the "+ Tugas baru" button instead of at a
+  // random spot that could land anywhere (including right under the
+  // button itself) — stacks downward as more nodes get added so repeated
+  // clicks don't pile new nodes exactly on top of each other.
   const handleAddNode = () => {
-    const x = 80 + Math.random() * 240;
-    const y = 80 + Math.random() * 200;
+    const x = 40;
+    const y = 70 + workflowNodes.length * 80;
     addNode(t("workflowView.newNodeLabel"), "#579bfc", x, y);
   };
 
@@ -513,6 +603,7 @@ function WorkflowCanvas() {
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onNodeDragStop={onNodeDragStop}

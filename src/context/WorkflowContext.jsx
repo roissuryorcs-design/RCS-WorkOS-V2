@@ -24,6 +24,8 @@ function mapEdge(row) {
     sourceHandle: row.source_handle,
     targetHandle: row.target_handle,
     dashed: row.dashed,
+    bendX: row.bend_x,
+    bendY: row.bend_y,
   };
 }
 
@@ -184,6 +186,16 @@ export function WorkflowProvider({ children, boardId }) {
     });
   };
 
+  // Persists the dragged bend point (the "yellow dot" on a step path) —
+  // local-only updates happen live during drag via WorkflowView's own
+  // edge state, this only needs to fire once on drop.
+  const updateEdgeBend = (id, x, y) => {
+    setEdgeRows((prev) => prev.map((e) => (e.id === id ? { ...e, bendX: x, bendY: y } : e)));
+    supabase.from("workflow_edges").update({ bend_x: x, bend_y: y }).eq("id", id).then(({ error }) => {
+      if (error) console.error("Error moving workflow edge bend point:", error);
+    });
+  };
+
   const value = {
     loading,
     workflowNodes: nodeRows,
@@ -199,6 +211,7 @@ export function WorkflowProvider({ children, boardId }) {
     deleteEdge,
     updateEdgeColor,
     updateEdgeDashed,
+    updateEdgeBend,
   };
 
   return <WorkflowContext.Provider value={value}>{children}</WorkflowContext.Provider>;
