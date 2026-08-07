@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ReactFlow,
   ReactFlowProvider,
@@ -9,7 +9,6 @@ import {
   MarkerType,
   BaseEdge,
   EdgeLabelRenderer,
-  getSmoothStepPath,
   useReactFlow,
   applyNodeChanges,
   applyEdgeChanges,
@@ -165,30 +164,20 @@ function WorkflowNode({ id, data }) {
 
 const nodeTypes = { workflow: WorkflowNode };
 
-// A step-path edge with a draggable "bend" handle (the yellow dot) — lets
-// the route be manually reshaped instead of always taking the
-// auto-computed midpoint bend. getSmoothStepPath's centerX/centerY
-// override is what lets the bend be pinned to a specific point rather
-// than always centered; EdgeLabelRenderer is what lets the drag handle be
-// plain HTML positioned in flow space (handles pan/zoom for us) instead
-// of raw SVG.
-function WorkflowEdge({ id, sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition, style, markerEnd, data }) {
+// A step-path edge with a draggable "bend" handle (the yellow dot),
+// visible only while the edge is selected. The path is built by hand
+// (not getSmoothStepPath's centerX/centerY, which turned out not to
+// reliably pin the route to that point) as a Z-shaped 3-segment path that
+// always passes exactly through (bendX, bendY) — guaranteeing the line
+// and the dot never disagree about where the bend is. EdgeLabelRenderer
+// is what lets the drag handle be plain HTML positioned in flow space
+// (handles pan/zoom for us) instead of raw SVG.
+function WorkflowEdge({ id, sourceX, sourceY, targetX, targetY, style, markerEnd, selected, data }) {
   const { screenToFlowPosition } = useReactFlow();
 
-  const [path, autoLabelX, autoLabelY] = getSmoothStepPath({
-    sourceX,
-    sourceY,
-    sourcePosition,
-    targetX,
-    targetY,
-    targetPosition,
-    borderRadius: 6,
-    centerX: data?.bendX ?? undefined,
-    centerY: data?.bendY ?? undefined,
-  });
-
-  const handleX = data?.bendX ?? autoLabelX;
-  const handleY = data?.bendY ?? autoLabelY;
+  const bendX = data?.bendX ?? (sourceX + targetX) / 2;
+  const bendY = data?.bendY ?? (sourceY + targetY) / 2;
+  const path = `M ${sourceX},${sourceY} L ${sourceX},${bendY} L ${bendX},${bendY} L ${bendX},${targetY} L ${targetX},${targetY}`;
 
   const onPointerDown = (e) => {
     e.stopPropagation();
@@ -210,24 +199,26 @@ function WorkflowEdge({ id, sourceX, sourceY, sourcePosition, targetX, targetY, 
   return (
     <>
       <BaseEdge id={id} path={path} style={style} markerEnd={markerEnd} />
-      <EdgeLabelRenderer>
-        <div
-          onPointerDown={onPointerDown}
-          title="Geser untuk atur jalur"
-          style={{
-            position: "absolute",
-            transform: `translate(-50%, -50%) translate(${handleX}px, ${handleY}px)`,
-            width: 12,
-            height: 12,
-            borderRadius: "50%",
-            background: "#fbbf24",
-            border: "2px solid #fff",
-            boxShadow: "0 1px 4px rgba(0,0,0,0.4)",
-            cursor: "grab",
-            pointerEvents: "all",
-          }}
-        />
-      </EdgeLabelRenderer>
+      {selected && (
+        <EdgeLabelRenderer>
+          <div
+            onPointerDown={onPointerDown}
+            title="Geser untuk atur jalur"
+            style={{
+              position: "absolute",
+              transform: `translate(-50%, -50%) translate(${bendX}px, ${bendY}px)`,
+              width: 12,
+              height: 12,
+              borderRadius: "50%",
+              background: "#fbbf24",
+              border: "2px solid #fff",
+              boxShadow: "0 1px 4px rgba(0,0,0,0.4)",
+              cursor: "grab",
+              pointerEvents: "all",
+            }}
+          />
+        </EdgeLabelRenderer>
+      )}
     </>
   );
 }
@@ -461,6 +452,8 @@ function WorkflowCanvas() {
     updateEdgeBend,
     deleteNode,
   } = useWorkflow();
+  const { screenToFlowPosition } = useReactFlow();
+  const addButtonRef = useRef(null);
   const [nodes, setNodes] = useState([]);
   const [edges, setEdges] = useState([]);
   const [selectedEdgeId, setSelectedEdgeId] = useState(null);
@@ -511,6 +504,7 @@ function WorkflowCanvas() {
         sourceHandle: e.sourceHandle || "bottom-s",
         targetHandle: e.targetHandle || "top-t",
         type: "workflow",
+        selected: e.id === selectedEdgeId,
         markerEnd: { type: MarkerType.ArrowClosed, color: e.color || "#8a94a6" },
         style: {
           stroke: e.color || "#8a94a6",
@@ -563,13 +557,17 @@ function WorkflowCanvas() {
   }, []);
 
   // Lands predictably below the "+ Tugas baru" button instead of at a
-  // random spot that could land anywhere (including right under the
-  // button itself) — stacks downward as more nodes get added so repeated
-  // clicks don't pile new nodes exactly on top of each other.
+  // random spot that could land anywhere on the canvas. A fixed flow-space
+  // coordinate isn't enough on its own — once the user has panned/zoomed,
+  // a flow-space point no longer lines up with the button's actual screen
+  // position, so the button's real on-screen rect is converted through
+  // screenToFlowPosition (accounts for current pan/zoom) each time.
+  // Stacks downward as more nodes get added so repeated clicks don't pile
+  // new nodes exactly on top of each other.
   const handleAddNode = () => {
-    const x = 40;
-    const y = 70 + workflowNodes.length * 80;
-    addNode(t("workflowView.newNodeLabel"), "#579bfc", x, y);
+    const rect = addButtonRef.current?.getBoundingClientRect();
+    const basePos = rect ? screenToFlowPosition({ x: rect.left, y: rect.bottom + 20 }) : { x: 40, y: 70 };
+    addNode(t("workflowView.newNodeLabel"), "#579bfc", basePos.x, basePos.y + workflowNodes.length * 80);
   };
 
   const editingNode = editingNodeId ? workflowNodes.find((n) => n.id === editingNodeId) : null;
@@ -579,6 +577,7 @@ function WorkflowCanvas() {
     <div style={{ flex: 1, minHeight: 0, position: "relative" }}>
       <div style={{ position: "absolute", top: 14, left: 14, zIndex: 5 }}>
         <button
+          ref={addButtonRef}
           onClick={handleAddNode}
           style={{
             padding: "8px 16px",
