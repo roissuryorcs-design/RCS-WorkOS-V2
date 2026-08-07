@@ -199,7 +199,13 @@ function WorkflowEdge({ id, sourceX, sourceY, targetX, targetY, style, markerEnd
   const rawBendX = data?.bendX ?? (sourceX + targetX) / 2;
   const rawBendY = data?.bendY ?? (sourceY + targetY) / 2;
   const targetSide = sideOf(data?.targetHandle) || "top";
-  const iconClearance = data?.targetHasIcon && targetSide === "top" ? 22 : 0;
+  // Every side gets at least a short perpendicular stub — without one, a
+  // side/bottom entry could end in a zero-length final segment (when the
+  // bend already lines up with the target), which leaves the arrowhead's
+  // marker orientation to fall back on the previous (wrong-direction)
+  // segment instead of pointing straight into the node.
+  const STUB = 14;
+  const iconClearance = data?.targetHasIcon && targetSide === "top" ? 22 : STUB;
 
   let bendX = rawBendX;
   let bendY = rawBendY;
