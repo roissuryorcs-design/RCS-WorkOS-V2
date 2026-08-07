@@ -13,6 +13,7 @@ import {
 import "@xyflow/react/dist/style.css";
 import { useWorkflow } from "../context/WorkflowContext";
 import { useLanguage } from "../context/LanguageContext";
+import Popover from "./Popover";
 
 const COLOR_PALETTE = ["#fdab3d", "#e2445c", "#00c875", "#c4c4c4", "#579bfc", "#a25ddc", "#333333"];
 const SHAPES = [
@@ -41,6 +42,9 @@ const ICONS = [
   { emoji: "🏭", label: "Commissioning" },
   { emoji: "📊", label: "Report" },
   { emoji: "📄", label: "Dokumen" },
+  { emoji: "📁", label: "Folder" },
+  { emoji: "🗂️", label: "Multi Folder" },
+  { emoji: "📑", label: "Multi Dokumen" },
   { emoji: "⚠️", label: "Hold/Issue" },
   { emoji: "🎯", label: "Target" },
 ];
@@ -71,16 +75,7 @@ function WorkflowNode({ id, data }) {
   const { updateNodeLabel, updateNodeColor, updateNodeShape, updateNodeIcon, deleteNode } = useWorkflow();
   const [menuOpen, setMenuOpen] = useState(false);
   const [text, setText] = useState(data.label);
-  const wrapperRef = useRef(null);
-
-  useEffect(() => {
-    if (!menuOpen) return;
-    const handleOutside = (e) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) setMenuOpen(false);
-    };
-    document.addEventListener("mousedown", handleOutside);
-    return () => document.removeEventListener("mousedown", handleOutside);
-  }, [menuOpen]);
+  const btnRef = useRef(null);
 
   const commitLabel = () => {
     const trimmed = text.trim();
@@ -89,7 +84,7 @@ function WorkflowNode({ id, data }) {
   };
 
   return (
-    <div ref={wrapperRef} style={{ position: "relative", marginTop: data.icon ? 16 : 0 }}>
+    <div style={{ position: "relative", marginTop: data.icon ? 16 : 0 }}>
       {data.icon && (
         <div
           style={{
@@ -142,6 +137,7 @@ function WorkflowNode({ id, data }) {
       </div>
 
       <button
+        ref={btnRef}
         onClick={(e) => {
           e.stopPropagation();
           setMenuOpen((p) => !p);
@@ -168,23 +164,20 @@ function WorkflowNode({ id, data }) {
         ⋮
       </button>
 
-      {menuOpen && (
-        <div
-          onClick={(e) => e.stopPropagation()}
-          style={{
-            position: "absolute",
-            top: "100%",
-            right: 0,
-            marginTop: 6,
-            background: "#fff",
-            borderRadius: 8,
-            padding: 10,
-            width: 200,
-            boxShadow: "0 6px 20px rgba(0,0,0,0.35)",
-            zIndex: 20,
-            textAlign: "left",
-          }}
-        >
+      <Popover
+        anchorRef={btnRef}
+        isOpen={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        placement="bottom-end"
+        style={{
+          background: "#fff",
+          borderRadius: 8,
+          padding: 10,
+          width: 200,
+          boxShadow: "0 6px 20px rgba(0,0,0,0.35)",
+          textAlign: "left",
+        }}
+      >
           <div style={{ fontSize: 10.5, fontWeight: 700, color: "#8a94a6", marginBottom: 3 }}>Nama</div>
           <input
             value={text}
@@ -292,8 +285,7 @@ function WorkflowNode({ id, data }) {
           >
             🗑 Hapus
           </button>
-        </div>
-      )}
+      </Popover>
     </div>
   );
 }
@@ -321,9 +313,10 @@ function pickHandles(sourceNode, targetNode) {
 
 function WorkflowCanvas() {
   const { t } = useLanguage();
-  const { workflowNodes, workflowEdges, addNode, updateNodePosition, addEdge: addWorkflowEdge, deleteEdge, deleteNode } = useWorkflow();
+  const { workflowNodes, workflowEdges, addNode, updateNodePosition, addEdge: addWorkflowEdge, deleteEdge, updateEdgeColor, deleteNode } = useWorkflow();
   const [nodes, setNodes] = useState([]);
   const [edges, setEdges] = useState([]);
+  const [selectedEdgeId, setSelectedEdgeId] = useState(null);
 
   // Synced from context (initial load + Realtime updates from other
   // sessions) into ReactFlow's own node/edge shape. A node being actively
@@ -363,12 +356,12 @@ function WorkflowCanvas() {
           // equivalent to "find a clean path automatically" once the
           // diagram has more than a couple of nodes.
           type: "smoothstep",
-          markerEnd: { type: MarkerType.ArrowClosed },
-          style: { stroke: "#8a94a6", strokeWidth: 1.5 },
+          markerEnd: { type: MarkerType.ArrowClosed, color: e.color || "#8a94a6" },
+          style: { stroke: e.color || "#8a94a6", strokeWidth: e.id === selectedEdgeId ? 2.5 : 1.5 },
         };
       })
     );
-  }, [workflowEdges, nodes]);
+  }, [workflowEdges, nodes, selectedEdgeId]);
 
   const onNodesChange = useCallback((changes) => setNodes((nds) => applyNodeChanges(changes, nds)), []);
   const onEdgesChange = useCallback((changes) => setEdges((eds) => applyEdgeChanges(changes, eds)), []);
@@ -380,8 +373,19 @@ function WorkflowCanvas() {
 
   const onConnect = useCallback((connection) => addWorkflowEdge(connection.source, connection.target), [addWorkflowEdge]);
 
-  const onEdgesDelete = useCallback((deleted) => deleted.forEach((e) => deleteEdge(e.id)), [deleteEdge]);
+  const onEdgesDelete = useCallback(
+    (deleted) => {
+      deleted.forEach((e) => deleteEdge(e.id));
+      setSelectedEdgeId((prev) => (deleted.some((e) => e.id === prev) ? null : prev));
+    },
+    [deleteEdge]
+  );
   const onNodesDelete = useCallback((deleted) => deleted.forEach((n) => deleteNode(n.id)), [deleteNode]);
+  const onEdgeClick = useCallback((event, edge) => {
+    event.stopPropagation();
+    setSelectedEdgeId(edge.id);
+  }, []);
+  const onPaneClick = useCallback(() => setSelectedEdgeId(null), []);
 
   const handleAddNode = () => {
     const x = 80 + Math.random() * 240;
@@ -409,6 +413,40 @@ function WorkflowCanvas() {
           + {t("workflowView.newNodeBtn")}
         </button>
       </div>
+
+      {selectedEdgeId && (
+        <div
+          style={{
+            position: "absolute",
+            top: 14,
+            right: 14,
+            zIndex: 5,
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            background: "#fff",
+            padding: "7px 9px",
+            borderRadius: 8,
+            boxShadow: "0 2px 8px rgba(0,0,0,0.25)",
+          }}
+        >
+          <span style={{ fontSize: 11, color: "#8a94a6", fontWeight: 600, marginRight: 2 }}>Warna panah</span>
+          {COLOR_PALETTE.concat("#8a94a6").map((c) => (
+            <button
+              key={c}
+              onClick={() => updateEdgeColor(selectedEdgeId, c)}
+              style={{ width: 18, height: 18, borderRadius: "50%", background: c, border: "1px solid #ddd", cursor: "pointer", padding: 0 }}
+            />
+          ))}
+          <button
+            onClick={() => setSelectedEdgeId(null)}
+            style={{ background: "none", border: "none", cursor: "pointer", color: "#8a94a6", fontSize: 13, padding: "0 2px", marginLeft: 2 }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -419,6 +457,8 @@ function WorkflowCanvas() {
         onConnect={onConnect}
         onEdgesDelete={onEdgesDelete}
         onNodesDelete={onNodesDelete}
+        onEdgeClick={onEdgeClick}
+        onPaneClick={onPaneClick}
         deleteKeyCode={["Backspace", "Delete"]}
         connectionMode="loose"
         fitView

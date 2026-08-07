@@ -20,6 +20,7 @@ function mapEdge(row) {
     id: row.id,
     source: row.source_id,
     target: row.target_id,
+    color: row.color,
   };
 }
 
@@ -162,6 +163,13 @@ export function WorkflowProvider({ children, boardId }) {
     if (error) console.error("Error disconnecting workflow nodes:", error);
   };
 
+  const updateEdgeColor = (id, color) => {
+    setEdgeRows((prev) => prev.map((e) => (e.id === id ? { ...e, color } : e)));
+    supabase.from("workflow_edges").update({ color }).eq("id", id).then(({ error }) => {
+      if (error) console.error("Error recoloring workflow edge:", error);
+    });
+  };
+
   const value = {
     loading,
     workflowNodes: nodeRows,
@@ -175,6 +183,7 @@ export function WorkflowProvider({ children, boardId }) {
     deleteNode,
     addEdge,
     deleteEdge,
+    updateEdgeColor,
   };
 
   return <WorkflowContext.Provider value={value}>{children}</WorkflowContext.Provider>;
