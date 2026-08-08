@@ -170,8 +170,8 @@ function WorkflowNode({ id, data, selected }) {
             height: 20,
             borderRadius: "50%",
             border: "2px solid #fff",
-            background: "#333",
-            color: "#fff",
+            background: "#000",
+            color: "#fbbf24",
             fontSize: 11,
             fontWeight: 700,
             cursor: "pointer",
@@ -696,7 +696,7 @@ function WorkflowCanvas() {
   const handleAddNode = () => {
     const rect = addButtonRef.current?.getBoundingClientRect();
     const basePos = rect ? screenToFlowPosition({ x: rect.left, y: rect.bottom + 20 }) : { x: 40, y: 70 };
-    addNode(t("workflowView.newNodeLabel"), "#579bfc", basePos.x, basePos.y + workflowNodes.length * 80);
+    addNode(t("workflowView.newNodeLabel"), "#a25ddc", basePos.x, basePos.y + workflowNodes.length * 80);
   };
 
   const editingNode = editingNodeId ? workflowNodes.find((n) => n.id === editingNodeId) : null;
