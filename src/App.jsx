@@ -11,6 +11,7 @@ import { GroupProvider, useGroups } from "./context/GroupContext";
 import { ItemsProvider, useItems } from "./context/ItemsContext";
 import { WorkflowProvider } from "./context/WorkflowContext";
 import { BoardsProvider, useBoards } from "./context/BoardsContext";
+import { FileManagerProvider } from "./context/FileManagerContext";
 import { MobileNavProvider } from "./context/MobileNavContext";
 import LoginScreen from "./components/LoginScreen";
 import LandingPage from "./components/LandingPage";
@@ -482,9 +483,11 @@ export default function App() {
               <DMProvider>
                 <NotificationProvider>
                   <BoardsProvider>
-                    <MobileNavProvider>
-                      <AppShellInner />
-                    </MobileNavProvider>
+                    <FileManagerProvider>
+                      <MobileNavProvider>
+                        <AppShellInner />
+                      </MobileNavProvider>
+                    </FileManagerProvider>
                   </BoardsProvider>
                 </NotificationProvider>
               </DMProvider>

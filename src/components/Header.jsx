@@ -8,6 +8,7 @@ import AccountMenu from './AccountMenu';
 import NotificationBell from './NotificationBell';
 import BoardDiscussionPanel from './BoardDiscussionPanel';
 import MemberDirectory from './MemberDirectory';
+import FileManagerModal from './FileManagerModal';
 
 // title/subtitle now live in the `boards` table (columns existed since
 // Phase 1 but were never wired up — this component was still 100%
@@ -23,6 +24,7 @@ const Header = ({ groups = [], boardId, isReady = true }) => {
   const [subtitle, setSubtitle] = useState(t('defaults.boardSubtitle'));
   const [showDiscussion, setShowDiscussion] = useState(false);
   const [showTeam, setShowTeam] = useState(false);
+  const [showFiles, setShowFiles] = useState(false);
 
   // Fulfills a notification-bell deep-link once this board actually
   // becomes the active one — requestBoardNavigation() (BoardsContext) may
@@ -250,12 +252,21 @@ const Header = ({ groups = [], boardId, isReady = true }) => {
         >
           👥
         </button>
+        <button
+          onClick={() => setShowFiles(true)}
+          title={t('header.filesLabel')}
+          aria-label={t('header.filesLabel')}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--text-secondary)', padding: 6 }}
+        >
+          🗂️
+        </button>
         <NotificationBell />
         <AccountMenu />
       </div>
 
       {showDiscussion && <BoardDiscussionPanel boardId={boardId} boardTitle={title} onClose={() => setShowDiscussion(false)} />}
       {showTeam && <MemberDirectory onClose={() => setShowTeam(false)} />}
+      {showFiles && <FileManagerModal onClose={() => setShowFiles(false)} />}
     </div>
   );
 };
