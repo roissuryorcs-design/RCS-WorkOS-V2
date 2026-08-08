@@ -100,7 +100,7 @@ const ICON_MARGIN_STYLE = {
   right: { marginRight: 16 },
 };
 
-function WorkflowNode({ id, data }) {
+function WorkflowNode({ id, data, selected }) {
   const iconPosition = data.iconPosition || "top";
   return (
     <div style={{ position: "relative", ...(data.icon ? ICON_MARGIN_STYLE[iconPosition] : {}) }}>
@@ -155,32 +155,34 @@ function WorkflowNode({ id, data }) {
         <span style={{ display: "block", width: "100%", whiteSpace: "normal", wordBreak: "break-word", overflowWrap: "break-word" }}>{data.label}</span>
       </div>
 
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          data.onOpenMenu(id);
-        }}
-        title="Menu"
-        style={{
-          position: "absolute",
-          top: -8,
-          right: -8,
-          width: 20,
-          height: 20,
-          borderRadius: "50%",
-          border: "2px solid #fff",
-          background: "#333",
-          color: "#fff",
-          fontSize: 11,
-          fontWeight: 700,
-          cursor: "pointer",
-          padding: 0,
-          lineHeight: 1,
-          boxShadow: "0 1px 4px rgba(0,0,0,0.4)",
-        }}
-      >
-        ⋮
-      </button>
+      {selected && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            data.onOpenMenu(id);
+          }}
+          title="Menu"
+          style={{
+            position: "absolute",
+            top: -8,
+            right: -8,
+            width: 20,
+            height: 20,
+            borderRadius: "50%",
+            border: "2px solid #fff",
+            background: "#333",
+            color: "#fff",
+            fontSize: 11,
+            fontWeight: 700,
+            cursor: "pointer",
+            padding: 0,
+            lineHeight: 1,
+            boxShadow: "0 1px 4px rgba(0,0,0,0.4)",
+          }}
+        >
+          ⋮
+        </button>
+      )}
     </div>
   );
 }
