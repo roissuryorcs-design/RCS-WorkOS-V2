@@ -169,7 +169,7 @@ function WorkflowNode({ id, data, selected }) {
             width: 20,
             height: 20,
             borderRadius: "50%",
-            border: "2px solid var(--bg-primary)",
+            border: "2px solid var(--text-primary)",
             background: "#fbbf24",
             color: "#000",
             fontSize: 13,
